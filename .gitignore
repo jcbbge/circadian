@@ -1,0 +1,14 @@
+# --- privacy boundary -------------------------------------------------------
+# mind/ is YOUR living memory: SELF.md, JRG.md (private, never leaves the
+# machine), NOW.md, episodes/, scoreboard.jsonl. It is its own git repo with
+# its own history and NO remote (MIND-SPEC.md). It must never enter this
+# public repo. The install script scaffolds a fresh mind/ from templates/ on
+# each user's machine.
+mind/
+
+# runtime logs (launchd stdout/stderr)
+logs/*.log
+
+# os / editor cruft
+.DS_Store
+node_modules/
