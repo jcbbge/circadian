@@ -2,7 +2,7 @@
 /**
  * rem.ts — the REM consolidator of the Circadian memory substrate.
  *
- * Nightly launchd job (com.circadian.rem, 03:30 per MIND-SPEC.md "The Cycle
+ * Twice-daily launchd job (com.circadian.rem, 09:00 & 21:00 per MIND-SPEC.md "The Cycle
  * > REM"). One run does, in order:
  *
  *   1. loads mind/{SELF,USER,NOW,greeting,compost}.md and all episodes/*.md;
@@ -11,8 +11,9 @@
  *   2. gathers propagation evidence: transcripts under ~/.claude/projects/
  *      modified in the last 24h, bounded per-transcript and in total, plus
  *      an enumeration of the items currently "live" in SELF.md/NOW.md.
- *   3. calls claude -p (no --model flag — must inherit the default top-tier
- *      model) with both, asking it to judge each new episode against
+ *   3. calls the local LLM (llm.ts — the system mlx-omni-server on :10240,
+ *      replacing the old `claude -p` dependency) with both, asking it to
+ *      judge each new episode against
  *      SELF.md (confirm/contradict/supersede/deepen), rewrite SELF.md
  *      (shrink-unless-justified), decide compost eligibility under the
  *      digestion-completeness rule, plant one NOW.md serendipity line, and
@@ -23,15 +24,16 @@
  *   5. writes (temp file + rename), appends the rem scoreboard event, and
  *      commits the mind repo — REM is the only regular committer of it.
  *
- * No mocks: the claude call is real every time this runs for real (i.e.
+ * No mocks: the LLM call is real every time this runs for real (i.e.
  * without --dry-run). --dry-run performs steps 1-2 and prints the exact
- * prompt that would be sent, without calling claude or writing anything.
+ * prompt that would be sent, without calling the LLM or writing anything.
  */
 
 import * as fs from "fs";
 import * as path from "path";
 import { homedir } from "os";
 import { execFileSync } from "child_process";
+import { complete } from "./llm.ts";
 
 // ---- paths (per MIND-SPEC.md) ----
 // CIRCADIAN_HOME overrides; default ~/circadian. See wake.ts for the contract.
@@ -47,7 +49,6 @@ const SPEC_PATH = path.join(MIND_DIR, "MIND-SPEC.md");
 const SCOREBOARD_PATH = path.join(MIND_DIR, "scoreboard.jsonl");
 const EPISODES_DIR = path.join(MIND_DIR, "episodes");
 
-const CLAUDE_BIN = process.env.CIRCADIAN_CLAUDE_BIN || "/opt/homebrew/bin/claude";
 // Where the harness writes session transcripts (propagation evidence). Claude
 // Code uses ~/.claude/projects; overridable for other harnesses/users.
 const PROJECTS_DIR = process.env.CIRCADIAN_PROJECTS_DIR || path.join(homedir(), ".claude/projects");
@@ -63,7 +64,8 @@ const GREETING_MAX_LINES = 3;
 const TRANSCRIPT_WINDOW_MS = 24 * 60 * 60 * 1000;
 const PER_TRANSCRIPT_EXCERPT_CHARS = 4000;
 const TOTAL_EXCERPT_BUDGET_CHARS = 24000;
-const CLAUDE_TIMEOUT_MS = 20 * 60 * 1000;
+const LLM_TIMEOUT_MS = 15 * 60 * 1000; // full SELF.md rewrite on a local model can be slow
+const LLM_MAX_TOKENS = 12000; // must exceed a full SELF.md rewrite (~6k) plus the other blocks
 
 function tokensOf(text: string): number {
   return Math.ceil(text.length / 4);
@@ -299,7 +301,7 @@ function buildPrompt(ctx: MindContext): string {
 
   const injectedBlock = ctx.injectedItems.length === 0 ? "(none currently loaded)" : ctx.injectedItems.join("\n");
 
-  return `You are REM, the nightly consolidation pass of the Circadian memory substrate (the mind repo). Follow MIND-SPEC.md exactly — it is the design authority. You do not chat; you produce exactly the delimited output blocks specified at the end of this prompt and nothing else outside them.
+  return `You are REM, the twice-daily consolidation pass of the Circadian memory substrate (the mind repo). Follow MIND-SPEC.md exactly — it is the design authority. You do not chat; you produce exactly the delimited output blocks specified at the end of this prompt and nothing else outside them.
 
 === MIND-SPEC.md (authority for this process) ===
 ${ctx.specMd}
@@ -575,7 +577,7 @@ function atomicWrite(targetPath: string, content: string) {
 // main
 // ---------------------------------------------------------------------
 
-function main() {
+async function main() {
   const args = process.argv.slice(2);
   const dryRun = args.includes("--dry-run");
 
@@ -614,18 +616,9 @@ function main() {
 
   let raw: string;
   try {
-    raw = execFileSync(CLAUDE_BIN, ["-p"], {
-      input: prompt,
-      encoding: "utf8",
-      maxBuffer: 20 * 1024 * 1024,
-      timeout: CLAUDE_TIMEOUT_MS,
-      // Marks this session as metabolism-internal so the wake/sleep hooks
-      // skip it (no injection contaminating the strict-format output, no
-      // recursive sleep drafting).
-      env: { ...process.env, CIRCADIAN_INTERNAL: "1" },
-    });
+    raw = await complete(prompt, { timeoutMs: LLM_TIMEOUT_MS, maxTokens: LLM_MAX_TOKENS });
   } catch (err) {
-    console.error(`rem: claude -p call failed: ${(err as Error).message}. No mind files were modified.`);
+    console.error(`rem: local LLM call failed: ${(err as Error).message}. No mind files were modified.`);
     process.exit(1);
     return;
   }
@@ -704,4 +697,4 @@ function main() {
   }
 }
 
-main();
+await main();

@@ -3,7 +3,7 @@
 A file-based memory substrate for AI coding agents. Plain markdown in git;
 all intelligence lives in four small processes around it — **wake** (inject
 memory at session start), **sleep** (draft an episode at session end),
-**rem** (nightly consolidation), and **status** (vitals).
+**rem** (twice-daily consolidation), and **status** (vitals).
 
 See [`mind/MIND-SPEC.md`](templates/MIND-SPEC.md) for the design contract.
 
@@ -17,7 +17,7 @@ cd ~/circadian
 
 The installer scaffolds your private `mind/` from `templates/`, initializes it
 as a local git repo (no remote — your memory never leaves your machine), and
-installs the nightly REM job. It prints the Claude Code hook config to add.
+installs the twice-daily REM job (09:00 & 21:00). It prints the Claude Code hook config to add.
 
 ## Layout
 

@@ -34,10 +34,14 @@ if [ -z "$BUN_BIN" ]; then
 fi
 echo "circadian: using bun at $BUN_BIN"
 
-CLAUDE_BIN="${CIRCADIAN_CLAUDE_BIN:-$(command -v claude || echo /opt/homebrew/bin/claude)}"
-if [ ! -x "$CLAUDE_BIN" ]; then
-  echo "circadian: WARNING — claude CLI not found at $CLAUDE_BIN." >&2
-  echo "  SLEEP/REM drafting need it. Set CIRCADIAN_CLAUDE_BIN before running the jobs." >&2
+# SLEEP/REM drafting call the system local-LLM service (OpenAI-compatible),
+# not a cloud CLI. Default endpoint 127.0.0.1:10240 (see llm.ts for the env
+# knobs: CIRCADIAN_LLM_BASE_URL / CIRCADIAN_LLM_MODEL). Probe it, warn if down.
+LLM_BASE_URL="${CIRCADIAN_LLM_BASE_URL:-${LOCAL_LLM_BASE_URL:-http://127.0.0.1:10240/v1}}"
+if ! curl -sS -m 5 "$LLM_BASE_URL/models" >/dev/null 2>&1; then
+  echo "circadian: WARNING — local LLM not reachable at $LLM_BASE_URL." >&2
+  echo "  SLEEP/REM drafting need it. Start your local LLM service, or point" >&2
+  echo "  CIRCADIAN_LLM_BASE_URL / CIRCADIAN_LLM_MODEL at another endpoint." >&2
 fi
 
 # ---- 2. scaffold mind/ from templates -------------------------------------
@@ -98,12 +102,20 @@ if [ "$(uname)" = "Darwin" ]; then
         <string>$CIRCADIAN_HOME/src/rem.ts</string>
     </array>
     <key>StartCalendarInterval</key>
-    <dict>
-        <key>Hour</key>
-        <integer>3</integer>
-        <key>Minute</key>
-        <integer>30</integer>
-    </dict>
+    <array>
+        <dict>
+            <key>Hour</key>
+            <integer>9</integer>
+            <key>Minute</key>
+            <integer>0</integer>
+        </dict>
+        <dict>
+            <key>Hour</key>
+            <integer>21</integer>
+            <key>Minute</key>
+            <integer>0</integer>
+        </dict>
+    </array>
     <key>RunAtLoad</key>
     <false/>
     <key>StandardOutPath</key>
@@ -124,10 +136,10 @@ if [ "$(uname)" = "Darwin" ]; then
 EOF
     launchctl unload "$PLIST" 2>/dev/null || true
     launchctl load "$PLIST"
-    echo "circadian: nightly REM job installed (03:30 daily; launchd re-fires on wake if the machine slept through it)."
+    echo "circadian: REM job installed (09:00 and 21:00 daily; launchd re-fires on wake if the machine slept through a slot)."
   fi
 else
-  echo "circadian: non-macOS — skipping launchd. Schedule 'CIRCADIAN_HOME=$CIRCADIAN_HOME $BUN_BIN $CIRCADIAN_HOME/src/rem.ts' via cron/systemd at 03:30."
+  echo "circadian: non-macOS — skipping launchd. Schedule 'CIRCADIAN_HOME=$CIRCADIAN_HOME $BUN_BIN $CIRCADIAN_HOME/src/rem.ts' via cron/systemd at 09:00 and 21:00."
 fi
 
 # ---- 5. Claude Code hook wiring (printed, not blind-edited) ----------------

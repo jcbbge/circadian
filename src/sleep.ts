@@ -9,30 +9,32 @@
 // and return immediately. SessionEnd must never wait on an LLM call.
 //
 // Worker mode (--worker): read the event from stdin, extract the session's
-// user/assistant text from the transcript JSONL, call `claude -p` to draft
-// an episode file and a rewritten NOW.md, then write both (temp-then-move,
+// user/assistant text from the transcript JSONL, call the local LLM (llm.ts)
+// to draft an episode file and a rewritten NOW.md, then write both (temp-then-move,
 // caps validated before the move). SLEEP never commits the mind repo — only REM
 // does (MIND-SPEC "REM" section).
 
-import { spawnSync, spawn } from "node:child_process";
+import { spawn } from "node:child_process";
 import { appendFileSync, existsSync, readFileSync, renameSync, statSync, writeFileSync } from "node:fs";
 import { homedir } from "node:os";
 import { join } from "node:path";
+import { complete } from "./llm.ts";
 
 // See wake.ts for the path-resolution contract. CIRCADIAN_HOME overrides;
-// default ~/circadian. Binaries are overridable so a user whose bun/claude
-// live elsewhere can point at them without editing source.
+// default ~/circadian. The drafting call now goes to the system local-LLM
+// service (see llm.ts) instead of a cloud CLI — no binary path to configure.
 const CIRCADIAN_HOME = process.env.CIRCADIAN_HOME || join(homedir(), "circadian");
 const MIND = join(CIRCADIAN_HOME, "mind");
 const EPISODES_DIR = join(MIND, "episodes");
 const BUN_BIN = process.env.CIRCADIAN_BUN_BIN || join(homedir(), ".bun/bin/bun");
-const CLAUDE_BIN = process.env.CIRCADIAN_CLAUDE_BIN || "/opt/homebrew/bin/claude";
-const CLAUDE_MODEL = "claude-sonnet-5";
 const RESERVED_SLUG = "the-forest-session"; // reserved for Worker D's archaeology episode
 const EPISODE_CAP_CHARS = 4000; // 1k tokens
 const NOW_CAP_CHARS = 12000; // 3k tokens
-const TRANSCRIPT_CAP_CHARS = 100000; // bound the prompt sent to claude -p
-const CLAUDE_TIMEOUT_MS = 4 * 60 * 1000; // stay well under the 6-minute test bound
+// Local models have a bounded context window; keep the prompt well within it.
+// (Was 100k chars for a cloud CLI; the local Qwen3 context is far smaller.)
+const TRANSCRIPT_CAP_CHARS = 48000; // ~12k tokens of transcript
+const LLM_TIMEOUT_MS = 6 * 60 * 1000; // local generation of both artifacts can be slow
+const LLM_MAX_TOKENS = 6000; // must exceed episode (~1k) + NOW (~3k) with headroom
 const MIN_TRANSCRIPT_BYTES = 10 * 1024; // one-shot -p sessions leave tiny transcripts; episodes from them are noise
 
 async function readStdinText(): Promise<string> {
@@ -57,9 +59,10 @@ async function runHook(): Promise<void> {
   const evt = parseEvent(await readStdinText());
   const transcriptPath = evt?.transcript_path;
 
-  // Sessions spawned by the metabolism itself (this worker's claude -p, and
-  // REM's) set CIRCADIAN_INTERNAL=1. Without this guard every drafting call
-  // would fire SessionEnd -> spawn another drafting call, unbounded.
+  // Legacy guard from when drafting shelled out to `claude -p` (each such
+  // subprocess fired SessionEnd -> another drafting call). Drafting now hits
+  // the local LLM over HTTP with no Claude subprocess, so this can no longer
+  // recurse; the guard is kept as a cheap belt-and-suspenders no-op.
   if (process.env.CIRCADIAN_INTERNAL === "1") process.exit(0);
 
   if (!transcriptPath || !existsSync(transcriptPath) || statSync(transcriptPath).size < MIN_TRANSCRIPT_BYTES) {
@@ -168,24 +171,21 @@ ARC: <a short 2-6 word name for this episode's arc>
 <any promises made to the user this session, one per line, or "none" if none>
 
 ## Serendipity
-<leave completely empty — this section is owned exclusively by a separate nightly process, never write anything here>
+<leave completely empty — this section is owned exclusively by a separate consolidation process, never write anything here>
 
 ## Last sleep
 <leave completely empty — the caller fills this in>
 === END ===`;
 }
 
-function draftViaClaude(prompt: string): string | null {
-  const result = spawnSync(CLAUDE_BIN, ["-p", "--model", CLAUDE_MODEL], {
-    input: prompt,
-    encoding: "utf8",
-    maxBuffer: 20 * 1024 * 1024,
-    timeout: CLAUDE_TIMEOUT_MS,
-    cwd: MIND,
-    env: { ...process.env, CIRCADIAN_INTERNAL: "1" }, // see runHook guard
-  });
-  if (result.status !== 0 || !result.stdout) return null;
-  return result.stdout;
+async function draftViaLLM(prompt: string): Promise<string | null> {
+  try {
+    return await complete(prompt, { timeoutMs: LLM_TIMEOUT_MS, maxTokens: LLM_MAX_TOKENS });
+  } catch {
+    // transport error, timeout, truncation, or empty content — treated as a
+    // failed draft by the caller (no partial write).
+    return null;
+  }
 }
 
 function parseDraft(output: string): { arc: string; episodeBody: string; nowRaw: string } | null {
@@ -319,7 +319,7 @@ async function runWorker(): Promise<void> {
 
     let draft: ReturnType<typeof parseDraft> = null;
     for (let attempt = 0; attempt < 2 && !draft; attempt += 1) {
-      const output = draftViaClaude(prompt);
+      const output = await draftViaLLM(prompt);
       if (output) draft = parseDraft(output);
     }
     if (!draft) return; // real call failed or output malformed twice — no partial write

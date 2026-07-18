@@ -100,7 +100,7 @@ archaeology commit (Worker D, content-population).
 
 ### REM
 
-A nightly launchd job, scheduled 03:30. REM:
+A launchd job, scheduled twice daily at 09:00 and 21:00. REM:
 1. reads new episodes against `SELF.md`, asking of each claim: does it
    confirm, contradict, supersede, or deepen the existing worldview?
 2. rewrites the worldview file (`SELF.md`) under the rule: shrink unless
@@ -206,13 +206,13 @@ Notes:
   `--greet-bad "<reason>"` flags. `greeting_verdict` is `"ok"` or `"bad"`;
   when bad, an optional `reason` field carries the free-text reason string.
 - `wake` events are appended at WAKE time; `sleep` events at SLEEP time;
-  `rem` events at REM time, once per nightly run.
+  `rem` events at REM time, once per REM run (twice daily).
 
 ---
 
 ## Greeting Protocol
 
-The greeting is composed by REM (nightly, the normal path) or by SLEEP (as
+The greeting is composed by REM (twice daily, the normal path) or by SLEEP (as
 a same-day fallback if REM has not yet run since the last sleep). It is at
 most 3 lines:
 
