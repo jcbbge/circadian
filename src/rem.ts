@@ -577,9 +577,55 @@ function atomicWrite(targetPath: string, content: string) {
 // main
 // ---------------------------------------------------------------------
 
+// REM runs on a schedule (09:00 and 21:00) but must also CATCH UP: if a slot
+// was missed because the laptop was asleep/off, the next time the machine is
+// available (login, wake, restart, or any new session) it should run once for
+// that missed slot — and never twice for the same slot. This is that guard.
+//
+// "due" = the most recent scheduled slot that has already passed today has not
+// yet had a successful REM run. --if-due exits 0 without running when not due,
+// so it is safe to call from every entry point (SessionStart hook, a
+// wake/login LaunchAgent, the scheduled job itself). The scheduled 09:00/21:00
+// job runs unconditionally; the opportunistic callers pass --if-due.
+const REM_SLOT_HOURS = [9, 21];
+
+function mostRecentSlot(now: Date): Date {
+  // Walk back from now to the latest slot boundary at or before now.
+  const candidates: Date[] = [];
+  for (const dayOffset of [0, -1]) {
+    for (const h of REM_SLOT_HOURS) {
+      const d = new Date(now);
+      d.setDate(d.getDate() + dayOffset);
+      d.setHours(h, 0, 0, 0);
+      if (d.getTime() <= now.getTime()) candidates.push(d);
+    }
+  }
+  // latest boundary <= now
+  return candidates.reduce((a, b) => (a.getTime() >= b.getTime() ? a : b));
+}
+
+function isDue(scoreboard: ScoreEvent[], now: Date): boolean {
+  const slot = mostRecentSlot(now);
+  const last = lastRemTs(scoreboard);
+  if (!last) return true; // never run — always due
+  const lastMs = Date.parse(last);
+  if (Number.isNaN(lastMs)) return true; // unparseable — treat as due, run
+  return lastMs < slot.getTime(); // due iff no REM since the current slot opened
+}
+
 async function main() {
   const args = process.argv.slice(2);
   const dryRun = args.includes("--dry-run");
+  const ifDue = args.includes("--if-due");
+
+  if (ifDue) {
+    const scoreboardCheck = loadScoreboard();
+    if (!isDue(scoreboardCheck, new Date())) {
+      console.log(`rem: --if-due — not due (last REM is newer than the current ${REM_SLOT_HOURS.join("/")} slot). Skipping.`);
+      return;
+    }
+    console.log("rem: --if-due — a scheduled slot was missed; catching up now.");
+  }
 
   const specMd = readOrEmpty(SPEC_PATH);
   const selfMd = readOrEmpty(SELF_PATH);

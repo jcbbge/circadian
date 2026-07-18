@@ -7,6 +7,7 @@
 import { appendFileSync, readFileSync } from "node:fs";
 import { homedir } from "node:os";
 import { join } from "node:path";
+import { spawn } from "node:child_process";
 
 // Path resolution (single-source, distributable): CIRCADIAN_HOME overrides;
 // otherwise ~/circadian. The mind data lives at $CIRCADIAN_HOME/mind. This is
@@ -106,6 +107,23 @@ try {
     appendFileSync(join(MIND, "scoreboard.jsonl"), JSON.stringify(event) + "\n");
   } catch {
     // scoreboard append failure must never withhold the injection above
+  }
+
+  // Catch-up: every new session is an "opportunity" to run a missed REM slot.
+  // Fire REM in --if-due mode, fully detached, AFTER the injection is already
+  // on stdout — it must never delay or block session start. --if-due exits
+  // immediately when a run isn't owed, and can never double-run a slot, so
+  // this is safe to fire on every single wake.
+  try {
+    const bun = process.env.CIRCADIAN_BUN_BIN || join(homedir(), ".bun/bin/bun");
+    const child = spawn(bun, ["run", join(CIRCADIAN_HOME, "src/rem.ts"), "--if-due"], {
+      detached: true,
+      stdio: "ignore",
+      env: { ...process.env, CIRCADIAN_INTERNAL: "1" },
+    });
+    child.unref();
+  } catch {
+    // a failed catch-up spawn must never affect the wake injection
   }
 } catch {
   // mind dir missing/unreadable, or any other failure — print nothing (Law 7)

@@ -136,10 +136,56 @@ if [ "$(uname)" = "Darwin" ]; then
 EOF
     launchctl unload "$PLIST" 2>/dev/null || true
     launchctl load "$PLIST"
-    echo "circadian: REM job installed (09:00 and 21:00 daily; launchd re-fires on wake if the machine slept through a slot)."
+    echo "circadian: REM job installed (09:00 and 21:00 daily)."
+  fi
+
+  # Catch-up agent: runs `rem.ts --if-due` at every login/restart. --if-due
+  # runs REM only when the most recent 09:00/21:00 slot was missed, and never
+  # double-runs a slot. Together with the scheduled job above and the WAKE
+  # hook (which also fires --if-due per session), a slot missed while the
+  # laptop was closed runs at the next opportunity: login, restart, wake, or
+  # any new session.
+  CATCHUP="$PLIST_DIR/com.circadian.rem-catchup.plist"
+  if [ -f "$CATCHUP" ]; then
+    echo "circadian: catch-up agent already installed at $CATCHUP — leaving it."
+  else
+    cat > "$CATCHUP" <<EOF
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>com.circadian.rem-catchup</string>
+    <key>ProgramArguments</key>
+    <array>
+        <string>$BUN_BIN</string>
+        <string>$CIRCADIAN_HOME/src/rem.ts</string>
+        <string>--if-due</string>
+    </array>
+    <key>RunAtLoad</key>
+    <true/>
+    <key>StandardOutPath</key>
+    <string>$LOG_DIR/rem.log</string>
+    <key>StandardErrorPath</key>
+    <string>$LOG_DIR/rem.error.log</string>
+    <key>EnvironmentVariables</key>
+    <dict>
+        <key>PATH</key>
+        <string>/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:$HOME/.bun/bin</string>
+        <key>CIRCADIAN_HOME</key>
+        <string>$CIRCADIAN_HOME</string>
+    </dict>
+    <key>WorkingDirectory</key>
+    <string>$CIRCADIAN_HOME</string>
+</dict>
+</plist>
+EOF
+    launchctl unload "$CATCHUP" 2>/dev/null || true
+    launchctl load "$CATCHUP"
+    echo "circadian: catch-up agent installed (runs --if-due at every login/restart)."
   fi
 else
-  echo "circadian: non-macOS — skipping launchd. Schedule 'CIRCADIAN_HOME=$CIRCADIAN_HOME $BUN_BIN $CIRCADIAN_HOME/src/rem.ts' via cron/systemd at 09:00 and 21:00."
+  echo "circadian: non-macOS — skipping launchd. Schedule 'CIRCADIAN_HOME=$CIRCADIAN_HOME $BUN_BIN $CIRCADIAN_HOME/src/rem.ts' via cron/systemd at 09:00 and 21:00, and 'rem.ts --if-due' at login/wake."
 fi
 
 # ---- 5. Claude Code hook wiring (printed, not blind-edited) ----------------
