@@ -1,6 +1,6 @@
 # MIND-SPEC.md — Circadian Memory Substrate
 
-This is the contract for `~/mind`. It is the design authority for every
+This is the contract for `~/circadian/mind`. It is the design authority for every
 process that reads or writes this repo (wake, sleep, rem, status, content
 archaeology). If a process's behavior conflicts with this document, the
 process is wrong.
@@ -13,7 +13,7 @@ private relational memory and never leaves this machine.
 ## The Eight Laws
 
 1. **Storage dumb, metabolism smart.** The mind is plain markdown in git at
-   `~/mind`; all intelligence lives in the processes around it (wake, sleep,
+   `~/circadian/mind`; all intelligence lives in the processes around it (wake, sleep,
    rem, status), not in the storage layer. No database sits in the critical
    path of reading or writing the mind.
 
@@ -80,7 +80,7 @@ overage — never silently truncate any file's content.
 ### LIVE
 
 Nothing. The working agent carries zero memory duties for the duration of
-the session. It does not write to `~/mind`, does not curate what it says,
+the session. It does not write to `~/circadian/mind`, does not curate what it says,
 does not manage its own memory. The full transcript is implicitly the
 deposit that SLEEP will later read.
 
@@ -94,7 +94,7 @@ Triggered by SessionEnd, via a detached worker. SLEEP:
 - may fall back to composing `greeting.md` if REM has not run since (see
   "Greeting Protocol")
 
-SLEEP does not commit `~/mind`. Only REM commits (see below), except for
+SLEEP does not commit `~/circadian/mind`. Only REM commits (see below), except for
 the two bootstrap commits: the founding commit (Worker A) and the
 archaeology commit (Worker D, content-population).
 
@@ -114,7 +114,7 @@ A launchd job, scheduled twice daily at 09:00 and 21:00. REM:
    nothing:").
 5. drafts tomorrow's `greeting.md` (see "Greeting Protocol").
 6. appends one `rem`-type event to `scoreboard.jsonl`.
-7. commits `~/mind` with the REM commit convention (see below).
+7. commits `~/circadian/mind` with the REM commit convention (see below).
 
 REM is the only regular committer of the mind repo. SLEEP and WAKE never
 commit.

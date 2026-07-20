@@ -737,7 +737,7 @@ async function main() {
     console.log(`rem: committed. ${subject}`);
   } catch (err) {
     console.error(
-      `rem: write/commit phase failed AFTER validation passed: ${(err as Error).message}. ~/mind may be in a partially-written, uncommitted state — inspect with 'git -C ${MIND_DIR} status'.`
+      `rem: write/commit phase failed AFTER validation passed: ${(err as Error).message}. ~/circadian/mind may be in a partially-written, uncommitted state — inspect with 'git -C ${MIND_DIR} status'.`
     );
     process.exit(1);
   }
