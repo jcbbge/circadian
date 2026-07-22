@@ -19,6 +19,7 @@ import { appendFileSync, existsSync, mkdirSync, readFileSync, renameSync, statSy
 import { homedir } from "node:os";
 import { dirname, join } from "node:path";
 import { complete } from "./llm.ts";
+import { ok, degraded, fail, correlation } from "./obs.ts";
 
 // ---------- observability ----------
 // SLEEP used to fail silently (every early return / swallowed catch left no
@@ -347,6 +348,7 @@ function appendSleepScoreboard(): void {
 }
 
 async function runWorker(): Promise<void> {
+  const corr = correlation("sleep");
   slog("worker", "start");
   try {
     // Event arrives via env (see runHook spawn). Fall back to stdin for any
@@ -354,37 +356,65 @@ async function runWorker(): Promise<void> {
     const evtRaw = process.env.CIRCADIAN_SLEEP_EVENT || (await readStdinText());
     const evt = parseEvent(evtRaw);
     const transcriptPath = evt?.transcript_path;
+    const sessionId = evt?.session_id ?? "unknown";
     if (!transcriptPath || !existsSync(transcriptPath)) {
       slog("worker", "abort: transcript missing", { transcriptPath: transcriptPath ?? null });
+      // A missing transcript at SLEEP means this session leaves NO letter to
+      // the next instance — a discontinuity event. Surface it, do not swallow.
+      degraded({
+        process: "sleep", phase: "read-transcript", correlation_id: corr, session_id: sessionId,
+        summary: "no transcript to digest at session end; no episode written",
+        context: { transcript_path: transcriptPath ?? null },
+        cause: "SessionEnd event carried no existing transcript_path (session may have produced no on-disk transcript)",
+        next_action: "if this recurs, verify the SessionEnd hook passes transcript_path; inspect logs/sleep.log for the raw event",
+      });
       return;
     }
 
     const transcriptText = extractTranscriptText(transcriptPath, TRANSCRIPT_CAP_CHARS);
     if (!transcriptText) {
-      slog("worker", "abort: transcript extracted to empty text (no user/assistant turns?)");
+      slog("worker", "abort: transcript extracted to empty text");
+      degraded({
+        process: "sleep", phase: "extract-transcript", correlation_id: corr, session_id: sessionId,
+        summary: "transcript had no user/assistant text; no episode written",
+        context: { transcript_path: transcriptPath },
+        cause: "extractTranscriptText found zero user/assistant turns in the JSONL",
+        next_action: "confirm the transcript format matches the parser (message.role/content); this session yields no episode",
+      });
       return;
     }
     slog("worker", "transcript extracted", { chars: transcriptText.length });
 
     const existingNow = readFileSync(join(MIND, "NOW.md"), "utf8");
     const existingSelf = existsSync(join(MIND, "SELF.md")) ? readFileSync(join(MIND, "SELF.md"), "utf8") : "";
-    const sessionId = evt?.session_id ?? "unknown";
 
     const prompt = buildPrompt(transcriptText, sessionId, existingSelf, existingNow);
 
     let draft: ReturnType<typeof parseDraft> = null;
+    let lastReason = "";
     for (let attempt = 0; attempt < 2 && !draft; attempt += 1) {
       slog("worker", "LLM draft attempt", { attempt: attempt + 1 });
       const output = await draftViaLLM(prompt);
       if (!output) {
-        slog("worker", "LLM returned nothing (call failed or timed out)", { attempt: attempt + 1 });
+        lastReason = "LLM returned nothing (call failed or timed out)";
+        slog("worker", lastReason, { attempt: attempt + 1 });
         continue;
       }
       draft = parseDraft(output);
-      if (!draft) slog("worker", "LLM output did not parse (malformed draft)", { attempt: attempt + 1, output_chars: output.length });
+      if (!draft) {
+        lastReason = `LLM output did not parse into an episode (${output.length} chars returned)`;
+        slog("worker", "LLM output did not parse (malformed draft)", { attempt: attempt + 1, output_chars: output.length });
+      }
     }
     if (!draft) {
       slog("worker", "abort: no valid draft after 2 attempts — NO episode written");
+      degraded({
+        process: "sleep", phase: "llm-draft", correlation_id: corr, session_id: sessionId,
+        summary: "episode draft failed twice; this session leaves no episode",
+        context: { transcript_chars: transcriptText.length, attempts: 2 },
+        cause: lastReason || "LLM produced no parseable EPISODE/NOW blocks on either attempt",
+        next_action: "check the local LLM at :10240 (curl http://127.0.0.1:10240/v1/models); the full run is in logs/sleep.log",
+      });
       return; // real call failed or output malformed twice — no partial write
     }
 
@@ -400,9 +430,23 @@ async function runWorker(): Promise<void> {
     writeNowFile(nowContent);
     appendSleepScoreboard();
     slog("worker", "SUCCESS: episode written", { episode: epPath, arc: draft.arc });
+    // The letter was written. Success is as legible as failure.
+    ok({
+      process: "sleep", phase: "write-episode", correlation_id: corr, session_id: sessionId,
+      summary: `episode written for this session: ${draft.arc}`,
+      context: { episode: epPath, arc: draft.arc, transcript_chars: transcriptText.length },
+    });
   } catch (e) {
-    // best-effort detached worker — but record the failure instead of hiding it
-    slog("worker", "EXCEPTION", { error: (e as Error).message, stack: (e as Error).stack?.split("\n")[1]?.trim() });
+    // best-effort detached worker — but record the failure everywhere, never hide it.
+    slog("worker", "EXCEPTION", { error: (e as Error).message });
+    fail({
+      process: "sleep", phase: "worker", correlation_id: corr,
+      summary: "sleep worker threw; session may leave no episode",
+      context: { error_line: (e as Error).stack?.split("\n")[1]?.trim() },
+      cause: (e as Error).message,
+      next_action: "inspect logs/sleep.log and logs/circadian.events.jsonl; the transcript is intact, sleep can be re-run manually with CIRCADIAN_SLEEP_EVENT",
+      code: 1,
+    });
   }
 }
 
