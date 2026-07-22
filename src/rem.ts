@@ -33,6 +33,7 @@ import * as fs from "fs";
 import * as path from "path";
 import { homedir } from "os";
 import { execFileSync } from "child_process";
+import { createHash } from "crypto";
 import { complete } from "./llm.ts";
 
 // ---- paths (per MIND-SPEC.md) ----
@@ -127,26 +128,115 @@ interface Episode {
   filename: string;
   filepath: string;
   content: string;
-  isNew: boolean;
+  hash: string; // sha256 of on-disk content — stable content identity
+  isNew: boolean; // NOT digested yet, per the digested ledger (never mtime)
 }
 
-function loadEpisodes(sinceTs: string | null): Episode[] {
+// ---------------------------------------------------------------------
+// digested ledger — the single source of truth for "have I absorbed this?"
+//
+// WHY THIS EXISTS: "new" was previously decided by comparing file mtime to the
+// last rem event's timestamp. That is a guess, not state: a rem commit's own
+// timestamp buries any episode whose mtime predates it, stranding it as a
+// permanent, SILENT backlog (observed: 2 episodes the drain loop could never
+// see). Filesystem time, git checkouts, backfills, and re-runs all corrupt an
+// mtime heuristic. The ledger replaces the guess with a fact: an episode is
+// digested iff its CONTENT HASH is recorded here. Content-keyed, so identity
+// survives renames, re-touches, git operations, and duplicate filenames.
+//
+// INVARIANT (the thing you can trust): every episode fed into a committed rem
+// wave as NEW gets its hash appended here inside the same commit. Therefore
+// each committed wave strictly shrinks the undigested set, and drain-to-zero
+// terminates in finite passes regardless of clocks.
+// ---------------------------------------------------------------------
+const DIGESTED_PATH = path.join(MIND_DIR, "digested.jsonl");
+
+interface DigestedEntry {
+  ts: string;
+  hash: string;
+  filename: string;
+  disposition: "absorbed" | "composted";
+}
+
+function hashContent(content: string): string {
+  return createHash("sha256").update(content, "utf8").digest("hex");
+}
+
+function loadDigestedHashes(): Set<string> {
+  const set = new Set<string>();
+  let raw = "";
+  try {
+    raw = fs.readFileSync(DIGESTED_PATH, "utf8");
+  } catch {
+    return set; // no ledger yet -> nothing digested
+  }
+  for (const line of raw.split("\n")) {
+    const t = line.trim();
+    if (!t) continue;
+    try {
+      const e = JSON.parse(t) as DigestedEntry;
+      if (e && typeof e.hash === "string" && e.hash) set.add(e.hash);
+    } catch {
+      process.stderr.write(`rem: skipping unparseable digested-ledger line: ${t.slice(0, 80)}\n`);
+    }
+  }
+  return set;
+}
+
+// Append entries and return the ledger text to be committed. Writing is
+// append-only + atomic via read-modify-rewrite so a crash mid-write cannot
+// corrupt prior facts (old file stays intact until rename).
+function recordDigested(entries: DigestedEntry[]): void {
+  if (entries.length === 0) return;
+  const existing = (() => {
+    try {
+      return fs.readFileSync(DIGESTED_PATH, "utf8");
+    } catch {
+      return "";
+    }
+  })();
+  const addition = entries.map((e) => JSON.stringify(e)).join("\n") + "\n";
+  const next = existing && !existing.endsWith("\n") ? existing + "\n" + addition : existing + addition;
+  const tmp = `${DIGESTED_PATH}.rem-tmp`;
+  fs.writeFileSync(tmp, next, "utf8");
+  fs.renameSync(tmp, DIGESTED_PATH);
+}
+
+function loadEpisodes(): Episode[] {
   let files: string[] = [];
   try {
     files = fs.readdirSync(EPISODES_DIR).filter((f) => f.endsWith(".md"));
   } catch {
     files = [];
   }
-  const sinceMs = sinceTs ? Date.parse(sinceTs) : null;
+  const digested = loadDigestedHashes();
   return files
     .map((f) => {
       const filepath = path.join(EPISODES_DIR, f);
-      const stat = fs.statSync(filepath);
       const content = fs.readFileSync(filepath, "utf8");
-      const isNew = sinceMs === null || Number.isNaN(sinceMs) || stat.mtime.getTime() > sinceMs;
-      return { filename: f, filepath, content, isNew };
+      const hash = hashContent(content);
+      return { filename: f, filepath, content, hash, isNew: !digested.has(hash) };
     })
     .sort((a, b) => a.filename.localeCompare(b.filename));
+}
+
+// Peristalsis: REM digests at most `batch` new episodes per pass (oldest
+// first), and carries at most a handful of already-seen episodes as compost
+// candidates. A backlog (e.g. a backfill, or a heavy week) is therefore
+// drained wave by wave across passes instead of being shoved into one
+// monolithic prompt that blows the model's context and the compost cap in a
+// single all-or-nothing transaction. Biology: one enzyme, one substrate.
+interface Meal {
+  episodes: Episode[]; // what this pass digests
+  deferred: Episode[]; // new episodes deferred to later passes
+}
+function selectMeal(all: Episode[], batch: number, seenCap = 6): Meal {
+  const fresh = all.filter((e) => e.isNew);
+  const seen = all.filter((e) => !e.isNew);
+  const meal = [...fresh.slice(0, batch), ...seen.slice(0, seenCap)].sort((a, b) =>
+    a.filename.localeCompare(b.filename)
+  );
+  return { episodes: meal, deferred: fresh.slice(batch) };
 }
 
 // ---------------------------------------------------------------------
@@ -524,6 +614,32 @@ function appendCompostEntries(compostMd: string, compost: ParsedOutput["compost"
   return `${base}\n\n## ${dateStr}\n${entries}\n`;
 }
 
+// Compost must itself compost. compost.md was append-only under a hard 1k
+// cap — an excretory organ that cannot excrete: after ~4-10 more composted
+// episodes the whole metabolism would jam permanently on OVER-CAP. Since git
+// history is the permanent archive (MIND-SPEC Compost Rules — the shed commit
+// preserves everything), old compost entries lose nothing by being dropped.
+// Rule: after appending, drop the OLDEST dated sections until the file fits
+// comfortably under cap (90%), preserving the header. The compost log is a
+// recent-history window, not a ledger — the ledger is git.
+function pruneCompost(compostMd: string, capTokens: number): string {
+  const target = Math.floor(capTokens * 0.9);
+  if (tokensOf(compostMd) <= target) return compostMd;
+  const lines = compostMd.split("\n");
+  // find dated section starts ("## <anything>")
+  const sectionStarts: number[] = [];
+  for (let i = 0; i < lines.length; i++) if (/^##\s+/.test(lines[i])) sectionStarts.push(i);
+  let dropUpTo = 0; // index into sectionStarts: how many oldest sections to drop
+  let current = compostMd;
+  while (tokensOf(current) > target && dropUpTo < sectionStarts.length - 1) {
+    dropUpTo += 1;
+    const header = lines.slice(0, sectionStarts[0]).join("\n");
+    const rest = lines.slice(sectionStarts[dropUpTo]).join("\n");
+    current = `${header}\n${rest}`;
+  }
+  return current;
+}
+
 function appendTaughtLine(content: string, taught: string, absorbedWhere: string): string {
   const base = content.endsWith("\n") ? content.slice(0, -1) : content;
   return `${base}\n\n**taught -> absorbed-where:** ${taught} -> ${absorbedWhere}\n`;
@@ -561,7 +677,11 @@ function validateAndCompute(
   enforceCap("NOW.md", newNowMd, CAP_NOW_TOKENS);
 
   const dateStr = new Date().toISOString().slice(0, 10);
-  const newCompostMd = appendCompostEntries(ctx.compostMd, parsed.compost, dateStr);
+  // Append, then let the compost log itself compost (oldest sections drop;
+  // git history is the ledger). enforceCap stays as the final guard — it can
+  // now only fire if a SINGLE pass's entries exceed the whole cap, which the
+  // batch limit upstream makes structurally impossible in normal operation.
+  const newCompostMd = pruneCompost(appendCompostEntries(ctx.compostMd, parsed.compost, dateStr), CAP_COMPOST_TOKENS);
   enforceCap("compost.md", newCompostMd, CAP_COMPOST_TOKENS);
 
   return { parsed, oldSelfTokens, newSelfTokens, newNowMd, newCompostMd, dateStr };
@@ -613,6 +733,15 @@ function isDue(scoreboard: ScoreEvent[], now: Date): boolean {
   return lastMs < slot.getTime(); // due iff no REM since the current slot opened
 }
 
+// Digestion rhythm: how many NEW episodes a single REM pass may take on, and
+// the AIMD (additive-increase/multiplicative-decrease) regulator that keeps
+// the metabolism at the critical point. On a validation failure the batch
+// halves and the pass retries — the failure becomes back-pressure instead of
+// a stall. On success with backlog remaining, REM immediately runs another
+// pass. A 57-episode backfill and a quiet Tuesday are the same code path.
+const REM_BATCH_DEFAULT = 4;
+const REM_MAX_PASSES = 30; // hard ceiling per invocation — no runaway loops
+
 async function main() {
   const args = process.argv.slice(2);
   const dryRun = args.includes("--dry-run");
@@ -627,6 +756,40 @@ async function main() {
     console.log("rem: --if-due — a scheduled slot was missed; catching up now.");
   }
 
+  let batch = REM_BATCH_DEFAULT;
+  let pass = 0;
+  let anyCommit = false;
+  while (pass < REM_MAX_PASSES) {
+    pass += 1;
+    const result = await runOnePass({ dryRun, batch, pass });
+    if (dryRun) return;
+    if (result === "empty") {
+      if (!anyCommit) console.log("rem: nothing to digest.");
+      return;
+    }
+    if (result === "validation-failed") {
+      if (batch <= 1) {
+        console.error("rem: validation failed even at batch=1 — giving up this invocation. Nothing further modified.");
+        process.exit(1);
+      }
+      batch = Math.max(1, Math.floor(batch / 2));
+      console.error(`rem: validation failed — halving batch to ${batch} and retrying (AIMD back-pressure).`);
+      continue;
+    }
+    // success
+    anyCommit = true;
+    if (result === "drained") return;
+    // backlog remains: additive increase back toward default, next wave
+    batch = Math.min(REM_BATCH_DEFAULT, batch + 1);
+    console.log(`rem: backlog remains — continuing with next wave (pass ${pass + 1}, batch ${batch}).`);
+  }
+  console.error(`rem: hit the ${REM_MAX_PASSES}-pass ceiling with backlog remaining; the next scheduled run resumes the drain.`);
+}
+
+type PassResult = "empty" | "validation-failed" | "more-backlog" | "drained";
+
+async function runOnePass(opts: { dryRun: boolean; batch: number; pass: number }): Promise<PassResult> {
+  const { dryRun, batch } = opts;
   const specMd = readOrEmpty(SPEC_PATH);
   const selfMd = readOrEmpty(SELF_PATH);
   const userMd = readOrEmpty(USER_PATH);
@@ -635,8 +798,11 @@ async function main() {
   const compostMd = readOrEmpty(COMPOST_PATH);
 
   const scoreboard = loadScoreboard();
-  const sinceTs = lastRemTs(scoreboard);
-  const episodes = loadEpisodes(sinceTs);
+  const allEpisodes = loadEpisodes();
+  const { episodes, deferred } = selectMeal(allEpisodes, batch);
+  const backlog = deferred.length;
+  if (episodes.length === 0) return "empty";
+  if (backlog > 0) console.log(`rem: pass ${opts.pass} — digesting ${episodes.filter((e) => e.isNew).length} of ${backlog + episodes.filter((e) => e.isNew).length} new episodes (batch ${batch}).`);
   const transcripts = gatherTranscriptExcerpts();
   const injectedItems = enumerateInjectedItems(selfMd, nowMd);
 
@@ -655,27 +821,29 @@ async function main() {
   if (dryRun) {
     console.log(prompt);
     console.log(
-      `\n[dry-run] episodes: ${episodes.length} total, ${episodes.filter((e) => e.isNew).length} new since last REM. transcripts sampled: ${transcripts.length}. prompt length: ${prompt.length} chars (~${tokensOf(prompt)} tokens). Nothing was called or written.`
+      `\n[dry-run] episodes in this meal: ${episodes.length} (${episodes.filter((e) => e.isNew).length} new, batch ${batch}), backlog deferred: ${backlog}. transcripts sampled: ${transcripts.length}. prompt length: ${prompt.length} chars (~${tokensOf(prompt)} tokens). Nothing was called or written.`
     );
-    return;
+    return "drained";
   }
 
   let raw: string;
   try {
     raw = await complete(prompt, { timeoutMs: LLM_TIMEOUT_MS, maxTokens: LLM_MAX_TOKENS });
   } catch (err) {
+    // LLM unreachable is not back-pressure — halving the batch won't fix a
+    // dead service. Hard-fail so launchd/doctor surface it.
     console.error(`rem: local LLM call failed: ${(err as Error).message}. No mind files were modified.`);
     process.exit(1);
-    return;
   }
 
   let computed: ValidatedRem;
   try {
-    computed = validateAndCompute(raw, { selfMd, nowMd, compostMd, episodes });
+    computed = validateAndCompute(raw!, { selfMd, nowMd, compostMd, episodes });
   } catch (err) {
-    console.error(`rem: FAILED validation — ${(err as Error).message}. No mind files were modified.`);
-    process.exit(1);
-    return;
+    // Validation failure IS back-pressure — report it and let the AIMD loop
+    // shrink the meal and retry instead of stalling the whole metabolism.
+    console.error(`rem: pass validation failed — ${(err as Error).message}. No mind files were modified this pass.`);
+    return "validation-failed";
   }
 
   const { parsed, oldSelfTokens, newSelfTokens, newNowMd, newCompostMd, dateStr } = computed;
@@ -694,10 +862,27 @@ async function main() {
       fs.writeFileSync(ep.filepath, withTaughtLine, "utf8");
     }
 
-    const newEpisodeCount = episodes.filter((e) => e.isNew).length;
+    const newEpisodesThisWave = episodes.filter((e) => e.isNew);
+    const newEpisodeCount = newEpisodesThisWave.length;
+
+    // Record EVERY new episode this wave digested into the ledger BEFORE the
+    // commit stages it. Disposition: composted if it was shed, else absorbed.
+    // This is the invariant's write point — hash recorded == will never be
+    // re-fed as new. Composted-set membership keyed by filename (validated to
+    // exist upstream).
+    const compostedNames = new Set(parsed.compost.map((m) => m.episode));
+    const nowIso = new Date().toISOString();
+    recordDigested(
+      newEpisodesThisWave.map((e) => ({
+        ts: nowIso,
+        hash: e.hash,
+        filename: e.filename,
+        disposition: compostedNames.has(e.filename) ? ("composted" as const) : ("absorbed" as const),
+      }))
+    );
 
     appendScoreboardEvent({
-      ts: new Date().toISOString(),
+      ts: nowIso,
       type: "rem",
       worldview_tokens: newSelfTokens,
       propagated: parsed.propagated,
@@ -716,7 +901,7 @@ async function main() {
     // without -f, so the shed must happen against a clean HEAD anyway.
     execFileSync(
       "git",
-      ["add", "SELF.md", "NOW.md", "greeting.md", "compost.md", "scoreboard.jsonl", "episodes"],
+      ["add", "SELF.md", "NOW.md", "greeting.md", "compost.md", "scoreboard.jsonl", "digested.jsonl", "episodes"],
       { cwd: MIND_DIR }
     );
     execFileSync("git", ["commit", "-m", subject + body], { cwd: MIND_DIR });
@@ -741,6 +926,11 @@ async function main() {
     );
     process.exit(1);
   }
+
+  // No mtime bookkeeping needed: deferred episodes were never recorded in the
+  // digested ledger, so they remain isNew=true on the next pass by definition.
+  // The ledger, not the clock, is the state.
+  return backlog > 0 ? "more-backlog" : "drained";
 }
 
 await main();
