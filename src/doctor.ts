@@ -25,13 +25,17 @@
  *   9. token caps        — any whole-mind file over cap
  *
  * Exit code: 0 if no FAIL, 1 if any FAIL. WARN/IDLE do not fail the run.
- * Flags: --json for machine-readable output; --quiet to print only non-OK lines.
+ * Flags: --json for machine-readable output; --quiet to print only non-OK lines;
+ *        --alert posts a message to the tower bus (~/.tower/board.jsonl) when
+ *        anything is FAIL, so a broken pipeline surfaces in your next session
+ *        automatically — no command to remember. Scheduled runs pass --alert.
  */
 
 import * as fs from "fs";
 import * as path from "path";
 import { homedir } from "os";
 import { execSync } from "child_process";
+import { appendFileSync, mkdirSync } from "fs";
 
 const CIRCADIAN_HOME = process.env.CIRCADIAN_HOME || path.join(homedir(), "circadian");
 const MIND_DIR = path.join(CIRCADIAN_HOME, "mind");
@@ -281,6 +285,30 @@ function main() {
   checkCaps();
 
   const anyFail = checks.some((c) => c.level === "FAIL");
+
+  // --alert: surface FAILs on the tower bus so they reach the human without
+  // anyone running a command. Posts one board message per unhealthy run.
+  if (args.includes("--alert") && anyFail) {
+    try {
+      const board = path.join(homedir(), ".tower", "board.jsonl");
+      mkdirSync(path.dirname(board), { recursive: true });
+      const fails = checks.filter((c) => c.level === "FAIL").map((c) => `${c.name}: ${c.detail}`);
+      appendFileSync(
+        board,
+        JSON.stringify({
+          id: `circadian-doctor-${Date.now().toString(36)}`,
+          ts: new Date().toISOString(),
+          cwd: CIRCADIAN_HOME,
+          type: "alert",
+          from: "circadian-doctor",
+          topic: "circadian health",
+          body: `circadian NOT healthy — ${fails.length} failing: ${fails.join(" | ")}`,
+        }) + "\n"
+      );
+    } catch {
+      /* alerting must never crash the check */
+    }
+  }
 
   if (args.includes("--json")) {
     console.log(
