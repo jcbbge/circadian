@@ -15,10 +15,27 @@
 // does (MIND-SPEC "REM" section).
 
 import { spawn } from "node:child_process";
-import { appendFileSync, existsSync, readFileSync, renameSync, statSync, writeFileSync } from "node:fs";
+import { appendFileSync, existsSync, mkdirSync, readFileSync, renameSync, statSync, writeFileSync } from "node:fs";
 import { homedir } from "node:os";
-import { join } from "node:path";
+import { dirname, join } from "node:path";
 import { complete } from "./llm.ts";
+
+// ---------- observability ----------
+// SLEEP used to fail silently (every early return / swallowed catch left no
+// trace), which made 'nothing digested' indistinguishable from 'ran fine'.
+// Every decision point now writes one line to logs/sleep.log so the pipeline
+// is auditable: `tail logs/sleep.log` tells you exactly why an episode was or
+// wasn't produced for a given session.
+const SLEEP_LOG = join(process.env.CIRCADIAN_HOME || join(homedir(), "circadian"), "logs", "sleep.log");
+function slog(mode: string, msg: string, extra?: Record<string, unknown>): void {
+  try {
+    mkdirSync(dirname(SLEEP_LOG), { recursive: true });
+    const line = `${new Date().toISOString()} [${mode}] ${msg}${extra ? " " + JSON.stringify(extra) : ""}\n`;
+    appendFileSync(SLEEP_LOG, line);
+  } catch {
+    /* logging must never break the hook */
+  }
+}
 
 // See wake.ts for the path-resolution contract. CIRCADIAN_HOME overrides;
 // default ~/circadian. The drafting call now goes to the system local-LLM
@@ -56,29 +73,56 @@ function parseEvent(text: string): Record<string, any> {
 // ---------- hook mode ----------
 
 async function runHook(): Promise<void> {
-  const evt = parseEvent(await readStdinText());
+  const raw = await readStdinText();
+  const evt = parseEvent(raw);
   const transcriptPath = evt?.transcript_path;
+  slog("hook", "fired", {
+    stdin_bytes: raw.length,
+    transcript_path: transcriptPath ?? null,
+    session_id: evt?.session_id ?? null,
+    keys: Object.keys(evt || {}),
+  });
 
   // Legacy guard from when drafting shelled out to `claude -p` (each such
   // subprocess fired SessionEnd -> another drafting call). Drafting now hits
   // the local LLM over HTTP with no Claude subprocess, so this can no longer
   // recurse; the guard is kept as a cheap belt-and-suspenders no-op.
-  if (process.env.CIRCADIAN_INTERNAL === "1") process.exit(0);
+  if (process.env.CIRCADIAN_INTERNAL === "1") {
+    slog("hook", "bail: CIRCADIAN_INTERNAL=1 (recursion guard)");
+    process.exit(0);
+  }
 
-  if (!transcriptPath || !existsSync(transcriptPath) || statSync(transcriptPath).size < MIN_TRANSCRIPT_BYTES) {
+  if (!transcriptPath) {
+    slog("hook", "bail: event carried no transcript_path", { keys: Object.keys(evt || {}) });
+    process.exit(0);
+  }
+  if (!existsSync(transcriptPath)) {
+    slog("hook", "bail: transcript_path does not exist", { transcriptPath });
+    process.exit(0);
+  }
+  const tsize = statSync(transcriptPath).size;
+  if (tsize < MIN_TRANSCRIPT_BYTES) {
+    slog("hook", "bail: transcript too small", { bytes: tsize, min: MIN_TRANSCRIPT_BYTES });
     process.exit(0);
   }
 
   try {
     const selfPath = import.meta.path;
+    // Pass the event via env, NOT piped stdin: the hook exits immediately
+    // (process.exit(0) below), and a detached child's piped stdin is not
+    // guaranteed to flush before the parent dies — that race delivered empty
+    // stdin to the worker every time, so transcript_path arrived as null and
+    // the worker aborted silently. Env survives detach+exit deterministically.
     const worker = spawn(BUN_BIN, ["run", selfPath, "--worker"], {
       detached: true,
-      stdio: ["pipe", "ignore", "ignore"],
+      stdio: ["ignore", "ignore", "ignore"],
+      env: { ...process.env, CIRCADIAN_SLEEP_EVENT: JSON.stringify(evt) },
     });
-    worker.stdin.end(JSON.stringify(evt));
     worker.unref();
-  } catch {
-    // never let a spawn failure block SessionEnd
+    slog("hook", "spawned worker", { transcript_bytes: tsize, pid: worker.pid });
+  } catch (e) {
+    // never let a spawn failure block SessionEnd — but do record it
+    slog("hook", "spawn FAILED", { error: (e as Error).message });
   }
 
   process.exit(0);
@@ -303,13 +347,24 @@ function appendSleepScoreboard(): void {
 }
 
 async function runWorker(): Promise<void> {
+  slog("worker", "start");
   try {
-    const evt = parseEvent(await readStdinText());
+    // Event arrives via env (see runHook spawn). Fall back to stdin for any
+    // caller that still pipes it (e.g. manual `bun run sleep.ts --worker`).
+    const evtRaw = process.env.CIRCADIAN_SLEEP_EVENT || (await readStdinText());
+    const evt = parseEvent(evtRaw);
     const transcriptPath = evt?.transcript_path;
-    if (!transcriptPath || !existsSync(transcriptPath)) return;
+    if (!transcriptPath || !existsSync(transcriptPath)) {
+      slog("worker", "abort: transcript missing", { transcriptPath: transcriptPath ?? null });
+      return;
+    }
 
     const transcriptText = extractTranscriptText(transcriptPath, TRANSCRIPT_CAP_CHARS);
-    if (!transcriptText) return;
+    if (!transcriptText) {
+      slog("worker", "abort: transcript extracted to empty text (no user/assistant turns?)");
+      return;
+    }
+    slog("worker", "transcript extracted", { chars: transcriptText.length });
 
     const existingNow = readFileSync(join(MIND, "NOW.md"), "utf8");
     const existingSelf = existsSync(join(MIND, "SELF.md")) ? readFileSync(join(MIND, "SELF.md"), "utf8") : "";
@@ -319,10 +374,19 @@ async function runWorker(): Promise<void> {
 
     let draft: ReturnType<typeof parseDraft> = null;
     for (let attempt = 0; attempt < 2 && !draft; attempt += 1) {
+      slog("worker", "LLM draft attempt", { attempt: attempt + 1 });
       const output = await draftViaLLM(prompt);
-      if (output) draft = parseDraft(output);
+      if (!output) {
+        slog("worker", "LLM returned nothing (call failed or timed out)", { attempt: attempt + 1 });
+        continue;
+      }
+      draft = parseDraft(output);
+      if (!draft) slog("worker", "LLM output did not parse (malformed draft)", { attempt: attempt + 1, output_chars: output.length });
     }
-    if (!draft) return; // real call failed or output malformed twice — no partial write
+    if (!draft) {
+      slog("worker", "abort: no valid draft after 2 attempts — NO episode written");
+      return; // real call failed or output malformed twice — no partial write
+    }
 
     const now = new Date();
     const date = now.toISOString().slice(0, 10);
@@ -332,11 +396,13 @@ async function runWorker(): Promise<void> {
     const episodeContent = buildEpisodeContent(date, sessionId, draft.arc, draft.episodeBody);
     const nowContent = buildNowContent(draft.nowRaw, preservedSerendipity, lastSleepIso);
 
-    writeEpisodeFile(date, draft.arc, episodeContent);
+    const epPath = writeEpisodeFile(date, draft.arc, episodeContent);
     writeNowFile(nowContent);
     appendSleepScoreboard();
-  } catch {
-    // best-effort detached worker — failures here must not surface anywhere
+    slog("worker", "SUCCESS: episode written", { episode: epPath, arc: draft.arc });
+  } catch (e) {
+    // best-effort detached worker — but record the failure instead of hiding it
+    slog("worker", "EXCEPTION", { error: (e as Error).message, stack: (e as Error).stack?.split("\n")[1]?.trim() });
   }
 }
 

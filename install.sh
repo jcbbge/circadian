@@ -188,24 +188,42 @@ else
   echo "circadian: non-macOS — skipping launchd. Schedule 'CIRCADIAN_HOME=$CIRCADIAN_HOME $BUN_BIN $CIRCADIAN_HOME/src/rem.ts' via cron/systemd at 09:00 and 21:00, and 'rem.ts --if-due' at login/wake."
 fi
 
-# ---- 5. Claude Code hook wiring (printed, not blind-edited) ----------------
+# ---- 5. Claude Code hook wiring (auto-merged, idempotent) ------------------
+# WAKE fires on SessionStart, SLEEP on SessionEnd (NOT Stop — Stop fires every
+# assistant turn, which misfires and gets deduped; SessionEnd fires once at the
+# real end of a session, which is the whole contract). We merge into the user's
+# existing settings.json without clobbering their other hooks, and we do it
+# ourselves so there is ZERO manual JSON editing.
 SETTINGS="$HOME/.claude/settings.json"
-cat <<EOF
+WAKE_CMD="$BUN_BIN $CIRCADIAN_HOME/src/wake.ts"
+SLEEP_CMD="$BUN_BIN $CIRCADIAN_HOME/src/sleep.ts"
 
-circadian: WAKE and SLEEP run as Claude Code hooks. Add these to $SETTINGS
-(merge into existing "hooks"; do not remove other hooks you already have):
+mkdir -p "$(dirname "$SETTINGS")"
+[ -f "$SETTINGS" ] || echo '{}' > "$SETTINGS"
+cp "$SETTINGS" "$SETTINGS.bak-$(date +%s)"
 
-  "hooks": {
-    "SessionStart": [
-      { "hooks": [ { "type": "command", "command": "$BUN_BIN $CIRCADIAN_HOME/src/wake.ts", "timeout": 10 } ] }
-    ],
-    "Stop": [
-      { "hooks": [ { "type": "command", "command": "$BUN_BIN $CIRCADIAN_HOME/src/sleep.ts", "timeout": 15 } ] }
-    ]
-  }
+"$BUN_BIN" - "$SETTINGS" "$WAKE_CMD" "$SLEEP_CMD" <<'JS'
+const [file, wakeCmd, sleepCmd] = Bun.argv.slice(2);
+const s = JSON.parse(await Bun.file(file).text() || "{}");
+s.hooks ??= {};
+const has = (evt, needle) =>
+  (s.hooks[evt] || []).some(g => (g.hooks || []).some(h => (h.command || "").includes(needle)));
+const ensure = (evt, cmd, needle, timeout) => {
+  s.hooks[evt] ??= [];
+  if (!has(evt, needle)) s.hooks[evt].push({ hooks: [{ type: "command", command: cmd, timeout }] });
+};
+// SLEEP must live on SessionEnd only — strip any legacy copy on Stop.
+if (Array.isArray(s.hooks.Stop)) {
+  for (const g of s.hooks.Stop) if (Array.isArray(g.hooks))
+    g.hooks = g.hooks.filter(h => !(h.command || "").includes("circadian/src/sleep.ts"));
+  s.hooks.Stop = s.hooks.Stop.filter(g => (g.hooks || []).length);
+  if (!s.hooks.Stop.length) delete s.hooks.Stop;
+}
+ensure("SessionStart", wakeCmd, "circadian/src/wake.ts", 10);
+ensure("SessionEnd", sleepCmd, "circadian/src/sleep.ts", 15);
+await Bun.write(file, JSON.stringify(s, null, 2) + "\n");
+console.log("circadian: hooks wired — SessionStart->wake, SessionEnd->sleep");
+JS
 
-Then check vitals any time with:
-  CIRCADIAN_HOME=$CIRCADIAN_HOME $BUN_BIN $CIRCADIAN_HOME/src/status.ts
-
-circadian: install complete.
-EOF
+echo "circadian: install complete. WAKE/SLEEP now fire automatically — no commands to remember."
+echo "circadian: (optional) health check any time: $BUN_BIN $CIRCADIAN_HOME/src/doctor.ts"
