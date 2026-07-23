@@ -57,6 +57,7 @@ const PROJECTS_DIR = process.env.CIRCADIAN_PROJECTS_DIR || path.join(homedir(), 
 
 // ---- token caps: chars/4 = tokens (MIND-SPEC.md "Token Caps") ----
 const CAP_SELF_TOKENS = 6000;
+const CAP_USER_TOKENS = 2000;
 const CAP_NOW_TOKENS = 3000;
 const CAP_COMPOST_TOKENS = 1000;
 const GREETING_MAX_LINES = 3;
@@ -64,8 +65,13 @@ const GREETING_MAX_LINES = 3;
 // ---- propagation-evidence bounds (this process's own input budget; not a
 // MIND-SPEC cap, just keeps the claude call bounded) ----
 const TRANSCRIPT_WINDOW_MS = 24 * 60 * 60 * 1000;
-const PER_TRANSCRIPT_EXCERPT_CHARS = 4000;
-const TOTAL_EXCERPT_BUDGET_CHARS = 24000;
+// Transcript-excerpt budget is the main variable driver of REM's prompt size.
+// At 24k chars the total prompt reached ~19k tokens and the local 4B model
+// returned empty content (it cannot complete a ~6k-token structured output
+// from that large a context). Held to 12k chars (~3k tokens) so the whole
+// prompt stays within the model's proven envelope (~12k tokens in, 6k out).
+const PER_TRANSCRIPT_EXCERPT_CHARS = 2500;
+const TOTAL_EXCERPT_BUDGET_CHARS = 12000;
 const LLM_TIMEOUT_MS = 15 * 60 * 1000; // full SELF.md rewrite on a local model can be slow
 const LLM_MAX_TOKENS = 12000; // must exceed a full SELF.md rewrite (~6k) plus the other blocks
 
@@ -416,7 +422,7 @@ ${ctx.specMd}
 === current SELF.md ===
 ${ctx.selfMd || "(empty)"}
 
-=== current USER.md (private, relational, read-only context — you do not rewrite this file) ===
+=== current USER.md (private, relational — read-only here; a separate pass updates it) ===
 ${ctx.userMd || "(empty)"}
 
 === current NOW.md ===
@@ -453,6 +459,8 @@ ${transcriptsBlock}
 
 7. Compare SELF.md's token count before and after your rewrite (chars/4 for both). If it grew, you MUST supply a one-line justification for why the growth was warranted. If it did not grow, leave that output block completely empty.
 
+(USER.md is handled by a separate dedicated pass after this one — do not rewrite it here.)
+
 === required output format — EXACTLY these six blocks, in this order, nothing else outside them ===
 
 ===SELF_MD===
@@ -478,6 +486,37 @@ ${transcriptsBlock}
 ===SELF_GROWTH_JUSTIFICATION===
 <one line if SELF.md grew in token count this pass; leave this block completely empty otherwise>
 ===END_SELF_GROWTH_JUSTIFICATION===
+`;
+}
+
+// USER.md gets its own focused call (task 8): a small prompt — current USER.md
+// plus only the episodes' user-observed lines — so the local model stays well
+// within its output envelope instead of choking on SELF+USER in one shot.
+function buildUserPrompt(existingUser: string, userObservations: { ep: string; line: string }[]): string {
+  const obs = userObservations.length
+    ? userObservations.map((o) => `- [ep:${o.ep}] ${o.line}`).join("\n")
+    : "(none this cycle)";
+  return `You are the USER-MODEL pass of REM in a circadian memory substrate. You maintain USER.md, the private relational model of the user jrg — who he is to work with: preferences, working style, register, mental models, reaction patterns. NOT code facts.
+
+CURRENT USER.md:
+"""
+${existingUser || "(empty)"}
+"""
+
+NEW OBSERVATIONS from this cycle's episodes (each is a "user-observed:" line a session drafted about jrg):
+"""
+${obs}
+"""
+
+Your task: rewrite USER.md, applying confirm/contradict/supersede/deepen to each new observation against the current file. A genuinely new, well-evidenced observation deepens or adds; a contradicted one is corrected or removed; a confirmed one is left as-is (do not duplicate). Every retained line MUST keep its origin stamp [ep:YYYY-MM-DD] and, where voice matters, a short verbatim quote (ash is banned — "jrg prefers X" with no why or quote is a defect). These are inferences about a person; they self-correct over cycles, so record well-evidenced ones without fear, but never invent beyond the observations. Preserve the section structure. Shrink-unless-justified. Cap: 2000 tokens / 8000 chars.
+
+If there are no new observations, return the current USER.md UNCHANGED.
+
+Output EXACTLY one block, nothing else:
+
+===USER_MD===
+<the full rewritten USER.md>
+===END_USER_MD===
 `;
 }
 
@@ -965,6 +1004,56 @@ async function runOnePass(opts: { dryRun: boolean; batch: number; pass: number; 
       composted: parsed.compost.map((m) => m.episode),
     });
 
+    // USER-MODEL pass (task 8): extract this wave's user-observed lines and,
+    // if any are substantive, run a SMALL focused call to update USER.md. Its
+    // own call keeps the local model within its output envelope (a combined
+    // SELF+USER generation overflowed and returned empty). Best-effort: a
+    // failure here must not lose the already-absorbed SELF work, so it emits
+    // degraded and leaves USER.md untouched rather than aborting the commit.
+    const userObs = newEpisodesThisWave
+      .map((e) => {
+        const m = e.content.match(/^user-observed:\s*(.+)$/im);
+        const line = m ? m[1].trim() : "";
+        const dm = e.filename.match(/(\d{4}-\d{2}-\d{2})/);
+        return { ep: dm ? dm[1] : dateStr, line };
+      })
+      .filter((o) => o.line && !/^nothing new$/i.test(o.line));
+    if (userObs.length > 0) {
+      try {
+        const existingUser = readOrEmpty(USER_PATH);
+        const userRaw = await complete(buildUserPrompt(existingUser, userObs), {
+          timeoutMs: LLM_TIMEOUT_MS,
+          maxTokens: 3000,
+        });
+        const um = userRaw.match(/===USER_MD===\r?\n([\s\S]*?)\r?\n?===END_USER_MD===/);
+        const newUser = um ? um[1].trim() : "";
+        if (newUser && tokensOf(newUser) <= CAP_USER_TOKENS) {
+          atomicWrite(USER_PATH, newUser);
+          ok({
+            process: "rem", phase: "user-model", correlation_id: corr,
+            summary: `USER.md updated from ${userObs.length} observation(s)`,
+            context: { observations: userObs.length, user_tokens: tokensOf(newUser) },
+          });
+        } else {
+          degraded({
+            process: "rem", phase: "user-model", correlation_id: corr,
+            summary: "USER.md update skipped; model output empty or over cap",
+            context: { observations: userObs.length, out_tokens: newUser ? tokensOf(newUser) : 0, cap: CAP_USER_TOKENS },
+            cause: newUser ? "proposed USER.md exceeded the 2k-token cap" : "USER-model call returned no USER_MD block",
+            next_action: "USER.md left unchanged this cycle; observations remain in the episodes and will be reconsidered next REM",
+          });
+        }
+      } catch (e) {
+        degraded({
+          process: "rem", phase: "user-model", correlation_id: corr,
+          summary: "USER.md update failed; SELF work is safe",
+          context: { observations: userObs.length },
+          cause: (e as Error).message,
+          next_action: "USER.md left unchanged; check the LLM at :10240; observations persist in episodes for next cycle",
+        });
+      }
+    }
+
     const subject = `rem: ${dateStr} — absorbed ${newEpisodeCount}, shed ${parsed.compost.length}, worldview ${Math.round(
       newSelfTokens / 1000
     )}k tokens`;
@@ -977,7 +1066,7 @@ async function runOnePass(opts: { dryRun: boolean; batch: number; pass: number; 
     // without -f, so the shed must happen against a clean HEAD anyway.
     execFileSync(
       "git",
-      ["add", "SELF.md", "NOW.md", "greeting.md", "compost.md", "scoreboard.jsonl", "digested.jsonl", "episodes"],
+      ["add", "SELF.md", "USER.md", "NOW.md", "greeting.md", "compost.md", "scoreboard.jsonl", "digested.jsonl", "episodes"],
       { cwd: MIND_DIR }
     );
     execFileSync("git", ["commit", "-m", subject + body], { cwd: MIND_DIR });
