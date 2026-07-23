@@ -27,12 +27,18 @@ private relational memory and never leaves this machine.
    the memory in it isn't good enough to say out loud to the user at the
    top of a session, it isn't earning its keep.
 
-4. **Finite body.** Hard token caps force excretion (composting). A mind that
-   never forgets is not a mind, it is a landfill. Caps are enforced by
-   character count using the rule chars/4 = tokens (see "Token Caps"
-   below). The wake injection payload has a hard cap of 15k tokens; if the
-   payload would exceed it, this must be announced loudly with an
-   "OVER-CAP" line — never silently truncated.
+4. **Finite body.** Size targets force excretion (composting). A mind that
+   never forgets is not a mind, it is a landfill. But the targets are SOFT —
+   ranges the metabolism aims for, never walls that abort a digestion for a
+   small overage. The process prefers shrinking to growing (distill, do not
+   accrete) and grows only when there is genuinely more worldview to hold.
+   Sizes are measured by character count using the rule chars/4 = tokens (see
+   "Token Targets" below). Over-target is surfaced as telemetry, never fatal.
+   The ONLY size condition that stops a write is a gross RUNAWAY (past 1.75x a
+   target) — a corruption signal (a dumped transcript, not a worldview) — and
+   even then it fails loudly with a reason, never silently truncates. A guard
+   that kills the whole metabolism because it is a few tokens over is itself a
+   defect (the same jam this system's excretory organ was redesigned to avoid).
 
 5. **Ash banned.** Retained conclusions must carry their why-chain and, where
    voice matters, verbatim quotes. A summary that flattens voice down to a
@@ -93,9 +99,10 @@ WAKE is file reads only (Law 7). If `NOW.md`'s "Last sleep" timestamp is
 more than 48 hours old, the injected greeting MUST be prepended with an
 explicit staleness warning line before it reaches the user.
 
-If the assembled injection payload exceeds the 15k-token hard cap, WAKE must
-emit a loud `OVER-CAP` line identifying the offending file(s) and the
-overage — never silently truncate any file's content.
+The wake injection payload aims for roughly 15k tokens. If it drifts over,
+WAKE emits a loud telemetry line identifying the offending file(s) and the
+overage — it never silently truncates any file's content. Only a gross
+runaway (past 1.75x, i.e. ~26k tokens) is treated as a real fault.
 
 ### GRAZE
 
@@ -138,10 +145,11 @@ archaeology commit (Worker D, content-population).
 A launchd job, scheduled twice daily at 09:00 and 21:00. REM:
 1. reads new episodes against `SELF.md`, asking of each claim: does it
    confirm, contradict, supersede, or deepen the existing worldview?
-2. rewrites the worldview file (`SELF.md`) under the rule: shrink unless
-   justified. If `SELF.md`'s token count grows in a REM pass, the commit
-   body MUST carry a written justification line explaining why growth was
-   warranted.
+2. rewrites the worldview file (`SELF.md`), preferring to shrink (distill)
+   but free to grow when there is genuinely more to hold. Growth needs no
+   justification and is never rejected; an optional one-line note MAY
+   accompany meaningful growth (informational only). Only a runaway past
+   1.75x target is refused.
 3. composts eligible episodes under the digestion-completeness rule (see
    "Compost Rules").
 4. plants exactly ONE labeled serendipity association in `NOW.md`'s
@@ -156,24 +164,29 @@ commit.
 
 ---
 
-## Token Caps
+## Token Targets
 
-Rule: **chars / 4 = tokens.** Every cap below is enforced by character
-count divided by four.
+Rule: **chars / 4 = tokens.** Every number below is a SOFT TARGET the
+metabolism aims for — not a wall. Overshooting a target by a few or a few
+hundred tokens is normal and allowed; it is recorded as telemetry, never
+fatal. Only crossing the RUNAWAY threshold (1.75x the target) stops a write,
+because that signals corruption (a dumped transcript) rather than a
+worldview. Silent truncation is never permitted, at any size, for any file.
 
-| File | Cap (tokens) | Cap (chars) |
-|---|---|---|
-| `SELF.md` | 6,000 | 24,000 |
-| `USER.md` | 2,000 | 8,000 |
-| `NOW.md` | 3,000 | 12,000 |
-| `compost.md` | 1,000 | 4,000 |
-| each file in `episodes/` | 1,000 | 4,000 |
-| **Wake injection payload (total)** | **15,000 (hard cap)** | 60,000 |
+| File | Target (tokens) | Target (chars) | Runaway (1.75x, tokens) |
+|---|---|---|---|
+| `SELF.md` | 6,000 | 24,000 | 10,500 |
+| `USER.md` | 2,000 | 8,000 | 3,500 |
+| `NOW.md` | 3,000 | 12,000 | 5,250 |
+| `compost.md` | 1,000 | 4,000 | 1,750 |
+| each file in `episodes/` | 1,000 | 4,000 | 1,750 |
+| **Wake injection payload (total)** | **15,000** | 60,000 | 26,250 |
 
-Over-cap handling: if the total wake injection payload would exceed 15,000
-tokens, this must be announced loudly with an explicit `OVER-CAP` line
-naming the offending file(s) and the overage amount. Silent truncation of
-any file is never permitted, at any cap, for any file.
+Growth of `SELF.md` needs no justification or permission slip. The process
+prefers to shrink (distill), but it grows freely when there is more to hold.
+An optional one-line note MAY accompany meaningful growth; it is
+informational, never a gate. This is a free and open metabolism: it is
+steered by targets and a runaway guard, never stifled by hard caps.
 
 ---
 
@@ -181,19 +194,19 @@ any file is never permitted, at any cap, for any file.
 
 - **`SELF.md`** — four sections, exactly: "Who I am across sessions",
   "Doctrine" (each belief stamped with its origin episode, `[ep:YYYY-MM-DD]`),
-  "Motifs" (recurring themes, capped at 10 lines), "How we work". Cap: 6k
+  "Motifs" (recurring themes, aim ~10 lines), "How we work". Target: 6k
   tokens / 24k chars.
 
 - **`USER.md`** — relational memory: who the user is, registers, arcs, and
   preferences observed across sessions. PRIVATE: never pushed to any
-  remote; the mind repo has no remote configured, ever. Cap: 2k tokens / 8k
+  remote; the mind repo has no remote configured, ever. Target: 2k tokens / 8k
   chars.
 
 - **`NOW.md`** — six sections, exactly: "Arc", "Flight plan" (the
   successor session's first move), "Live tensions" (3 plus-or-minus 1
   open items, loaded but not resolved), "Commitments", "Serendipity" (one
   line, must start with "Might be nothing:"), "Last sleep" (an ISO-8601
-  timestamp of the most recent SLEEP). Cap: 3k tokens / 12k chars.
+  timestamp of the most recent SLEEP). Target: 3k tokens / 12k chars.
 
 - **`greeting.md`** — at most 3 lines, precomputed by REM (or by SLEEP as
   fallback): an arc summary, the flight plan, and one live tension.
@@ -207,16 +220,16 @@ any file is never permitted, at any cap, for any file.
   classifying the episode's relationship to `SELF.md` as one of
   confirm / contradict / supersede / deepen. When an episode is composted, a
   "taught -> absorbed-where" line is added to it recording what it taught
-  and where that lesson now lives. Cap: 1k tokens / 4k chars per episode.
+  and where that lesson now lives. Target: 1k tokens / 4k chars per episode.
 
 - **`compost.md`** — a ROLLING WINDOW log of shed episodes (NOT append-only):
   what was shed, why it was shed, and where the lesson now lives (which
   file/section absorbed it). Entries open with the fixed form
   `Composted: <what> — <why> — lesson lives at <where>`.
-  When the file exceeds its cap, REM prunes the OLDEST dated sections until
-  it fits comfortably under cap (90%) — git history is the permanent archive,
-  so old compost entries lose nothing by being dropped. No entries at genesis.
-  Cap: 1k tokens / 4k chars.
+  When the file exceeds its target, REM prunes the OLDEST dated sections until
+  it fits comfortably (90%) — git history is the permanent archive, so old
+  compost entries lose nothing by being dropped. No entries at genesis.
+  Target: 1k tokens / 4k chars (soft).
 
 - **`mind/meals/<session_id>.md`** — in-session working memory, written by
   GRAZE. Bullet notes from each checkpoint. Deleted by SLEEP at SessionEnd
@@ -298,11 +311,12 @@ carries the living, human-readable record of what was shed and where it
 went.
 
 **Rolling window.** `compost.md` is NOT append-only — it is a rolling window
-under its cap. After each REM pass appends new entries, if the file exceeds
-90% of its token cap, REM prunes the OLDEST dated sections until it fits
+around its target. After each REM pass appends new entries, if the file
+exceeds 90% of its target, REM prunes the OLDEST dated sections until it fits
 comfortably. Git history is the archive; the compost log is recent history
-only. This prevents the excretory organ from becoming a landfill (the
-metabolism would jam permanently on OVER-CAP).
+only. This is what keeps the excretory organ from becoming a landfill — and
+from jamming: the target is a rolling boundary the prune maintains, never a
+wall that rejects a digestion.
 
 Zero-propagation trigger (Law 6): injected items that show zero
 propagation across their observed lifetime are compost candidates, subject to
@@ -349,10 +363,10 @@ episodes/claims absorbed into `SELF.md` this pass, `M` is the count of
 episodes composted this pass, and `XXk` is `SELF.md`'s resulting token count
 rounded to the nearest thousand, suffixed `k`.
 
-The commit body carries the shrink-justification line whenever `SELF.md`
-grew in token count during the pass (required by Law 4 / the shrink-unless-
-justified rule) — e.g. `justification: <why growth was warranted>`. If
-`SELF.md` did not grow, no justification line is required.
+The commit body MAY carry an optional one-line note when `SELF.md` grew
+meaningfully during the pass — e.g. `justification: <why growth was
+warranted>`. This is informational only: growth is free and never rejected,
+and no note is required whether or not `SELF.md` grew.
 
 ---
 
