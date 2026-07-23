@@ -56,10 +56,17 @@ const EPISODES_DIR = path.join(MIND_DIR, "episodes");
 const PROJECTS_DIR = process.env.CIRCADIAN_PROJECTS_DIR || path.join(homedir(), ".claude/projects");
 
 // ---- token caps: chars/4 = tokens (MIND-SPEC.md "Token Caps") ----
-const CAP_SELF_TOKENS = 6000;
-const CAP_USER_TOKENS = 2000;
-const CAP_NOW_TOKENS = 3000;
-const CAP_COMPOST_TOKENS = 1000;
+// Soft target sizes, NOT hard walls. The mind is a free, open metabolism: it
+// AIMS for these, and overshooting by a few or a few hundred tokens never
+// kills a digestion. A cap that rejects the whole pass for being 3 tokens over
+// is the compost-jam disease in another organ. These are the number the model
+// is asked to shrink toward; only a far runaway (RUNAWAY_FACTOR x target) hard
+// stops, and even then it says so loudly rather than silently truncating.
+const TARGET_SELF_TOKENS = 6000;
+const TARGET_USER_TOKENS = 2000;
+const TARGET_NOW_TOKENS = 3000;
+const TARGET_COMPOST_TOKENS = 1000;
+const RUNAWAY_FACTOR = 1.75; // only a gross overshoot (e.g. SELF > 10.5k) is a real fault
 const GREETING_MAX_LINES = 3;
 
 // ---- propagation-evidence bounds (this process's own input budget; not a
@@ -447,7 +454,7 @@ ${transcriptsBlock}
 
 1. For each episode marked NEW since last REM, judge: does it confirm, contradict, supersede, or deepen the existing worldview in SELF.md? Use that judgment to rewrite SELF.md.
 
-2. Rewrite SELF.md under shrink-unless-justified (Law 4): do not let it grow unless growth is truly warranted. Keep exactly these four sections, in this order: "## Who I am across sessions", "## Doctrine" (each belief stamped with its origin episode as [ep:YYYY-MM-DD]), "## Motifs" (recurring themes, at most 10 lines total), "## How we work". Cap: 6000 tokens / 24000 chars (chars/4=tokens, enforced strictly).
+2. Rewrite SELF.md. Prefer shrinking to growing — distill, do not accrete — but this is a guideline you aim for, NOT a hard limit: grow when there is genuinely more worldview to hold, shrink when a belief has been absorbed or superseded. Keep exactly these four sections, in this order: "## Who I am across sessions", "## Doctrine" (each belief stamped with its origin episode as [ep:YYYY-MM-DD]), "## Motifs" (recurring themes, aim for about 10 lines), "## How we work". Aim for around 6000 tokens; a few hundred over is fine. Only a gross runaway (many thousands over — a sign you pasted a transcript instead of a worldview) is a problem.
 
 3. Using the transcript excerpts and the injected-items list, judge which injected items actually propagated (were read, referenced, or built upon) recently. Items with zero observed propagation across their lifetime are compost candidates (Law 6) — candidacy only, this does not by itself compost anything.
 
@@ -457,7 +464,7 @@ ${transcriptsBlock}
 
 6. Draft tomorrow's greeting.md: at most 3 lines total — an arc summary, the flight plan (the successor session's first move), and one live tension. Anchor-aware (Law 8): orient to the work itself — the arc, the live tension, the next move — never mention Circadian, REM, SELF.md, or the memory system itself.
 
-7. Compare SELF.md's token count before and after your rewrite (chars/4 for both). If it grew, you MUST supply a one-line justification for why the growth was warranted. If it did not grow, leave that output block completely empty.
+7. OPTIONAL: if SELF.md grew this pass and the growth is meaningful, you MAY add a one-line note on why in the SELF_GROWTH_JUSTIFICATION block. This is informational only — not required, not a gate. Leave it empty if you have nothing to add.
 
 (USER.md is handled by a separate dedicated pass after this one — do not rewrite it here.)
 
@@ -547,14 +554,20 @@ function parseClaudeOutput(raw: string): ParsedOutput {
     "GREETING_MD",
     "COMPOST_JSON",
     "PROPAGATED_JSON",
-    "SELF_GROWTH_JUSTIFICATION",
   ];
+  // SELF_GROWTH_JUSTIFICATION is OPTIONAL now — growth no longer needs a permission
+  // slip. If the model provides it, we keep it as a note; if not, no problem.
+  const optional = ["SELF_GROWTH_JUSTIFICATION"];
   const blocks: Record<string, string> = {};
   const missing: string[] = [];
   for (const n of names) {
     const b = extractBlock(raw, n);
     if (b === null) missing.push(n);
     else blocks[n] = b.trim();
+  }
+  for (const n of optional) {
+    const b = extractBlock(raw, n);
+    blocks[n] = b === null ? "" : b.trim();
   }
   if (missing.length > 0) {
     throw new Error(`claude output missing required block(s): ${missing.join(", ")}`);
@@ -628,11 +641,18 @@ function validateCompostAgainstEpisodes(compost: ParsedOutput["compost"], episod
   }
 }
 
-function enforceCap(name: string, text: string, capTokens: number) {
+// Soft size check. Returns a status the caller surfaces as telemetry — it does
+// NOT throw for normal overshoot. Only a runaway (well past target) is a fault,
+// and it is returned, never silently applied. "over target" is informational.
+function checkSize(name: string, text: string, targetTokens: number): {
+  tokens: number;
+  target: number;
+  status: "under" | "over-target" | "runaway";
+} {
   const tk = tokensOf(text);
-  if (tk > capTokens) {
-    throw new Error(`OVER-CAP: ${name} is ${tk} tokens, cap is ${capTokens} tokens (+${tk - capTokens})`);
-  }
+  const runawayAt = Math.floor(targetTokens * RUNAWAY_FACTOR);
+  const status = tk > runawayAt ? "runaway" : tk > targetTokens ? "over-target" : "under";
+  return { tokens: tk, target: targetTokens, status };
 }
 
 function replaceSection(md: string, heading: string, newBody: string): string {
@@ -710,6 +730,7 @@ interface ValidatedRem {
   newCompostMd: string;
   dateStr: string;
   pruneInfo: { dropped_sections: number; before_tokens: number; after_tokens: number };
+  sizeNotes: string[]; // soft over-target observations to surface as telemetry (never fatal)
 }
 
 /** Pure: parses + validates claude's raw output against every MIND-SPEC rule.
@@ -724,25 +745,37 @@ function validateAndCompute(
 
   const oldSelfTokens = tokensOf(ctx.selfMd);
   const newSelfTokens = tokensOf(parsed.selfMd);
-  if (newSelfTokens > oldSelfTokens && !parsed.growthJustification) {
-    throw new Error(
-      `SELF.md grew ${oldSelfTokens} -> ${newSelfTokens} tokens with no justification (Law 4: shrink-unless-justified)`
-    );
-  }
-  enforceCap("SELF.md", parsed.selfMd, CAP_SELF_TOKENS);
+
+  // Size is a SOFT target, not a wall. Growth is fine — the worldview is a
+  // living, free process; it grows when there is more to hold and shrinks when
+  // there is not. We record over-target as telemetry and only FAULT on a gross
+  // runaway (a real sign the model dumped a transcript, not a worldview).
+  const sizeNotes: string[] = [];
+  const runawayFaults: string[] = [];
+  const note = (chk: { tokens: number; target: number; status: string }, name: string) => {
+    if (chk.status === "over-target") sizeNotes.push(`${name} ${chk.tokens}t (target ${chk.target}, over by ${chk.tokens - chk.target} — allowed)`);
+    if (chk.status === "runaway") runawayFaults.push(`${name} ${chk.tokens}t is a runaway (> ${Math.floor(chk.target * RUNAWAY_FACTOR)}t = ${RUNAWAY_FACTOR}x target ${chk.target}) — likely a dumped transcript, not a worldview`);
+  };
+
+  note(checkSize("SELF.md", parsed.selfMd, TARGET_SELF_TOKENS), "SELF.md");
 
   const newNowMd = replaceSection(ctx.nowMd, "Serendipity", parsed.serendipityLine);
-  enforceCap("NOW.md", newNowMd, CAP_NOW_TOKENS);
+  note(checkSize("NOW.md", newNowMd, TARGET_NOW_TOKENS), "NOW.md");
 
   const dateStr = new Date().toISOString().slice(0, 10);
   // Append, then let the compost log itself compost (oldest sections drop;
-  // git history is the ledger). enforceCap stays as the final guard — it can
-  // now only fire if a SINGLE pass's entries exceed the whole cap, which the
-  // batch limit upstream makes structurally impossible in normal operation.
-  const pruned = pruneCompost(appendCompostEntries(ctx.compostMd, parsed.compost, dateStr), CAP_COMPOST_TOKENS);
-  enforceCap("compost.md", pruned.md, CAP_COMPOST_TOKENS);
+  // git history is the ledger). pruneCompost already keeps this near target;
+  // the check below is purely informational.
+  const pruned = pruneCompost(appendCompostEntries(ctx.compostMd, parsed.compost, dateStr), TARGET_COMPOST_TOKENS);
+  note(checkSize("compost.md", pruned.md, TARGET_COMPOST_TOKENS), "compost.md");
 
-  return { parsed, oldSelfTokens, newSelfTokens, newNowMd, newCompostMd: pruned.md, dateStr, pruneInfo: { dropped_sections: pruned.dropped_sections, before_tokens: pruned.before_tokens, after_tokens: pruned.after_tokens } };
+  // The ONLY size condition that stops a write: a gross runaway, which is a
+  // corruption signal, not normal growth. Everything else proceeds.
+  if (runawayFaults.length > 0) {
+    throw new Error(`RUNAWAY (not mere over-target): ${runawayFaults.join("; ")}`);
+  }
+
+  return { parsed, oldSelfTokens, newSelfTokens, newNowMd, newCompostMd: pruned.md, dateStr, pruneInfo: { dropped_sections: pruned.dropped_sections, before_tokens: pruned.before_tokens, after_tokens: pruned.after_tokens }, sizeNotes };
 }
 
 function atomicWrite(targetPath: string, content: string) {
@@ -950,7 +983,7 @@ async function runOnePass(opts: { dryRun: boolean; batch: number; pass: number; 
     return "validation-failed";
   }
 
-  const { parsed, oldSelfTokens, newSelfTokens, newNowMd, newCompostMd, dateStr, pruneInfo } = computed;
+  const { parsed, oldSelfTokens, newSelfTokens, newNowMd, newCompostMd, dateStr, pruneInfo, sizeNotes } = computed;
 
   // pruneCompost dropping sections is the compost log excreting old history —
   // normal metabolism (git is the archive), but surface it so a cold reader
@@ -1027,19 +1060,22 @@ async function runOnePass(opts: { dryRun: boolean; batch: number; pass: number; 
         });
         const um = userRaw.match(/===USER_MD===\r?\n([\s\S]*?)\r?\n?===END_USER_MD===/);
         const newUser = um ? um[1].trim() : "";
-        if (newUser && tokensOf(newUser) <= CAP_USER_TOKENS) {
+        const userRunawayAt = Math.floor(TARGET_USER_TOKENS * RUNAWAY_FACTOR);
+        if (newUser && tokensOf(newUser) <= userRunawayAt) {
+          // Soft target: accept normal over-target growth; only a runaway is refused.
           atomicWrite(USER_PATH, newUser);
+          const ut = tokensOf(newUser);
           ok({
             process: "rem", phase: "user-model", correlation_id: corr,
             summary: `USER.md updated from ${userObs.length} observation(s)`,
-            context: { observations: userObs.length, user_tokens: tokensOf(newUser) },
+            context: { observations: userObs.length, user_tokens: ut, target: TARGET_USER_TOKENS, ...(ut > TARGET_USER_TOKENS ? { over_target_by: ut - TARGET_USER_TOKENS } : {}) },
           });
         } else {
           degraded({
             process: "rem", phase: "user-model", correlation_id: corr,
-            summary: "USER.md update skipped; model output empty or over cap",
-            context: { observations: userObs.length, out_tokens: newUser ? tokensOf(newUser) : 0, cap: CAP_USER_TOKENS },
-            cause: newUser ? "proposed USER.md exceeded the 2k-token cap" : "USER-model call returned no USER_MD block",
+            summary: "USER.md update skipped; model output empty or a runaway",
+            context: { observations: userObs.length, out_tokens: newUser ? tokensOf(newUser) : 0, target: TARGET_USER_TOKENS, runaway_at: userRunawayAt },
+            cause: newUser ? `proposed USER.md ${tokensOf(newUser)}t is a runaway (> ${userRunawayAt}t)` : "USER-model call returned no USER_MD block",
             next_action: "USER.md left unchanged this cycle; observations remain in the episodes and will be reconsidered next REM",
           });
         }
@@ -1087,7 +1123,7 @@ async function runOnePass(opts: { dryRun: boolean; batch: number; pass: number; 
     ok({
       process: "rem", phase: "commit", correlation_id: corr,
       summary: `wave committed: absorbed ${newEpisodeCount}, shed ${parsed.compost.length}`,
-      context: { absorbed: newEpisodeCount, shed: parsed.compost.length, worldview_tokens: newSelfTokens, backlog_remaining: backlog, pass: opts.pass, batch },
+      context: { absorbed: newEpisodeCount, shed: parsed.compost.length, worldview_tokens: newSelfTokens, self_delta: newSelfTokens - oldSelfTokens, backlog_remaining: backlog, pass: opts.pass, batch, ...(sizeNotes.length ? { size_notes: sizeNotes } : {}) },
     });
     rlog(`committed. ${subject}`);
   } catch (err) {
