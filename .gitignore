@@ -6,8 +6,10 @@
 # each user's machine.
 mind/
 
-# runtime logs (launchd stdout/stderr)
+# runtime logs (launchd stdout/stderr + event ledgers)
 logs/*.log
+logs/*.jsonl
+logs/fleet/
 
 # os / editor cruft
 .DS_Store

@@ -13,6 +13,15 @@
 // to draft an episode file and a rewritten NOW.md, then write both (temp-then-move,
 // caps validated before the move). SLEEP never commits the mind repo — only REM
 // does (MIND-SPEC "REM" section).
+//
+// Pending-queue durability (added after the 2026-07-23 outage, when a dead
+// LLM made two real sessions leave NO episode — the letter-never-written
+// discontinuity this system exists to prevent): a worker whose draft fails
+// appends the session to logs/pending-sleep.jsonl BEFORE reporting the
+// failure, and `--drain` (which REM also runs before digesting) replays that
+// queue oldest-first through the SAME drafting path. A line leaves the queue
+// only when its episode is written or its transcript is gone for good; at 8
+// attempts the drain stops and fails loud for a human decision.
 
 import { spawn } from "node:child_process";
 import { appendFileSync, existsSync, mkdirSync, readFileSync, renameSync, statSync, unlinkSync, writeFileSync } from "node:fs";
@@ -55,6 +64,157 @@ const TRANSCRIPT_CAP_CHARS = 48000; // ~12k tokens of transcript
 const LLM_TIMEOUT_MS = 6 * 60 * 1000; // local generation of both artifacts can be slow
 const LLM_MAX_TOKENS = 6000; // must exceed episode (~1k) + NOW (~3k) with headroom
 const MIN_TRANSCRIPT_BYTES = 10 * 1024; // one-shot -p sessions leave tiny transcripts; episodes from them are noise
+
+// ---------- pending queue (durability) ----------
+// FIXED CONTRACT — doctor.ts (W3) reads this exact path and line shape.
+const PENDING_QUEUE = join(CIRCADIAN_HOME, "logs", "pending-sleep.jsonl");
+const PENDING_LOCK = join(CIRCADIAN_HOME, "logs", "pending-sleep.lock");
+const DRAFT_ATTEMPTS = 2; // LLM tries per drafting round (live worker or one drain pass)
+const PENDING_ATTEMPTS_CAP = 8; // at/above this a human must decide — retrying is no longer obviously right
+const LOCK_STALE_MS = 15 * 60 * 1000; // a lock older than this belonged to a drain that died mid-run
+
+interface PendingSleep {
+  ts: string;
+  session_id: string;
+  transcript_path: string;
+  transcript_chars: number;
+  attempts: number;
+  last_error: string;
+  queued_at: string;
+}
+
+// Identity of a queue line for the post-drain merge: queued_at is minted at
+// enqueue time and never mutated, so it pins the line even when attempts and
+// last_error are updated in place by a drain.
+function pendingKey(e: PendingSleep): string {
+  return `${e.session_id} ${e.transcript_path} ${e.queued_at}`;
+}
+
+function readPendingQueue(): PendingSleep[] {
+  if (!existsSync(PENDING_QUEUE)) return [];
+  const entries: PendingSleep[] = [];
+  for (const line of readFileSync(PENDING_QUEUE, "utf8").split("\n")) {
+    if (!line.trim()) continue;
+    try {
+      const e = JSON.parse(line);
+      if (typeof e?.transcript_path === "string" && typeof e?.session_id === "string") {
+        entries.push({ attempts: 0, last_error: "", queued_at: "", ...e });
+      }
+      // A line we cannot parse is never a line we drop: malformed lines are
+      // skipped here but survive the rewrite merge byte-identical.
+    } catch {
+      /* tolerate a partial trailing line from a crashed append */
+    }
+  }
+  return entries;
+}
+
+// Append is atomic enough for JSONL (single write, O_APPEND). A queue-write
+// failure must NEVER be swallowed: this line is the episode's only surviving
+// handle, so losing it silently IS the original bug. fail() loud instead —
+// the caller's degraded event never goes out without its queue line behind it.
+function enqueuePendingSleep(entry: PendingSleep, corr: string): void {
+  try {
+    mkdirSync(dirname(PENDING_QUEUE), { recursive: true });
+    appendFileSync(PENDING_QUEUE, JSON.stringify(entry) + "\n");
+  } catch (e) {
+    fail({
+      process: "sleep", phase: "pending-queue", correlation_id: corr, session_id: entry.session_id,
+      summary: "FAILED to persist a failed episode draft to the pending queue; the episode is truly lost",
+      context: { queue: PENDING_QUEUE, transcript_path: entry.transcript_path, transcript_chars: entry.transcript_chars },
+      cause: (e as Error).message,
+      next_action: "fix the logs dir, then re-queue manually: append {session_id, transcript_path, attempts:0, queued_at} to logs/pending-sleep.jsonl and run `bun src/sleep.ts --drain`",
+      code: 1,
+    });
+  }
+}
+
+// Merge-rewrite the queue after a drain: apply the processed actions (null =
+// drop, object = keep with updated attempts/last_error) to the lines read at
+// drain start, and keep EVERYTHING else byte-identical — including lines a
+// SessionEnd worker appended while this drain was running (the worker does
+// not take the drain lock). Tmp+rename so a crash mid-write never halves the
+// queue. Returns the number of lines remaining. Throws on write failure;
+// the caller releases the lock and fails loud.
+function rewritePendingQueue(processed: Map<string, PendingSleep | null>): number {
+  const raw = existsSync(PENDING_QUEUE) ? readFileSync(PENDING_QUEUE, "utf8") : "";
+  const out: string[] = [];
+  for (const line of raw.split("\n")) {
+    if (!line.trim()) continue;
+    let e: PendingSleep | null = null;
+    try {
+      e = { attempts: 0, last_error: "", queued_at: "", ...JSON.parse(line) };
+    } catch {
+      out.push(line); // unparseable — preserved, never silently dropped
+      continue;
+    }
+    if (processed.has(pendingKey(e!))) {
+      const action = processed.get(pendingKey(e!));
+      if (action) out.push(JSON.stringify(action));
+      // null => drop: episode written, or transcript gone for good
+    } else {
+      out.push(line); // appended during this drain, or after a cap stop — untouched
+    }
+  }
+  const tmp = `${PENDING_QUEUE}.tmp-${process.pid}`;
+  writeFileSync(tmp, out.length ? out.join("\n") + "\n" : "", "utf8");
+  renameSync(tmp, PENDING_QUEUE);
+  return out.length;
+}
+
+// O_EXCL create; two drains never run concurrently. A lock younger than
+// LOCK_STALE_MS means a live (or just-crashed) drain — refuse loud. Older
+// means the holder died mid-drain (fail() paths exit without unlocking by
+// design — this stale break is the reaper): break it with a stderr note and
+// take over.
+function acquireDrainLock(corr: string): void {
+  mkdirSync(dirname(PENDING_LOCK), { recursive: true });
+  const payload = () => JSON.stringify({ pid: process.pid, ts: new Date().toISOString(), corr }) + "\n";
+  try {
+    writeFileSync(PENDING_LOCK, payload(), { flag: "wx" });
+    return;
+  } catch (e) {
+    if ((e as NodeJS.ErrnoException).code !== "EEXIST") throw e;
+  }
+  let ageMs = Infinity; // stat failed => the lock vanished between checks; retry below
+  try {
+    ageMs = Date.now() - statSync(PENDING_LOCK).mtimeMs;
+  } catch {
+    /* raced release — fall through to the retry */
+  }
+  if (ageMs !== Infinity && ageMs <= LOCK_STALE_MS) {
+    fail({
+      process: "sleep", phase: "drain-lock", correlation_id: corr,
+      summary: "another drain holds the pending-sleep lock; refusing a concurrent drain",
+      context: { lock: PENDING_LOCK, lock_age_ms: ageMs },
+      cause: "lockfile exists and is younger than the 15-minute stale window",
+      next_action: "if no drain is actually running, the lock self-breaks after 15 minutes; to force, delete logs/pending-sleep.lock",
+      code: 1,
+    });
+  }
+  if (ageMs > LOCK_STALE_MS) {
+    process.stderr.write(
+      `sleep --drain: breaking stale lock (age ${Math.round(ageMs / 60000)}min > ${LOCK_STALE_MS / 60000}min); the previous holder died mid-drain\n`
+    );
+    try {
+      unlinkSync(PENDING_LOCK);
+    } catch {
+      /* raced another drainer — the retry below decides */
+    }
+  }
+  try {
+    writeFileSync(PENDING_LOCK, payload(), { flag: "wx" });
+  } catch (e) {
+    fail({
+      process: "sleep", phase: "drain-lock", correlation_id: corr,
+      summary: "could not take the pending-sleep lock",
+      context: { lock: PENDING_LOCK },
+      cause: (e as Error).message,
+      next_action: "inspect logs/pending-sleep.lock — a concurrent drain may have raced the stale break",
+      code: 1,
+    });
+  }
+}
 
 async function readStdinText(): Promise<string> {
   try {
@@ -353,6 +513,154 @@ function appendSleepScoreboard(): void {
   }
 }
 
+type DraftResult =
+  | { status: "written" }
+  | { status: "no-transcript" }
+  | { status: "empty-transcript" }
+  | { status: "draft-failed"; lastError: string };
+
+// The drafting core shared by the live SessionEnd worker and --drain:
+// identical episode format, NOW.md write, meal fold-and-delete, scoreboard
+// append. queueOnFailure is true ONLY for the live worker — the drain
+// replays lines that are already queued, so re-enqueueing would duplicate
+// them (and mask the attempts ratchet).
+async function draftSessionEpisode(opts: {
+  transcriptPath: string | undefined;
+  sessionId: string;
+  corr: string;
+  queueOnFailure: boolean;
+  queueAttempts: number; // cumulative queue attempts INCLUDING this round (event context only)
+  mode: "worker" | "drain";
+}): Promise<DraftResult> {
+  const { transcriptPath, sessionId, corr, mode } = opts;
+  if (!transcriptPath || !existsSync(transcriptPath)) {
+    slog(mode, "abort: transcript missing", { transcriptPath: transcriptPath ?? null });
+    // A missing transcript at SLEEP means this session leaves NO letter to
+    // the next instance — a discontinuity event. Surface it, do not swallow.
+    degraded({
+      process: "sleep", phase: "read-transcript", correlation_id: corr, session_id: sessionId,
+      summary: "no transcript to digest at session end; no episode written",
+      context: { transcript_path: transcriptPath ?? null },
+      cause: "SessionEnd event carried no existing transcript_path (session may have produced no on-disk transcript)",
+      next_action: "if this recurs, verify the SessionEnd hook passes transcript_path; inspect logs/sleep.log for the raw event",
+    });
+    return { status: "no-transcript" };
+  }
+
+  const transcriptText = extractTranscriptText(transcriptPath, TRANSCRIPT_CAP_CHARS);
+  if (!transcriptText) {
+    slog(mode, "abort: transcript extracted to empty text");
+    degraded({
+      process: "sleep", phase: "extract-transcript", correlation_id: corr, session_id: sessionId,
+      summary: "transcript had no user/assistant text; no episode written",
+      context: { transcript_path: transcriptPath },
+      cause: "extractTranscriptText found zero user/assistant turns in the JSONL",
+      next_action: "confirm the transcript format matches the parser (message.role/content); this session yields no episode",
+    });
+    return { status: "empty-transcript" };
+  }
+  slog(mode, "transcript extracted", { chars: transcriptText.length });
+
+  // Fold in meal notes from graze (in-session checkpoints) — pre-chewed
+  // context that SLEEP digests alongside the full transcript.
+  const mealPath = join(MEALS_DIR, `${sessionId}.md`);
+  let mealNotes = "";
+  let mealCheckpoints = 0;
+  if (existsSync(mealPath)) {
+    mealNotes = readFileSync(mealPath, "utf8");
+    mealCheckpoints = (mealNotes.match(/## checkpoint \d+/g) || []).length;
+    slog(mode, "meal notes found", { meal: mealPath, checkpoints: mealCheckpoints });
+  }
+
+  const existingNow = readFileSync(join(MIND, "NOW.md"), "utf8");
+  const existingSelf = existsSync(join(MIND, "SELF.md")) ? readFileSync(join(MIND, "SELF.md"), "utf8") : "";
+
+  const prompt = buildPrompt(transcriptText, sessionId, existingSelf, existingNow, mealNotes);
+
+  let draft: ReturnType<typeof parseDraft> = null;
+  let lastReason = "";
+  for (let attempt = 0; attempt < DRAFT_ATTEMPTS && !draft; attempt += 1) {
+    slog(mode, "LLM draft attempt", { attempt: attempt + 1 });
+    const output = await draftViaLLM(prompt);
+    if (!output) {
+      lastReason = "LLM returned nothing (call failed or timed out)";
+      slog(mode, lastReason, { attempt: attempt + 1 });
+      continue;
+    }
+    draft = parseDraft(output);
+    if (!draft) {
+      lastReason = `LLM output did not parse into an episode (${output.length} chars returned)`;
+      slog(mode, "LLM output did not parse (malformed draft)", { attempt: attempt + 1, output_chars: output.length });
+    }
+  }
+  if (!draft) {
+    // Queue BEFORE reporting, so the degraded event can truthfully say the
+    // episode is preserved. enqueuePendingSleep fail()s loudly on a write
+    // error — this event never goes out without its queue line behind it.
+    if (opts.queueOnFailure) {
+      enqueuePendingSleep(
+        {
+          ts: new Date().toISOString(),
+          session_id: sessionId,
+          transcript_path: transcriptPath,
+          transcript_chars: transcriptText.length,
+          attempts: DRAFT_ATTEMPTS,
+          last_error: lastReason,
+          queued_at: new Date().toISOString(),
+        },
+        corr
+      );
+    }
+    slog(mode, `no valid draft after ${DRAFT_ATTEMPTS} attempts — queued, not lost`);
+    degraded({
+      process: "sleep", phase: "llm-draft", correlation_id: corr, session_id: sessionId,
+      summary: `episode draft failed ${DRAFT_ATTEMPTS} times; queued in logs/pending-sleep.jsonl for a later drain`,
+      context: { transcript_chars: transcriptText.length, attempts: DRAFT_ATTEMPTS, queued: true, queue_attempts: opts.queueAttempts },
+      cause: lastReason || "LLM produced no parseable EPISODE/NOW blocks on either attempt",
+      next_action: "check the local LLM at :10240 (curl http://127.0.0.1:10240/v1/models); the queue drains via `bun src/sleep.ts --drain` (REM runs it before digesting); the full run is in logs/sleep.log",
+    });
+    return { status: "draft-failed", lastError: lastReason };
+  }
+
+  const now = new Date();
+  const date = now.toISOString().slice(0, 10);
+  const lastSleepIso = now.toISOString();
+  const preservedSerendipity = extractSection(existingNow, "Serendipity"); // REM owns this line; carry it forward as-is
+
+  const episodeContent = buildEpisodeContent(date, sessionId, draft.arc, draft.episodeBody);
+  const nowContent = buildNowContent(draft.nowRaw, preservedSerendipity, lastSleepIso);
+
+  const epPath = writeEpisodeFile(date, draft.arc, episodeContent);
+  writeNowFile(nowContent);
+  appendSleepScoreboard();
+  slog(mode, "SUCCESS: episode written", { episode: epPath, arc: draft.arc });
+  // The letter was written. Success is as legible as failure.
+  ok({
+    process: "sleep", phase: "write-episode", correlation_id: corr, session_id: sessionId,
+    summary: `episode written for this session: ${draft.arc}`,
+    context: {
+      episode: epPath,
+      arc: draft.arc,
+      transcript_chars: transcriptText.length,
+      meal_notes_used: mealCheckpoints > 0,
+      checkpoints: mealCheckpoints,
+    },
+  });
+
+  // Fold and delete the meal file — the episode supersedes it; meals/ is
+  // working memory, never committed.
+  if (existsSync(mealPath)) {
+    try {
+      unlinkSync(mealPath);
+      slog(mode, "meal file deleted", { meal: mealPath });
+    } catch (e) {
+      slog(mode, "failed to delete meal file", { error: (e as Error).message });
+      // not fatal — the episode is already written
+    }
+  }
+  return { status: "written" };
+}
+
 async function runWorker(): Promise<void> {
   const corr = correlation("sleep");
   slog("worker", "start");
@@ -361,116 +669,14 @@ async function runWorker(): Promise<void> {
     // caller that still pipes it (e.g. manual `bun run sleep.ts --worker`).
     const evtRaw = process.env.CIRCADIAN_SLEEP_EVENT || (await readStdinText());
     const evt = parseEvent(evtRaw);
-    const transcriptPath = evt?.transcript_path;
-    const sessionId = evt?.session_id ?? "unknown";
-    if (!transcriptPath || !existsSync(transcriptPath)) {
-      slog("worker", "abort: transcript missing", { transcriptPath: transcriptPath ?? null });
-      // A missing transcript at SLEEP means this session leaves NO letter to
-      // the next instance — a discontinuity event. Surface it, do not swallow.
-      degraded({
-        process: "sleep", phase: "read-transcript", correlation_id: corr, session_id: sessionId,
-        summary: "no transcript to digest at session end; no episode written",
-        context: { transcript_path: transcriptPath ?? null },
-        cause: "SessionEnd event carried no existing transcript_path (session may have produced no on-disk transcript)",
-        next_action: "if this recurs, verify the SessionEnd hook passes transcript_path; inspect logs/sleep.log for the raw event",
-      });
-      return;
-    }
-
-    const transcriptText = extractTranscriptText(transcriptPath, TRANSCRIPT_CAP_CHARS);
-    if (!transcriptText) {
-      slog("worker", "abort: transcript extracted to empty text");
-      degraded({
-        process: "sleep", phase: "extract-transcript", correlation_id: corr, session_id: sessionId,
-        summary: "transcript had no user/assistant text; no episode written",
-        context: { transcript_path: transcriptPath },
-        cause: "extractTranscriptText found zero user/assistant turns in the JSONL",
-        next_action: "confirm the transcript format matches the parser (message.role/content); this session yields no episode",
-      });
-      return;
-    }
-    slog("worker", "transcript extracted", { chars: transcriptText.length });
-
-    // Fold in meal notes from graze (in-session checkpoints) — pre-chewed
-    // context that SLEEP digests alongside the full transcript.
-    const mealPath = join(MEALS_DIR, `${sessionId}.md`);
-    let mealNotes = "";
-    let mealCheckpoints = 0;
-    if (existsSync(mealPath)) {
-      mealNotes = readFileSync(mealPath, "utf8");
-      mealCheckpoints = (mealNotes.match(/## checkpoint \d+/g) || []).length;
-      slog("worker", "meal notes found", { meal: mealPath, checkpoints: mealCheckpoints });
-    }
-
-    const existingNow = readFileSync(join(MIND, "NOW.md"), "utf8");
-    const existingSelf = existsSync(join(MIND, "SELF.md")) ? readFileSync(join(MIND, "SELF.md"), "utf8") : "";
-
-    const prompt = buildPrompt(transcriptText, sessionId, existingSelf, existingNow, mealNotes);
-
-    let draft: ReturnType<typeof parseDraft> = null;
-    let lastReason = "";
-    for (let attempt = 0; attempt < 2 && !draft; attempt += 1) {
-      slog("worker", "LLM draft attempt", { attempt: attempt + 1 });
-      const output = await draftViaLLM(prompt);
-      if (!output) {
-        lastReason = "LLM returned nothing (call failed or timed out)";
-        slog("worker", lastReason, { attempt: attempt + 1 });
-        continue;
-      }
-      draft = parseDraft(output);
-      if (!draft) {
-        lastReason = `LLM output did not parse into an episode (${output.length} chars returned)`;
-        slog("worker", "LLM output did not parse (malformed draft)", { attempt: attempt + 1, output_chars: output.length });
-      }
-    }
-    if (!draft) {
-      slog("worker", "abort: no valid draft after 2 attempts — NO episode written");
-      degraded({
-        process: "sleep", phase: "llm-draft", correlation_id: corr, session_id: sessionId,
-        summary: "episode draft failed twice; this session leaves no episode",
-        context: { transcript_chars: transcriptText.length, attempts: 2 },
-        cause: lastReason || "LLM produced no parseable EPISODE/NOW blocks on either attempt",
-        next_action: "check the local LLM at :10240 (curl http://127.0.0.1:10240/v1/models); the full run is in logs/sleep.log",
-      });
-      return; // real call failed or output malformed twice — no partial write
-    }
-
-    const now = new Date();
-    const date = now.toISOString().slice(0, 10);
-    const lastSleepIso = now.toISOString();
-    const preservedSerendipity = extractSection(existingNow, "Serendipity"); // REM owns this line; carry it forward as-is
-
-    const episodeContent = buildEpisodeContent(date, sessionId, draft.arc, draft.episodeBody);
-    const nowContent = buildNowContent(draft.nowRaw, preservedSerendipity, lastSleepIso);
-
-    const epPath = writeEpisodeFile(date, draft.arc, episodeContent);
-    writeNowFile(nowContent);
-    appendSleepScoreboard();
-    slog("worker", "SUCCESS: episode written", { episode: epPath, arc: draft.arc });
-    // The letter was written. Success is as legible as failure.
-    ok({
-      process: "sleep", phase: "write-episode", correlation_id: corr, session_id: sessionId,
-      summary: `episode written for this session: ${draft.arc}`,
-      context: {
-        episode: epPath,
-        arc: draft.arc,
-        transcript_chars: transcriptText.length,
-        meal_notes_used: mealCheckpoints > 0,
-        checkpoints: mealCheckpoints,
-      },
+    await draftSessionEpisode({
+      transcriptPath: evt?.transcript_path,
+      sessionId: evt?.session_id ?? "unknown",
+      corr,
+      queueOnFailure: true,
+      queueAttempts: DRAFT_ATTEMPTS,
+      mode: "worker",
     });
-
-    // Fold and delete the meal file — the episode supersedes it; meals/ is
-    // working memory, never committed.
-    if (existsSync(mealPath)) {
-      try {
-        unlinkSync(mealPath);
-        slog("worker", "meal file deleted", { meal: mealPath });
-      } catch (e) {
-        slog("worker", "failed to delete meal file", { error: (e as Error).message });
-        // not fatal — the episode is already written
-      }
-    }
   } catch (e) {
     // best-effort detached worker — but record the failure everywhere, never hide it.
     slog("worker", "EXCEPTION", { error: (e as Error).message });
@@ -485,8 +691,123 @@ async function runWorker(): Promise<void> {
   }
 }
 
+// ---------- drain mode ----------
+
+// Replay the pending queue oldest-first through the same drafting core.
+// Outcomes per line: episode written => drop; transcript gone => drop with a
+// human-visible degraded (unrecoverable, but never silent); draft failed =>
+// keep and ratchet attempts; attempts >= CAP => stop the drain and fail loud
+// for a human decision (lines processed so far are still merged to disk).
+async function runDrain(): Promise<void> {
+  const corr = correlation("sleep-drain");
+  slog("drain", "start");
+  acquireDrainLock(corr);
+  let capHit: PendingSleep | null = null;
+  let drained = 0;
+  let dropped = 0;
+  let remaining = 0;
+  let fatal: Error | null = null;
+  try {
+    const entries = readPendingQueue();
+    if (entries.length > 0) {
+      const processed = new Map<string, PendingSleep | null>();
+      for (const entry of entries) {
+        if (entry.attempts >= PENDING_ATTEMPTS_CAP) {
+          capHit = entry; // leave queued; fail() fires after the merge + unlock
+          break;
+        }
+        const key = pendingKey(entry);
+        if (!existsSync(entry.transcript_path)) {
+          degraded({
+            process: "sleep", phase: "drain-drop", correlation_id: corr, session_id: entry.session_id,
+            summary: "dropping queued episode: its transcript is gone; this session can never yield an episode",
+            context: { transcript_path: entry.transcript_path, attempts: entry.attempts, queued_at: entry.queued_at },
+            cause: "transcript file no longer exists on disk",
+            next_action: "nothing to retry — if the transcript survives elsewhere, append a fresh line to logs/pending-sleep.jsonl and re-run --drain",
+          });
+          slog("drain", "dropped: transcript gone", { session_id: entry.session_id });
+          processed.set(key, null);
+          dropped += 1;
+          continue;
+        }
+        try {
+          const result = await draftSessionEpisode({
+            transcriptPath: entry.transcript_path,
+            sessionId: entry.session_id,
+            corr,
+            queueOnFailure: false, // already queued — this IS the drain
+            queueAttempts: entry.attempts + DRAFT_ATTEMPTS,
+            mode: "drain",
+          });
+          if (result.status === "written") {
+            processed.set(key, null);
+            drained += 1;
+            slog("drain", "drained: episode written", { session_id: entry.session_id });
+          } else if (result.status === "no-transcript") {
+            processed.set(key, null); // vanished mid-drain — same as gone
+            dropped += 1;
+          } else {
+            const lastError =
+              result.status === "draft-failed" ? result.lastError : "transcript yielded no user/assistant text";
+            processed.set(key, { ...entry, attempts: entry.attempts + DRAFT_ATTEMPTS, last_error: lastError });
+            slog("drain", "kept: draft failed again", { session_id: entry.session_id, attempts: entry.attempts + DRAFT_ATTEMPTS });
+          }
+        } catch (e) {
+          // One poisonous line must not block the rest of the queue.
+          degraded({
+            process: "sleep", phase: "drain", correlation_id: corr, session_id: entry.session_id,
+            summary: "drain threw on a queued line; keeping it for the next drain",
+            context: { transcript_path: entry.transcript_path, attempts: entry.attempts + DRAFT_ATTEMPTS },
+            cause: (e as Error).message,
+            next_action: "inspect logs/sleep.log; the line stays queued and ratchets toward the attempts cap",
+          });
+          processed.set(key, { ...entry, attempts: entry.attempts + DRAFT_ATTEMPTS, last_error: (e as Error).message });
+        }
+      }
+      remaining = rewritePendingQueue(processed);
+    }
+  } catch (e) {
+    fatal = e as Error;
+  } finally {
+    try {
+      unlinkSync(PENDING_LOCK);
+    } catch {
+      /* already gone */
+    }
+  }
+  if (fatal) {
+    fail({
+      process: "sleep", phase: "drain", correlation_id: corr,
+      summary: "drain failed before completing; queue state on disk is intact",
+      context: { drained, dropped, queue: PENDING_QUEUE },
+      cause: fatal.message,
+      next_action: "inspect logs/sleep.log and logs/pending-sleep.jsonl; episodes already written this drain are on disk — re-run `bun src/sleep.ts --drain` (writeEpisodeFile dedupes filenames)",
+      code: 1,
+    });
+  }
+  if (capHit) {
+    fail({
+      process: "sleep", phase: "drain", correlation_id: corr, session_id: capHit.session_id,
+      summary: `queued episode hit the ${PENDING_ATTEMPTS_CAP}-attempt cap; human decision required`,
+      context: { transcript_path: capHit.transcript_path, attempts: capHit.attempts, queued_at: capHit.queued_at, drained, dropped },
+      cause: capHit.last_error || "repeated draft failures",
+      next_action: "inspect logs/pending-sleep.jsonl: fix the LLM and re-run `bun src/sleep.ts --drain`, or delete the line to abandon the episode",
+      code: 1,
+    });
+  }
+  ok({
+    process: "sleep", phase: "drain", correlation_id: corr,
+    summary: `drain complete: ${drained} drained, ${dropped} dropped, ${remaining} remaining`,
+    context: { drained, remaining, dropped },
+  });
+  slog("drain", "done", { drained, dropped, remaining });
+}
+
 if (process.argv.includes("--worker")) {
   await runWorker();
+  process.exit(0);
+} else if (process.argv.includes("--drain")) {
+  await runDrain();
   process.exit(0);
 } else {
   await runHook();

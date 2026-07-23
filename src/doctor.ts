@@ -40,6 +40,8 @@ const LOG_DIR = path.join(CIRCADIAN_HOME, "logs");
 const EVENTS_LEDGER = path.join(LOG_DIR, "circadian.events.jsonl");
 const MIND_DIR = path.join(CIRCADIAN_HOME, "mind");
 const EPISODES_DIR = path.join(MIND_DIR, "episodes");
+// FIXED CONTRACT (W1): failed sleep drafts queue here for REM-driven re-run.
+const PENDING_SLEEP_QUEUE = path.join(LOG_DIR, "pending-sleep.jsonl");
 const LLM_BASE_URL =
   process.env.CIRCADIAN_LLM_BASE_URL || process.env.LOCAL_LLM_BASE_URL || "http://127.0.0.1:10240/v1";
 
@@ -52,6 +54,8 @@ const PI_SESSIONS_DIR = path.join(homedir(), ".pi", "agent", "sessions");
 const REM_EXPECTED_HOURS = 15; // twice daily at 09:00 & 21:00
 const SESSION_EXPECTED_HOURS = 48; // sessions should happen at least every 48h
 const UNADDRESSED_WINDOW_HOURS = 24; // degraded/failed within this window is "recent"
+const PENDING_ATTEMPTS_CAP = 8; // W1 retry cap — at the cap an entry has survived every automatic drain
+const PENDING_STALE_HOURS = 24; // queued longer than this = survived multiple REM drains
 
 const CAPS: Record<string, number> = {
   "SELF.md": 6000,
@@ -428,6 +432,100 @@ function checkEpisodes(events: CircadianEvent[]): void {
   }
 }
 
+// ---------- pending sleep queue (W1 contract) ----------
+
+interface PendingSleepEntry {
+  session_id?: string;
+  attempts?: number;
+  queued_at?: string;
+}
+
+/**
+ * Reads logs/pending-sleep.jsonl. The file does not exist until W1 lands and
+ * a failure occurs — absent means nothing is awaiting recovery, not an error.
+ * A non-empty queue is always at least WARN (work is owed); an entry at the
+ * attempts cap or older than PENDING_STALE_HOURS has survived multiple REM
+ * drains and needs a human decision -> FAIL.
+ */
+function checkPendingSleepQueue(): void {
+  const raw = readOrEmpty(PENDING_SLEEP_QUEUE);
+  if (!raw.trim()) {
+    add("pending sleep queue", "IDLE", "no queued episodes; nothing awaiting recovery");
+    return;
+  }
+
+  const entries: PendingSleepEntry[] = [];
+  let unparseable = 0;
+  for (const line of raw.split("\n")) {
+    const t = line.trim();
+    if (!t) continue;
+    try {
+      entries.push(JSON.parse(t));
+    } catch {
+      unparseable++;
+    }
+  }
+
+  const stuck = entries.filter(
+    (e) => (e.attempts ?? 0) >= PENDING_ATTEMPTS_CAP || (e.queued_at !== undefined && (hoursSince(e.queued_at) ?? 0) > PENDING_STALE_HOURS)
+  );
+  const ages = entries
+    .map((e) => (e.queued_at !== undefined ? hoursSince(e.queued_at) : null))
+    .filter((h): h is number => h !== null)
+    .sort((a, b) => b - a);
+  const countStr = `${entries.length} episode(s) awaiting sleep re-run, oldest ${ages.length > 0 ? fmtAge(ages[0]) : "unknown age"}`;
+  const corruptStr = unparseable > 0 ? `; ${unparseable} unparseable line(s) — queue corruption` : "";
+
+  if (stuck.length > 0) {
+    const names = stuck.map((e) => e.session_id ?? "unknown").join(", ");
+    add(
+      "pending sleep queue",
+      "FAIL",
+      `${stuck.length} stuck (attempts >= ${PENDING_ATTEMPTS_CAP} or queued > ${PENDING_STALE_HOURS}h): ${names} — survived multiple REM drains; human decision required (${countStr})${corruptStr}`
+    );
+  } else {
+    add("pending sleep queue", "WARN", `${countStr}${corruptStr}`);
+  }
+}
+
+// ---------- launchd agents ----------
+
+/**
+ * Parses `launchctl list` columns: PID (or "-"), last-exit Status, Label.
+ * Non-zero last exit is WARN, never FAIL — the ledger's unaddressed-failure
+ * logic already owns FAIL semantics; failing here too would cry wolf.
+ */
+function checkLaunchdAgents(): void {
+  const r = tryExec("launchctl list");
+  if (!r.ok) {
+    add("launchd agents", "WARN", `launchctl unavailable — cannot verify scheduled agents (${r.out.split("\n")[0] || "no output"})`);
+    return;
+  }
+
+  const labels = ["com.circadian.rem", "com.circadian.rem-catchup", "com.circadian.doctor"];
+  const statusOf: Record<string, number> = {};
+  for (const line of r.out.split("\n")) {
+    const cols = line.trim().split(/\s+/);
+    if (cols.length < 3) continue;
+    const status = Number.parseInt(cols[1], 10);
+    if (labels.includes(cols[2]) && !Number.isNaN(status)) statusOf[cols[2]] = status;
+  }
+
+  const missing = labels.filter((l) => !(l in statusOf));
+  const nonzero = labels.filter((l) => statusOf[l] !== undefined && statusOf[l] !== 0);
+  if (missing.length === 0 && nonzero.length === 0) {
+    add("launchd agents", "OK", `${labels.length} agents loaded, all last exits 0`);
+    return;
+  }
+  const parts: string[] = [];
+  if (nonzero.length > 0)
+    parts.push(
+      nonzero.map((l) => `${l} last exit ${statusOf[l]} — fossil of a loud failure; clears on next healthy scheduled run`).join("; ")
+    );
+  if (missing.length > 0) parts.push(`missing: ${missing.join(", ")}`);
+  add("launchd agents", "WARN", parts.join("; "));
+}
+
 // ---------- render ----------
 
 const ICON: Record<Level, string> = { OK: "✓", IDLE: "•", WARN: "!", FAIL: "✗" };
@@ -454,6 +552,8 @@ function main() {
   checkMindRepo();
   checkCaps();
   checkEpisodes(events);
+  checkPendingSleepQueue();
+  checkLaunchdAgents();
 
   const anyFail = checks.some((c) => c.level === "FAIL");
 

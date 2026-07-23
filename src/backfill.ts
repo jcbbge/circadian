@@ -14,7 +14,9 @@
  *   - Synchronous, one at a time. We call sleep's worker inline (not the
  *     detached hook) so we can watch progress and not spawn hundreds of procs.
  *   - Resumable. A manifest (logs/backfill.jsonl) records every processed
- *     transcript; re-running skips ones already done.
+ *     transcript; re-running skips only ones that produced an episode
+ *     (status "ok"). Failures (status "no-episode") are RETRIED on re-run —
+ *     a dead-LLM night no longer marks those transcripts done forever.
  *   - SLEEP writes episodes; REM (run after) does the absorbing. This script
  *     never touches SELF.md.
  *
@@ -113,7 +115,12 @@ if (existsSync(MANIFEST)) {
   for (const line of readFileSync(MANIFEST, "utf8").split("\n")) {
     if (!line.trim()) continue;
     try {
-      done.add(JSON.parse(line).path);
+      const rec = JSON.parse(line);
+      // Only a successful digest bars re-processing. "no-episode" lines
+      // record a FAILURE (dead LLM, no parseable draft); skipping them made
+      // a transient outage permanently lose those episodes. Re-running now
+      // retries them.
+      if (rec?.status === "ok" && typeof rec?.path === "string") done.add(rec.path);
     } catch {
       /* skip */
     }

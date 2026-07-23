@@ -32,7 +32,7 @@
 import * as fs from "fs";
 import * as path from "path";
 import { homedir } from "os";
-import { execFileSync } from "child_process";
+import { execFileSync, spawnSync } from "child_process";
 import { createHash } from "crypto";
 import { complete } from "./llm.ts";
 import { ok, idle, degraded, fail, correlation } from "./obs.ts";
@@ -54,6 +54,8 @@ const EPISODES_DIR = path.join(MIND_DIR, "episodes");
 // Where the harness writes session transcripts (propagation evidence). Claude
 // Code uses ~/.claude/projects; overridable for other harnesses/users.
 const PROJECTS_DIR = process.env.CIRCADIAN_PROJECTS_DIR || path.join(homedir(), ".claude/projects");
+// Same bun-binary contract as backfill.ts (used to spawn sleep's drain).
+const BUN_BIN = process.env.CIRCADIAN_BUN_BIN || path.join(homedir(), ".bun/bin/bun");
 
 // ---- token caps: chars/4 = tokens (MIND-SPEC.md "Token Caps") ----
 // Soft target sizes, NOT hard walls. The mind is a free, open metabolism: it
@@ -871,6 +873,30 @@ async function main() {
       process: "rem", phase: "schedule-guard", correlation_id: corr,
       summary: "--if-due: a scheduled slot was missed; catching up now",
       context: { slot_hours: REM_SLOT_HOURS },
+    });
+  }
+
+  // SLEEP pending-queue drain (W1 durability): episodes the SessionEnd
+  // worker could not draft (e.g. a dead LLM overnight) wait in
+  // logs/pending-sleep.jsonl. Drain them BEFORE selecting this pass's meal so
+  // a recovered episode can be digested in the same run. Absent/empty queue
+  // is the common case — silence, no spawn. The drain emits its own events;
+  // its exit status only reports how the queue fared and never blocks REM.
+  let queuedBefore = 0;
+  try {
+    const pendingQueue = path.join(CIRCADIAN_HOME, "logs", "pending-sleep.jsonl");
+    if (fs.existsSync(pendingQueue)) {
+      queuedBefore = fs.readFileSync(pendingQueue, "utf8").split("\n").filter((l) => l.trim()).length;
+    }
+  } catch {
+    // an unreadable queue must not block REM — the drain itself fails loud
+  }
+  if (queuedBefore > 0) {
+    spawnSync(BUN_BIN, ["run", path.join(CIRCADIAN_HOME, "src", "sleep.ts"), "--drain"], { stdio: "ignore", env: process.env });
+    ok({
+      process: "rem", phase: "pending-drain", correlation_id: corr,
+      summary: `ran sleep --drain over ${queuedBefore} pending episode(s) before digesting`,
+      context: { queued_before: queuedBefore },
     });
   }
 
