@@ -75,7 +75,7 @@ function buildPayload(files: { self: string; user: string; now: string; greeting
     "</mind:now>",
     "",
     "<mind:greeting-instruction>",
-    "Open your FIRST reply to the user with the greeting content below, verbatim, before anything else. The greeting orients to the work — the current arc, the live tension, the next move — never to the memory system itself (Law 8).",
+    "Open your FIRST reply to the user by SPEAKING the greeting below, verbatim, before anything else — it is the mind's own voice (the dream-echo from the last consolidation), not a label or a report. Deliver it as if you are the mind resuming mid-thought. It orients to the work — the arc, the live tension, the next move — never to the memory system itself (Law 8). If it passes, the user continues the thread as if no time passed.",
     "",
     greetingBlock,
     "</mind:greeting-instruction>",

@@ -462,7 +462,7 @@ ${transcriptsBlock}
 
 5. Plant exactly ONE new serendipity line for NOW.md's Serendipity section: a single line starting exactly "Might be nothing:". This replaces whatever was there before.
 
-6. Draft tomorrow's greeting.md: at most 3 lines total — an arc summary, the flight plan (the successor session's first move), and one live tension. Anchor-aware (Law 8): orient to the work itself — the arc, the live tension, the next move — never mention Circadian, REM, SELF.md, or the memory system itself.
+6. Draft tomorrow's greeting.md as a DREAM-ECHO: one short spoken first-person voice from the mind to jrg, 1-3 lines. This is NOT a memo with labels ("Arc:" / "First move:") — it is the mind waking up and speaking. Weave in, naturally: what got carried forward from the digested episodes (the thing worth knowing overnight), the live tension that is still open, and the next move. Anchor-aware (Law 8): orient to the WORK — the arc, the tension, the move — never mention Circadian, REM, SELF.md, episodes, or the memory system itself, and never narrate your own process. Speak like a trusted collaborator resuming mid-thought, with jrg's register allowed (he responds to intensity and substance, not coddling). No flattery, no filler, no preamble. It must still pass the Law-3 test: if it isn't good enough to say out loud to him at the top of a session, it isn't earning its keep. Example register (do not copy): "Kept the venue-field guard from silently eating seven deals while you were away. The ACP bidirectional-state question is still the open one — that's where to start."
 
 7. OPTIONAL: if SELF.md grew this pass and the growth is meaningful, you MAY add a one-line note on why in the SELF_GROWTH_JUSTIFICATION block. This is informational only — not required, not a gate. Leave it empty if you have nothing to add.
 
@@ -479,7 +479,7 @@ ${transcriptsBlock}
 ===END_SERENDIPITY_LINE===
 
 ===GREETING_MD===
-<the full new greeting.md content; at most 3 lines>
+<the full new greeting.md dream-echo; a short first-person voice, 1-3 lines, no labels>
 ===END_GREETING_MD===
 
 ===COMPOST_JSON===
@@ -611,8 +611,10 @@ function parseClaudeOutput(raw: string): ParsedOutput {
   }
 
   const greetingLines = blocks.GREETING_MD.split("\n").filter((l) => l.length > 0);
-  if (greetingLines.length > GREETING_MAX_LINES) {
-    throw new Error(`GREETING_MD has ${greetingLines.length} lines, cap is ${GREETING_MAX_LINES}`);
+  // Soft target like everything else: the dream-echo aims for <=3 lines; only a
+  // gross overrun (a whole monologue) is refused.
+  if (greetingLines.length > GREETING_MAX_LINES * 2) {
+    throw new Error(`GREETING_MD is a monologue (${greetingLines.length} lines) — the dream-echo should be a few spoken lines, not a briefing`);
   }
 
   const requiredSelfHeadings = ["## Who I am across sessions", "## Doctrine", "## Motifs", "## How we work"];
