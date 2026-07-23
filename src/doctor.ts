@@ -44,6 +44,11 @@ const EPISODES_DIR = path.join(MIND_DIR, "episodes");
 const PENDING_SLEEP_QUEUE = path.join(LOG_DIR, "pending-sleep.jsonl");
 const LLM_BASE_URL =
   process.env.CIRCADIAN_LLM_BASE_URL || process.env.LOCAL_LLM_BASE_URL || "http://127.0.0.1:10240/v1";
+// The mlx-omni-server markup patch (2026-07-23) lives in site-packages — one
+// package upgrade away from silently regressing to the episode-killing crash.
+const LLM_LOGGER_FILE =
+  process.env.CIRCADIAN_LLM_LOGGER_FILE ||
+  path.join(homedir(), "local-llm", "venv", "lib", "python3.11", "site-packages", "mlx_omni_server", "utils", "logger.py");
 
 // Transcript dirs for session-evidence probing (cheap liveness probe, not a
 // process re-run). Claude Code uses ~/.claude/projects; pi uses ~/.pi/agent/sessions.
@@ -341,6 +346,41 @@ function checkLLM(): void {
   }
 }
 
+/**
+ * Guards the 2026-07-23 root-cause patch: mlx-omni-server's RichHandler must
+ * keep markup=False, or bracketed payloads crash request logging mid-request
+ * (500/empty -> clients see "empty content" while /models stays 200). The
+ * patch is in site-packages, so an upgrade silently reverts it — this check
+ * makes the regression loud instead of silent. FAIL on markup=True (the exact
+ * killer state), WARN when the file is gone (package changed; re-verify).
+ */
+function checkLLMPatchIntegrity(): void {
+  const raw = readOrEmpty(LLM_LOGGER_FILE);
+  if (!raw) {
+    add(
+      "LLM patch integrity",
+      "WARN",
+      `${LLM_LOGGER_FILE} not found — mlx-omni-server moved or was upgraded; re-verify the markup=False patch (see ~/dotfiles/launchagents/LOCALLLM.md)`
+    );
+    return;
+  }
+  if (raw.includes("markup=False")) {
+    add("LLM patch integrity", "OK", "markup=False patch present — bracketed payloads cannot crash request logging");
+  } else if (raw.includes("markup=True")) {
+    add(
+      "LLM patch integrity",
+      "FAIL",
+      `markup=True in ${LLM_LOGGER_FILE} — the episode-killing rich-markup crash is BACK (site-packages upgraded?). Fix: set markup=False in that file, then launchctl kickstart -k gui/$UID/com.localllm.server`
+    );
+  } else {
+    add(
+      "LLM patch integrity",
+      "WARN",
+      `no markup setting found in ${LLM_LOGGER_FILE} — package layout changed; re-verify manually`
+    );
+  }
+}
+
 function checkHooks(): void {
   const settings = path.join(homedir(), ".claude", "settings.json");
   const raw = readOrEmpty(settings);
@@ -548,6 +588,7 @@ function main() {
 
   // Supplementary cheap probes
   checkLLM();
+  checkLLMPatchIntegrity();
   checkHooks();
   checkMindRepo();
   checkCaps();
