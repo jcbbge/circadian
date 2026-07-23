@@ -35,6 +35,7 @@ import { homedir } from "os";
 import { execFileSync } from "child_process";
 import { createHash } from "crypto";
 import { complete } from "./llm.ts";
+import { ok, idle, degraded, fail, correlation } from "./obs.ts";
 
 // ---- paths (per MIND-SPEC.md) ----
 // CIRCADIAN_HOME overrides; default ~/circadian. See wake.ts for the contract.
@@ -77,6 +78,22 @@ function readOrEmpty(p: string): string {
     return fs.readFileSync(p, "utf8");
   } catch {
     return "";
+  }
+}
+
+// ---- human-readable progress log (separate from the obs event ledger) ----
+// rem runs as a scheduled launchd job; its stdout/stderr is captured by
+// launchd and not easily tailed. rlog() writes a plain timestamped line to
+// logs/rem.log so `tail -f logs/rem.log` shows the wave-by-wave drain in
+// real time, while the structured obs events carry the auditable trail.
+const REM_LOG = path.join(CIRCADIAN_HOME, "logs", "rem.log");
+function rlog(msg: string, extra?: Record<string, unknown>): void {
+  try {
+    fs.mkdirSync(path.dirname(REM_LOG), { recursive: true });
+    const line = `${new Date().toISOString()} [rem] ${msg}${extra ? " " + JSON.stringify(extra) : ""}\n`;
+    fs.appendFileSync(REM_LOG, line);
+  } catch {
+    /* logging must never break rem */
   }
 }
 
@@ -622,9 +639,10 @@ function appendCompostEntries(compostMd: string, compost: ParsedOutput["compost"
 // Rule: after appending, drop the OLDEST dated sections until the file fits
 // comfortably under cap (90%), preserving the header. The compost log is a
 // recent-history window, not a ledger — the ledger is git.
-function pruneCompost(compostMd: string, capTokens: number): string {
+function pruneCompost(compostMd: string, capTokens: number): { md: string; dropped_sections: number; before_tokens: number; after_tokens: number } {
   const target = Math.floor(capTokens * 0.9);
-  if (tokensOf(compostMd) <= target) return compostMd;
+  const before = tokensOf(compostMd);
+  if (before <= target) return { md: compostMd, dropped_sections: 0, before_tokens: before, after_tokens: before };
   const lines = compostMd.split("\n");
   // find dated section starts ("## <anything>")
   const sectionStarts: number[] = [];
@@ -637,7 +655,7 @@ function pruneCompost(compostMd: string, capTokens: number): string {
     const rest = lines.slice(sectionStarts[dropUpTo]).join("\n");
     current = `${header}\n${rest}`;
   }
-  return current;
+  return { md: current, dropped_sections: dropUpTo, before_tokens: before, after_tokens: tokensOf(current) };
 }
 
 function appendTaughtLine(content: string, taught: string, absorbedWhere: string): string {
@@ -652,6 +670,7 @@ interface ValidatedRem {
   newNowMd: string;
   newCompostMd: string;
   dateStr: string;
+  pruneInfo: { dropped_sections: number; before_tokens: number; after_tokens: number };
 }
 
 /** Pure: parses + validates claude's raw output against every MIND-SPEC rule.
@@ -681,10 +700,10 @@ function validateAndCompute(
   // git history is the ledger). enforceCap stays as the final guard — it can
   // now only fire if a SINGLE pass's entries exceed the whole cap, which the
   // batch limit upstream makes structurally impossible in normal operation.
-  const newCompostMd = pruneCompost(appendCompostEntries(ctx.compostMd, parsed.compost, dateStr), CAP_COMPOST_TOKENS);
-  enforceCap("compost.md", newCompostMd, CAP_COMPOST_TOKENS);
+  const pruned = pruneCompost(appendCompostEntries(ctx.compostMd, parsed.compost, dateStr), CAP_COMPOST_TOKENS);
+  enforceCap("compost.md", pruned.md, CAP_COMPOST_TOKENS);
 
-  return { parsed, oldSelfTokens, newSelfTokens, newNowMd, newCompostMd, dateStr };
+  return { parsed, oldSelfTokens, newSelfTokens, newNowMd, newCompostMd: pruned.md, dateStr, pruneInfo: { dropped_sections: pruned.dropped_sections, before_tokens: pruned.before_tokens, after_tokens: pruned.after_tokens } };
 }
 
 function atomicWrite(targetPath: string, content: string) {
@@ -746,14 +765,23 @@ async function main() {
   const args = process.argv.slice(2);
   const dryRun = args.includes("--dry-run");
   const ifDue = args.includes("--if-due");
+  const corr = correlation("rem");
 
   if (ifDue) {
     const scoreboardCheck = loadScoreboard();
     if (!isDue(scoreboardCheck, new Date())) {
-      console.log(`rem: --if-due — not due (last REM is newer than the current ${REM_SLOT_HOURS.join("/")} slot). Skipping.`);
+      idle({
+        process: "rem", phase: "schedule-guard", correlation_id: corr,
+        summary: "--if-due: not due; last REM is newer than the current slot",
+        context: { last_rem_ts: lastRemTs(scoreboardCheck) ?? null, slot_hours: REM_SLOT_HOURS },
+      });
       return;
     }
-    console.log("rem: --if-due — a scheduled slot was missed; catching up now.");
+    ok({
+      process: "rem", phase: "schedule-guard", correlation_id: corr,
+      summary: "--if-due: a scheduled slot was missed; catching up now",
+      context: { slot_hours: REM_SLOT_HOURS },
+    });
   }
 
   let batch = REM_BATCH_DEFAULT;
@@ -761,19 +789,23 @@ async function main() {
   let anyCommit = false;
   while (pass < REM_MAX_PASSES) {
     pass += 1;
-    const result = await runOnePass({ dryRun, batch, pass });
-    if (dryRun) return;
+    const result = await runOnePass({ dryRun, batch, pass, corr });
     if (result === "empty") {
-      if (!anyCommit) console.log("rem: nothing to digest.");
+      if (!anyCommit) {
+        idle({
+          process: "rem", phase: "drain", correlation_id: corr,
+          summary: "nothing to digest",
+          context: { episodes: 0, pass: 1, dry_run: dryRun },
+        });
+      }
       return;
     }
+    if (dryRun) return;
     if (result === "validation-failed") {
-      if (batch <= 1) {
-        console.error("rem: validation failed even at batch=1 — giving up this invocation. Nothing further modified.");
-        process.exit(1);
-      }
+      // runOnePass already emitted a degraded event with the error; batch is
+      // guaranteed > 1 here (fail() is called at batch=1 inside runOnePass).
       batch = Math.max(1, Math.floor(batch / 2));
-      console.error(`rem: validation failed — halving batch to ${batch} and retrying (AIMD back-pressure).`);
+      rlog(`validation failed — halving batch to ${batch} and retrying (AIMD back-pressure).`);
       continue;
     }
     // success
@@ -781,15 +813,21 @@ async function main() {
     if (result === "drained") return;
     // backlog remains: additive increase back toward default, next wave
     batch = Math.min(REM_BATCH_DEFAULT, batch + 1);
-    console.log(`rem: backlog remains — continuing with next wave (pass ${pass + 1}, batch ${batch}).`);
+    rlog(`backlog remains — continuing with next wave (pass ${pass + 1}, batch ${batch}).`);
   }
-  console.error(`rem: hit the ${REM_MAX_PASSES}-pass ceiling with backlog remaining; the next scheduled run resumes the drain.`);
+  degraded({
+    process: "rem", phase: "drain", correlation_id: corr,
+    summary: `hit the ${REM_MAX_PASSES}-pass ceiling with backlog remaining; the next scheduled run resumes the drain`,
+    context: { passes: REM_MAX_PASSES, batch },
+    cause: "AIMD drain did not reach zero within the pass ceiling",
+    next_action: "the next scheduled REM run resumes the drain from where this left off",
+  });
 }
 
 type PassResult = "empty" | "validation-failed" | "more-backlog" | "drained";
 
-async function runOnePass(opts: { dryRun: boolean; batch: number; pass: number }): Promise<PassResult> {
-  const { dryRun, batch } = opts;
+async function runOnePass(opts: { dryRun: boolean; batch: number; pass: number; corr: string }): Promise<PassResult> {
+  const { dryRun, batch, corr } = opts;
   const specMd = readOrEmpty(SPEC_PATH);
   const selfMd = readOrEmpty(SELF_PATH);
   const userMd = readOrEmpty(USER_PATH);
@@ -802,7 +840,7 @@ async function runOnePass(opts: { dryRun: boolean; batch: number; pass: number }
   const { episodes, deferred } = selectMeal(allEpisodes, batch);
   const backlog = deferred.length;
   if (episodes.length === 0) return "empty";
-  if (backlog > 0) console.log(`rem: pass ${opts.pass} — digesting ${episodes.filter((e) => e.isNew).length} of ${backlog + episodes.filter((e) => e.isNew).length} new episodes (batch ${batch}).`);
+  if (backlog > 0) rlog(`pass ${opts.pass} — digesting ${episodes.filter((e) => e.isNew).length} of ${backlog + episodes.filter((e) => e.isNew).length} new episodes (batch ${batch}).`);
   const transcripts = gatherTranscriptExcerpts();
   const injectedItems = enumerateInjectedItems(selfMd, nowMd);
 
@@ -820,9 +858,12 @@ async function runOnePass(opts: { dryRun: boolean; batch: number; pass: number }
 
   if (dryRun) {
     console.log(prompt);
-    console.log(
-      `\n[dry-run] episodes in this meal: ${episodes.length} (${episodes.filter((e) => e.isNew).length} new, batch ${batch}), backlog deferred: ${backlog}. transcripts sampled: ${transcripts.length}. prompt length: ${prompt.length} chars (~${tokensOf(prompt)} tokens). Nothing was called or written.`
-    );
+    rlog(`[dry-run] episodes in this meal: ${episodes.length} (${episodes.filter((e) => e.isNew).length} new, batch ${batch}), backlog deferred: ${backlog}. transcripts sampled: ${transcripts.length}. prompt length: ${prompt.length} chars (~${tokensOf(prompt)} tokens). Nothing was called or written.`);
+    ok({
+      process: "rem", phase: "dry-run", correlation_id: corr,
+      summary: "dry-run: prompt assembled, nothing called or written",
+      context: { pass: opts.pass, batch, episodes: episodes.length, new_episodes: episodes.filter((e) => e.isNew).length, backlog, transcripts: transcripts.length, prompt_chars: prompt.length, prompt_tokens: tokensOf(prompt) },
+    });
     return "drained";
   }
 
@@ -832,8 +873,13 @@ async function runOnePass(opts: { dryRun: boolean; batch: number; pass: number }
   } catch (err) {
     // LLM unreachable is not back-pressure — halving the batch won't fix a
     // dead service. Hard-fail so launchd/doctor surface it.
-    console.error(`rem: local LLM call failed: ${(err as Error).message}. No mind files were modified.`);
-    process.exit(1);
+    fail({
+      process: "rem", phase: "llm", correlation_id: corr,
+      summary: "local LLM call failed; no mind files were modified",
+      context: { error: (err as Error).message, batch, pass: opts.pass, timeout_ms: LLM_TIMEOUT_MS, max_tokens: LLM_MAX_TOKENS },
+      cause: (err as Error).message,
+      next_action: "check the LLM service at http://127.0.0.1:10240/v1 (curl /v1/models); this is not back-pressure — halving the batch will not help a dead service",
+    });
   }
 
   let computed: ValidatedRem;
@@ -842,11 +888,41 @@ async function runOnePass(opts: { dryRun: boolean; batch: number; pass: number }
   } catch (err) {
     // Validation failure IS back-pressure — report it and let the AIMD loop
     // shrink the meal and retry instead of stalling the whole metabolism.
-    console.error(`rem: pass validation failed — ${(err as Error).message}. No mind files were modified this pass.`);
+    const errMsg = (err as Error).message;
+    if (batch <= 1) {
+      // At the minimum batch there is nothing left to halve — this is a
+      // genuine give-up, not back-pressure.
+      fail({
+        process: "rem", phase: "validate", correlation_id: corr,
+        summary: "validation failed even at batch=1; giving up this invocation",
+        context: { batch: 1, pass: opts.pass, error: errMsg },
+        cause: errMsg,
+        next_action: "inspect the failing episode or LLM output; the mind repo is untouched this wave; fix and re-run rem",
+      });
+    }
+    // batch > 1: degraded + AIMD halving
+    degraded({
+      process: "rem", phase: "validate", correlation_id: corr,
+      summary: "pass validation failed; AIMD halving batch and retrying",
+      context: { batch, pass: opts.pass, error: errMsg },
+      cause: errMsg,
+      next_action: `AIMD halving: batch halved to ${Math.max(1, Math.floor(batch / 2))} and retried`,
+    });
     return "validation-failed";
   }
 
-  const { parsed, oldSelfTokens, newSelfTokens, newNowMd, newCompostMd, dateStr } = computed;
+  const { parsed, oldSelfTokens, newSelfTokens, newNowMd, newCompostMd, dateStr, pruneInfo } = computed;
+
+  // pruneCompost dropping sections is the compost log excreting old history —
+  // normal metabolism (git is the archive), but surface it so a cold reader
+  // sees the token churn.
+  if (pruneInfo.dropped_sections > 0) {
+    ok({
+      process: "rem", phase: "prune-compost", correlation_id: corr,
+      summary: `compost log pruned ${pruneInfo.dropped_sections} old section(s) to fit under cap`,
+      context: { dropped_sections: pruneInfo.dropped_sections, before_tokens: pruneInfo.before_tokens, after_tokens: pruneInfo.after_tokens },
+    });
+  }
 
   try {
     // All validation above passed; every write below is now safe to apply.
@@ -919,12 +995,20 @@ async function runOnePass(opts: { dryRun: boolean; batch: number; pass: number }
       );
     }
 
-    console.log(`rem: committed. ${subject}`);
+    ok({
+      process: "rem", phase: "commit", correlation_id: corr,
+      summary: `wave committed: absorbed ${newEpisodeCount}, shed ${parsed.compost.length}`,
+      context: { absorbed: newEpisodeCount, shed: parsed.compost.length, worldview_tokens: newSelfTokens, backlog_remaining: backlog, pass: opts.pass, batch },
+    });
+    rlog(`committed. ${subject}`);
   } catch (err) {
-    console.error(
-      `rem: write/commit phase failed AFTER validation passed: ${(err as Error).message}. ~/circadian/mind may be in a partially-written, uncommitted state — inspect with 'git -C ${MIND_DIR} status'.`
-    );
-    process.exit(1);
+    fail({
+      process: "rem", phase: "commit", correlation_id: corr,
+      summary: "write/commit phase failed AFTER validation passed",
+      context: { error: (err as Error).message, batch, pass: opts.pass, mind_dir: MIND_DIR },
+      cause: (err as Error).message,
+      next_action: `inspect ~/circadian/mind with 'git -C ${MIND_DIR} status'; the mind repo may be partially written and uncommitted`,
+    });
   }
 
   // No mtime bookkeeping needed: deferred episodes were never recorded in the

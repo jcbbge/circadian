@@ -1,13 +1,21 @@
 #!/usr/bin/env bun
 // Circadian WAKE — SessionStart hook. See mind/MIND-SPEC.md (Law 7: file
-// reads only; the mind must never take a session down with it). Everything
-// below is wrapped so that any failure — missing mind dir, unreadable file,
-// bad stdin — results in silent, empty output and exit 0.
+// reads only; the mind must never take a session down with it). Every
+// decision point now writes a context-bound event to the obs ledger
+// (logs/circadian.events.jsonl) so a cold reader can see exactly what
+// happened — no silent skips, no swallowed catches.
+//
+// Migration onto obs (mirror sleep.ts @ d21e47c): each mind-file read is
+// attempted independently; a missing file is a degraded event with cause +
+// next_action, not a silent skip. Staleness (>48h) and OVER-CAP (>15k tokens)
+// are also degraded events. The injection is ALWAYS delivered (Law 7) — the
+// events are telemetry, they never block the session.
 
 import { appendFileSync, readFileSync } from "node:fs";
 import { homedir } from "node:os";
 import { join } from "node:path";
 import { spawn } from "node:child_process";
+import { ok, degraded, emit, correlation } from "./obs.ts";
 
 // Path resolution (single-source, distributable): CIRCADIAN_HOME overrides;
 // otherwise ~/circadian. The mind data lives at $CIRCADIAN_HOME/mind. This is
@@ -24,7 +32,7 @@ async function readStdin(): Promise<void> {
   try {
     await new Response(Bun.stdin.stream()).text();
   } catch {
-    // ignored — tolerate empty/unparseable stdin
+    // tolerated — stdin drain must never break the hook
   }
 }
 
@@ -82,7 +90,8 @@ function buildPayload(files: { self: string; user: string; now: string; greeting
   return body;
 }
 
-try {
+async function runHook(): Promise<void> {
+  const corr = correlation("wake");
   await readStdin();
 
   // Claude sessions spawned BY the metabolism itself (sleep/REM drafting set
@@ -91,23 +100,126 @@ try {
   // not wakes.
   if (process.env.CIRCADIAN_INTERNAL === "1") process.exit(0);
 
-  const self = readFileSync(join(MIND, "SELF.md"), "utf8");
-  const user = readFileSync(join(MIND, "USER.md"), "utf8");
-  const now = readFileSync(join(MIND, "NOW.md"), "utf8");
-  const greeting = readFileSync(join(MIND, "greeting.md"), "utf8");
+  // Read each mind file independently — a missing file is a context-bound
+  // event, not a silent skip (Law 7: wake still delivers, but the gap is
+  // visible). Previously all four reads lived in one try/catch: a single
+  // missing file swallowed the entire injection silently.
+  const fileSpecs = [
+    ["SELF.md", join(MIND, "SELF.md")],
+    ["USER.md", join(MIND, "USER.md")],
+    ["NOW.md", join(MIND, "NOW.md")],
+    ["greeting.md", join(MIND, "greeting.md")],
+  ] as const;
 
-  process.stdout.write(buildPayload({ self, user, now, greeting }) + "\n");
+  const files: Record<string, string> = {};
+  const missing: string[] = [];
+  for (const [name, p] of fileSpecs) {
+    try {
+      files[name] = readFileSync(p, "utf8");
+    } catch {
+      missing.push(name);
+      files[name] = "";
+    }
+  }
 
+  if (missing.length > 0) {
+    degraded({
+      process: "wake",
+      phase: "read-mind",
+      correlation_id: corr,
+      summary: `missing mind file(s): ${missing.join(", ")} — injection delivered with empty content for those files`,
+      context: { missing_files: missing, mind_dir: MIND },
+      cause: `could not read ${missing.join(", ")} from ${MIND} (file missing or unreadable)`,
+      next_action:
+        "verify the mind repo exists and is populated — run install.sh or check that mind/ files are present",
+    });
+  }
+
+  const payload = buildPayload({
+    self: files["SELF.md"],
+    user: files["USER.md"],
+    now: files["NOW.md"],
+    greeting: files["greeting.md"],
+  });
+
+  const payloadTokens = Math.ceil(payload.length / 4);
+  const selfTokens = Math.ceil(files["SELF.md"].length / 4);
+
+  // Staleness check (>48h on NOW.md "Last sleep" timestamp). The staleness
+  // warning is already prepended to the greeting in buildPayload; this event
+  // makes it observable in the ledger so doctor can flag it.
+  const lastSleepRaw = extractLastSleep(files["NOW.md"]);
+  const lastSleepDate = lastSleepRaw ? new Date(lastSleepRaw) : null;
+  const isValidDate = lastSleepDate instanceof Date && !isNaN(lastSleepDate.getTime());
+  const isStale = isValidDate ? Date.now() - lastSleepDate!.getTime() > STALE_MS : true;
+
+  if (isStale) {
+    degraded({
+      process: "wake",
+      phase: "staleness-check",
+      correlation_id: corr,
+      summary: "NOW.md last-sleep timestamp is stale or missing — greeting carries a staleness warning",
+      context: { last_sleep: lastSleepRaw ?? null, stale_ms: STALE_MS, is_stale: true },
+      cause: isValidDate
+        ? `last sleep was ${lastSleepRaw} — more than 48h ago`
+        : "no parseable 'Last sleep' timestamp in NOW.md — treating as stale",
+      next_action:
+        "run a session (SLEEP writes a fresh timestamp at SessionEnd) or manually update NOW.md Last sleep",
+    });
+  }
+
+  // OVER-CAP check (payload > 15k tokens). The OVER-CAP line is already in
+  // the payload; this event makes it observable in the ledger.
+  if (payloadTokens > CAP_TOKENS) {
+    degraded({
+      process: "wake",
+      phase: "payload-cap",
+      correlation_id: corr,
+      summary: `wake injection payload ${payloadTokens} tokens exceeds ${CAP_TOKENS}-token hard cap — OVER-CAP line emitted in payload`,
+      context: {
+        payload_tokens: payloadTokens,
+        cap_tokens: CAP_TOKENS,
+        over_by: payloadTokens - CAP_TOKENS,
+        self_tokens: selfTokens,
+      },
+      cause: "assembled injection payload exceeds the 15k-token hard cap (MIND-SPEC Law 4)",
+      next_action:
+        "compost mind content (run rem or manually trim SELF.md/USER.md/NOW.md) to bring the payload under 15k tokens",
+    });
+  }
+
+  // Deliver the injection. Law 7: wake must always deliver, even when degraded.
+  process.stdout.write(payload + "\n");
+
+  // Scoreboard append (MIND-SPEC schema — kept for status.ts to read).
   try {
     const event = {
       ts: new Date().toISOString(),
       type: "wake",
-      worldview_tokens: Math.ceil(self.length / 4),
+      worldview_tokens: selfTokens,
     };
     appendFileSync(join(MIND, "scoreboard.jsonl"), JSON.stringify(event) + "\n");
   } catch {
     // scoreboard append failure must never withhold the injection above
   }
+
+  // OK event with vitals as context — success is as legible as failure.
+  ok({
+    process: "wake",
+    phase: "inject",
+    correlation_id: corr,
+    summary: "wake injection delivered to session",
+    context: {
+      payload_tokens: payloadTokens,
+      cap_tokens: CAP_TOKENS,
+      worldview_tokens: selfTokens,
+      files_read: fileSpecs.map(([n]) => n),
+      missing_files: missing,
+      stale: isStale,
+      over_cap: payloadTokens > CAP_TOKENS,
+      last_sleep: lastSleepRaw ?? null,
+    },
+  });
 
   // Catch-up: every new session is an "opportunity" to run a missed REM slot.
   // Fire REM in --if-due mode, fully detached, AFTER the injection is already
@@ -125,8 +237,22 @@ try {
   } catch {
     // a failed catch-up spawn must never affect the wake injection
   }
-} catch {
-  // mind dir missing/unreadable, or any other failure — print nothing (Law 7)
+
+  process.exit(0);
 }
 
-process.exit(0);
+// Law 7: wake must never block a session. Even an unexpected exception emits
+// a failed event (never silent) but still exits 0 so the session proceeds.
+runHook().catch((e) => {
+  emit({
+    process: "wake",
+    phase: "hook",
+    outcome: "failed",
+    summary: "wake hook threw unexpectedly; injection may be incomplete",
+    context: { error: (e as Error).message },
+    cause: (e as Error).message,
+    next_action:
+      "inspect logs/circadian.events.jsonl for the failed event; verify mind/ files are readable and CIRCADIAN_HOME is set correctly",
+  });
+  process.exit(0);
+});

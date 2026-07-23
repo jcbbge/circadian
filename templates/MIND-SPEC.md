@@ -54,11 +54,31 @@ private relational memory and never leaves this machine.
    itself. A greeting that talks about Circadian instead of the work has
    failed law 3.
 
+9. **Nothing silent.** Every signal is context-bound. If code in this system
+   can fail, warn, or make a decision, it emits a context-bound event to the
+   obs ledger (`logs/circadian.events.jsonl`) via `src/obs.ts` — enough that
+   an agent picking it up cold knows WHAT happened, in WHICH process and
+   phase, WHY, and WHAT TO DO NEXT. A bare exit code is not telemetry. See
+   `docs/OBSERVABILITY.md` for the full doctrine: four-word outcomes
+   (ok | idle | degraded | failed); degraded/failed MUST carry cause +
+   next_action; every event surfaces to stderr + the ledger + the tower bus.
+   A process that runs and produces NO event is operating silently — the
+   cardinal sin this law exists to prevent.
+
 ---
 
 ## The Cycle
 
-Four phases: WAKE, LIVE, SLEEP, REM.
+Five phases: WAKE, GRAZE, LIVE, SLEEP, REM.
+
+Two tempos govern the cycle:
+- **Per-meal fast path** (GRAZE + SLEEP): the transcript is metabolized
+  in-session via graze checkpoints, then consolidated into an episode at
+  session end. Immediate digestion — the letter is written while the ink is
+  still wet.
+- **Twice-daily worldview consolidation** (REM): at 09:00 and 21:00, REM
+  absorbs new episodes into `SELF.md`, composts what's been digested, plants
+  a serendipity, and drafts tomorrow's greeting. The slow fold.
 
 ### WAKE
 
@@ -77,12 +97,27 @@ If the assembled injection payload exceeds the 15k-token hard cap, WAKE must
 emit a loud `OVER-CAP` line identifying the offending file(s) and the
 overage — never silently truncate any file's content.
 
+### GRAZE
+
+In-session metabolizer. Fires from cheap, frequent Claude Code hooks
+(PostToolUse / UserPromptSubmit), self-throttles to one real checkpoint per
+~15 minutes. Each checkpoint reads only the transcript DELTA since the last
+checkpoint (byte offset in a per-session state file), digests it via the local
+LLM into 2-4 bullet notes, and appends them to `mind/meals/<session_id>.md`
+— working memory, never committed to git.
+
+GRAZE is the per-meal fast path: the transcript is metabolized WHILE the
+session happens, not after. At SessionEnd, SLEEP folds the accumulated meal
+notes into its whole-meal digest prompt (as pre-chewed context) and deletes
+the meal file — the episode supersedes it.
+
 ### LIVE
 
-Nothing. The working agent carries zero memory duties for the duration of
-the session. It does not write to `~/circadian/mind`, does not curate what it says,
+The working agent carries zero memory duties for the duration of the
+session. It does not write to `~/circadian/mind`, does not curate what it says,
 does not manage its own memory. The full transcript is implicitly the
-deposit that SLEEP will later read.
+deposit that SLEEP will later read. GRAZE runs beneath LIVE as the
+in-session checkpoint layer; the agent itself is unaware of it.
 
 ### SLEEP
 
@@ -174,11 +209,19 @@ any file is never permitted, at any cap, for any file.
   "taught -> absorbed-where" line is added to it recording what it taught
   and where that lesson now lives. Cap: 1k tokens / 4k chars per episode.
 
-- **`compost.md`** — a dated log of shed episodes: what was shed, why it was
-  shed, and where the lesson now lives (which file/section absorbed it).
-  Entries open with the fixed form
+- **`compost.md`** — a ROLLING WINDOW log of shed episodes (NOT append-only):
+  what was shed, why it was shed, and where the lesson now lives (which
+  file/section absorbed it). Entries open with the fixed form
   `Composted: <what> — <why> — lesson lives at <where>`.
-  No entries at genesis. Cap: 1k tokens / 4k chars.
+  When the file exceeds its cap, REM prunes the OLDEST dated sections until
+  it fits comfortably under cap (90%) — git history is the permanent archive,
+  so old compost entries lose nothing by being dropped. No entries at genesis.
+  Cap: 1k tokens / 4k chars.
+
+- **`mind/meals/<session_id>.md`** — in-session working memory, written by
+  GRAZE. Bullet notes from each checkpoint. Deleted by SLEEP at SessionEnd
+  after the episode is drafted (the episode supersedes it). NEVER committed
+  to git — it is working memory, not archive.
 
 - **`scoreboard.jsonl`** — append-only, one JSON object per line. See
   "Scoreboard Schema" below.
@@ -254,10 +297,42 @@ compost. Git history is the permanent archive of the raw episode; `compost.md`
 carries the living, human-readable record of what was shed and where it
 went.
 
+**Rolling window.** `compost.md` is NOT append-only — it is a rolling window
+under its cap. After each REM pass appends new entries, if the file exceeds
+90% of its token cap, REM prunes the OLDEST dated sections until it fits
+comfortably. Git history is the archive; the compost log is recent history
+only. This prevents the excretory organ from becoming a landfill (the
+metabolism would jam permanently on OVER-CAP).
+
 Zero-propagation trigger (Law 6): injected items that show zero
 propagation across their observed lifetime are compost candidates, subject to
 the same digestion-completeness rule above — zero propagation makes an
 item a candidate, it does not bypass the rule.
+
+---
+
+## Digestion Ledger
+
+`mind/digested.jsonl` is the single source of truth for "have I absorbed this
+episode?" — it replaces the old mtime-based heuristic. Each line is a JSON
+object:
+
+```json
+{
+  "ts": "ISO-8601 timestamp of digestion",
+  "hash": "sha256 hex of the episode's on-disk content at digestion time",
+  "filename": "the episode filename (e.g. 2026-07-22-arc-name.md)",
+  "disposition": "absorbed | composted"
+}
+```
+
+Content-keyed, not time-keyed: `isNew = sha256(content) NOT IN ledger`. This
+is rename-proof, mtime-touch-proof, and survives corrupt lines (a malformed
+line is skipped, not fatal). An episode whose content changes is re-flagged
+as new; an episode whose filename changes but content is identical is
+correctly seen as already digested. REM appends to this ledger inside the
+same commit that absorbs/composts the episode, so the invariant holds:
+hash recorded == will never be re-fed as new.
 
 ---
 

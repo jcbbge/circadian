@@ -13,11 +13,18 @@
  *
  * `--greet-ok` / `--greet-bad "<reason>"` append a verdict event to
  * scoreboard.jsonl and exit; they do not render the status report.
+ *
+ * Migrated onto obs (mirror sleep.ts @ d21e47c): every run emits a context-
+ * bound event to logs/circadian.events.jsonl. The default render emits ok
+ * with the full vitals payload as context; --greet-ok emits ok; --greet-bad
+ * emits degraded (a bad greeting is a trust signal that needs a look, so it
+ * reaches the tower bus). No silent exits — every path surfaces.
  */
 
 import * as fs from "fs";
 import * as path from "path";
 import { homedir } from "os";
+import { ok, degraded, correlation } from "./obs.ts";
 
 // CIRCADIAN_HOME overrides; default ~/circadian. See wake.ts for the contract.
 const CIRCADIAN_HOME = process.env.CIRCADIAN_HOME || path.join(homedir(), "circadian");
@@ -106,87 +113,137 @@ function appendVerdict(verdict: "ok" | "bad", reason?: string) {
   console.log(`status: recorded verdict=${verdict}${reason ? ` (${reason})` : ""}`);
 }
 
-function renderStatus() {
+/**
+ * Collect all vitals into a structured object — used both for rendering and
+ * for the obs ok event context. A cold reader of the ledger gets the full
+ * vitals payload without re-running status.
+ */
+function collectVitals() {
   const nowMd = readOrEmpty(NOW_PATH);
   const selfMd = readOrEmpty(SELF_PATH);
   const userMd = readOrEmpty(USER_PATH);
   const compostMd = readOrEmpty(COMPOST_PATH);
   const scoreboard = loadScoreboard();
 
-  console.log("=== circadian status ===\n");
-
   // --- last-sleep age ---
   let lastSleepIso = extractNowLastSleep(nowMd);
-  let source = "NOW.md";
+  let lastSleepSource = "NOW.md";
   if (!lastSleepIso) {
     const sleepEvents = scoreboard.filter((e) => e.type === "sleep");
     if (sleepEvents.length > 0) {
       lastSleepIso = sleepEvents[sleepEvents.length - 1].ts;
-      source = "scoreboard.jsonl (fallback — NOW.md had no Last sleep timestamp)";
+      lastSleepSource = "scoreboard.jsonl (fallback — NOW.md had no Last sleep timestamp)";
     }
   }
-  if (lastSleepIso) {
-    console.log(`last sleep: ${fmtAge(lastSleepIso)} [${lastSleepIso}] (source: ${source})`);
+  const lastSleepAge = lastSleepIso ? fmtAge(lastSleepIso) : null;
+
+  // --- token counts vs caps ---
+  const tokenCounts: Record<string, { tokens: number; cap: number; over: boolean }> = {};
+  for (const [name, content] of [
+    ["SELF.md", selfMd],
+    ["USER.md", userMd],
+    ["NOW.md", nowMd],
+    ["compost.md", compostMd],
+  ] as const) {
+    const tk = tokensOf(content);
+    const cap = CAPS[name];
+    tokenCounts[name] = { tokens: tk, cap, over: tk > cap };
+  }
+
+  // --- greeting verdicts ---
+  const verdicts = scoreboard.filter((e) => e.type === "verdict" && e.greeting_verdict);
+  const last7 = verdicts.slice(-7);
+  const killSwitch = last7.length >= KILL_SWITCH_STREAK && last7.every((v) => v.greeting_verdict === "bad");
+
+  // --- propagation summary ---
+  const remEvents = scoreboard.filter((e) => e.type === "rem");
+  const recentRem = remEvents.slice(-RECENT_REM_EVENTS);
+
+  return {
+    last_sleep: lastSleepIso ?? null,
+    last_sleep_age: lastSleepAge,
+    last_sleep_source: lastSleepIso ? lastSleepSource : null,
+    token_counts: tokenCounts,
+    verdicts: {
+      total: verdicts.length,
+      recent_7: last7.map((v) => ({ ts: v.ts, verdict: v.greeting_verdict, reason: v.reason ?? null })),
+      kill_switch: killSwitch,
+    },
+    propagation: {
+      total_rem_events: remEvents.length,
+      recent: recentRem.map((r) => ({
+        ts: r.ts,
+        worldview_tokens: r.worldview_tokens,
+        propagated: r.propagated?.length ?? 0,
+        composted: r.composted?.length ?? 0,
+      })),
+    },
+    worldview_tokens: tokensOf(selfMd),
+  };
+}
+
+function renderStatus(vitals: ReturnType<typeof collectVitals>) {
+  console.log("=== circadian status ===\n");
+
+  // --- last-sleep age ---
+  if (vitals.last_sleep) {
+    console.log(`last sleep: ${vitals.last_sleep_age} [${vitals.last_sleep}] (source: ${vitals.last_sleep_source})`);
   } else {
     console.log("last sleep: unknown — no NOW.md timestamp and no sleep event in scoreboard.jsonl");
   }
 
   // --- token counts vs caps ---
   console.log("\ntoken counts vs caps:");
-  const files: [string, string][] = [
-    ["SELF.md", selfMd],
-    ["USER.md", userMd],
-    ["NOW.md", nowMd],
-    ["compost.md", compostMd],
-  ];
-  for (const [name, content] of files) {
-    const tk = tokensOf(content);
-    const cap = CAPS[name];
-    if (tk > cap) {
-      console.log(`  OVER-CAP: ${name} is ${tk} tokens, cap is ${cap} (+${tk - cap})`);
+  for (const [name, info] of Object.entries(vitals.token_counts)) {
+    if (info.over) {
+      console.log(`  OVER-CAP: ${name} is ${info.tokens} tokens, cap is ${info.cap} (+${info.tokens - info.cap})`);
     } else {
-      console.log(`  ${name}: ${tk} / ${cap} tokens`);
+      console.log(`  ${name}: ${info.tokens} / ${info.cap} tokens`);
     }
   }
 
   // --- last 7 greeting verdicts ---
-  const verdicts = scoreboard.filter((e) => e.type === "verdict" && e.greeting_verdict);
-  const last7 = verdicts.slice(-7);
-  console.log(`\nlast ${last7.length} greeting verdict(s) (of ${verdicts.length} total):`);
+  const last7 = vitals.verdicts.recent_7;
+  console.log(`\nlast ${last7.length} greeting verdict(s) (of ${vitals.verdicts.total} total):`);
   if (last7.length === 0) {
     console.log("  (none recorded yet)");
   } else {
     for (const v of last7) {
-      console.log(`  ${v.ts}: ${v.greeting_verdict}${v.reason ? ` — ${v.reason}` : ""}`);
+      console.log(`  ${v.ts}: ${v.verdict}${v.reason ? ` — ${v.reason}` : ""}`);
     }
   }
 
-  if (last7.length >= KILL_SWITCH_STREAK && last7.every((v) => v.greeting_verdict === "bad")) {
+  if (vitals.verdicts.kill_switch) {
     console.log(
       `\n!!! KILL SWITCH: the last ${KILL_SWITCH_STREAK} greeting verdicts are all "bad". Per MIND-SPEC.md "Kill Switch" this is the decommission trigger. The decision to actually decommission is human, not automated.`
     );
   }
 
   // --- propagation summary from recent rem events ---
-  const remEvents = scoreboard.filter((e) => e.type === "rem");
-  const recentRem = remEvents.slice(-RECENT_REM_EVENTS);
-  console.log(`\npropagation summary (last ${recentRem.length} rem event(s) of ${remEvents.length} total):`);
+  const recentRem = vitals.propagation.recent;
+  console.log(`\npropagation summary (last ${recentRem.length} rem event(s) of ${vitals.propagation.total_rem_events} total):`);
   if (recentRem.length === 0) {
     console.log("  (no rem events yet)");
   } else {
     for (const r of recentRem) {
-      const propagated = r.propagated?.length ?? 0;
-      const composted = r.composted?.length ?? 0;
-      console.log(`  ${r.ts}: worldview ${r.worldview_tokens} tokens, propagated ${propagated}, composted ${composted}`);
+      console.log(`  ${r.ts}: worldview ${r.worldview_tokens} tokens, propagated ${r.propagated}, composted ${r.composted}`);
     }
   }
 }
 
 function main() {
   const args = process.argv.slice(2);
+  const corr = correlation("status");
 
   if (args.includes("--greet-ok")) {
     appendVerdict("ok");
+    ok({
+      process: "status",
+      phase: "greet-verdict",
+      correlation_id: corr,
+      summary: "greeting verdict recorded: ok",
+      context: { verdict: "ok" },
+    });
     return;
   }
 
@@ -199,10 +256,32 @@ function main() {
       return;
     }
     appendVerdict("bad", reason);
+    // A bad greeting verdict is a trust signal degradation — it reaches the
+    // tower bus so the human sees it without running a command.
+    degraded({
+      process: "status",
+      phase: "greet-verdict",
+      correlation_id: corr,
+      summary: `greeting verdict recorded: bad — ${reason}`,
+      context: { verdict: "bad", reason },
+      cause: `user marked the greeting as bad: ${reason}`,
+      next_action:
+        "review mind/greeting.md and the worldview in SELF.md; a bad greeting means the memory injection was not useful — inspect the last wake event in logs/circadian.events.jsonl",
+    });
     return;
   }
 
-  renderStatus();
+  // Default run: render + emit ok with vitals as context.
+  const vitals = collectVitals();
+  renderStatus(vitals);
+
+  ok({
+    process: "status",
+    phase: "vitals",
+    correlation_id: corr,
+    summary: "circadian status rendered",
+    context: vitals,
+  });
 }
 
 main();

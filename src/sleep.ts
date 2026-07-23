@@ -15,7 +15,7 @@
 // does (MIND-SPEC "REM" section).
 
 import { spawn } from "node:child_process";
-import { appendFileSync, existsSync, mkdirSync, readFileSync, renameSync, statSync, writeFileSync } from "node:fs";
+import { appendFileSync, existsSync, mkdirSync, readFileSync, renameSync, statSync, unlinkSync, writeFileSync } from "node:fs";
 import { homedir } from "node:os";
 import { dirname, join } from "node:path";
 import { complete } from "./llm.ts";
@@ -44,6 +44,7 @@ function slog(mode: string, msg: string, extra?: Record<string, unknown>): void 
 const CIRCADIAN_HOME = process.env.CIRCADIAN_HOME || join(homedir(), "circadian");
 const MIND = join(CIRCADIAN_HOME, "mind");
 const EPISODES_DIR = join(MIND, "episodes");
+const MEALS_DIR = join(MIND, "meals");
 const BUN_BIN = process.env.CIRCADIAN_BUN_BIN || join(homedir(), ".bun/bin/bun");
 const RESERVED_SLUG = "the-forest-session"; // reserved for Worker D's archaeology episode
 const EPISODE_CAP_CHARS = 4000; // 1k tokens
@@ -177,7 +178,7 @@ function extractSection(md: string, heading: string): string {
   return m ? m[1].trim() : "";
 }
 
-function buildPrompt(transcriptText: string, sessionId: string, existingSelf: string, existingNow: string): string {
+function buildPrompt(transcriptText: string, sessionId: string, existingSelf: string, existingNow: string, mealNotes: string): string {
   return `You are the SLEEP process of a circadian memory substrate for an AI coding agent (the user's Claude Code). Read the session transcript below and produce EXACTLY two artifacts in the delimited format specified — no commentary before "=== EPISODE ===" or after "=== END ===", no surrounding markdown code fences.
 
 SESSION ID: ${sessionId}
@@ -190,6 +191,11 @@ ${existingSelf || "(empty)"}
 CURRENT NOW.md (about to be superseded):
 """
 ${existingNow}
+"""
+
+MEAL NOTES (in-session checkpoints from graze — pre-chewed context, the running meal log):
+"""
+${mealNotes || "(none — no graze checkpoints fired this session)"}
 """
 
 SESSION TRANSCRIPT (user + assistant text turns, chronological, may be head+tail truncated):
@@ -385,10 +391,21 @@ async function runWorker(): Promise<void> {
     }
     slog("worker", "transcript extracted", { chars: transcriptText.length });
 
+    // Fold in meal notes from graze (in-session checkpoints) — pre-chewed
+    // context that SLEEP digests alongside the full transcript.
+    const mealPath = join(MEALS_DIR, `${sessionId}.md`);
+    let mealNotes = "";
+    let mealCheckpoints = 0;
+    if (existsSync(mealPath)) {
+      mealNotes = readFileSync(mealPath, "utf8");
+      mealCheckpoints = (mealNotes.match(/## checkpoint \d+/g) || []).length;
+      slog("worker", "meal notes found", { meal: mealPath, checkpoints: mealCheckpoints });
+    }
+
     const existingNow = readFileSync(join(MIND, "NOW.md"), "utf8");
     const existingSelf = existsSync(join(MIND, "SELF.md")) ? readFileSync(join(MIND, "SELF.md"), "utf8") : "";
 
-    const prompt = buildPrompt(transcriptText, sessionId, existingSelf, existingNow);
+    const prompt = buildPrompt(transcriptText, sessionId, existingSelf, existingNow, mealNotes);
 
     let draft: ReturnType<typeof parseDraft> = null;
     let lastReason = "";
@@ -434,8 +451,26 @@ async function runWorker(): Promise<void> {
     ok({
       process: "sleep", phase: "write-episode", correlation_id: corr, session_id: sessionId,
       summary: `episode written for this session: ${draft.arc}`,
-      context: { episode: epPath, arc: draft.arc, transcript_chars: transcriptText.length },
+      context: {
+        episode: epPath,
+        arc: draft.arc,
+        transcript_chars: transcriptText.length,
+        meal_notes_used: mealCheckpoints > 0,
+        checkpoints: mealCheckpoints,
+      },
     });
+
+    // Fold and delete the meal file — the episode supersedes it; meals/ is
+    // working memory, never committed.
+    if (existsSync(mealPath)) {
+      try {
+        unlinkSync(mealPath);
+        slog("worker", "meal file deleted", { meal: mealPath });
+      } catch (e) {
+        slog("worker", "failed to delete meal file", { error: (e as Error).message });
+        // not fatal — the episode is already written
+      }
+    }
   } catch (e) {
     // best-effort detached worker — but record the failure everywhere, never hide it.
     slog("worker", "EXCEPTION", { error: (e as Error).message });

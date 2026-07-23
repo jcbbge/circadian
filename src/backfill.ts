@@ -32,12 +32,15 @@ import { appendFileSync, existsSync, mkdirSync, readFileSync, statSync } from "n
 import { homedir } from "node:os";
 import { join } from "node:path";
 import { execSync } from "node:child_process";
+import { ok, degraded, correlation } from "./obs.ts";
 
 const CIRCADIAN_HOME = process.env.CIRCADIAN_HOME || join(homedir(), "circadian");
 const BUN_BIN = process.env.CIRCADIAN_BUN_BIN || join(homedir(), ".bun/bin/bun");
 const SLEEP_TS = join(CIRCADIAN_HOME, "src", "sleep.ts");
 const MANIFEST = join(CIRCADIAN_HOME, "logs", "backfill.jsonl");
 const EPISODES_DIR = join(CIRCADIAN_HOME, "mind", "episodes");
+
+const corr = correlation("backfill");
 
 const args = process.argv.slice(2);
 const flag = (n: string) => args.includes(n);
@@ -128,6 +131,11 @@ if (DRY) {
   for (const c of todo.slice(0, 40)) console.log(`  [${c.source}] ${(c.bytes / 1024).toFixed(0)}KB  ${c.path}`);
   if (todo.length > 40) console.log(`  ... and ${todo.length - 40} more`);
   console.log(`\n(dry run — nothing written)`);
+  ok({
+    process: "backfill", phase: "dry-run", correlation_id: corr,
+    summary: `dry-run: ${todo.length} transcript(s) would be processed`,
+    context: { candidates: todo.length, min_bytes: MIN_BYTES, source_counts: { claude: claudeFiles.length, pi: piFiles.length } },
+  });
   process.exit(0);
 }
 
@@ -143,8 +151,8 @@ function episodeCount(): number {
   }
 }
 
-let ok = 0;
-let fail = 0;
+let okCount = 0;
+let failCount = 0;
 const startEpisodes = episodeCount();
 
 for (let i = 0; i < todo.length; i++) {
@@ -166,9 +174,25 @@ for (let i = 0; i < todo.length; i++) {
   const after = episodeCount();
   const produced = after > before;
   const status = produced ? "ok" : "no-episode";
-  if (produced) ok++;
-  else fail++;
+  if (produced) okCount++;
+  else failCount++;
   console.log(produced ? "episode written" : `skipped (${res.status === null ? "timeout" : "no draft"})`);
+
+  if (produced) {
+    ok({
+      process: "backfill", phase: "transcript", correlation_id: corr,
+      summary: `episode written for ${c.source} transcript`,
+      context: { path: c.path, source: c.source, bytes: c.bytes, episode_produced: true },
+    });
+  } else {
+    degraded({
+      process: "backfill", phase: "transcript", correlation_id: corr,
+      summary: `no episode produced for ${c.source} transcript`,
+      context: { path: c.path, source: c.source, bytes: c.bytes, episode_produced: false, exit_status: res.status },
+      cause: res.status === null ? `sleep worker timed out after ${8 * 60 * 1000}ms` : "sleep worker produced no episode (LLM draft failed or transcript yielded no content)",
+      next_action: "inspect logs/sleep.log for the session_id; re-run backfill for this transcript if the failure is transient",
+    });
+  }
 
   appendFileSync(
     MANIFEST,
@@ -178,7 +202,12 @@ for (let i = 0; i < todo.length; i++) {
 
 const endEpisodes = episodeCount();
 console.log(
-  `\nbackfill done: ${ok} episode(s) written, ${fail} produced nothing. ` +
+  `\nbackfill done: ${okCount} episode(s) written, ${failCount} produced nothing. ` +
     `episodes/ went ${startEpisodes} -> ${endEpisodes}.`
 );
 console.log(`next: run REM to digest them ->  ${BUN_BIN} ${join(CIRCADIAN_HOME, "src", "rem.ts")}`);
+ok({
+  process: "backfill", phase: "summary", correlation_id: corr,
+  summary: `backfill complete: ${okCount} written, ${failCount} skipped`,
+  context: { written: okCount, skipped: failCount, source_counts: { claude: claudeFiles.length, pi: piFiles.length }, episodes_before: startEpisodes, episodes_after: endEpisodes },
+});

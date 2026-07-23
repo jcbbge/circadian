@@ -2,33 +2,30 @@
 /**
  * doctor.ts — circadian observability surface.
  *
- * The one command that answers "is this actually working, right now, and if
- * not, why?" — the question status.ts does not, because status reports the
- * mind's *vitals* while doctor reports the *machinery's health*.
+ * The single honest health surface. READS logs/circadian.events.jsonl (the obs
+ * ledger) — it does NOT re-derive health by re-running processes. Cheap
+ * liveness probes (LLM curl, transcript existence, git status, file sizes)
+ * are fine; re-invoking wake/sleep/graze/rem is not.
  *
- * It distinguishes three states per check, because "nothing happened" is
- * ambiguous and that ambiguity is exactly what erodes trust:
- *   OK    — working, and doing/did its job
- *   IDLE  — working, but nothing to do (e.g. no episodes to digest). NOT a fault.
- *   FAIL  — genuinely broken; needs attention
- *   WARN  — degraded / stale / worth a look, but not fatal
+ * For each process (wake, graze, sleep, rem) it reports:
+ *   - when it last emitted (last event timestamp, human-readable age)
+ *   - its last outcome (ok / idle / degraded / failed)
+ *   - whether any failed/degraded event is recent AND unaddressed (no
+ *     subsequent ok from the same process)
  *
- * Checks:
- *   1. prerequisites     — bun present
- *   2. scheduler         — launchd rem jobs loaded + last exit status
- *   3. rem cadence       — did rem actually run within its expected window?
- *   4. rem error log     — recent failures (freshness-aware, not just presence)
- *   5. episode pipeline  — episodes waiting vs. absorbed (idle vs stuck)
- *   6. LLM service       — is the drafting backend reachable right now?
- *   7. session hooks     — are wake/sleep installed in Claude Code settings?
- *   8. mind repo         — is it a clean, committing git repo?
- *   9. token caps        — any whole-mind file over cap
+ * Cardinal check (the core doctrine): a process that SHOULD have run but
+ * produced NO event in its expected window = FAIL. Silent operation is the
+ * cardinal sin — the one thing the entire lineage exists to prevent.
  *
- * Exit code: 0 if no FAIL, 1 if any FAIL. WARN/IDLE do not fail the run.
- * Flags: --json for machine-readable output; --quiet to print only non-OK lines;
- *        --alert posts a message to the tower bus (~/.tower/board.jsonl) when
- *        anything is FAIL, so a broken pipeline surfaces in your next session
- *        automatically — no command to remember. Scheduled runs pass --alert.
+ * Expected windows:
+ *   rem   — 15h  (scheduled twice daily: 09:00 & 21:00; always expected)
+ *   wake  — 48h  (per-session; expected when session evidence exists)
+ *   sleep — 48h  (per-session; expected when session evidence exists)
+ *   graze — 48h  (per-session; expected when session evidence exists)
+ *
+ * Exit code: 0 if no FAIL, 1 if any FAIL. --json for machine output.
+ * --alert posts a tower bus message when anything is FAIL.
+ * --quiet prints only non-OK lines.
  */
 
 import * as fs from "fs";
@@ -36,13 +33,25 @@ import * as path from "path";
 import { homedir } from "os";
 import { execSync } from "child_process";
 import { appendFileSync, mkdirSync } from "fs";
+import { ok, correlation } from "./obs.ts";
 
 const CIRCADIAN_HOME = process.env.CIRCADIAN_HOME || path.join(homedir(), "circadian");
+const LOG_DIR = path.join(CIRCADIAN_HOME, "logs");
+const EVENTS_LEDGER = path.join(LOG_DIR, "circadian.events.jsonl");
 const MIND_DIR = path.join(CIRCADIAN_HOME, "mind");
 const EPISODES_DIR = path.join(MIND_DIR, "episodes");
-const SCOREBOARD_PATH = path.join(MIND_DIR, "scoreboard.jsonl");
-const LOG_DIR = path.join(CIRCADIAN_HOME, "logs");
-const REM_ERROR_LOG = path.join(LOG_DIR, "rem.error.log");
+const LLM_BASE_URL =
+  process.env.CIRCADIAN_LLM_BASE_URL || process.env.LOCAL_LLM_BASE_URL || "http://127.0.0.1:10240/v1";
+
+// Transcript dirs for session-evidence probing (cheap liveness probe, not a
+// process re-run). Claude Code uses ~/.claude/projects; pi uses ~/.pi/agent/sessions.
+const PROJECTS_DIR = process.env.CIRCADIAN_PROJECTS_DIR || path.join(homedir(), ".claude", "projects");
+const PI_SESSIONS_DIR = path.join(homedir(), ".pi", "agent", "sessions");
+
+// Expected windows (hours)
+const REM_EXPECTED_HOURS = 15; // twice daily at 09:00 & 21:00
+const SESSION_EXPECTED_HOURS = 48; // sessions should happen at least every 48h
+const UNADDRESSED_WINDOW_HOURS = 24; // degraded/failed within this window is "recent"
 
 const CAPS: Record<string, number> = {
   "SELF.md": 6000,
@@ -51,20 +60,27 @@ const CAPS: Record<string, number> = {
   "compost.md": 1000,
 };
 
-// rem is scheduled twice daily (09:00 & 21:00). If the newest rem event is
-// older than this, cadence is suspect. 15h gives slack past the 12h interval.
-const REM_STALE_HOURS = 15;
-// rem.error.log entries older than this are treated as historical, not active.
-const ERROR_FRESH_HOURS = 26;
-const LLM_BASE_URL =
-  process.env.CIRCADIAN_LLM_BASE_URL || process.env.LOCAL_LLM_BASE_URL || "http://127.0.0.1:10240/v1";
-
 type Level = "OK" | "IDLE" | "WARN" | "FAIL";
+
+interface CircadianEvent {
+  ts: string;
+  process: string;
+  phase: string;
+  outcome: "ok" | "idle" | "degraded" | "failed";
+  summary: string;
+  context?: Record<string, unknown>;
+  cause?: string;
+  next_action?: string;
+  session_id?: string;
+  correlation_id?: string;
+}
+
 interface Check {
   name: string;
   level: Level;
   detail: string;
 }
+
 const checks: Check[] = [];
 function add(name: string, level: Level, detail: string) {
   checks.push({ name, level, detail });
@@ -77,39 +93,21 @@ function readOrEmpty(p: string): string {
     return "";
   }
 }
+
 function tokensOf(text: string): number {
   return Math.ceil(text.length / 4);
 }
+
 function hoursSince(iso: string): number | null {
   const t = Date.parse(iso);
   if (Number.isNaN(t)) return null;
   return (Date.now() - t) / 3_600_000;
 }
+
 function fmtAge(hours: number): string {
   if (hours < 1) return `${Math.round(hours * 60)}m ago`;
   if (hours < 48) return `${hours.toFixed(1)}h ago`;
   return `${(hours / 24).toFixed(1)}d ago`;
-}
-
-interface ScoreEvent {
-  ts: string;
-  type: string;
-  propagated?: string[];
-  composted?: string[];
-}
-function loadScoreboard(): ScoreEvent[] {
-  const raw = readOrEmpty(SCOREBOARD_PATH);
-  const out: ScoreEvent[] = [];
-  for (const line of raw.split("\n")) {
-    const t = line.trim();
-    if (!t) continue;
-    try {
-      out.push(JSON.parse(t));
-    } catch {
-      /* skip */
-    }
-  }
-  return out;
 }
 
 function tryExec(cmd: string): { ok: boolean; out: string } {
@@ -120,128 +118,251 @@ function tryExec(cmd: string): { ok: boolean; out: string } {
   }
 }
 
-// --- 1. prerequisites -------------------------------------------------------
-function checkBun() {
-  const r = tryExec("command -v bun && bun --version");
-  if (r.ok) add("prerequisites", "OK", `bun present (${r.out.split("\n").pop()})`);
-  else add("prerequisites", "FAIL", "bun not found on PATH");
+// ---------- read the ledger ----------
+
+function readLedger(): CircadianEvent[] {
+  const raw = readOrEmpty(EVENTS_LEDGER);
+  const events: CircadianEvent[] = [];
+  for (const line of raw.split("\n")) {
+    const t = line.trim();
+    if (!t) continue;
+    try {
+      events.push(JSON.parse(t));
+    } catch {
+      // skip unparseable lines — but note them
+    }
+  }
+  // Sort by timestamp ascending so "last" = most recent
+  return events.sort((a, b) => (a.ts < b.ts ? -1 : 1));
 }
 
-// --- 2 & 3. scheduler + cadence --------------------------------------------
-function checkScheduler(scoreboard: ScoreEvent[]) {
-  const r = tryExec("launchctl list com.circadian.rem");
-  if (!r.ok) {
-    add("scheduler", "FAIL", "com.circadian.rem is NOT loaded in launchd — REM will never run on schedule");
-  } else {
-    const m = r.out.match(/"LastExitStatus"\s*=\s*(-?\d+)/);
-    const exit = m ? m[1] : "?";
-    if (exit === "0") add("scheduler", "OK", `launchd job loaded, last exit status 0`);
-    else add("scheduler", "WARN", `launchd job loaded but last exit status = ${exit}`);
+function eventsFor(events: CircadianEvent[], process: string): CircadianEvent[] {
+  return events.filter((e) => e.process === process);
+}
+
+// ---------- unaddressed failures ----------
+
+/**
+ * A degraded/failed event is "unaddressed" if it is recent (within
+ * UNADDRESSED_WINDOW_HOURS) and no subsequent ok event from the SAME process
+ * has been emitted — meaning the issue was never resolved.
+ */
+function findUnaddressed(procEvents: CircadianEvent[]): CircadianEvent[] {
+  const cutoff = Date.now() - UNADDRESSED_WINDOW_HOURS * 3_600_000;
+  const unaddressed: CircadianEvent[] = [];
+  for (const e of procEvents) {
+    if (e.outcome !== "degraded" && e.outcome !== "failed") continue;
+    const evtTime = Date.parse(e.ts);
+    if (Number.isNaN(evtTime) || evtTime < cutoff) continue;
+    // Recovery = a subsequent ok from the same process
+    const hasRecovery = procEvents.some((f) => f.outcome === "ok" && Date.parse(f.ts) > evtTime);
+    if (!hasRecovery) unaddressed.push(e);
+  }
+  return unaddressed;
+}
+
+// ---------- session evidence (cheap probe) ----------
+
+/**
+ * Walk transcript directories for .jsonl files modified within the expected
+ * window. This is a cheap filesystem probe — NOT a process re-run. It tells
+ * us whether a session "should have" triggered wake/sleep/graze.
+ */
+function findRecentTranscripts(dirs: string[], maxAgeHours: number): { found: boolean; latest: number | null } {
+  const cutoff = Date.now() - maxAgeHours * 3_600_000;
+  let latest = 0;
+  const maxDepth = 5;
+  const maxFiles = 5000;
+  let fileCount = 0;
+
+  function walk(d: string, depth: number) {
+    if (depth > maxDepth || fileCount > maxFiles) return;
+    let entries: fs.Dirent[];
+    try {
+      entries = fs.readdirSync(d, { withFileTypes: true });
+    } catch {
+      return;
+    }
+    for (const e of entries) {
+      if (fileCount > maxFiles) return;
+      const full = path.join(d, e.name);
+      if (e.isDirectory()) walk(full, depth + 1);
+      else if (e.name.endsWith(".jsonl")) {
+        fileCount++;
+        try {
+          const st = fs.statSync(full);
+          if (st.mtimeMs > cutoff && st.mtimeMs > latest) latest = st.mtimeMs;
+        } catch {
+          /* ignore */
+        }
+      }
+    }
   }
 
-  const remEvents = scoreboard.filter((e) => e.type === "rem");
-  if (remEvents.length === 0) {
-    add("rem cadence", "WARN", "no rem events ever recorded in scoreboard");
+  for (const dir of dirs) {
+    if (fs.existsSync(dir)) walk(dir, 0);
+  }
+
+  return { found: latest > 0, latest: latest || null };
+}
+
+// ---------- context summariser ----------
+
+function summarizeContext(ctx: Record<string, unknown> | undefined): string {
+  if (!ctx) return "";
+  const parts: string[] = [];
+  if (ctx.payload_tokens) parts.push(`payload ${ctx.payload_tokens}t`);
+  if (ctx.worldview_tokens) parts.push(`worldview ${ctx.worldview_tokens}t`);
+  if (ctx.missing_files && Array.isArray(ctx.missing_files) && (ctx.missing_files as string[]).length > 0)
+    parts.push(`missing ${(ctx.missing_files as string[]).length}`);
+  if (ctx.absorbed !== undefined) parts.push(`absorbed ${ctx.absorbed}`);
+  if (ctx.shed !== undefined) parts.push(`shed ${ctx.shed}`);
+  if (ctx.backlog_remaining !== undefined) parts.push(`backlog ${ctx.backlog_remaining}`);
+  if (ctx.arc) parts.push(`arc: ${ctx.arc}`);
+  if (ctx.transcript_chars) parts.push(`${ctx.transcript_chars} chars`);
+  if (ctx.stale === true) parts.push("STALE");
+  if (ctx.over_cap === true) parts.push("OVER-CAP");
+  if (ctx.checkpoints !== undefined) parts.push(`${ctx.checkpoints} checkpoints`);
+  if (ctx.dropped_sections !== undefined) parts.push(`pruned ${ctx.dropped_sections}`);
+  return parts.length > 0 ? ` — ${parts.join(", ")}` : "";
+}
+
+// ---------- per-process check ----------
+
+function checkProcess(
+  name: string,
+  events: CircadianEvent[],
+  expectedWindowHours: number,
+  shouldHaveRun: boolean
+): void {
+  const procEvents = eventsFor(events, name);
+
+  if (procEvents.length === 0) {
+    // Cardinal check: process should have run but produced NO event at all
+    if (shouldHaveRun) {
+      add(
+        name,
+        "FAIL",
+        `no ${name} event in ledger — expected within ${expectedWindowHours}h but produced NO event (SILENT OPERATION — cardinal sin)`
+      );
+    } else {
+      add(
+        name,
+        "WARN",
+        `no ${name} event in ledger — no session evidence to confirm it should have run`
+      );
+    }
     return;
   }
-  const last = remEvents[remEvents.length - 1];
-  const age = hoursSince(last.ts);
-  if (age === null) add("rem cadence", "WARN", `last rem event has unparseable timestamp: ${last.ts}`);
-  else if (age > REM_STALE_HOURS)
+
+  const last = procEvents[procEvents.length - 1];
+  const lastAgeH = hoursSince(last.ts);
+  const lastAgeStr = lastAgeH === null ? "unknown age" : fmtAge(lastAgeH);
+
+  // Unaddressed degraded/failed events (recent, no subsequent ok from same process)
+  const unaddressed = findUnaddressed(procEvents);
+
+  let detail = `last event ${lastAgeStr}: ${last.outcome} in ${last.phase}`;
+  if (last.summary) detail += ` — ${last.summary}`;
+  detail += summarizeContext(last.context);
+
+  // Determine level — most severe wins
+  let level: Level;
+
+  if (unaddressed.length > 0 || last.outcome === "failed") {
+    // Unaddressed failure or last event is failed → FAIL
+    level = "FAIL";
+    if (unaddressed.length > 0) {
+      const details = unaddressed
+        .map((e) => `${e.phase}: ${e.summary} (${fmtAge(hoursSince(e.ts) ?? 0)})`)
+        .join("; ");
+      detail += `\n           ${unaddressed.length} unaddressed ${unaddressed.length === 1 ? "event" : "events"}: ${details}`;
+    }
+  } else if (lastAgeH !== null && lastAgeH > expectedWindowHours && shouldHaveRun) {
+    // Cardinal check: should have run but last event is too old
+    level = "FAIL";
+    detail += `\n           CARDINAL: expected ${name} within ${expectedWindowHours}h, last event ${lastAgeStr} (SILENT OPERATION)`;
+  } else if (lastAgeH !== null && lastAgeH > expectedWindowHours && !shouldHaveRun) {
+    // Stale but no session evidence — can't confirm it should have run
+    level = "WARN";
+    detail += `\n           stale (${lastAgeStr}) but no session evidence to confirm ${name} should have run`;
+  } else if (last.outcome === "degraded") {
+    level = "WARN";
+  } else if (last.outcome === "idle") {
+    level = "IDLE";
+  } else {
+    level = "OK";
+  }
+
+  add(name, level, detail);
+}
+
+// ---------- supplementary cheap probes ----------
+
+function checkLedger(events: CircadianEvent[]): void {
+  if (!fs.existsSync(EVENTS_LEDGER)) {
     add(
-      "rem cadence",
+      "events ledger",
       "FAIL",
-      `last rem ran ${fmtAge(age)} — expected within ${REM_STALE_HOURS}h (runs 09:00 & 21:00). Scheduler may be silently skipping.`
+      `${EVENTS_LEDGER} does not exist — no process has emitted any event; the system is operating silently (cardinal sin)`
     );
-  else add("rem cadence", "OK", `last rem ran ${fmtAge(age)} (${remEvents.length} total)`);
-}
-
-// --- 4. rem error log (freshness-aware) ------------------------------------
-function checkErrorLog() {
-  if (!fs.existsSync(REM_ERROR_LOG)) {
-    add("rem errors", "OK", "no error log");
-    return;
-  }
-  const st = fs.statSync(REM_ERROR_LOG);
-  if (st.size === 0) {
-    add("rem errors", "OK", "error log empty");
-    return;
-  }
-  const ageH = (Date.now() - st.mtimeMs) / 3_600_000;
-  const lastLine = readOrEmpty(REM_ERROR_LOG).trim().split("\n").pop() || "";
-  if (ageH > ERROR_FRESH_HOURS) {
-    add("rem errors", "OK", `error log has entries but is stale (${fmtAge(ageH)}) — historical, not active`);
-  } else {
-    add("rem errors", "FAIL", `recent failure (${fmtAge(ageH)}): ${lastLine.slice(0, 120)}`);
-  }
-}
-
-// --- 5. episode pipeline (idle vs stuck) -----------------------------------
-function checkEpisodes(scoreboard: ScoreEvent[]) {
-  let waiting: string[] = [];
-  try {
-    waiting = fs.readdirSync(EPISODES_DIR).filter((f) => f.endsWith(".md") && f !== ".gitkeep");
-  } catch {
-    add("episode pipeline", "FAIL", `episodes/ dir missing at ${EPISODES_DIR}`);
-    return;
-  }
-  const remEvents = scoreboard.filter((e) => e.type === "rem");
-  const last = remEvents[remEvents.length - 1];
-
-  if (waiting.length === 0) {
+  } else if (events.length === 0) {
     add(
-      "episode pipeline",
-      "IDLE",
-      "no episodes waiting to digest — this is why rem reports 'absorbed 0'. Not a fault; run a session (sleep deposits an episode at session end)."
-    );
-    return;
-  }
-  // Episodes present. If the last rem still absorbed 0, they may be stuck.
-  if (last && (last.propagated?.length ?? 0) === 0 && (last.composted?.length ?? 0) === 0) {
-    add(
-      "episode pipeline",
-      "WARN",
-      `${waiting.length} episode(s) present but last rem absorbed/composted nothing — possible stuck digest`
+      "events ledger",
+      "FAIL",
+      `${EVENTS_LEDGER} exists but is empty — no process has emitted any event; the system is operating silently (cardinal sin)`
     );
   } else {
-    add("episode pipeline", "OK", `${waiting.length} episode(s) present; last rem processed content`);
+    const last = events[events.length - 1];
+    const age = hoursSince(last.ts);
+    add(
+      "events ledger",
+      "OK",
+      `${events.length} events, last ${age === null ? "unknown" : fmtAge(age)} (${last.process}/${last.phase} ${last.outcome})`
+    );
   }
 }
 
-// --- 6. LLM service --------------------------------------------------------
-function checkLLM() {
+function checkLLM(): void {
   const url = LLM_BASE_URL.replace(/\/$/, "") + "/models";
   const r = tryExec(`curl -s -m 5 -o /dev/null -w "%{http_code}" ${JSON.stringify(url)}`);
-  if (r.ok && r.out.trim() === "200") add("LLM service", "OK", `reachable at ${LLM_BASE_URL}`);
-  else
+  if (r.ok && r.out.trim() === "200") {
+    add("LLM service", "OK", `reachable at ${LLM_BASE_URL}`);
+  } else {
     add(
       "LLM service",
       "WARN",
       `not reachable at ${LLM_BASE_URL} (http ${r.out.trim() || "?"}) — rem/sleep drafting will fail until it's up`
     );
+  }
 }
 
-// --- 7. session hooks ------------------------------------------------------
-function checkHooks() {
+function checkHooks(): void {
   const settings = path.join(homedir(), ".claude", "settings.json");
   const raw = readOrEmpty(settings);
   if (!raw) {
-    add("session hooks", "WARN", `~/.claude/settings.json not found — wake/sleep hooks can't be verified`);
+    add("session hooks", "WARN", `~/.claude/settings.json not found — wake/sleep/graze hooks can't be verified`);
     return;
   }
   const wake = raw.includes("wake.ts");
   const sleep = raw.includes("sleep.ts");
-  if (wake && sleep) add("session hooks", "OK", "wake + sleep hooks installed in Claude Code");
-  else
+  const graze = raw.includes("graze.ts");
+  if (wake && sleep && graze) {
+    add("session hooks", "OK", "wake + sleep + graze hooks installed in Claude Code");
+  } else {
+    const missing: string[] = [];
+    if (!wake) missing.push("wake");
+    if (!sleep) missing.push("sleep");
+    if (!graze) missing.push("graze");
     add(
       "session hooks",
       "WARN",
-      `hooks incomplete: wake=${wake ? "yes" : "MISSING"}, sleep=${sleep ? "yes" : "MISSING"} — memory won't inject/deposit`
+      `hooks incomplete: ${missing.join(", ")} missing — memory won't inject/deposit/checkpoint`
     );
+  }
 }
 
-// --- 8. mind repo ----------------------------------------------------------
-function checkMindRepo() {
+function checkMindRepo(): void {
   const r = tryExec(`cd ${JSON.stringify(MIND_DIR)} && git rev-parse --is-inside-work-tree 2>/dev/null`);
   if (!r.ok || r.out.trim() !== "true") {
     add("mind repo", "FAIL", `${MIND_DIR} is not a git repo — history/archive is not being kept`);
@@ -250,39 +371,89 @@ function checkMindRepo() {
   const lastCommit = tryExec(`cd ${JSON.stringify(MIND_DIR)} && git log -1 --format=%ci 2>/dev/null`);
   if (lastCommit.ok && lastCommit.out) {
     const age = hoursSince(lastCommit.out.replace(" ", "T").replace(" ", ""));
-    const ageStr = age === null ? lastCommit.out : fmtAge(age);
-    add("mind repo", "OK", `git repo, last commit ${ageStr}`);
+    add("mind repo", "OK", `git repo, last commit ${age === null ? lastCommit.out : fmtAge(age)}`);
   } else {
     add("mind repo", "WARN", "git repo with no commits yet");
   }
 }
 
-// --- 9. token caps ---------------------------------------------------------
-function checkCaps() {
+function checkCaps(): void {
   const over: string[] = [];
   for (const [name, cap] of Object.entries(CAPS)) {
-    const tk = tokensOf(readOrEmpty(path.join(MIND_DIR, name)));
+    const text = readOrEmpty(path.join(MIND_DIR, name));
+    const tk = tokensOf(text);
     if (tk > cap) over.push(`${name} ${tk}/${cap}`);
   }
   if (over.length === 0) add("token caps", "OK", "all whole-mind files under cap");
   else add("token caps", "WARN", `over cap: ${over.join(", ")}`);
 }
 
-// --- render ----------------------------------------------------------------
+function checkEpisodes(events: CircadianEvent[]): void {
+  let waiting: string[] = [];
+  try {
+    waiting = fs.readdirSync(EPISODES_DIR).filter((f) => f.endsWith(".md") && f !== ".gitkeep");
+  } catch {
+    add("episode pipeline", "WARN", `episodes/ dir missing at ${EPISODES_DIR}`);
+    return;
+  }
+
+  const remEvents = eventsFor(events, "rem");
+  if (remEvents.length === 0) {
+    if (waiting.length === 0) {
+      add("episode pipeline", "IDLE", "no episodes waiting, no rem events in ledger");
+    } else {
+      add("episode pipeline", "WARN", `${waiting.length} episode(s) present but no rem events in ledger — backlog may be stuck`);
+    }
+    return;
+  }
+
+  // Find the last rem event with commit context (absorbed/shed)
+  const lastCommit = [...remEvents].reverse().find((e) => e.context?.absorbed !== undefined || e.context?.shed !== undefined);
+  if (!lastCommit) {
+    const last = remEvents[remEvents.length - 1];
+    add("episode pipeline", "IDLE", `no episodes waiting; last rem event: ${last.phase} ${last.outcome}`);
+    return;
+  }
+
+  const absorbed = (lastCommit.context?.absorbed as number) ?? 0;
+  const shed = (lastCommit.context?.shed as number) ?? 0;
+  const backlog = (lastCommit.context?.backlog_remaining as number) ?? 0;
+
+  if (waiting.length === 0) {
+    add("episode pipeline", "IDLE", `no episodes waiting to digest; last rem: absorbed ${absorbed}, shed ${shed}, backlog ${backlog}`);
+  } else if (absorbed === 0 && shed === 0) {
+    add("episode pipeline", "WARN", `${waiting.length} episode(s) present but last rem commit absorbed/shed nothing — possible stuck digest`);
+  } else {
+    add("episode pipeline", "OK", `${waiting.length} episode(s) present; last rem: absorbed ${absorbed}, shed ${shed}, backlog ${backlog}`);
+  }
+}
+
+// ---------- render ----------
+
 const ICON: Record<Level, string> = { OK: "✓", IDLE: "•", WARN: "!", FAIL: "✗" };
 
 function main() {
   const args = process.argv.slice(2);
-  const scoreboard = loadScoreboard();
+  const corr = correlation("doctor");
+  const events = readLedger();
 
-  checkBun();
-  checkScheduler(scoreboard);
-  checkErrorLog();
-  checkEpisodes(scoreboard);
+  // Session evidence: are there recent transcripts that imply a session
+  // should have triggered wake/sleep/graze?
+  const sessionEvidence = findRecentTranscripts([PROJECTS_DIR, PI_SESSIONS_DIR], SESSION_EXPECTED_HOURS);
+
+  // Core: read the ledger for each process
+  checkLedger(events);
+  checkProcess("wake", events, SESSION_EXPECTED_HOURS, sessionEvidence.found);
+  checkProcess("graze", events, SESSION_EXPECTED_HOURS, sessionEvidence.found);
+  checkProcess("sleep", events, SESSION_EXPECTED_HOURS, sessionEvidence.found);
+  checkProcess("rem", events, REM_EXPECTED_HOURS, true); // rem is always expected (time-scheduled)
+
+  // Supplementary cheap probes
   checkLLM();
   checkHooks();
   checkMindRepo();
   checkCaps();
+  checkEpisodes(events);
 
   const anyFail = checks.some((c) => c.level === "FAIL");
 
@@ -292,7 +463,7 @@ function main() {
     try {
       const board = path.join(homedir(), ".tower", "board.jsonl");
       mkdirSync(path.dirname(board), { recursive: true });
-      const fails = checks.filter((c) => c.level === "FAIL").map((c) => `${c.name}: ${c.detail}`);
+      const fails = checks.filter((c) => c.level === "FAIL").map((c) => `${c.name}: ${c.detail.split("\n")[0]}`);
       appendFileSync(
         board,
         JSON.stringify({
@@ -310,13 +481,36 @@ function main() {
     }
   }
 
+  // --json: machine-readable output, exit 1 on any FAIL
   if (args.includes("--json")) {
     console.log(
-      JSON.stringify({ ts: new Date().toISOString(), healthy: !anyFail, checks }, null, 2)
+      JSON.stringify(
+        {
+          ts: new Date().toISOString(),
+          healthy: !anyFail,
+          checks,
+        },
+        null,
+        2
+      )
     );
+    // Doctor's own ok event — it successfully ran the health check
+    ok({
+      process: "doctor",
+      phase: "health-check",
+      correlation_id: corr,
+      summary: `doctor run complete: ${checks.length} checks, ${anyFail ? "UNHEALTHY" : "healthy"}`,
+      context: {
+        checks: checks.length,
+        healthy: !anyFail,
+        session_evidence: sessionEvidence.found,
+        events_in_ledger: events.length,
+      },
+    });
     process.exit(anyFail ? 1 : 0);
   }
 
+  // Human-readable render
   const quiet = args.includes("--quiet");
   console.log("=== circadian doctor ===\n");
   for (const c of checks) {
@@ -331,6 +525,20 @@ function main() {
   if (anyFail) console.log("\nVERDICT: NOT HEALTHY — see ✗ lines above.");
   else if (counts.WARN) console.log("\nVERDICT: working, with warnings (! lines) worth a look.");
   else console.log("\nVERDICT: healthy. Everything that should be running is running.");
+
+  // Doctor's own ok event
+  ok({
+    process: "doctor",
+    phase: "health-check",
+    correlation_id: corr,
+    summary: `doctor run complete: ${checks.length} checks, ${anyFail ? "UNHEALTHY" : "healthy"}`,
+    context: {
+      checks: checks.length,
+      healthy: !anyFail,
+      session_evidence: sessionEvidence.found,
+      events_in_ledger: events.length,
+    },
+  });
 
   process.exit(anyFail ? 1 : 0);
 }
