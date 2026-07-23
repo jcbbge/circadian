@@ -634,13 +634,28 @@ function parseClaudeOutput(raw: string): ParsedOutput {
   };
 }
 
-function validateCompostAgainstEpisodes(compost: ParsedOutput["compost"], episodes: Episode[]) {
+function validateCompostAgainstEpisodes(compost: ParsedOutput["compost"], episodes: Episode[]): { kept: ParsedOutput["compost"]; dropped: string[] } {
   const known = new Set(episodes.map((e) => e.filename));
+  const kept: ParsedOutput["compost"] = [];
+  const dropped: string[] = [];
   for (const m of compost) {
-    if (!known.has(m.episode)) {
-      throw new Error(`COMPOST_JSON references an episode file that doesn't exist: ${m.episode}`);
-    }
+    if (known.has(m.episode)) kept.push(m);
+    else dropped.push(m.episode);
   }
+  // A hallucinated/typo'd filename in the model's compost list must NOT stall
+  // the whole metabolism — drop the invalid refs, keep the valid ones, and
+  // surface the drops as telemetry. Digestion-completeness still governs the
+  // kept entries; this only stops a naming slip from blocking everything.
+  if (dropped.length > 0) {
+    degraded({
+      process: "rem", phase: "compost-select",
+      summary: `dropped ${dropped.length} compost reference(s) to nonexistent episode file(s)`,
+      context: { dropped, kept_count: kept.length },
+      cause: "model emitted COMPOST_JSON filenames not present in episodes/ (hallucination or typo)",
+      next_action: "no action needed — valid composts proceeded; the referenced episodes remain for future passes",
+    });
+  }
+  return { kept, dropped };
 }
 
 // Soft size check. Returns a status the caller surfaces as telemetry — it does
@@ -742,8 +757,9 @@ function validateAndCompute(
   raw: string,
   ctx: { selfMd: string; nowMd: string; compostMd: string; episodes: Episode[] }
 ): ValidatedRem {
-  const parsed = parseClaudeOutput(raw);
-  validateCompostAgainstEpisodes(parsed.compost, ctx.episodes);
+  const parsedRaw = parseClaudeOutput(raw);
+  const { kept: keptCompost } = validateCompostAgainstEpisodes(parsedRaw.compost, ctx.episodes);
+  const parsed = { ...parsedRaw, compost: keptCompost };
 
   const oldSelfTokens = tokensOf(ctx.selfMd);
   const newSelfTokens = tokensOf(parsed.selfMd);
@@ -1110,10 +1126,35 @@ async function runOnePass(opts: { dryRun: boolean; batch: number; pass: number; 
     execFileSync("git", ["commit", "-m", subject + body], { cwd: MIND_DIR });
 
     // Shed commit: separate so the archived content sits one revision behind
-    // the deletion.
+    // the deletion. Robust to an episode that is untracked (e.g. shed before
+    // the absorb staged it): git rm only what git tracks; for anything else,
+    // delete the file directly so the shed can never fail on a pathspec.
     if (parsed.compost.length > 0) {
       for (const m of parsed.compost) {
-        execFileSync("git", ["rm", "--quiet", path.join("episodes", m.episode)], { cwd: MIND_DIR });
+        const rel = path.join("episodes", m.episode);
+        const abs = path.join(MIND_DIR, rel);
+        let tracked = true;
+        try {
+          execFileSync("git", ["ls-files", "--error-unmatch", rel], { cwd: MIND_DIR, stdio: "ignore" });
+        } catch {
+          tracked = false;
+        }
+        if (tracked) {
+          execFileSync("git", ["rm", "--quiet", rel], { cwd: MIND_DIR });
+        } else {
+          // Not in the index (born untracked, absorb commit already happened):
+          // remove from disk and stage the deletion so history records the shed.
+          try {
+            fs.rmSync(abs, { force: true });
+          } catch {
+            /* already gone */
+          }
+          try {
+            execFileSync("git", ["add", "-A", rel], { cwd: MIND_DIR });
+          } catch {
+            /* best effort */
+          }
+        }
       }
       execFileSync(
         "git",
