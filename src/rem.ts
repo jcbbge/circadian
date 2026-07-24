@@ -36,6 +36,7 @@ import { execFileSync, spawnSync } from "child_process";
 import { createHash } from "crypto";
 import { complete } from "./llm.ts";
 import { ok, idle, degraded, fail, correlation } from "./obs.ts";
+import { MUTATION_GRAMMAR, parseMutations, applyMutations, noChangeGreeting, type Mutation, type ParsedMutations } from "./mutate.ts";
 
 // ---- paths (per MIND-SPEC.md) ----
 // CIRCADIAN_HOME overrides; default ~/circadian. See wake.ts for the contract.
@@ -124,6 +125,9 @@ interface ScoreEvent {
   reason?: string;
   propagated?: string[];
   composted?: string[];
+  /** Did this wave actually change SELF.md? false = the model echoed its
+   * input back — the flatline signal doctor watches for. */
+  self_changed?: boolean;
 }
 
 function loadScoreboard(): ScoreEvent[] {
@@ -454,9 +458,18 @@ ${transcriptsBlock}
 
 === your tasks, in order ===
 
-1. For each episode marked NEW since last REM, judge: does it confirm, contradict, supersede, or deepen the existing worldview in SELF.md? Use that judgment to rewrite SELF.md.
+1. For each episode marked NEW since last REM, judge it against the current SELF.md above: does it confirm, contradict, supersede, or deepen the existing worldview?
 
-2. Rewrite SELF.md. Prefer shrinking to growing — distill, do not accrete — but this is a guideline you aim for, NOT a hard limit: grow when there is genuinely more worldview to hold, shrink when a belief has been absorbed or superseded. Keep exactly these four sections, in this order: "## Who I am across sessions", "## Doctrine" (each belief stamped with its origin episode as [ep:YYYY-MM-DD]), "## Motifs" (recurring themes, aim for about 10 lines), "## How we work". Aim for around 6000 tokens; a few hundred over is fine. Only a gross runaway (many thousands over — a sign you pasted a transcript instead of a worldview) is a problem.
+2. Express EVERY judgment as MUTATIONS. You never output SELF.md — you emit mutation lines and the engine applies them mechanically. This is deliberate: a full rewrite makes copying the safest move; mutations make change cheaper than stagnation.
+
+${MUTATION_GRAMMAR}
+
+Mutation rules:
+- Prefer the smallest mutation that carries the lesson. One DEEPEN beats a paragraph.
+- DEEPEN and ADD must carry the why-chain — the reasoning, a verbatim quote where voice matters — never a bare conclusion. Ash is banned.
+- CONFIRM is real work: a belief that keeps earning its residence should say so; beliefs nobody confirms are drifting toward compost.
+- If genuinely nothing moved, emit exactly ONE line: NO-CHANGE :: <justification>. The justification must name the WORK-side reason (e.g. "six sync-test episodes repeat a lesson Doctrine[5] already holds — the work is circling the same validation loop"), because it will be spoken to jrg at the next wake, to his face.
+- An empty MUTATIONS block is invalid. Mutate or confess — silence is not an option.
 
 3. Using the transcript excerpts and the injected-items list, judge which injected items actually propagated (were read, referenced, or built upon) recently. Items with zero observed propagation across their lifetime are compost candidates (Law 6) — candidacy only, this does not by itself compost anything.
 
@@ -466,15 +479,13 @@ ${transcriptsBlock}
 
 6. Draft tomorrow's greeting.md as a DREAM-ECHO: one short spoken first-person voice from the mind to jrg, 1-3 lines. This is NOT a memo with labels ("Arc:" / "First move:") — it is the mind waking up and speaking. Weave in, naturally: what got carried forward from the digested episodes (the thing worth knowing overnight), the live tension that is still open, and the next move. Anchor-aware (Law 8): orient to the WORK — the arc, the tension, the move — never mention Circadian, REM, SELF.md, episodes, or the memory system itself, and never narrate your own process. Speak like a trusted collaborator resuming mid-thought, with jrg's register allowed (he responds to intensity and substance, not coddling). No flattery, no filler, no preamble. It must still pass the Law-3 test: if it isn't good enough to say out loud to him at the top of a session, it isn't earning its keep. Example register (do not copy): "Kept the venue-field guard from silently eating seven deals while you were away. The ACP bidirectional-state question is still the open one — that's where to start."
 
-7. OPTIONAL: if SELF.md grew this pass and the growth is meaningful, you MAY add a one-line note on why in the SELF_GROWTH_JUSTIFICATION block. This is informational only — not required, not a gate. Leave it empty if you have nothing to add.
-
 (USER.md is handled by a separate dedicated pass after this one — do not rewrite it here.)
 
-=== required output format — EXACTLY these six blocks, in this order, nothing else outside them ===
+=== required output format — EXACTLY these five blocks, in this order, nothing else outside them ===
 
-===SELF_MD===
-<the full rewritten SELF.md content>
-===END_SELF_MD===
+===MUTATIONS===
+<one mutation per line, following the grammar exactly; NEVER empty — mutate or confess NO-CHANGE>
+===END_MUTATIONS===
 
 ===SERENDIPITY_LINE===
 <the single new NOW.md Serendipity line; must start with "Might be nothing:"; must be exactly one line>
@@ -491,10 +502,6 @@ ${transcriptsBlock}
 ===PROPAGATED_JSON===
 <a JSON array, possibly empty ([]), of strings identifying which injected items above propagated recently>
 ===END_PROPAGATED_JSON===
-
-===SELF_GROWTH_JUSTIFICATION===
-<one line if SELF.md grew in token count this pass; leave this block completely empty otherwise>
-===END_SELF_GROWTH_JUSTIFICATION===
 `;
 }
 
@@ -534,12 +541,13 @@ Output EXACTLY one block, nothing else:
 // ---------------------------------------------------------------------
 
 interface ParsedOutput {
-  selfMd: string;
+  mutations: Mutation[];
+  malformedMutations: string[];
+  droppedConfession: string | null;
   serendipityLine: string;
   greetingMd: string;
   compost: { episode: string; taught: string; absorbed_where: string }[];
   propagated: string[];
-  growthJustification: string;
 }
 
 function extractBlock(raw: string, name: string): string | null {
@@ -551,15 +559,12 @@ function extractBlock(raw: string, name: string): string | null {
 
 function parseClaudeOutput(raw: string): ParsedOutput {
   const names = [
-    "SELF_MD",
+    "MUTATIONS",
     "SERENDIPITY_LINE",
     "GREETING_MD",
     "COMPOST_JSON",
     "PROPAGATED_JSON",
   ];
-  // SELF_GROWTH_JUSTIFICATION is OPTIONAL now — growth no longer needs a permission
-  // slip. If the model provides it, we keep it as a note; if not, no problem.
-  const optional = ["SELF_GROWTH_JUSTIFICATION"];
   const blocks: Record<string, string> = {};
   const missing: string[] = [];
   for (const n of names) {
@@ -567,13 +572,15 @@ function parseClaudeOutput(raw: string): ParsedOutput {
     if (b === null) missing.push(n);
     else blocks[n] = b.trim();
   }
-  for (const n of optional) {
-    const b = extractBlock(raw, n);
-    blocks[n] = b === null ? "" : b.trim();
-  }
   if (missing.length > 0) {
     throw new Error(`claude output missing required block(s): ${missing.join(", ")}`);
   }
+
+  // parseMutations is a forgiving reader of a strict grammar: malformed lines
+  // and incoherent confessions are collected for loud telemetry, and it only
+  // throws (back-pressure) when nothing valid survives at all.
+  const pm: ParsedMutations = parseMutations(blocks.MUTATIONS);
+  const mutations = pm.mutations;
 
   let compost: any;
   try {
@@ -619,20 +626,14 @@ function parseClaudeOutput(raw: string): ParsedOutput {
     throw new Error(`GREETING_MD is a monologue (${greetingLines.length} lines) — the dream-echo should be a few spoken lines, not a briefing`);
   }
 
-  const requiredSelfHeadings = ["## Who I am across sessions", "## Doctrine", "## Motifs", "## How we work"];
-  for (const h of requiredSelfHeadings) {
-    if (!blocks.SELF_MD.includes(h)) {
-      throw new Error(`SELF_MD missing required heading: ${h}`);
-    }
-  }
-
   return {
-    selfMd: blocks.SELF_MD,
+    mutations,
+    malformedMutations: pm.malformed,
+    droppedConfession: pm.droppedConfession,
     serendipityLine: blocks.SERENDIPITY_LINE,
     greetingMd: blocks.GREETING_MD,
     compost,
     propagated,
-    growthJustification: blocks.SELF_GROWTH_JUSTIFICATION,
   };
 }
 
@@ -745,6 +746,17 @@ interface ValidatedRem {
   parsed: ParsedOutput;
   oldSelfTokens: number;
   newSelfTokens: number;
+  /** Whitespace-normalized comparison of old vs new SELF.md. An unchanged
+   * SELF on a wave that absorbed episodes means the model echoed instead of
+   * rewriting — digestion was narrated, not performed. Under the mutation
+   * engine this is derived from applied mutations, and false ONLY on an
+   * explicit, justified NO-CHANGE confession. */
+  selfChanged: boolean;
+  newSelfMd: string;
+  appliedMutations: string[];
+  rejectedMutations: { line: string; reason: string }[];
+  noChangeJustification: string | null;
+  newGreetingMd: string;
   newNowMd: string;
   newCompostMd: string;
   dateStr: string;
@@ -763,8 +775,19 @@ function validateAndCompute(
   const { kept: keptCompost } = validateCompostAgainstEpisodes(parsedRaw.compost, ctx.episodes);
   const parsed = { ...parsedRaw, compost: keptCompost };
 
+  // MUTATION ENGINE: apply the model's mutations mechanically. Echo is
+  // structurally impossible — there is no full document in the model's output
+  // to copy. applyMutations throws if every mutation misses its target
+  // (back-pressure), and returns the confession on a NO-CHANGE wave.
+  const applied = applyMutations(ctx.selfMd, parsed.mutations);
+
+  // On a NO-CHANGE wave the greeting is MECHANICAL — the system's own flat
+  // voice carrying the confession to jrg's face at wake. The model-drafted
+  // dream-echo is only trusted on waves where something actually moved.
+  const newGreetingMd = applied.noChange !== null ? noChangeGreeting(applied.noChange) : parsed.greetingMd;
+
   const oldSelfTokens = tokensOf(ctx.selfMd);
-  const newSelfTokens = tokensOf(parsed.selfMd);
+  const newSelfTokens = tokensOf(applied.text);
 
   // Size is a SOFT target, not a wall. Growth is fine — the worldview is a
   // living, free process; it grows when there is more to hold and shrinks when
@@ -777,7 +800,7 @@ function validateAndCompute(
     if (chk.status === "runaway") runawayFaults.push(`${name} ${chk.tokens}t is a runaway (> ${Math.floor(chk.target * RUNAWAY_FACTOR)}t = ${RUNAWAY_FACTOR}x target ${chk.target}) — likely a dumped transcript, not a worldview`);
   };
 
-  note(checkSize("SELF.md", parsed.selfMd, TARGET_SELF_TOKENS), "SELF.md");
+  note(checkSize("SELF.md", applied.text, TARGET_SELF_TOKENS), "SELF.md");
 
   const newNowMd = replaceSection(ctx.nowMd, "Serendipity", parsed.serendipityLine);
   note(checkSize("NOW.md", newNowMd, TARGET_NOW_TOKENS), "NOW.md");
@@ -795,7 +818,24 @@ function validateAndCompute(
     throw new Error(`RUNAWAY (not mere over-target): ${runawayFaults.join("; ")}`);
   }
 
-  return { parsed, oldSelfTokens, newSelfTokens, newNowMd, newCompostMd: pruned.md, dateStr, pruneInfo: { dropped_sections: pruned.dropped_sections, before_tokens: pruned.before_tokens, after_tokens: pruned.after_tokens }, sizeNotes };
+  const selfChanged = applied.applied.length > 0;
+
+  return {
+    parsed,
+    oldSelfTokens,
+    newSelfTokens,
+    selfChanged,
+    newSelfMd: applied.text,
+    appliedMutations: applied.applied,
+    rejectedMutations: applied.rejected,
+    noChangeJustification: applied.noChange,
+    newGreetingMd,
+    newNowMd,
+    newCompostMd: pruned.md,
+    dateStr,
+    pruneInfo: { dropped_sections: pruned.dropped_sections, before_tokens: pruned.before_tokens, after_tokens: pruned.after_tokens },
+    sizeNotes,
+  };
 }
 
 function atomicWrite(targetPath: string, content: string) {
@@ -1027,7 +1067,7 @@ async function runOnePass(opts: { dryRun: boolean; batch: number; pass: number; 
     return "validation-failed";
   }
 
-  const { parsed, oldSelfTokens, newSelfTokens, newNowMd, newCompostMd, dateStr, pruneInfo, sizeNotes } = computed;
+  const { parsed, oldSelfTokens, newSelfTokens, selfChanged, newSelfMd, appliedMutations, rejectedMutations, noChangeJustification, newGreetingMd, newNowMd, newCompostMd, dateStr, pruneInfo, sizeNotes } = computed;
 
   // pruneCompost dropping sections is the compost log excreting old history —
   // normal metabolism (git is the archive), but surface it so a cold reader
@@ -1042,9 +1082,11 @@ async function runOnePass(opts: { dryRun: boolean; batch: number; pass: number; 
 
   try {
     // All validation above passed; every write below is now safe to apply.
-    atomicWrite(SELF_PATH, parsed.selfMd);
+    // newSelfMd came out of the mutation engine — mechanical application of
+    // the model's mutations, never a model-emitted document.
+    atomicWrite(SELF_PATH, newSelfMd);
     atomicWrite(NOW_PATH, newNowMd);
-    atomicWrite(GREETING_PATH, parsed.greetingMd);
+    atomicWrite(GREETING_PATH, newGreetingMd);
     atomicWrite(COMPOST_PATH, newCompostMd);
 
     for (const m of parsed.compost) {
@@ -1079,7 +1121,55 @@ async function runOnePass(opts: { dryRun: boolean; batch: number; pass: number; 
       worldview_tokens: newSelfTokens,
       propagated: parsed.propagated,
       composted: parsed.compost.map((m) => m.episode),
+      self_changed: selfChanged,
     });
+
+    // Mutation-engine telemetry: what actually moved, what missed, and — on a
+    // NO-CHANGE wave — the confession that will be spoken at the next wake.
+    // Under this engine a silent flatline is structurally impossible: echo has
+    // no document to copy, and stagnation costs a signed justification.
+    if (noChangeJustification !== null) {
+      degraded({
+        process: "rem", phase: "absorb", correlation_id: corr,
+        summary: `NO-CHANGE wave: worldview deliberately untouched despite ${newEpisodeCount} new episode(s)`,
+        context: { absorbed: newEpisodeCount, justification: noChangeJustification, batch, pass: opts.pass },
+        cause: `model confessed: ${noChangeJustification}`,
+        next_action: "the confession is now greeting.md — jrg hears it at next wake and rules on it; no automated action",
+      });
+    } else {
+      ok({
+        process: "rem", phase: "absorb", correlation_id: corr,
+        summary: `worldview mutated: ${appliedMutations.length} applied${rejectedMutations.length ? `, ${rejectedMutations.length} rejected` : ""}`,
+        context: { applied: appliedMutations, ...(rejectedMutations.length ? { rejected: rejectedMutations } : {}), batch, pass: opts.pass },
+      });
+      if (rejectedMutations.length > 0) {
+        degraded({
+          process: "rem", phase: "absorb", correlation_id: corr,
+          summary: `${rejectedMutations.length} mutation(s) referenced targets that don't exist in SELF.md`,
+          context: { rejected: rejectedMutations },
+          cause: "model referenced doctrine numbers or motifs not present on disk (stale mental copy or hallucination)",
+          next_action: "no action needed — valid mutations applied; if this recurs every wave, the model is not reading the SELF.md it is given",
+        });
+      }
+    }
+    if (parsed.malformedMutations.length > 0) {
+      degraded({
+        process: "rem", phase: "absorb", correlation_id: corr,
+        summary: `${parsed.malformedMutations.length} mutation line(s) violated the grammar and were dropped`,
+        context: { malformed: parsed.malformedMutations },
+        cause: "model emitted lines outside the mutation grammar",
+        next_action: "valid mutations proceeded; if malformed lines dominate every wave, tighten the grammar examples in the prompt",
+      });
+    }
+    if (parsed.droppedConfession !== null) {
+      degraded({
+        process: "rem", phase: "absorb", correlation_id: corr,
+        summary: "model claimed NO-CHANGE while also emitting mutations — confession dropped, mutations won",
+        context: { dropped_confession: parsed.droppedConfession, applied: appliedMutations.length },
+        cause: "incoherent output: stagnation confessed alongside evidence of motion",
+        next_action: "nothing lost — the mutations applied; recurring incoherence means the model is padding its output",
+      });
+    }
 
     // USER-MODEL pass (task 8): extract this wave's user-observed lines and,
     // if any are substantive, run a SMALL focused call to update USER.md. Its
@@ -1137,7 +1227,10 @@ async function runOnePass(opts: { dryRun: boolean; batch: number; pass: number; 
     const subject = `rem: ${dateStr} — absorbed ${newEpisodeCount}, shed ${parsed.compost.length}, worldview ${Math.round(
       newSelfTokens / 1000
     )}k tokens`;
-    const body = newSelfTokens > oldSelfTokens ? `\n\njustification: ${parsed.growthJustification}` : "";
+    const body =
+      noChangeJustification !== null
+        ? `\n\nno-change: ${noChangeJustification}`
+        : `\n\nmutations:\n${appliedMutations.map((a) => `  - ${a}`).join("\n")}`;
 
     // Absorb commit: stage episodes/ wholesale — sleep-drafted episodes are
     // born untracked, and composted ones just gained their taught-line; both

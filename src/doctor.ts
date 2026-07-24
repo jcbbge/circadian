@@ -472,6 +472,59 @@ function checkEpisodes(events: CircadianEvent[]): void {
   }
 }
 
+// ---------- worldview motion (flatline guard) ----------
+
+/**
+ * The anima failure mode: REM commits "absorbed N" every wave while SELF.md
+ * never changes — digestion narrated, not performed. rem.ts stamps each
+ * scoreboard rem event with self_changed; this check reads the trail.
+ * One flatline wave can be legitimate (episodes genuinely taught nothing
+ * new). Consecutive flatlines across waves that DID absorb episodes mean
+ * the worldview has stopped metabolizing — the greeting goes stale and the
+ * whole cycle becomes theater. That is FAIL, not WARN.
+ */
+function checkWorldviewMotion(): void {
+  const raw = readOrEmpty(path.join(MIND_DIR, "scoreboard.jsonl"));
+  const remEvents: { ts: string; self_changed?: boolean; composted?: string[] }[] = [];
+  for (const line of raw.split("\n")) {
+    const t = line.trim();
+    if (!t) continue;
+    try {
+      const e = JSON.parse(t);
+      if (e.type === "rem") remEvents.push(e);
+    } catch {
+      /* unparseable lines are checkLedger's problem */
+    }
+  }
+  if (remEvents.length === 0) {
+    add("worldview motion", "IDLE", "no rem events in scoreboard yet");
+    return;
+  }
+
+  // Only waves that digested something count — an idle wave changing nothing
+  // is correct behavior, not a flatline.
+  const digestingWaves = remEvents.filter((e) => (e.composted?.length ?? 0) > 0);
+  const stamped = digestingWaves.filter((e) => e.self_changed !== undefined);
+  if (stamped.length === 0) {
+    add("worldview motion", "IDLE", "no rem events carry self_changed yet (stamp added 2026-07-24); next wave will report");
+    return;
+  }
+
+  let consecutiveFlat = 0;
+  for (let i = stamped.length - 1; i >= 0; i--) {
+    if (stamped[i].self_changed === false) consecutiveFlat++;
+    else break;
+  }
+
+  if (consecutiveFlat === 0) {
+    add("worldview motion", "OK", `last digesting wave rewrote SELF.md (${stamped.length} stamped wave(s) on record)`);
+  } else if (consecutiveFlat === 1) {
+    add("worldview motion", "WARN", "last digesting wave left SELF.md unchanged — one echo can be legitimate; two is a flatline");
+  } else {
+    add("worldview motion", "FAIL", `${consecutiveFlat} consecutive digesting waves left SELF.md unchanged — REM is narrating digestion without performing it; the greeting is going stale. Check the LLM at :10240 (echoing input?) and the size of the meal.`);
+  }
+}
+
 // ---------- pending sleep queue (W1 contract) ----------
 
 interface PendingSleepEntry {
@@ -593,6 +646,7 @@ function main() {
   checkMindRepo();
   checkCaps();
   checkEpisodes(events);
+  checkWorldviewMotion();
   checkPendingSleepQueue();
   checkLaunchdAgents();
 
