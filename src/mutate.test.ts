@@ -65,17 +65,19 @@ describe("parseMutations", () => {
 
 describe("applyMutations against the real SELF.md", () => {
   test("CONFIRM stamps and refreshes without duplicating", () => {
-    const baseline = (realSelf.match(/\[confirmed:/g) || []).length;
+    // The living document may already carry a confirm on Doctrine[5] from a
+    // real wave (it earned it; the test must not assume a virgin world). The
+    // invariant is REFRESH-NOT-ACCUMULATE: after N confirms of the same
+    // belief, its title line holds exactly ONE stamp, and the rest of the
+    // document's stamps are untouched.
+    const d5Line = (s: string) => s.split("\n").find((l) => /^\*\*5\.\s/.test(l)) || "";
+    const othersBaseline = (realSelf.match(/\[confirmed:/g) || []).length - (d5Line(realSelf).match(/\[confirmed:/g) || []).length;
     const once = applyMutations(realSelf, parseMutations("CONFIRM Doctrine[5]").mutations);
     expect(once.applied.length).toBe(1);
     expect(once.text).toMatch(/\*\*5\. .*\[confirmed:\d{4}-\d{2}-\d{2}\]/);
-    // Re-confirming refreshes Doctrine[5]'s stamp, never accumulates a second
-    // one — measured RELATIVE to the living document, which may already carry
-    // confirms from real waves (it earned them; the test must not assume a
-    // virgin world).
     const twice = applyMutations(once.text, parseMutations("CONFIRM Doctrine[5]").mutations);
-    const stamps = (twice.text.match(/\[confirmed:/g) || []).length;
-    expect(stamps).toBe(baseline + 1);
+    expect((d5Line(twice.text).match(/\[confirmed:/g) || []).length).toBe(1);
+    expect((twice.text.match(/\[confirmed:/g) || []).length).toBe(othersBaseline + 1);
   });
 
   test("DEEPEN appends the why-chain, auto-stamped", () => {
