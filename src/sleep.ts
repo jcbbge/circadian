@@ -340,6 +340,14 @@ export function redactMindEcho(transcriptText: string, greetings: string[]): { t
     for (const line of g.split("\n")) {
       const n = normEcho(line);
       if (n.length >= 30) echoSentences.push(n); // short fragments over-match
+      // Sentence-level fragments too: a greeting line often holds 2+
+      // sentences and sessions re-speak them separately (found live: a
+      // user-observed line attributed the greeting's second sentence to jrg
+      // — the mind's voice masquerading as his, headed for USER.md).
+      for (const s of line.split(/(?<=[.!?])\s+/)) {
+        const ns = normEcho(s);
+        if (ns.length >= 30) echoSentences.push(ns);
+      }
     }
   }
   if (echoSentences.length === 0) return { text: transcriptText, redactedLines: 0 };
