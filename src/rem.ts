@@ -36,7 +36,7 @@ import { execFileSync, spawnSync } from "child_process";
 import { createHash } from "crypto";
 import { complete } from "./llm.ts";
 import { ok, idle, degraded, fail, correlation } from "./obs.ts";
-import { MUTATION_GRAMMAR, parseMutations, applyMutations, noChangeGreeting, type Mutation, type ParsedMutations } from "./mutate.ts";
+import { MUTATION_GRAMMAR, parseMutations, applyMutations, noChangeGreeting, selfSimilarity, type Mutation, type ParsedMutations } from "./mutate.ts";
 import { clusterEpisodes, type EpisodeCluster } from "./ltp.ts";
 
 // ---- paths (per MIND-SPEC.md) ----
@@ -71,6 +71,15 @@ const TARGET_USER_TOKENS = 2000;
 const TARGET_NOW_TOKENS = 3000;
 const TARGET_COMPOST_TOKENS = 1000;
 const RUNAWAY_FACTOR = 1.75; // only a gross overshoot (e.g. SELF > 10.5k) is a real fault
+
+// ---- redundancy guard: the instrument size could never provide ----
+// Size alone cannot tell a worldview that genuinely grew from one stuttering
+// the same sentence fourteen times — both read as "over target". These are the
+// thresholds on self-similarity (fraction of the document redundant with
+// itself). Unlike size, redundancy has no legitimate reason to rise: a mind
+// that repeats itself is not holding more, it is holding the same thing badly.
+const SIMILARITY_WARN = 0.10; // surfaced loudly in telemetry and the commit body
+const SIMILARITY_FAULT = 0.25; // a wave may not INCREASE similarity past this
 const GREETING_MAX_LINES = 3;
 
 // ---- propagation-evidence bounds (this process's own input budget; not a
@@ -491,6 +500,10 @@ ${MUTATION_GRAMMAR}
 
 Mutation rules:
 - Prefer the smallest mutation that carries the lesson. One DEEPEN beats a paragraph.
+- BEFORE adding anything, check whether the worldview already holds it. If a doctrine, motif, bullet, or identity sentence already carries this substance, the correct mutation is CONFIRM (it earned residence again) or REVISE (it can be said better) — NEVER a second copy. A repeated belief is not a stronger belief.
+- SHRINKING IS THE WORK, not the cleanup afterward. RETRACT, SUPERSEDE, MERGE and REVISE count as much as DEEPEN and ADD. A wave with zero catabolic mutations is a digestion that absorbed without excreting, and it will be reported as such.
+- Specifically look for: two doctrines saying the same thing (MERGE them), a HowWeWork bullet that has drifted into a paragraph (REVISE it shorter), identity prose that has accumulated restatements (REVISE WhoIAm with a distilled version), a motif that is really a log of its own recurrences (RETRACT MOTIF).
+- The worldview has a redundancy budget. If the digest above reports high redundancy, your FIRST mutations must reduce it.
 - DEEPEN and ADD must carry the why-chain — the reasoning, a verbatim quote where voice matters — never a bare conclusion. Ash is banned.
 - CONFIRM is real work: a belief that keeps earning its residence should say so; beliefs nobody confirms are drifting toward compost.
 - If genuinely nothing moved, emit exactly ONE line: NO-CHANGE :: <justification>. The justification must name the WORK-side reason (e.g. "six sync-test episodes repeat a lesson Doctrine[5] already holds — the work is circling the same validation loop"), because it will be spoken to jrg at the next wake, to his face.
@@ -537,7 +550,16 @@ function buildUserPrompt(existingUser: string, userObservations: { ep: string; l
   const obs = userObservations.length
     ? userObservations.map((o) => `- [ep:${o.ep}] ${o.line}`).join("\n")
     : "(none this cycle)";
-  return `You are the USER-MODEL pass of REM in a circadian memory substrate. You maintain USER.md, the private relational model of the user jrg — who he is to work with: preferences, working style, register, mental models, reaction patterns. NOT code facts.
+  // The model was previously told the CAP but never its CURRENT SIZE, so it had
+  // no way to know it was already over and no signal to shrink. Stating the
+  // overage explicitly is the difference between a rule and an instruction.
+  const curTokens = tokensOf(existingUser);
+  const budget =
+    curTokens > TARGET_USER_TOKENS
+      ? `\n\nSIZE STATUS: USER.md is currently ${curTokens} tokens against a target of ${TARGET_USER_TOKENS} — OVER by ${curTokens - TARGET_USER_TOKENS}. Your rewrite MUST come back under ${TARGET_USER_TOKENS} tokens (${TARGET_USER_TOKENS * 4} chars). Consolidate: several lines almost certainly describe one trait. That consolidation is the work of this pass, not an optional extra.`
+      : `\n\nSIZE STATUS: USER.md is ${curTokens} tokens against a target of ${TARGET_USER_TOKENS} — under target. Keep it that way; add only what is genuinely new.`;
+
+  return `You are the USER-MODEL pass of REM in a circadian memory substrate. You maintain USER.md, the private relational model of the user jrg — who he is to work with: preferences, working style, register, mental models, reaction patterns. NOT code facts.${budget}
 
 CURRENT USER.md:
 """
@@ -549,7 +571,7 @@ NEW OBSERVATIONS from this cycle's episodes (each is a "user-observed:" line a s
 ${obs}
 """
 
-Your task: rewrite USER.md, applying confirm/contradict/supersede/deepen to each new observation against the current file. A genuinely new, well-evidenced observation deepens or adds; a contradicted one is corrected or removed; a confirmed one is left as-is (do not duplicate). Every retained line MUST keep its origin stamp [ep:YYYY-MM-DD] and, where voice matters, a short verbatim quote (ash is banned — "jrg prefers X" with no why or quote is a defect). These are inferences about a person; they self-correct over cycles, so record well-evidenced ones without fear, but never invent beyond the observations. Preserve the section structure. Shrink-unless-justified. Cap: 2000 tokens / 8000 chars.
+Your task: rewrite USER.md, applying confirm/contradict/supersede/deepen to each new observation against the current file. SIZE DISCIPLINE IS PART OF THE TASK: if the current file is already over its target, the rewrite MUST come back smaller — fold observations that describe the same trait into one sharper line (three bullets about wanting to see live output are one preference, not three), and drop what a newer observation supersedes. A relational model that only ever grows is a transcript, not a model. A genuinely new, well-evidenced observation deepens or adds; a contradicted one is corrected or removed; a confirmed one is left as-is (do not duplicate). Every retained line MUST keep its origin stamp [ep:YYYY-MM-DD] and, where voice matters, a short verbatim quote (ash is banned — "jrg prefers X" with no why or quote is a defect). These are inferences about a person; they self-correct over cycles, so record well-evidenced ones without fear, but never invent beyond the observations. Preserve the section structure. Shrink-unless-justified. Cap: 2000 tokens / 8000 chars.
 
 If there are no new observations, return the current USER.md UNCHANGED.
 
@@ -787,6 +809,10 @@ interface ValidatedRem {
   dateStr: string;
   pruneInfo: { dropped_sections: number; before_tokens: number; after_tokens: number };
   sizeNotes: string[]; // soft over-target observations to surface as telemetry (never fatal)
+  collapsedMutations: number; // mutations degraded/refused because the substance was already held
+  direction: { anabolic: number; catabolic: number; neutral: number };
+  similarityBefore: number;
+  similarityAfter: number;
 }
 
 /** Pure: parses + validates claude's raw output against every MIND-SPEC rule.
@@ -827,6 +853,44 @@ function validateAndCompute(
 
   note(checkSize("SELF.md", applied.text, TARGET_SELF_TOKENS), "SELF.md");
 
+  // REDUNDANCY GUARD. The accretion disease (2026-07-24) grew SELF.md from 14k
+  // to 29k chars over twelve waves while every size check said "over target,
+  // allowed" — 42% of it near-duplicate text. Size was the wrong instrument.
+  // This one measures self-similarity and, unlike size, it is allowed to be
+  // strict: a wave may push the worldview over the SIZE target (there may
+  // genuinely be more to hold), but it may never make the worldview MORE
+  // repetitive once past the fault line. Growth is welcome; stuttering is not.
+  const simBefore = selfSimilarity(ctx.selfMd);
+  const simAfter = selfSimilarity(applied.text);
+  // The comparison is on redundant VOLUME, not on the ratio. Cutting unique text
+  // leaves redundant chars fixed while shrinking the denominator, so a genuinely
+  // good distillation can RAISE the ratio — faulting on that would punish
+  // exactly the behaviour this whole change exists to encourage. Volume can only
+  // rise by actually adding a duplicate.
+  const redundancyGrew = simAfter.redundantChars > simBefore.redundantChars;
+  if (simAfter.ratio > SIMILARITY_FAULT && redundancyGrew) {
+    runawayFaults.push(
+      `SELF.md self-similarity ${(simAfter.ratio * 100).toFixed(1)}% exceeds ${(SIMILARITY_FAULT * 100).toFixed(0)}% and this wave INCREASED it (was ${(simBefore.ratio * 100).toFixed(1)}%)` +
+      (simAfter.worstOffender ? ` — worst: ${simAfter.worstOffender.copies} copies of "${simAfter.worstOffender.text.slice(0, 70)}"` : "") +
+      ` — the worldview is repeating itself, not growing; emit REVISE/MERGE/RETRACT instead of more appends`
+    );
+  }
+  if (simAfter.ratio > SIMILARITY_WARN || redundancyGrew) {
+    sizeNotes.push(
+      `SELF.md redundancy ${(simAfter.ratio * 100).toFixed(1)}% (warn > ${(SIMILARITY_WARN * 100).toFixed(0)}%, was ${(simBefore.ratio * 100).toFixed(1)}%)` +
+      (simAfter.worstOffender ? ` — ${simAfter.worstOffender.copies}x "${simAfter.worstOffender.text.slice(0, 50)}"` : "")
+    );
+  }
+  if (applied.collapsed > 0) {
+    sizeNotes.push(`${applied.collapsed} mutation(s) collapsed — substance already held (the model is circling)`);
+  }
+  // An all-anabolic wave is a digestion that never excreted. Not fatal — some
+  // waves genuinely only add — but it must be visible, because 66-to-1 was how
+  // the disease stayed invisible for twelve waves.
+  if (applied.direction.catabolic === 0 && applied.direction.anabolic > 0) {
+    sizeNotes.push(`all-anabolic wave: ${applied.direction.anabolic} growing op(s), 0 shrinking — nothing was distilled or shed`);
+  }
+
   const newNowMd = replaceSection(ctx.nowMd, "Serendipity", parsed.serendipityLine);
   note(checkSize("NOW.md", newNowMd, TARGET_NOW_TOKENS), "NOW.md");
 
@@ -853,6 +917,10 @@ function validateAndCompute(
     newSelfMd: applied.text,
     appliedMutations: applied.applied,
     rejectedMutations: applied.rejected,
+    collapsedMutations: applied.collapsed,
+    direction: applied.direction,
+    similarityBefore: simBefore.ratio,
+    similarityAfter: simAfter.ratio,
     noChangeJustification: applied.noChange,
     newGreetingMd,
     newNowMd,
@@ -861,6 +929,33 @@ function validateAndCompute(
     pruneInfo: { dropped_sections: pruned.dropped_sections, before_tokens: pruned.before_tokens, after_tokens: pruned.after_tokens },
     sizeNotes,
   };
+}
+
+/** git with stderr CAPTURED into the thrown Error. The default execFileSync
+ * error message is just "Command failed: git commit -m <subject>" — git's
+ * actual reason (hook rejection, index lock, identity unset, nothing staged)
+ * is lost, which made the 2026-07-24 rem/commit failure unrecoverable from its
+ * own log. "Fail loudly" requires the failure to say WHY. */
+function gitCommit(args: string[]): string {
+  const r = spawnSync("git", args, { cwd: MIND_DIR, encoding: "utf8" });
+  if (r.error) throw new Error(`git ${args[0]} could not run: ${r.error.message}`);
+  if (r.status !== 0) {
+    const detail = [r.stderr?.trim(), r.stdout?.trim()].filter(Boolean).join(" | ") || "(git produced no output)";
+    // EMPTY COMMIT IS NOT A FAILURE. This was the mystery FAIL of 2026-07-24:
+    // "write/commit phase failed AFTER validation passed" with git's actual
+    // reason swallowed. Once stderr was captured it read "nothing to commit,
+    // working tree clean" — a multi-pass wave where an earlier batch had already
+    // committed every changed file, so the last batch had nothing left to write.
+    // Reporting that as a hard failure sent the reader hunting a corrupt repo
+    // and left a red doctor line and a launchd exit-1 fossil behind it.
+    //
+    // A no-op commit is reported as such by the caller and the wave continues.
+    if (/nothing to commit|nothing added to commit/i.test(detail)) {
+      return "__NOTHING_TO_COMMIT__";
+    }
+    throw new Error(`git ${args[0]} exited ${r.status}: ${detail}`);
+  }
+  return r.stdout ?? "";
 }
 
 function atomicWrite(targetPath: string, content: string) {
@@ -1093,7 +1188,7 @@ async function runOnePass(opts: { dryRun: boolean; batch: number; pass: number; 
     return "validation-failed";
   }
 
-  const { parsed, oldSelfTokens, newSelfTokens, selfChanged, newSelfMd, appliedMutations, rejectedMutations, noChangeJustification, newGreetingMd, newNowMd, newCompostMd, dateStr, pruneInfo, sizeNotes } = computed;
+  const { parsed, oldSelfTokens, newSelfTokens, selfChanged, newSelfMd, appliedMutations, rejectedMutations, noChangeJustification, newGreetingMd, newNowMd, newCompostMd, dateStr, pruneInfo, sizeNotes, collapsedMutations, direction, similarityBefore, similarityAfter } = computed;
 
   // pruneCompost dropping sections is the compost log excreting old history —
   // normal metabolism (git is the archive), but surface it so a cold reader
@@ -1270,7 +1365,11 @@ async function runOnePass(opts: { dryRun: boolean; batch: number; pass: number; 
     const body =
       noChangeJustification !== null
         ? `\n\nno-change: ${noChangeJustification}`
-        : `\n\nmutations:\n${appliedMutations.map((a) => `  - ${a}`).join("\n")}`;
+        : `\n\nmutations:\n${appliedMutations.map((a) => `  - ${a}`).join("\n")}` +
+          `\n\nmetabolism: ${direction.anabolic} anabolic, ${direction.catabolic} catabolic, ${direction.neutral} neutral` +
+          (collapsedMutations > 0 ? `, ${collapsedMutations} collapsed (already held)` : "") +
+          `\nredundancy: ${(similarityBefore * 100).toFixed(1)}% → ${(similarityAfter * 100).toFixed(1)}%` +
+          (sizeNotes.length ? `\nsize: ${sizeNotes.join("; ")}` : "");
 
     // Absorb commit: stage episodes/ wholesale — sleep-drafted episodes are
     // born untracked, and composted ones just gained their taught-line; both
@@ -1282,7 +1381,13 @@ async function runOnePass(opts: { dryRun: boolean; batch: number; pass: number; 
       ["add", "SELF.md", "USER.md", "NOW.md", "greeting.md", "compost.md", "scoreboard.jsonl", "digested.jsonl", "episodes"],
       { cwd: MIND_DIR }
     );
-    execFileSync("git", ["commit", "-m", subject + body], { cwd: MIND_DIR });
+    // stderr must be CAPTURED, not swallowed. The 2026-07-24 commit failure
+    // reported only "Command failed: git commit -m ..." with git's actual
+    // complaint lost — an unrecoverable error message is a silent failure
+    // wearing a loud coat. execFileSync's default pipes stderr to the parent's
+    // buffer but does not attach it to the Error; capture it explicitly.
+    const absorbCommit = gitCommit(["commit", "-m", subject + body]);
+    const absorbWasNoop = absorbCommit === "__NOTHING_TO_COMMIT__";
 
     // Shed commit: separate so the archived content sits one revision behind
     // the deletion. Robust to an episode that is untracked (e.g. shed before
@@ -1324,17 +1429,15 @@ async function runOnePass(opts: { dryRun: boolean; batch: number; pass: number; 
           }
         }
       }
-      execFileSync(
-        "git",
-        ["commit", "-m", `rem: ${dateStr} — compost: ${shedTargets.join(", ")}`],
-        { cwd: MIND_DIR }
-      );
+      gitCommit(["commit", "-m", `rem: ${dateStr} — compost: ${shedTargets.join(", ")}`]);
     }
 
     ok({
       process: "rem", phase: "commit", correlation_id: corr,
-      summary: `wave committed: absorbed ${newEpisodeCount}, shed ${shedTargets.length}`,
-      context: { absorbed: newEpisodeCount, shed: shedTargets.length, worldview_tokens: newSelfTokens, self_delta: newSelfTokens - oldSelfTokens, backlog_remaining: backlog, pass: opts.pass, batch, ...(sizeNotes.length ? { size_notes: sizeNotes } : {}) },
+      summary: absorbWasNoop
+        ? `wave complete with nothing left to write — an earlier pass already committed these changes (absorbed ${newEpisodeCount}, shed ${shedTargets.length})`
+        : `wave committed: absorbed ${newEpisodeCount}, shed ${shedTargets.length}`,
+      context: { absorbed: newEpisodeCount, shed: shedTargets.length, worldview_tokens: newSelfTokens, self_delta: newSelfTokens - oldSelfTokens, redundancy_before: Number((similarityBefore * 100).toFixed(1)), redundancy_after: Number((similarityAfter * 100).toFixed(1)), anabolic: direction.anabolic, catabolic: direction.catabolic, collapsed: collapsedMutations, backlog_remaining: backlog, pass: opts.pass, batch, ...(sizeNotes.length ? { size_notes: sizeNotes } : {}) },
     });
     rlog(`committed. ${subject}`);
   } catch (err) {

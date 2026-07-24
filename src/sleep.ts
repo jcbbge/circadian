@@ -331,6 +331,32 @@ function collectGreetingHistory(): string[] {
 
 const normEcho = (s: string) => s.toLowerCase().replace(/["'“”‘’]/g, "").replace(/\s+/g, " ").trim();
 
+/** Structural markers of the mind's own injected payload. Provenance redaction
+ * by greeting-matching cannot catch these: the payload's BODY lines are SELF.md
+ * and USER.md content, not greeting lines, so a transcript carrying the wake
+ * block sails through the sentence matcher with 40k chars of the mind's own
+ * worldview intact — the exact autophagic loop this function exists to sever.
+ *
+ * In production `extractTranscriptText` filters by role and never sees the
+ * payload (it rides in a `custom_message` with no role). That is defence by
+ * accident, one refactor from failing silently. This is defence in depth: any
+ * caller that DOES include custom messages gets the block cut here, and the
+ * cut is reported so it can never be silent. */
+const WAKE_BLOCK_MARKERS = /\[Circadian\] WAKE|<\/?mind:[a-z-]+>/i;
+
+/** Section headings unique to the injected worldview files. If a transcript
+ * contains the wake payload, everything from the first marker onward is the
+ * mind talking to itself. */
+const MIND_PAYLOAD_HEADINGS = [
+  "## Who I am across sessions",
+  "## Doctrine",
+  "## Motifs",
+  "## How we work",
+  "## Registers — how he speaks and wants to be spoken to",
+  "## Preferences and patterns",
+  "<!-- PRIVATE: never leaves this machine",
+];
+
 export function redactMindEcho(transcriptText: string, greetings: string[]): { text: string; redactedLines: number } {
   // Greeting sentences: each line of each historical greeting, normalized.
   // Sentence-level matching catches partial re-speech (the assistant often
@@ -350,16 +376,44 @@ export function redactMindEcho(transcriptText: string, greetings: string[]): { t
       }
     }
   }
-  if (echoSentences.length === 0) return { text: transcriptText, redactedLines: 0 };
+  // The wake payload is cut STRUCTURALLY, before any sentence matching. Once a
+  // marker or a worldview heading appears, we are inside the mind's own output;
+  // it ends at the next transcript turn boundary ("User:" / "Assistant:") or at
+  // the end of the text. This holds whether or not greetings were supplied.
+  const rawLines = transcriptText.split("\n");
+  const structural: string[] = [];
+  let inPayload = false;
+  let payloadCut = 0;
+  for (const line of rawLines) {
+    const t = line.trim();
+    const isTurnBoundary = /^(User|Assistant):/.test(t);
+    if (inPayload) {
+      if (isTurnBoundary) inPayload = false;
+      else { payloadCut++; continue; }
+    }
+    if (WAKE_BLOCK_MARKERS.test(line) || MIND_PAYLOAD_HEADINGS.some((h) => t.startsWith(h))) {
+      inPayload = true;
+      payloadCut++;
+      continue;
+    }
+    structural.push(line);
+  }
 
-  let redacted = 0;
+  if (echoSentences.length === 0) {
+    // No greeting history: the structural cut still applies (a transcript
+    // carrying the payload must never reach the drafting model), but a clean
+    // transcript passes through byte-identical.
+    return payloadCut === 0
+      ? { text: transcriptText, redactedLines: 0 }
+      : { text: structural.join("\n"), redactedLines: payloadCut };
+  }
+
+  let redacted = payloadCut;
   const kept: string[] = [];
-  for (const line of transcriptText.split("\n")) {
+  for (const line of structural) {
     const n = normEcho(line);
     const isEcho = n.length > 0 && echoSentences.some((e) => n.includes(e) || e.includes(n));
-    // Also cut the wake-injection block markers wholesale.
-    const isWakeBlock = /\[Circadian\] WAKE|<\/?mind:/i.test(line);
-    if (isEcho || isWakeBlock) {
+    if (isEcho) {
       redacted++;
       continue;
     }

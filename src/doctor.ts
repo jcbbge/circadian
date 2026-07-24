@@ -34,6 +34,7 @@ import { homedir } from "os";
 import { execSync } from "child_process";
 import { appendFileSync, mkdirSync } from "fs";
 import { ok, correlation } from "./obs.ts";
+import { selfSimilarity } from "./mutate.ts";
 
 const CIRCADIAN_HOME = process.env.CIRCADIAN_HOME || path.join(homedir(), "circadian");
 const LOG_DIR = path.join(CIRCADIAN_HOME, "logs");
@@ -432,6 +433,44 @@ function checkCaps(): void {
   else add("token caps", "WARN", `over cap: ${over.join(", ")}`);
 }
 
+/** THE ACCRETION INSTRUMENT (added after the 2026-07-24 accretion wave).
+ *
+ * Doctrine 1 says "accretion must be a visible number with a guard on it, not a
+ * slow silent death" — and for twelve waves the only visible number was SIZE,
+ * which cannot distinguish a worldview holding more from one repeating itself.
+ * SELF.md reached 42% near-duplicate text while every check said WARN at worst.
+ *
+ * Redundancy is a better instrument than size precisely because it has no
+ * legitimate reason to rise. A mind may honestly need more room; it never needs
+ * to say the same thing twice. So this check is allowed to FAIL where the size
+ * check only warns. */
+function checkRedundancy(): void {
+  const targets = ["SELF.md", "USER.md", "NOW.md"];
+  const findings: string[] = [];
+  let worstRatio = 0;
+
+  for (const name of targets) {
+    const text = readOrEmpty(path.join(MIND_DIR, name));
+    if (!text) continue;
+    const sim = selfSimilarity(text);
+    if (sim.ratio > worstRatio) worstRatio = sim.ratio;
+    if (sim.ratio > 0.10) {
+      findings.push(
+        `${name} ${(sim.ratio * 100).toFixed(1)}% redundant` +
+        (sim.worstOffender ? ` (${sim.worstOffender.copies}x "${sim.worstOffender.text.slice(0, 45)}...")` : "")
+      );
+    }
+  }
+
+  if (findings.length === 0) {
+    add("worldview redundancy", "OK", `all mind files under 10% self-similarity (worst ${(worstRatio * 100).toFixed(1)}%)`);
+  } else if (worstRatio > 0.25) {
+    add("worldview redundancy", "FAIL", `${findings.join("; ")} — the worldview is repeating itself; REM must MERGE/REVISE/RETRACT before absorbing more`);
+  } else {
+    add("worldview redundancy", "WARN", `${findings.join("; ")} — watch for stutter; distillation is overdue`);
+  }
+}
+
 function checkEpisodes(events: CircadianEvent[]): void {
   let waiting: string[] = [];
   try {
@@ -645,6 +684,7 @@ function main() {
   checkHooks();
   checkMindRepo();
   checkCaps();
+  checkRedundancy();
   checkEpisodes(events);
   checkWorldviewMotion();
   checkPendingSleepQueue();
