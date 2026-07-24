@@ -240,6 +240,33 @@ function todayStamp(): string {
   return new Date().toISOString().slice(0, 10);
 }
 
+/** Normalization for duplicate detection: case, quotes, whitespace, and the
+ * ep-stamps all collapse so the same sentence in different dress matches. */
+function normalizeForDup(s: string): string {
+  return s
+    .toLowerCase()
+    .replace(/\[(ep|confirmed):\d{4}-\d{2}-\d{2}\]/g, "")
+    .replace(/["'“”‘’]/g, "")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+/** Fallback for paraphrase-grade duplication: if >=80% of the new text's
+ * 4-word shingles already appear in the body, it is the same substance. */
+function substantialOverlap(body: string, incoming: string): boolean {
+  const shingles = (t: string): Set<string> => {
+    const w = t.split(" ").filter(Boolean);
+    const out = new Set<string>();
+    for (let i = 0; i + 4 <= w.length; i++) out.add(w.slice(i, i + 4).join(" "));
+    return out;
+  };
+  const inc = shingles(incoming);
+  if (inc.size < 3) return false; // too short to judge by shingles
+  let hits = 0;
+  for (const s of inc) if (body.includes(s)) hits++;
+  return hits / inc.size >= 0.8;
+}
+
 function ensureEpStamp(text: string): string {
   return /\[ep:\d{4}-\d{2}-\d{2}\]/.test(text) ? text : `${text} [ep:${todayStamp()}]`;
 }
@@ -276,6 +303,19 @@ export function applyMutations(selfMd: string, mutations: Mutation[]): ApplyResu
       case "deepen": {
         const d = findDoctrine(mu.n);
         if (!d) { rejected.push({ line: `DEEPEN Doctrine[${mu.n}]`, reason: "no such doctrine entry" }); break; }
+        // DUPLICATE-QUOTE GUARD (live wave 2026-07-24: the model re-quoted an
+        // episode a prior wave had already absorbed — the belief stuttered
+        // instead of deepening). Same-substance detection is normalized
+        // containment either way: re-deepening with already-held text is a
+        // CONFIRM in disguise, so degrade it to one — the evidence refreshes
+        // the decay clock instead of duplicating the body.
+        const normBody = normalizeForDup(d.body);
+        const normNew = normalizeForDup(mu.text);
+        if (normNew.length > 0 && (normBody.includes(normNew) || substantialOverlap(normBody, normNew))) {
+          d.titleLine = d.titleLine.replace(/\s*\[confirmed:\d{4}-\d{2}-\d{2}\]/g, "") + ` [confirmed:${stamp}]`;
+          applied.push(`DEEPEN→CONFIRM Doctrine[${mu.n}] — text already absorbed; residence re-earned ${stamp} instead of duplicating`);
+          break;
+        }
         d.body = `${d.body} ${ensureEpStamp(mu.text)}`;
         applied.push(`DEEPEN Doctrine[${mu.n}] :: ${mu.text.slice(0, 80)}`);
         break;

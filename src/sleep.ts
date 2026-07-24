@@ -292,6 +292,74 @@ async function runHook(): Promise<void> {
 
 // ---------- worker mode ----------
 
+/** Synthetic-session detector. Conservative: only patterns that are
+ * unambiguously harness-made — a session_id the bench scripts stamp, or a
+ * transcript living in a bench worktree's session dir. */
+function isBenchSession(sessionId: string, transcriptPath: string | undefined): boolean {
+  if (/^bench[-_]/i.test(sessionId)) return true;
+  if (transcriptPath && /bench/i.test(transcriptPath)) return true;
+  return false;
+}
+
+/** ECHO REDACTION (the autophagy cut). The wake payload — greeting included —
+ * is the mind's OWN OUTPUT injected into the session and spoken by the
+ * assistant's first reply. Left in the transcript, SLEEP's verbatim-quote
+ * requirement makes the model quote it, the episode carries it, REM digests
+ * it, and the greeting reinforces itself forever (measured: 15 of 33
+ * episodes on 2026-07-24 quoted the greeting). Cut: collect every greeting
+ * this mind has ever committed (git history of greeting.md) plus the current
+ * one, and strip any transcript line that contains any of them. Provenance
+ * over similarity — we remove what WE said, not what looks alike. */
+function collectGreetingHistory(): string[] {
+  const texts = new Set<string>();
+  try {
+    const current = readFileSync(join(MIND, "greeting.md"), "utf8").trim();
+    if (current) texts.add(current);
+  } catch { /* no greeting yet */ }
+  try {
+    const { execFileSync } = require("node:child_process");
+    const hashes: string = execFileSync("git", ["log", "--format=%H", "-n", "30", "--", "greeting.md"], { cwd: MIND, encoding: "utf8" });
+    for (const h of hashes.split("\n").filter(Boolean)) {
+      try {
+        const g: string = execFileSync("git", ["show", `${h}:greeting.md`], { cwd: MIND, encoding: "utf8" });
+        if (g.trim()) texts.add(g.trim());
+      } catch { /* greeting.md absent at that revision */ }
+    }
+  } catch { /* not a git repo or git unavailable — current greeting still redacts */ }
+  return [...texts];
+}
+
+const normEcho = (s: string) => s.toLowerCase().replace(/["'“”‘’]/g, "").replace(/\s+/g, " ").trim();
+
+export function redactMindEcho(transcriptText: string, greetings: string[]): { text: string; redactedLines: number } {
+  // Greeting sentences: each line of each historical greeting, normalized.
+  // Sentence-level matching catches partial re-speech (the assistant often
+  // says the greeting inside a longer first message).
+  const echoSentences: string[] = [];
+  for (const g of greetings) {
+    for (const line of g.split("\n")) {
+      const n = normEcho(line);
+      if (n.length >= 30) echoSentences.push(n); // short fragments over-match
+    }
+  }
+  if (echoSentences.length === 0) return { text: transcriptText, redactedLines: 0 };
+
+  let redacted = 0;
+  const kept: string[] = [];
+  for (const line of transcriptText.split("\n")) {
+    const n = normEcho(line);
+    const isEcho = n.length > 0 && echoSentences.some((e) => n.includes(e) || e.includes(n));
+    // Also cut the wake-injection block markers wholesale.
+    const isWakeBlock = /\[Circadian\] WAKE|<\/?mind:/i.test(line);
+    if (isEcho || isWakeBlock) {
+      redacted++;
+      continue;
+    }
+    kept.push(line);
+  }
+  return { text: kept.join("\n"), redactedLines: redacted };
+}
+
 function extractTranscriptText(transcriptPath: string, capChars: number): string {
   const raw = readFileSync(transcriptPath, "utf8");
   const lines = raw.split("\n").filter(Boolean);
@@ -367,7 +435,7 @@ Produce your two artifacts in EXACTLY this format:
 
 === EPISODE ===
 ARC: <a short 2-6 word name for this episode's arc>
-<narrative body in markdown. Requirements: at least 2 VERBATIM quotes from the transcript above, each wrapped in double quotes exactly as they appeared; explicit why-chains for any conclusion you record (state the reasoning, not just the conclusion). Then, BEFORE the what-changed line, include one line starting exactly with "user-observed:" that records what THIS session revealed about the user jrg as a person to work with — a preference, working style, register, mental model, or reaction pattern — that is NOT a mere code fact and would help a future instance work with him better. It MUST carry a verbatim quote from the transcript as evidence. If the session genuinely revealed nothing new about him, write exactly "user-observed: nothing new". Do NOT invent; infer only what the transcript supports. Then end with one line starting exactly with "what-changed:" followed by one of confirm/contradict/supersede/deepen and a short reason relative to the current worldview above. Keep the whole episode body under 3500 characters total — this is memory, not a transcript, be economical.>
+<narrative body in markdown. Requirements: at least 2 VERBATIM quotes from the transcript above, each wrapped in double quotes exactly as they appeared; the quotes MUST be the USER's words or concrete work artifacts (commands, code, outputs) — NEVER the session-opening greeting, NEVER any line about memory/wake/episodes/the mind itself (that text is the memory system's own output re-entering; quoting it as evidence is contamination); explicit why-chains for any conclusion you record (state the reasoning, not just the conclusion). Then, BEFORE the what-changed line, include one line starting exactly with "user-observed:" that records what THIS session revealed about the user jrg as a person to work with — a preference, working style, register, mental model, or reaction pattern — that is NOT a mere code fact and would help a future instance work with him better. It MUST carry a verbatim quote from the transcript as evidence. If the session genuinely revealed nothing new about him, write exactly "user-observed: nothing new". Do NOT invent; infer only what the transcript supports. Then end with one line starting exactly with "what-changed:" followed by one of confirm/contradict/supersede/deepen and a short reason relative to the current worldview above. Keep the whole episode body under 3500 characters total — this is memory, not a transcript, be economical.>
 === NOW ===
 ## Arc
 <1-3 sentences: the current overarching arc/thread of work>
@@ -533,6 +601,23 @@ async function draftSessionEpisode(opts: {
   mode: "worker" | "drain";
 }): Promise<DraftResult> {
   const { transcriptPath, sessionId, corr, mode } = opts;
+
+  // PROVENANCE GUARD (2026-07-24 contamination post-mortem): bench/eval
+  // harness sessions (pi-spine bench-greeting, bench-compaction, anything
+  // running in a bench worktree) are SYNTHETIC — they exist to exercise the
+  // machinery, not to live. Eleven bench episodes entered the mind as if
+  // they were lived experience and locked the greeting into a loop. Memory
+  // is for lived sessions only; a test harness leaves no letter.
+  if (isBenchSession(sessionId, transcriptPath)) {
+    slog(mode, "skip: bench/eval session — synthetic provenance, no episode", { sessionId, transcriptPath: transcriptPath ?? null });
+    ok({
+      process: "sleep", phase: "provenance", correlation_id: corr, session_id: sessionId,
+      summary: "bench/eval session detected; no episode written (synthetic provenance)",
+      context: { session_id: sessionId, transcript_path: transcriptPath ?? null },
+    });
+    return { status: "no-transcript" };
+  }
+
   if (!transcriptPath || !existsSync(transcriptPath)) {
     slog(mode, "abort: transcript missing", { transcriptPath: transcriptPath ?? null });
     // A missing transcript at SLEEP means this session leaves NO letter to
@@ -547,7 +632,18 @@ async function draftSessionEpisode(opts: {
     return { status: "no-transcript" };
   }
 
-  const transcriptText = extractTranscriptText(transcriptPath, TRANSCRIPT_CAP_CHARS);
+  const rawTranscriptText = extractTranscriptText(transcriptPath, TRANSCRIPT_CAP_CHARS);
+  // Strip the mind's own voice before drafting — what we injected and what
+  // the assistant spoke back from the injection is not evidence of anything.
+  const { text: transcriptText, redactedLines } = redactMindEcho(rawTranscriptText, collectGreetingHistory());
+  if (redactedLines > 0) {
+    slog(mode, "mind-echo redacted from transcript", { redacted_lines: redactedLines });
+    ok({
+      process: "sleep", phase: "echo-redaction", correlation_id: corr, session_id: sessionId,
+      summary: `redacted ${redactedLines} mind-echo line(s) (wake payload / spoken greeting) before drafting`,
+      context: { redacted_lines: redactedLines },
+    });
+  }
   if (!transcriptText) {
     slog(mode, "abort: transcript extracted to empty text");
     degraded({
@@ -803,12 +899,17 @@ async function runDrain(): Promise<void> {
   slog("drain", "done", { drained, dropped, remaining });
 }
 
-if (process.argv.includes("--worker")) {
-  await runWorker();
-  process.exit(0);
-} else if (process.argv.includes("--drain")) {
-  await runDrain();
-  process.exit(0);
-} else {
-  await runHook();
+// import.meta.main guard: sleep.ts became importable (redactMindEcho is
+// tested against real transcripts) — a bare import must never fall into
+// hook mode and hang on stdin.
+if (import.meta.main) {
+  if (process.argv.includes("--worker")) {
+    await runWorker();
+    process.exit(0);
+  } else if (process.argv.includes("--drain")) {
+    await runDrain();
+    process.exit(0);
+  } else {
+    await runHook();
+  }
 }

@@ -65,13 +65,17 @@ describe("parseMutations", () => {
 
 describe("applyMutations against the real SELF.md", () => {
   test("CONFIRM stamps and refreshes without duplicating", () => {
+    const baseline = (realSelf.match(/\[confirmed:/g) || []).length;
     const once = applyMutations(realSelf, parseMutations("CONFIRM Doctrine[5]").mutations);
     expect(once.applied.length).toBe(1);
     expect(once.text).toMatch(/\*\*5\. .*\[confirmed:\d{4}-\d{2}-\d{2}\]/);
-    // Re-confirming refreshes the stamp, never accumulates a second one
+    // Re-confirming refreshes Doctrine[5]'s stamp, never accumulates a second
+    // one — measured RELATIVE to the living document, which may already carry
+    // confirms from real waves (it earned them; the test must not assume a
+    // virgin world).
     const twice = applyMutations(once.text, parseMutations("CONFIRM Doctrine[5]").mutations);
-    const stamps = twice.text.match(/\[confirmed:/g) || [];
-    expect(stamps.length).toBe(1);
+    const stamps = (twice.text.match(/\[confirmed:/g) || []).length;
+    expect(stamps).toBe(baseline + 1);
   });
 
   test("DEEPEN appends the why-chain, auto-stamped", () => {
@@ -88,7 +92,10 @@ describe("applyMutations against the real SELF.md", () => {
       realSelf,
       parseMutations("ADD DOCTRINE :: The null action must cost more than change :: when rewriting was the task, echo was the rational strategy; mutations invert the gradient. [ep:2026-07-24]").mutations
     );
-    expect(r.text).toMatch(/\*\*7\. The null action must cost more than change\.\*\*/);
+    // Next number derives from the living document — the doctrine count grows
+    // as real waves add beliefs; the test tracks the organism, not a snapshot.
+    const lastN = Math.max(...[...realSelf.matchAll(/\*\*(\d+)\.\s/g)].map((m) => parseInt(m[1], 10)));
+    expect(r.text).toContain(`**${lastN + 1}. The null action must cost more than change.**`);
   });
 
   test("RETRACT + ADD MOTIF perform surgery on the motif list only", () => {
@@ -128,6 +135,27 @@ describe("applyMutations against the real SELF.md", () => {
     const greeting = noChangeGreeting(r.noChange!);
     expect(greeting).toContain("Nothing moved through the night");
     expect(greeting).toContain("Either the work is circling or I am");
+  });
+
+  test("duplicate-quote guard: re-deepening with already-held text degrades to CONFIRM", () => {
+    const first = applyMutations(realSelf, parseMutations("DEEPEN Doctrine[4] :: the vasculature lesson held again in live PTY testing tonight.").mutations);
+    expect(first.applied[0]).toStartWith("DEEPEN Doctrine[4]");
+    // Same substance, different dress: quotes + case + an ep-stamp
+    const second = applyMutations(first.text, parseMutations('DEEPEN Doctrine[4] :: "The vasculature lesson HELD again in live PTY testing tonight." [ep:2026-07-25]').mutations);
+    expect(second.applied[0]).toContain("DEEPEN→CONFIRM Doctrine[4]");
+    // Body did not grow a second copy
+    const hits = second.text.match(/vasculature lesson held again in live PTY testing tonight/gi) || [];
+    expect(hits.length).toBe(1);
+    // But the decay clock refreshed
+    expect(second.text).toMatch(/\*\*4\..*\[confirmed:\d{4}-\d{2}-\d{2}\]/);
+  });
+
+  test("duplicate-quote guard: genuinely new text still deepens normally", () => {
+    const first = applyMutations(realSelf, parseMutations("DEEPEN Doctrine[4] :: first insight about circulation.").mutations);
+    const second = applyMutations(first.text, parseMutations("DEEPEN Doctrine[4] :: a different second insight about flow direction.").mutations);
+    expect(second.applied[0]).toStartWith("DEEPEN Doctrine[4]");
+    expect(second.text).toContain("first insight about circulation");
+    expect(second.text).toContain("different second insight about flow direction");
   });
 
   test("round-trip: apply then re-parse — the rendered document stays parseable", () => {

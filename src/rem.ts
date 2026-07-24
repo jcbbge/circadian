@@ -37,6 +37,7 @@ import { createHash } from "crypto";
 import { complete } from "./llm.ts";
 import { ok, idle, degraded, fail, correlation } from "./obs.ts";
 import { MUTATION_GRAMMAR, parseMutations, applyMutations, noChangeGreeting, type Mutation, type ParsedMutations } from "./mutate.ts";
+import { clusterEpisodes, type EpisodeCluster } from "./ltp.ts";
 
 // ---- paths (per MIND-SPEC.md) ----
 // CIRCADIAN_HOME overrides; default ~/circadian. See wake.ts for the contract.
@@ -263,16 +264,34 @@ function loadEpisodes(): Episode[] {
 // monolithic prompt that blows the model's context and the compost cap in a
 // single all-or-nothing transaction. Biology: one enzyme, one substrate.
 interface Meal {
-  episodes: Episode[]; // what this pass digests
+  episodes: Episode[]; // what this pass digests (cluster representatives for LTP'd groups)
   deferred: Episode[]; // new episodes deferred to later passes
+  /** LTP: weight + absorbed members per representative filename. A weight-14
+   * representative carries thirteen collapsed near-duplicates — repetition as
+   * signal strength, not signal volume. */
+  ltp: Map<string, { weight: number; members: Episode[] }>;
 }
 function selectMeal(all: Episode[], batch: number, seenCap = 6): Meal {
   const fresh = all.filter((e) => e.isNew);
   const seen = all.filter((e) => !e.isNew);
-  const meal = [...fresh.slice(0, batch), ...seen.slice(0, seenCap)].sort((a, b) =>
+
+  // LONG-TERM POTENTIATION: collapse near-duplicate NEW episodes into one
+  // potentiated representative BEFORE batching. Fourteen sync-test episodes
+  // are one lesson told fourteen times — one synapse strengthened, not
+  // fourteen grown. Members ride along: their hashes enter the digested
+  // ledger with the representative, and compost sheds the whole cluster.
+  const clusters = clusterEpisodes(fresh);
+  const ltp = new Map<string, { weight: number; members: Episode[] }>();
+  const potentiated: Episode[] = [];
+  for (const c of clusters) {
+    potentiated.push(c.representative);
+    if (c.weight > 1) ltp.set(c.representative.filename, { weight: c.weight, members: c.members });
+  }
+
+  const meal = [...potentiated.slice(0, batch), ...seen.slice(0, seenCap)].sort((a, b) =>
     a.filename.localeCompare(b.filename)
   );
-  return { episodes: meal, deferred: fresh.slice(batch) };
+  return { episodes: meal, deferred: potentiated.slice(batch), ltp };
 }
 
 // ---------------------------------------------------------------------
@@ -404,21 +423,27 @@ interface MindContext {
   episodes: Episode[];
   transcripts: TranscriptExcerpt[];
   injectedItems: string[];
+  ltp: Map<string, { weight: number; members: Episode[] }>;
 }
 
 function buildPrompt(ctx: MindContext): string {
   const newEpisodes = ctx.episodes.filter((e) => e.isNew);
   const oldEpisodes = ctx.episodes.filter((e) => !e.isNew);
 
+  // LTP rendering: a potentiated representative announces its weight so the
+  // model reads recurrence as evidence strength — "this lesson was lived x14"
+  // — instead of receiving fourteen copies that drown the rest of the meal.
+  const epHeader = (e: Episode): string => {
+    const pot = ctx.ltp.get(e.filename);
+    const freshness = e.isNew ? "NEW since last REM" : "already seen";
+    if (!pot) return `--- episode: ${e.filename} [${freshness}] ---`;
+    return `--- episode: ${e.filename} [${freshness}] [POTENTIATED x${pot.weight}: this same lesson was drafted ${pot.weight} times this cycle (${pot.members.map((m) => m.filename).join(", ")}) — treat recurrence as strong evidence, absorb it ONCE] ---`;
+  };
+
   const episodesBlock =
     ctx.episodes.length === 0
       ? "(none — episodes/ is empty)"
-      : ctx.episodes
-          .map(
-            (e) =>
-              `--- episode: ${e.filename} [${e.isNew ? "NEW since last REM" : "already seen"}] ---\n${e.content}`
-          )
-          .join("\n\n");
+      : ctx.episodes.map((e) => `${epHeader(e)}\n${e.content}`).join("\n\n");
 
   const transcriptsBlock =
     ctx.transcripts.length === 0
@@ -993,7 +1018,7 @@ async function runOnePass(opts: { dryRun: boolean; batch: number; pass: number; 
 
   const scoreboard = loadScoreboard();
   const allEpisodes = loadEpisodes();
-  const { episodes, deferred } = selectMeal(allEpisodes, batch);
+  const { episodes, deferred, ltp } = selectMeal(allEpisodes, batch);
   const backlog = deferred.length;
   if (episodes.length === 0) return "empty";
   if (backlog > 0) rlog(`pass ${opts.pass} — digesting ${episodes.filter((e) => e.isNew).length} of ${backlog + episodes.filter((e) => e.isNew).length} new episodes (batch ${batch}).`);
@@ -1010,6 +1035,7 @@ async function runOnePass(opts: { dryRun: boolean; batch: number; pass: number; 
     episodes,
     transcripts,
     injectedItems,
+    ltp,
   });
 
   if (dryRun) {
@@ -1106,14 +1132,28 @@ async function runOnePass(opts: { dryRun: boolean; batch: number; pass: number; 
     // exist upstream).
     const compostedNames = new Set(parsed.compost.map((m) => m.episode));
     const nowIso = new Date().toISOString();
-    recordDigested(
-      newEpisodesThisWave.map((e) => ({
-        ts: nowIso,
-        hash: e.hash,
-        filename: e.filename,
-        disposition: compostedNames.has(e.filename) ? ("composted" as const) : ("absorbed" as const),
-      }))
-    );
+    // LTP members were absorbed THROUGH their representative — they enter the
+    // ledger with it (never re-fed as new) and inherit its disposition.
+    const ledgerEntries: DigestedEntry[] = [];
+    for (const e of newEpisodesThisWave) {
+      const disposition = compostedNames.has(e.filename) ? ("composted" as const) : ("absorbed" as const);
+      ledgerEntries.push({ ts: nowIso, hash: e.hash, filename: e.filename, disposition });
+      const pot = ltp.get(e.filename);
+      if (pot) {
+        for (const m of pot.members) {
+          ledgerEntries.push({ ts: nowIso, hash: m.hash, filename: m.filename, disposition });
+        }
+      }
+    }
+    recordDigested(ledgerEntries);
+    const ltpCollapsed = [...ltp.values()].reduce((n, p) => n + p.members.length, 0);
+    if (ltpCollapsed > 0) {
+      ok({
+        process: "rem", phase: "ltp", correlation_id: corr,
+        summary: `long-term potentiation: ${ltpCollapsed} near-duplicate episode(s) collapsed into ${ltp.size} potentiated representative(s)`,
+        context: { clusters: [...ltp.entries()].map(([rep, p]) => ({ representative: rep, weight: p.weight, members: p.members.map((m) => m.filename) })) },
+      });
+    }
 
     appendScoreboardEvent({
       ts: nowIso,
@@ -1248,9 +1288,18 @@ async function runOnePass(opts: { dryRun: boolean; batch: number; pass: number; 
     // the deletion. Robust to an episode that is untracked (e.g. shed before
     // the absorb staged it): git rm only what git tracks; for anything else,
     // delete the file directly so the shed can never fail on a pathspec.
-    if (parsed.compost.length > 0) {
-      for (const m of parsed.compost) {
-        const rel = path.join("episodes", m.episode);
+    // A composted representative sheds its whole potentiated cluster: the
+    // members were absorbed through it, so they leave with it. Their content
+    // sits one revision back in git like every other shed.
+    const shedTargets: string[] = [];
+    for (const m of parsed.compost) {
+      shedTargets.push(m.episode);
+      const pot = ltp.get(m.episode);
+      if (pot) shedTargets.push(...pot.members.map((mm) => mm.filename));
+    }
+    if (shedTargets.length > 0) {
+      for (const episodeFile of shedTargets) {
+        const rel = path.join("episodes", episodeFile);
         const abs = path.join(MIND_DIR, rel);
         let tracked = true;
         try {
@@ -1277,15 +1326,15 @@ async function runOnePass(opts: { dryRun: boolean; batch: number; pass: number; 
       }
       execFileSync(
         "git",
-        ["commit", "-m", `rem: ${dateStr} — compost: ${parsed.compost.map((m) => m.episode).join(", ")}`],
+        ["commit", "-m", `rem: ${dateStr} — compost: ${shedTargets.join(", ")}`],
         { cwd: MIND_DIR }
       );
     }
 
     ok({
       process: "rem", phase: "commit", correlation_id: corr,
-      summary: `wave committed: absorbed ${newEpisodeCount}, shed ${parsed.compost.length}`,
-      context: { absorbed: newEpisodeCount, shed: parsed.compost.length, worldview_tokens: newSelfTokens, self_delta: newSelfTokens - oldSelfTokens, backlog_remaining: backlog, pass: opts.pass, batch, ...(sizeNotes.length ? { size_notes: sizeNotes } : {}) },
+      summary: `wave committed: absorbed ${newEpisodeCount}, shed ${shedTargets.length}`,
+      context: { absorbed: newEpisodeCount, shed: shedTargets.length, worldview_tokens: newSelfTokens, self_delta: newSelfTokens - oldSelfTokens, backlog_remaining: backlog, pass: opts.pass, batch, ...(sizeNotes.length ? { size_notes: sizeNotes } : {}) },
     });
     rlog(`committed. ${subject}`);
   } catch (err) {
