@@ -110,8 +110,16 @@ export function parseUserMutations(block: string): ParsedUserMutations {
       muts.push({ op: "revise", section: m[1].trim(), prefix: m[2].trim(), line: m[3].trim() });
     } else if ((m = line.match(/^DEEPEN\s+([^:]+?)\s*::\s*(.+?)\s*::\s*(.+)$/i))) {
       muts.push({ op: "deepen", section: m[1].trim(), prefix: m[2].trim(), text: m[3].trim() });
+    } else if ((m = line.match(/^RETRACT\s*::\s*(.+)$/i))) {
+      // Section omitted (observed live 2026-07-25). The prefix alone identifies
+      // the line; resolution searches every section. Postel's law over a dead wave.
+      muts.push({ op: "retract", section: "", prefix: m[1].trim() });
     } else if ((m = line.match(/^RETRACT\s+([^:]+?)\s*::\s*(.+)$/i))) {
       muts.push({ op: "retract", section: m[1].trim(), prefix: m[2].trim() });
+    } else if ((m = line.match(/^REVISE\s*::\s*(.+?)\s*::\s*(.+)$/i))) {
+      muts.push({ op: "revise", section: "", prefix: m[1].trim(), line: m[2].trim() });
+    } else if ((m = line.match(/^DEEPEN\s*::\s*(.+?)\s*::\s*(.+)$/i))) {
+      muts.push({ op: "deepen", section: "", prefix: m[1].trim(), text: m[2].trim() });
     } else if ((m = line.match(/^OBSERVE\s+([^:]+?)\s*::\s*(.+)$/i))) {
       muts.push({ op: "observe", section: m[1].trim(), line: m[2].trim() });
     } else if ((m = line.match(/^NO-CHANGE\s*::\s*(.+)$/i))) {
@@ -265,15 +273,48 @@ export function applyUserMutations(userMd: string, mutations: UserMutation[], op
   let anabolicBudget = 0;
   const currentLen = () => renderUser(doc).length;
 
+  // SECTION RESOLUTION IS FORGIVING BY DESIGN.
+  //
+  // Live wave 2026-07-25: the model emitted `RETRACT :: [ep:...] "we build not
+  // just systems..."` — omitting the section name entirely, so the line's own
+  // text landed in the section slot. Both mutations were rejected and the wave
+  // reported "the model is mutating a USER.md it was not given", which is exactly
+  // wrong: the target line existed, at a known position, and the intent was
+  // unambiguous. A strict reader turned a trivially recoverable omission into a
+  // dead wave and a misleading diagnosis.
+  //
+  // Strict grammar, forgiving reader (the same contract mutate.ts already keeps
+  // for malformed lines): if a section name resolves, use it. If it does not,
+  // fall through to searching EVERY section for the target line. A mutation whose
+  // target is unambiguous should never fail on bookkeeping.
   const findSection = (needle: string): Section | undefined => {
     const n = needle.toLowerCase().replace(/^#+\s*/, "").trim();
+    // An empty needle must NOT match — startsWith("") is true for every heading,
+    // which would silently bind an omitted section to whichever section happens to
+    // be first and skip the by-prefix search entirely.
+    if (n.length === 0) return undefined;
     return (
       doc.sections.find((s) => s.heading.toLowerCase().replace(/^##\s*/, "").startsWith(n)) ??
       doc.sections.find((s) => s.heading.toLowerCase().includes(n))
     );
   };
-  const findLine = (sec: Section, prefix: string): number =>
-    sec.lines.findIndex((l) => l.trim().startsWith("- ") && (norm(l).startsWith(norm(prefix)) || norm(l).includes(norm(prefix))));
+
+  /** Locate a line anywhere in the document. Used when the section slot did not
+   * resolve — the line prefix is the real identifier. */
+  const findAnywhere = (prefix: string): { sec: Section; i: number } | undefined => {
+    const p = norm(prefix);
+    if (p.length === 0) return undefined;
+    for (const sec of doc.sections) {
+      const i = sec.lines.findIndex((l) => l.trim().startsWith("- ") && (norm(l).startsWith(p) || norm(l).includes(p)));
+      if (i !== -1) return { sec, i };
+    }
+    return undefined;
+  };
+  const findLine = (sec: Section, prefix: string): number => {
+    const p = norm(prefix);
+    if (p.length === 0) return -1; // an empty prefix would match the first bullet
+    return sec.lines.findIndex((l) => l.trim().startsWith("- ") && (norm(l).startsWith(p) || norm(l).includes(p)));
+  };
 
   // CONSUMED-LINE TRACKING. Mutations apply in order, so an earlier MERGE or
   // RETRACT can legitimately remove the line a later mutation targets. Live wave
@@ -316,10 +357,23 @@ export function applyUserMutations(userMd: string, mutations: UserMutation[], op
       }
     }
 
-    const sec = findSection(mu.section);
+    let sec = findSection(mu.section);
     if (!sec) {
-      rejected.push({ line: `${mu.op.toUpperCase()} ${mu.section}`, reason: `no section matching "${mu.section}"` });
-      continue;
+      // The section slot did not resolve. For anything that targets an existing
+      // line, the prefix identifies it unambiguously — and when the model omits
+      // the section, its text shifts into that slot, so mu.section IS the prefix.
+      const targetPrefix =
+        mu.op === "retract" || mu.op === "revise" || mu.op === "deepen" ? mu.prefix : undefined;
+      const hit = findAnywhere(targetPrefix ?? mu.section);
+      if (hit) {
+        sec = hit.sec;
+      } else {
+        rejected.push({
+          line: `${mu.op.toUpperCase()} ${mu.section.slice(0, 50)}`,
+          reason: `no section matching "${mu.section.slice(0, 40)}" and no line found by that prefix in any section`,
+        });
+        continue;
+      }
     }
 
     switch (mu.op) {

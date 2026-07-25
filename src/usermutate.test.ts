@@ -258,6 +258,27 @@ describe("structure and telemetry", () => {
     expect(rej!.reason).not.toMatch(/^no line matches/);
   });
 
+  test("a section-less mutation still lands — the prefix identifies the line", () => {
+    // Live wave 2026-07-25: the model emitted `RETRACT :: [ep:...] "we build..."`,
+    // omitting the section, so the line's own text shifted into the section slot.
+    // Both mutations were rejected and the wave reported "the model is mutating a
+    // USER.md it was not given" — exactly wrong: the target existed and the intent
+    // was unambiguous. Strict grammar, forgiving reader.
+    const { section, a } = twoRealBullets();
+    void section;
+    const r = run(`RETRACT :: ${a.slice(0, 40)}`);
+    expect(r.applied).toHaveLength(1);
+    expect(r.applied[0]).toMatch(/RETRACT/);
+    expect(r.deltaChars).toBeLessThan(0);
+  });
+
+  test("an empty section or prefix never silently binds to the first line", () => {
+    // startsWith("") is true for every heading and every bullet, so an omitted
+    // field must resolve to nothing rather than to whatever happens to be first.
+    expect(() => run("RETRACT :: ")).toThrow();
+    expect(() => run("RETRACT Nonexistent :: nothing matching this text at all exists")).toThrow(/rejected/);
+  });
+
   test("a mutation naming no real section is rejected, not applied blindly", () => {
     expect(() => run("OBSERVE Nonexistent :: something")).toThrow(/rejected/);
   });
