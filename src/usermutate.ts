@@ -428,7 +428,29 @@ export function applyUserMutations(userMd: string, mutations: UserMutation[], op
           break;
         }
         const before = sec.lines[i].length;
-        sec.lines[i] = asBullet(ensureStamp(mu.line));
+        const replacement = asBullet(ensureStamp(mu.line));
+
+        // A REVISE THAT GROWS IS AN APPEND WEARING A CATABOLIC LABEL.
+        //
+        // Caught on real session data (2026-07-25): the gate correctly deferred
+        // four appends, then a `REVISE` expanded a line 138 -> 232 chars and
+        // sailed straight through, because the budget check keys off op TYPE and
+        // REVISE is classified catabolic. Net +94 while 554 tokens over target.
+        //
+        // The classification is a statement of INTENT, not of effect. Intent is
+        // not measurable; bytes are. So a REVISE that would grow the line is held
+        // to the same budget as an OBSERVE — it may spend only the headroom the
+        // wave's real cuts have earned. Sharpening stays free; padding does not.
+        const growth = replacement.length - before;
+        if (overAtStart && growth > 0 && currentLen() > targetChars) {
+          const saved = Math.max(0, startLen - currentLen());
+          if (growth > Math.floor(saved / 3)) {
+            deferred.push(`REVISE ${mu.section} :: ${mu.prefix.slice(0, 40)} (+${growth} chars — a revision that grows)`);
+            break;
+          }
+        }
+
+        sec.lines[i] = replacement;
         applied.push(`REVISE ${sec.heading.replace(/^##\s*/, "")} — ${before} → ${sec.lines[i].length} chars`);
         break;
       }
@@ -441,6 +463,17 @@ export function applyUserMutations(userMd: string, mutations: UserMutation[], op
         }
         if (ia === ib) { rejected.push({ line: `MERGE :: ${mu.prefixA.slice(0, 40)}`, reason: "both prefixes match the SAME line — cannot merge a line into itself" }); break; }
         const savedChars = sec.lines[ia].length + sec.lines[ib].length - mu.line.length;
+
+        // Same hole as REVISE: a "merge" whose unified line is LONGER than the two
+        // lines it replaces is growth with a catabolic label. Held to the budget.
+        if (overAtStart && savedChars < 0 && currentLen() > targetChars) {
+          const saved = Math.max(0, startLen - currentLen());
+          if (-savedChars > Math.floor(saved / 3)) {
+            deferred.push(`MERGE ${mu.section} :: ${mu.prefixA.slice(0, 30)} + ${mu.prefixB.slice(0, 30)} (+${-savedChars} chars — a merge that grows)`);
+            break;
+          }
+        }
+
         const keep = Math.min(ia, ib);
         const drop = Math.max(ia, ib);
         consumed.push(sec.lines[ia], sec.lines[ib]);
@@ -511,5 +544,45 @@ export function applyUserMutations(userMd: string, mutations: UserMutation[], op
   for (const d of deferred) {
     rejected.push({ line: d, reason: "DEFERRED — the file is over target and this wave's cuts left no room; the observation is real and will be reconsidered next wave" });
   }
-  return { text: rendered, applied, rejected, noChange: null, collapsed, direction, deltaChars: rendered.length - userMd.length, deferred: deferred.length };
+
+  // THE BACKSTOP INVARIANT, checked on BYTES rather than on op labels.
+  //
+  // Every per-op gate above keys off something the engine believes about a
+  // mutation's intent, and intent has now been wrong twice: a REVISE that grew a
+  // line, and a MERGE that could produce a longer line than its inputs. Rather
+  // than keep patching op-by-op and hoping the next verb is honest, assert the
+  // property that actually matters, once, at the end:
+  //
+  //   while over target, a wave may not end net-positive.
+  //
+  // This holds no matter which verb misbehaves or what verb gets added later. If
+  // it trips, the wave is discarded and confessed — losing one cycle of real
+  // observations is strictly better than a file that grows while its own
+  // telemetry says it is shrinking.
+  const finalDelta = rendered.length - userMd.length;
+  if (overAtStart && finalDelta > 0) {
+    return {
+      text: userMd, // discarded — the file is left exactly as it was
+      applied: [],
+      rejected: [
+        ...rejected,
+        {
+          line: `wave discarded (net +${finalDelta} chars)`,
+          reason:
+            "INVARIANT: USER.md is over target, so no wave may end net-positive. " +
+            `This one applied ${applied.length} mutation(s) for a net gain of ${finalDelta} chars — ` +
+            "most likely a REVISE or MERGE that expanded rather than sharpened.",
+        },
+      ],
+      noChange:
+        `wave discarded: ${applied.length} mutation(s) would have GROWN USER.md by ${finalDelta} chars while it is ` +
+        `${Math.ceil((userMd.length - targetChars) / 4)} tokens over target — a consolidation wave that grows the file is not a consolidation`,
+      collapsed,
+      direction,
+      deltaChars: 0,
+      deferred: deferred.length,
+    };
+  }
+
+  return { text: rendered, applied, rejected, noChange: null, collapsed, direction, deltaChars: finalDelta, deferred: deferred.length };
 }

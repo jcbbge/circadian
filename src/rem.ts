@@ -1333,6 +1333,14 @@ async function runOnePass(opts: { dryRun: boolean; batch: number; pass: number; 
     // SELF+USER generation overflowed and returned empty). Best-effort: a
     // failure here must not lose the already-absorbed SELF work, so it emits
     // degraded and leaves USER.md untouched rather than aborting the commit.
+    // Episodes whose user-observed line was DEFERRED must not be composted this
+    // wave. The deferral contract says "reconsidered next wave" — that promise is
+    // a lie if the source episode is shed in the same wave, and it WAS: real
+    // session data 2026-07-25 deferred four observations and composted both
+    // episodes in the same commit. Silent loss of real evidence, exactly the
+    // failure class this system exists to prevent.
+    let deferredObsEpisodes: string[] = [];
+
     const userObs = newEpisodesThisWave
       .map((e) => {
         const m = e.content.match(/^user-observed:\s*(.+)$/im);
@@ -1341,6 +1349,11 @@ async function runOnePass(opts: { dryRun: boolean; batch: number; pass: number; 
         return { ep: dm ? dm[1] : dateStr, line };
       })
       .filter((o) => o.line && !/^nothing new$/i.test(o.line));
+    const obsToEpisode = new Map<string, string>();
+    for (const e of newEpisodesThisWave) {
+      const m = e.content.match(/^user-observed:\s*(.+)$/im);
+      if (m) obsToEpisode.set(m[1].trim().slice(0, 60), e.filename);
+    }
     if (userObs.length > 0) {
       try {
         const existingUser = readOrEmpty(USER_PATH);
@@ -1368,6 +1381,24 @@ async function runOnePass(opts: { dryRun: boolean; batch: number; pass: number; 
         } else {
           const parsedUser = parseUserMutations(block);
           const uApplied = applyUserMutations(existingUser, parsedUser.mutations, { targetChars: TARGET_USER_TOKENS * 4 });
+
+          // Any episode whose observation was deferred is protected from this
+          // wave's compost. Match loosely (the deferral records a truncated
+          // prefix) and prefer over-protecting: keeping an episode one extra
+          // night costs a file, losing it costs real evidence about jrg.
+          if (uApplied.deferred > 0) {
+            const deferredLines = uApplied.rejected.filter((x) => /DEFERRED/.test(x.reason)).map((x) => x.line);
+            const protectedEps = new Set<string>();
+            for (const [obsPrefix, filename] of obsToEpisode) {
+              const key = obsPrefix.toLowerCase().slice(0, 40);
+              if (deferredLines.some((d) => d.toLowerCase().includes(key))) protectedEps.add(filename);
+            }
+            // If the mapping is ambiguous, protect EVERY episode that carried an
+            // observation this wave — the deferral promised another look.
+            if (protectedEps.size === 0) for (const f of obsToEpisode.values()) protectedEps.add(f);
+            deferredObsEpisodes = [...protectedEps];
+          }
+
           const ut = tokensOf(uApplied.text);
           const overBy = ut - TARGET_USER_TOKENS;
 
@@ -1472,7 +1503,12 @@ async function runOnePass(opts: { dryRun: boolean; batch: number; pass: number; 
     // members were absorbed through it, so they leave with it. Their content
     // sits one revision back in git like every other shed.
     const shedTargets: string[] = [];
+    const spared: string[] = [];
     for (const m of parsed.compost) {
+      if (deferredObsEpisodes.includes(m.episode)) {
+        spared.push(m.episode);
+        continue;
+      }
       shedTargets.push(m.episode);
       const pot = ltp.get(m.episode);
       if (pot) shedTargets.push(...pot.members.map((mm) => mm.filename));
@@ -1512,7 +1548,7 @@ async function runOnePass(opts: { dryRun: boolean; batch: number; pass: number; 
       summary: absorbWasNoop
         ? `wave complete with nothing left to write — an earlier pass already committed these changes (absorbed ${newEpisodeCount}, shed ${shedTargets.length})`
         : `wave committed: absorbed ${newEpisodeCount}, shed ${shedTargets.length}`,
-      context: { absorbed: newEpisodeCount, shed: shedTargets.length, worldview_tokens: newSelfTokens, self_delta: newSelfTokens - oldSelfTokens, redundancy_before: Number((similarityBefore * 100).toFixed(1)), redundancy_after: Number((similarityAfter * 100).toFixed(1)), anabolic: direction.anabolic, catabolic: direction.catabolic, collapsed: collapsedMutations, backlog_remaining: backlog, pass: opts.pass, batch, ...(sizeNotes.length ? { size_notes: sizeNotes } : {}) },
+      context: { absorbed: newEpisodeCount, shed: shedTargets.length, ...(spared.length ? { spared_for_deferred_observations: spared } : {}), worldview_tokens: newSelfTokens, self_delta: newSelfTokens - oldSelfTokens, redundancy_before: Number((similarityBefore * 100).toFixed(1)), redundancy_after: Number((similarityAfter * 100).toFixed(1)), anabolic: direction.anabolic, catabolic: direction.catabolic, collapsed: collapsedMutations, backlog_remaining: backlog, pass: opts.pass, batch, ...(sizeNotes.length ? { size_notes: sizeNotes } : {}) },
     });
     rlog(`committed. ${subject}`);
   } catch (err) {

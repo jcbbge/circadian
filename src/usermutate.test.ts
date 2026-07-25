@@ -219,6 +219,48 @@ describe("the engine enforces what the prompt could not", () => {
     expect(r.deltaChars).toBeLessThan(0);
   });
 
+  test("a REVISE that GROWS is treated as an append, not a cut", () => {
+    // Caught on REAL session data (2026-07-25): the gate correctly deferred four
+    // appends, then a REVISE expanded a line 138 -> 232 chars and sailed through,
+    // because the budget keyed off op TYPE and REVISE is classified catabolic.
+    // Net +94 while 554t over target. Classification states intent; bytes state
+    // effect. Only bytes can be enforced.
+    const line = realUser().split("\n").find((l) => l.trim().startsWith("- ") && l.length > 100)!;
+    const prefix = line.replace(/^-\s*/, "").slice(0, 40);
+    const { mutations } = parseUserMutations(
+      `REVISE :: ${prefix} :: ${line.replace(/^-\s*/, "")} ${"and additional padding text ".repeat(12)}`
+    );
+    const r = applyUserMutations(realUser(), mutations, { targetChars: TARGET });
+    expect(r.applied).toHaveLength(0);
+    expect(r.deferred).toBe(1);
+    expect(r.text).toBe(realUser()); // untouched
+  });
+
+  test("a REVISE that shrinks still lands — sharpening stays free", () => {
+    const line = realUser().split("\n").find((l) => l.trim().startsWith("- ") && l.length > 100)!;
+    const r = applyUserMutations(
+      realUser(),
+      parseUserMutations(`REVISE :: ${line.replace(/^-\s*/, "").slice(0, 40)} :: Short and sharp.`).mutations,
+      { targetChars: TARGET }
+    );
+    expect(r.applied).toHaveLength(1);
+    expect(r.deltaChars).toBeLessThan(0);
+  });
+
+  test("BACKSTOP: while over target, no wave may end net-positive", () => {
+    // The property that actually matters, asserted on bytes at the end, so it
+    // holds no matter which verb misbehaves or what verb is added later. Two
+    // op-level gates were already wrong (REVISE, MERGE); this needs to be right
+    // once instead of right per-verb.
+    const { section, a, b } = twoRealBullets();
+    const { mutations } = parseUserMutations(
+      `MERGE ${section} :: ${a.slice(0, 40)} + ${b.slice(0, 40)} :: ${a} ${b} ${"padding ".repeat(40)}`
+    );
+    const r = applyUserMutations(realUser(), mutations, { targetChars: TARGET });
+    expect(r.deltaChars).toBeLessThanOrEqual(0);
+    expect(r.text.length).toBeLessThanOrEqual(realUser().length);
+  });
+
   test("under target the mind grows freely — the gate is not a cage", () => {
     const section = aSection();
     const { mutations } = parseUserMutations(`OBSERVE ${section} :: A genuinely new trait that deserves its own line in the model.`);
