@@ -433,6 +433,48 @@ function checkCaps(): void {
   else add("token caps", "WARN", `over cap: ${over.join(", ")}`);
 }
 
+/** ECHO WATCH — the organ-level flatline detector.
+ *
+ * The flatline (2026-07-23) was caught by jrg's gut after ten sessions, not by
+ * telemetry. SELF.md got a mutation grammar so echo became structurally
+ * impossible there — but USER.md is still a full-document rewrite, and on
+ * 2026-07-24 it was caught echoing byte-identically while 919 tokens over
+ * target. Any organ that asks a model to reproduce a whole document can flatline,
+ * so the pattern gets a named check rather than a log line nobody reads.
+ *
+ * One echo is noise (an observation genuinely added nothing). A RUN of them is
+ * the flatline, and the whole point of this system is that it must never take
+ * ten sessions and a human gut to notice. */
+function checkEcho(events: CircadianEvent[]): void {
+  const userEvents = events.filter((e) => e.process === "rem" && e.phase === "user-model");
+  if (userEvents.length === 0) {
+    add("echo watch", "IDLE", "no USER-model passes on record yet");
+    return;
+  }
+
+  // Consecutive echoes, most recent first — a streak is the signal.
+  let streak = 0;
+  for (let i = userEvents.length - 1; i >= 0; i--) {
+    if (userEvents[i].context?.echo === true) streak++;
+    else break;
+  }
+
+  const last = userEvents[userEvents.length - 1];
+  const over = last.context?.over_target_by;
+
+  if (streak === 0) {
+    add("echo watch", "OK", `USER-model pass moved the relational model on its last run (${userEvents.length} pass(es) on record)`);
+  } else if (streak === 1) {
+    add("echo watch", "WARN", `USER.md echoed unchanged on the last pass${over ? ` while ${over}t over target` : ""} — one echo may be honest; two is a flatline`);
+  } else {
+    add(
+      "echo watch",
+      "FAIL",
+      `USER.md echoed unchanged ${streak} passes in a row${over ? ` while ${over}t over target` : ""} — this organ has flatlined: a full-document rewrite makes copying the model's cheapest valid output. It needs a mutation grammar, not a stronger prompt`
+    );
+  }
+}
+
 /** THE ACCRETION INSTRUMENT (added after the 2026-07-24 accretion wave).
  *
  * Doctrine 1 says "accretion must be a visible number with a guard on it, not a
@@ -685,6 +727,7 @@ function main() {
   checkMindRepo();
   checkCaps();
   checkRedundancy();
+  checkEcho(events);
   checkEpisodes(events);
   checkWorldviewMotion();
   checkPendingSleepQueue();

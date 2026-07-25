@@ -37,6 +37,7 @@ import { createHash } from "crypto";
 import { complete } from "./llm.ts";
 import { ok, idle, degraded, fail, correlation } from "./obs.ts";
 import { MUTATION_GRAMMAR, parseMutations, applyMutations, noChangeGreeting, selfSimilarity, type Mutation, type ParsedMutations } from "./mutate.ts";
+import { USER_MUTATION_GRAMMAR, parseUserMutations, applyUserMutations } from "./usermutate.ts";
 import { clusterEpisodes, type EpisodeCluster } from "./ltp.ts";
 
 // ---- paths (per MIND-SPEC.md) ----
@@ -554,12 +555,24 @@ function buildUserPrompt(existingUser: string, userObservations: { ep: string; l
   // no way to know it was already over and no signal to shrink. Stating the
   // overage explicitly is the difference between a rule and an instruction.
   const curTokens = tokensOf(existingUser);
+  // A BUDGET, NOT A SCOLDING. First attempt here just told the model it was over
+  // target; the live wave then emitted 5 catabolic ops that saved 844 chars and 3
+  // anabolic ops that added 836 — net minus eight. Every instruction was obeyed
+  // and nothing moved, because "you are over target" does not say how much to
+  // cut, and an unquantified goal loses to a concrete one every time.
+  //
+  // So the overage is converted into a CHARACTER QUOTA with a stated deadline in
+  // waves, and the anabolic side is explicitly capped against it. Same three
+  // rubrics as everywhere else: bounded loop, explicit termination condition.
+  const overTokens = curTokens - TARGET_USER_TOKENS;
   const budget =
-    curTokens > TARGET_USER_TOKENS
-      ? `\n\nSIZE STATUS: USER.md is currently ${curTokens} tokens against a target of ${TARGET_USER_TOKENS} — OVER by ${curTokens - TARGET_USER_TOKENS}. Your rewrite MUST come back under ${TARGET_USER_TOKENS} tokens (${TARGET_USER_TOKENS * 4} chars). Consolidate: several lines almost certainly describe one trait. That consolidation is the work of this pass, not an optional extra.`
-      : `\n\nSIZE STATUS: USER.md is ${curTokens} tokens against a target of ${TARGET_USER_TOKENS} — under target. Keep it that way; add only what is genuinely new.`;
+    overTokens > 0
+      ? `\n\nSIZE STATUS: USER.md is ${curTokens} tokens against a target of ${TARGET_USER_TOKENS} — OVER by ${overTokens} tokens (${overTokens * 4} characters).\n\nYOUR QUOTA THIS WAVE: remove at least ${Math.max(400, Math.min(overTokens * 4, 1200))} characters NET. Count as you go: a MERGE of two ~400-char lines into one ~200-char line nets about -600; a REVISE that halves a 300-char line nets about -150; an OBSERVE of a new 400-char line nets +400 and spends your quota. Do the cutting FIRST, then add only what the cuts leave room for. A wave that ends net-flat has failed even if every single mutation was valid — that is exactly what happened last wave (844 characters cut, 836 added back, net -8).`
+      : `\n\nSIZE STATUS: USER.md is ${curTokens} tokens against a target of ${TARGET_USER_TOKENS} — under target, with ${TARGET_USER_TOKENS - curTokens} tokens of room. Add only what is genuinely new, and prefer DEEPEN of a held line over a new one.`;
 
   return `You are the USER-MODEL pass of REM in a circadian memory substrate. You maintain USER.md, the private relational model of the user jrg — who he is to work with: preferences, working style, register, mental models, reaction patterns. NOT code facts.${budget}
+
+You do NOT output USER.md. You emit MUTATIONS which an engine applies mechanically. This is deliberate: when this pass asked for a full rewrite, the model returned the file byte-identically while 919 tokens over target, because copying input to output is the cheapest valid answer. One mutation line is cheaper than a copy, so the cheapest answer is now a real change.
 
 CURRENT USER.md:
 """
@@ -571,15 +584,23 @@ NEW OBSERVATIONS from this cycle's episodes (each is a "user-observed:" line a s
 ${obs}
 """
 
-Your task: rewrite USER.md, applying confirm/contradict/supersede/deepen to each new observation against the current file. SIZE DISCIPLINE IS PART OF THE TASK: if the current file is already over its target, the rewrite MUST come back smaller — fold observations that describe the same trait into one sharper line (three bullets about wanting to see live output are one preference, not three), and drop what a newer observation supersedes. A relational model that only ever grows is a transcript, not a model. A genuinely new, well-evidenced observation deepens or adds; a contradicted one is corrected or removed; a confirmed one is left as-is (do not duplicate). Every retained line MUST keep its origin stamp [ep:YYYY-MM-DD] and, where voice matters, a short verbatim quote (ash is banned — "jrg prefers X" with no why or quote is a defect). These are inferences about a person; they self-correct over cycles, so record well-evidenced ones without fear, but never invent beyond the observations. Preserve the section structure. Shrink-unless-justified. Cap: 2000 tokens / 8000 chars.
+Your task: express every judgment about the new observations as MUTATIONS against the current USER.md.
 
-If there are no new observations, return the current USER.md UNCHANGED.
+${USER_MUTATION_GRAMMAR}
+
+Rules:
+- A genuinely new, well-evidenced observation is OBSERVE. One that adds evidence to a trait already held is DEEPEN. One that says an existing line better is REVISE. Several lines describing ONE trait are MERGE. A trait that no longer holds is RETRACT.
+- Never OBSERVE something already held — the engine will refuse it and report you as circling.
+- Ash is banned: every line carries its why or a short verbatim quote. "jrg prefers X" with no reasoning is a defect.
+- Keep origin stamps [ep:YYYY-MM-DD]; the engine adds one if you omit it.
+- These are inferences about a person and they self-correct over cycles — record well-evidenced ones without fear, but never invent beyond the observations given.
+- If nothing about jrg moved this cycle, emit exactly ONE line: NO-CHANGE :: <justification>.
 
 Output EXACTLY one block, nothing else:
 
-===USER_MD===
-<the full rewritten USER.md>
-===END_USER_MD===
+===USER_MUTATIONS===
+<one mutation per line, following the grammar exactly; NEVER empty>
+===END_USER_MUTATIONS===
 `;
 }
 
@@ -1327,26 +1348,80 @@ async function runOnePass(opts: { dryRun: boolean; batch: number; pass: number; 
           timeoutMs: LLM_TIMEOUT_MS,
           maxTokens: 3000,
         });
-        const um = userRaw.match(/===USER_MD===\r?\n([\s\S]*?)\r?\n?===END_USER_MD===/);
-        const newUser = um ? um[1].trim() : "";
+        // MUTATIONS, not a document. Echo is now structurally impossible in this
+        // organ too: there is no USER.md in the model's output to copy. The old
+        // ===USER_MD=== full-rewrite block is gone — it was the flatline gradient,
+        // and it was caught live returning the file byte-identically while 919
+        // tokens over target and reporting success.
+        const um = userRaw.match(/===USER_MUTATIONS===\r?\n([\s\S]*?)\r?\n?===END_USER_MUTATIONS===/);
+        const block = um ? um[1].trim() : "";
         const userRunawayAt = Math.floor(TARGET_USER_TOKENS * RUNAWAY_FACTOR);
-        if (newUser && tokensOf(newUser) <= userRunawayAt) {
-          // Soft target: accept normal over-target growth; only a runaway is refused.
-          atomicWrite(USER_PATH, newUser);
-          const ut = tokensOf(newUser);
-          ok({
-            process: "rem", phase: "user-model", correlation_id: corr,
-            summary: `USER.md updated from ${userObs.length} observation(s)`,
-            context: { observations: userObs.length, user_tokens: ut, target: TARGET_USER_TOKENS, ...(ut > TARGET_USER_TOKENS ? { over_target_by: ut - TARGET_USER_TOKENS } : {}) },
-          });
-        } else {
+
+        if (!block) {
           degraded({
             process: "rem", phase: "user-model", correlation_id: corr,
-            summary: "USER.md update skipped; model output empty or a runaway",
-            context: { observations: userObs.length, out_tokens: newUser ? tokensOf(newUser) : 0, target: TARGET_USER_TOKENS, runaway_at: userRunawayAt },
-            cause: newUser ? `proposed USER.md ${tokensOf(newUser)}t is a runaway (> ${userRunawayAt}t)` : "USER-model call returned no USER_MD block",
+            summary: "USER.md update skipped; model returned no mutations block",
+            context: { observations: userObs.length, target: TARGET_USER_TOKENS },
+            cause: "USER-model call returned no ===USER_MUTATIONS=== block",
             next_action: "USER.md left unchanged this cycle; observations remain in the episodes and will be reconsidered next REM",
           });
+        } else {
+          const parsedUser = parseUserMutations(block);
+          const uApplied = applyUserMutations(existingUser, parsedUser.mutations, { targetChars: TARGET_USER_TOKENS * 4 });
+          const ut = tokensOf(uApplied.text);
+          const overBy = ut - TARGET_USER_TOKENS;
+
+          if (uApplied.noChange !== null) {
+            degraded({
+              process: "rem", phase: "user-model", correlation_id: corr,
+              summary: `USER.md unchanged — ${uApplied.collapsed > 0 ? "every observation restated a trait already held" : "nothing about jrg moved this cycle"}`,
+              context: { observations: userObs.length, user_tokens: ut, target: TARGET_USER_TOKENS, collapsed: uApplied.collapsed, ...(overBy > 0 ? { over_target_by: overBy } : {}), echo: true },
+              cause: uApplied.noChange,
+              next_action: overBy > 0
+                ? "USER.md is over target and nothing consolidated it — if this recurs, the observations are too repetitive to teach anything new"
+                : "no action needed if the observations genuinely added nothing",
+            });
+          } else if (ut <= userRunawayAt) {
+            atomicWrite(USER_PATH, uApplied.text);
+            // QUOTA ACCOUNTABILITY. A wave that is over target and ends net-flat
+            // has failed even though every mutation was valid — the 2026-07-24
+            // wave cut 844 chars and added back 836. Direction counts called that
+            // a success (5 catabolic!). Net delta is the honest number, so an
+            // over-target wave that fails to shrink is reported DEGRADED, not OK.
+            const wasOver = tokensOf(existingUser) > TARGET_USER_TOKENS;
+            const ctx = {
+              observations: userObs.length, applied: uApplied.applied, user_tokens: ut, target: TARGET_USER_TOKENS,
+              delta_chars: uApplied.deltaChars,
+              anabolic: uApplied.direction.anabolic, catabolic: uApplied.direction.catabolic,
+              ...(uApplied.collapsed ? { collapsed: uApplied.collapsed } : {}),
+              ...(uApplied.deferred ? { deferred: uApplied.deferred } : {}),
+              ...(uApplied.rejected.length ? { rejected: uApplied.rejected } : {}),
+              ...(overBy > 0 ? { over_target_by: overBy } : {}),
+            };
+            if (wasOver && uApplied.deltaChars > -100) {
+              degraded({
+                process: "rem", phase: "user-model", correlation_id: corr,
+                summary: `USER.md mutated but did not shrink: ${uApplied.applied.length} applied, net ${uApplied.deltaChars >= 0 ? "+" : ""}${uApplied.deltaChars} chars while ${overBy}t over target`,
+                context: ctx,
+                cause: `the wave was over target and every mutation was valid, but the anabolic ops gave back what the catabolic ops saved (${uApplied.direction.catabolic} catabolic, ${uApplied.direction.anabolic} anabolic, net ${uApplied.deltaChars} chars)`,
+                next_action: "the mutations are kept (they are real work); if this repeats, the quota in the prompt is not landing and USER.md needs one manual consolidation to get under target",
+              });
+            } else {
+              ok({
+                process: "rem", phase: "user-model", correlation_id: corr,
+                summary: `USER.md mutated: ${uApplied.applied.length} applied${uApplied.rejected.length ? `, ${uApplied.rejected.length} rejected` : ""}, net ${uApplied.deltaChars >= 0 ? "+" : ""}${uApplied.deltaChars} chars` + (overBy > 0 ? ` (${overBy}t over target)` : ""),
+                context: ctx,
+              });
+            }
+          } else {
+            degraded({
+              process: "rem", phase: "user-model", correlation_id: corr,
+              summary: "USER.md mutation refused; result is a runaway",
+              context: { observations: userObs.length, out_tokens: ut, target: TARGET_USER_TOKENS, runaway_at: userRunawayAt },
+              cause: `mutated USER.md ${ut}t is a runaway (> ${userRunawayAt}t)`,
+              next_action: "USER.md left unchanged this cycle; observations remain in the episodes and will be reconsidered next REM",
+            });
+          }
         }
       } catch (e) {
         degraded({
