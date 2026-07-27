@@ -29,7 +29,7 @@ const CIRCADIAN_HOME = process.env.CIRCADIAN_HOME || join(homedir(), "circadian"
 const EVENT_LOG = join(CIRCADIAN_HOME, "logs", "circadian.events.jsonl");
 const TOWER_BOARD = join(homedir(), ".tower", "board.jsonl");
 
-export type CircadianProcess = "wake" | "sleep" | "graze" | "rem" | "status" | "doctor" | "backfill" | "ops" | "zoom" | "replay" | "atoms" | "render" | "decay" | "stack";
+export type CircadianProcess = "wake" | "sleep" | "graze" | "rem" | "status" | "doctor" | "backfill" | "ops" | "zoom" | "replay" | "atoms" | "render" | "decay" | "stack" | "migrate";
 
 /**
  * Outcome is NEVER a bare exit code. These four words are the vocabulary:
