@@ -10,6 +10,8 @@ import {
   MAX_CANDIDATES,
   BAND_LOW,
   BAND_HIGH,
+  COMPARE_TOP_K,
+  EXTRACT_TEMPERATURE,
   CandidateShapeError,
   parseCandidateBlock,
   processExtractCompletion,
@@ -33,6 +35,22 @@ const PINNED_MIND_REV = "6271e090226a9970b158399d621d69eac15c5a80";
 const FLOOD = collectAllEpisodesAt(PINNED_MIND_REV, MIND).filter((e) =>
   e.filename.startsWith("2026-07-24-bidirectional-")
 );
+
+// ---------------------------------------------------------------------
+// tuned knobs (popmem WS-C2, §10 fallback: widen deterministic band /
+// temp-0 EXTRACT — never a bigger model)
+// ---------------------------------------------------------------------
+describe("WS-C2 tuned knobs", () => {
+  test("BAND_LOW widened from 0.15 to 0.05", () => {
+    expect(BAND_LOW).toBe(0.05);
+  });
+  test("COMPARE_TOP_K consults 2 in-band atoms", () => {
+    expect(COMPARE_TOP_K).toBe(2);
+  });
+  test("EXTRACT runs at temperature 0", () => {
+    expect(EXTRACT_TEMPERATURE).toBe(0);
+  });
+});
 
 // ---------------------------------------------------------------------
 // counterfeit-quote assert (R3) — real episode content, pinned rev
@@ -187,7 +205,7 @@ describe("routeCandidate — dedupe pipeline", () => {
   const BASE_CLAIM = "The cliff is complexity accretion across the whole system.";
   const HIGH_OVERLAP_CLAIM = "The cliff is complexity accretion across the entire codebase."; // ~0.5
   const MID_BAND_CLAIM = "The cliff of complexity keeps accreting inside every system we ship."; // ~0.27, in-band
-  const LOW_OVERLAP_CLAIM = "Weight decays nightly across the population by a small multiplicative factor."; // ~0.08
+  const LOW_OVERLAP_CLAIM = "The user prefers terse replies without trailing summaries in every session."; // 0 overlap
 
   function existingFor(claim: string): ExistingAtomView[] {
     return [{ id: atomId(claim), claim }];
@@ -309,6 +327,125 @@ describe("routeCandidate — dedupe pipeline", () => {
     const decision = await routeCandidate(HIGH_OVERLAP_CLAIM, existing, () => "SAME");
     expect(decision.action).toBe("stack");
     expect(decision.targetAtomId).toBe(atomId(BASE_CLAIM)); // the higher-overlap match, not `low`
+  });
+});
+
+// ---------------------------------------------------------------------
+// COMPARE_TOP_K — multi-atom band consult (popmem WS-C2, §10 fallback:
+// widen deterministic routing, never a bigger model)
+// ---------------------------------------------------------------------
+describe("routeCandidate — COMPARE_TOP_K multi-atom band consult", () => {
+  // Three atoms whose overlap against CANDIDATE all land in-band
+  // [BAND_LOW, BAND_HIGH), distinctly ranked: TOP > SECOND > THIRD.
+  const CANDIDATE = "The cliff is complexity accretion across the whole system.";
+  const TOP = "The cliff is complexity accretion yet the rest of this sentence differs completely now."; // ~0.2727
+  const SECOND = "The cliff is complexity accretion but nothing else about this matters here today."; // ~0.25
+  const THIRD = "Complexity accretion across many unrelated other topics discussed during the long meeting."; // ~0.2308
+
+  function threeInBand(): ExistingAtomView[] {
+    return [
+      { id: atomId(THIRD), claim: THIRD },
+      { id: atomId(TOP), claim: TOP },
+      { id: atomId(SECOND), claim: SECOND },
+    ];
+  }
+
+  test("sanity: TOP > SECOND > THIRD, all within [BAND_LOW, BAND_HIGH)", () => {
+    const ov = (b: string) => jaccard(significantTokens(CANDIDATE), significantTokens(b));
+    const [top, second, third] = [ov(TOP), ov(SECOND), ov(THIRD)];
+    expect(top).toBeGreaterThan(second);
+    expect(second).toBeGreaterThan(third);
+    for (const o of [top, second, third]) {
+      expect(o).toBeGreaterThanOrEqual(BAND_LOW);
+      expect(o).toBeLessThan(BAND_HIGH);
+    }
+  });
+
+  test("second-highest SAME wins when the highest is DISTINCT; THIRD is never consulted (topK=2)", async () => {
+    const seen: string[] = [];
+    const compare = (_a: string, b: string) => {
+      seen.push(b);
+      if (b === TOP) return "DISTINCT";
+      if (b === SECOND) return "SAME";
+      throw new Error(`THIRD must not be consulted at topK=2, got compare against: ${b}`);
+    };
+    const decision = await routeCandidate(CANDIDATE, threeInBand(), compare);
+    expect(decision.action).toBe("stack");
+    expect(decision.targetAtomId).toBe(atomId(SECOND));
+    expect(decision.compareCallCount).toBe(2);
+    expect(seen).toEqual([TOP, SECOND]);
+  });
+
+  test("short-circuits on a SAME from the highest-overlap atom — second is never consulted", async () => {
+    const seen: string[] = [];
+    const compare = (_a: string, b: string) => {
+      seen.push(b);
+      return "SAME";
+    };
+    const decision = await routeCandidate(CANDIDATE, threeInBand(), compare);
+    expect(decision.action).toBe("stack");
+    expect(decision.targetAtomId).toBe(atomId(TOP));
+    expect(decision.compareCallCount).toBe(1);
+    expect(seen).toEqual([TOP]);
+  });
+
+  test("a SUPERSEDES_A on the highest is remembered but a later SAME still wins (SAME > SUPERSEDES priority)", async () => {
+    const compare = (_a: string, b: string) => {
+      if (b === TOP) return "SUPERSEDES_A";
+      if (b === SECOND) return "SAME";
+      throw new Error("unexpected consult");
+    };
+    const decision = await routeCandidate(CANDIDATE, threeInBand(), compare);
+    expect(decision.action).toBe("stack");
+    expect(decision.targetAtomId).toBe(atomId(SECOND));
+    expect(decision.compareCallCount).toBe(2);
+  });
+
+  test("the FIRST SUPERSEDES_A wins when nothing later resolves SAME", async () => {
+    const compare = (_a: string, b: string) => {
+      if (b === TOP) return "SUPERSEDES_A";
+      if (b === SECOND) return "DISTINCT";
+      throw new Error("unexpected consult");
+    };
+    const decision = await routeCandidate(CANDIDATE, threeInBand(), compare);
+    expect(decision.action).toBe("supersede");
+    expect(decision.targetAtomId).toBe(atomId(TOP));
+    expect(decision.compareCallCount).toBe(2);
+  });
+
+  test("both consulted atoms DISTINCT -> new atom, compareCallCount 2, THIRD still uncalled", async () => {
+    const seen: string[] = [];
+    const compare = (_a: string, b: string) => {
+      seen.push(b);
+      return "DISTINCT";
+    };
+    const decision = await routeCandidate(CANDIDATE, threeInBand(), compare);
+    expect(decision.action).toBe("new");
+    expect(decision.compareCallCount).toBe(2);
+    expect(seen).toEqual([TOP, SECOND]);
+  });
+
+  test("an unrecognized token on one of two consulted atoms is counted in compareInvalidCount", async () => {
+    const decision = await routeCandidate(CANDIDATE, threeInBand(), (_a: string, b: string) =>
+      b === TOP ? "banana" : "DISTINCT"
+    );
+    expect(decision.action).toBe("new");
+    expect(decision.compareCallCount).toBe(2);
+    expect(decision.compareInvalidCount).toBe(1);
+  });
+
+  test("a custom topK narrows or widens how many in-band atoms are consulted", async () => {
+    let calls = 0;
+    const compare = () => {
+      calls++;
+      return "DISTINCT";
+    };
+    const decisionTop1 = await routeCandidate(CANDIDATE, threeInBand(), compare, { topK: 1 });
+    expect(decisionTop1.compareCallCount).toBe(1);
+
+    calls = 0;
+    const decisionTop3 = await routeCandidate(CANDIDATE, threeInBand(), compare, { topK: 3 });
+    expect(decisionTop3.compareCallCount).toBe(3);
   });
 });
 
