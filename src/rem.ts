@@ -139,6 +139,12 @@ interface ScoreEvent {
   /** Did this wave actually change SELF.md? false = the model echoed its
    * input back — the flatline signal doctor watches for. */
   self_changed?: boolean;
+  /** R7 implicit-ok provenance (status.ts's copy is the canonical doc comment):
+   * "propagation" = SLEEP-appended because a greeting-sourced rem judgment
+   * propagated; absent = explicit human verdict. */
+  source?: "propagation";
+  /** ts of the rem event an implicit verdict is based on — the dedupe key. */
+  basis?: string;
 }
 
 function loadScoreboard(): ScoreEvent[] {
@@ -165,6 +171,39 @@ function lastRemTs(events: ScoreEvent[]): string | null {
 
 function appendScoreboardEvent(event: ScoreEvent) {
   fs.appendFileSync(SCOREBOARD_PATH, JSON.stringify(event) + "\n");
+}
+
+// ---------------------------------------------------------------------
+// absorb freeze (popmem WS-0): a marker file pauses the v1 SELF.md mutation
+// path while the atom-based absorb path (WS-B/C) is built. SLEEP keeps
+// drafting episodes; WAKE keeps injecting the (frozen) SELF.md (Law 7
+// intact); the undigested backlog is the switchover's shakedown meal.
+// ---------------------------------------------------------------------
+const FREEZE_MARKER_PATH = path.join(CIRCADIAN_HOME, ".rem-freeze");
+
+export interface FreezeDecision {
+  frozen: boolean;
+  /** Free-text marker-file content, e.g. "popmem WS-F not yet switched over". */
+  reason: string | null;
+}
+
+/** Pure given a path: reads the marker file if present. No marker = not
+ * frozen. Arming/disarming the freeze is a human/orchestrator act (creating
+ * or removing the file) — this function only reads what's already there. */
+export function computeFreezeDecision(markerPath: string): FreezeDecision {
+  try {
+    const content = fs.readFileSync(markerPath, "utf8");
+    return { frozen: true, reason: content.trim() || null };
+  } catch {
+    return { frozen: false, reason: null };
+  }
+}
+
+/** Episodes on disk whose content hash is not yet in digested.jsonl — the
+ * absorb backlog. Pure given the loaded episode list (isNew is already
+ * computed against the digested ledger by loadEpisodes). */
+export function countBacklog(episodes: Episode[]): number {
+  return episodes.filter((e) => e.isNew).length;
 }
 
 // ---------------------------------------------------------------------
@@ -1229,6 +1268,7 @@ async function runOnePass(opts: { dryRun: boolean; batch: number; pass: number; 
 
   const scoreboard = loadScoreboard();
   const allEpisodes = loadEpisodes();
+  const freeze = computeFreezeDecision(FREEZE_MARKER_PATH);
   const { episodes, deferred, ltp } = selectMeal(allEpisodes, batch);
   const backlog = deferred.length;
   if (episodes.length === 0) return "empty";
@@ -1371,65 +1411,83 @@ async function runOnePass(opts: { dryRun: boolean; batch: number; pass: number; 
     // All validation above passed; every write below is now safe to apply.
     // newSelfMd came out of the mutation engine — mechanical application of
     // the model's mutations, never a model-emitted document.
-    atomicWrite(SELF_PATH, newSelfMd);
+    // ABSORB FREEZE (popmem WS-0): while $CIRCADIAN_HOME/.rem-freeze exists,
+    // SELF.md/compost.md/the digested ledger are untouched — only NOW.md and
+    // greeting.md (session-facing state, not the worldview) still write. The
+    // undigested backlog accumulates on purpose; it is the switchover's
+    // shakedown meal (see docs/POPULATION-MEMORY.md R7/§12 WS-0).
+    if (!freeze.frozen) {
+      atomicWrite(SELF_PATH, newSelfMd);
+      atomicWrite(COMPOST_PATH, newCompostMd);
+      for (const m of parsed.compost) {
+        const ep = episodes.find((e) => e.filename === m.episode);
+        if (!ep) continue; // already validated to exist; defensive only
+        const withTaughtLine = appendTaughtLine(ep.content, m.taught, m.absorbed_where);
+        fs.writeFileSync(ep.filepath, withTaughtLine, "utf8");
+      }
+    }
     atomicWrite(NOW_PATH, newNowMd);
     atomicWrite(GREETING_PATH, newGreetingMd);
-    atomicWrite(COMPOST_PATH, newCompostMd);
-
-    for (const m of parsed.compost) {
-      const ep = episodes.find((e) => e.filename === m.episode);
-      if (!ep) continue; // already validated to exist; defensive only
-      const withTaughtLine = appendTaughtLine(ep.content, m.taught, m.absorbed_where);
-      fs.writeFileSync(ep.filepath, withTaughtLine, "utf8");
-    }
 
     const newEpisodesThisWave = episodes.filter((e) => e.isNew);
     const newEpisodeCount = newEpisodesThisWave.length;
-
-    // Record EVERY new episode this wave digested into the ledger BEFORE the
-    // commit stages it. Disposition: composted if it was shed, else absorbed.
-    // This is the invariant's write point — hash recorded == will never be
-    // re-fed as new. Composted-set membership keyed by filename (validated to
-    // exist upstream).
-    const compostedNames = new Set(parsed.compost.map((m) => m.episode));
     const nowIso = new Date().toISOString();
-    // LTP members were absorbed THROUGH their representative — they enter the
-    // ledger with it (never re-fed as new) and inherit its disposition.
-    const ledgerEntries: DigestedEntry[] = [];
-    for (const e of newEpisodesThisWave) {
-      const disposition = compostedNames.has(e.filename) ? ("composted" as const) : ("absorbed" as const);
-      ledgerEntries.push({ ts: nowIso, hash: e.hash, filename: e.filename, disposition });
-      const pot = ltp.get(e.filename);
-      if (pot) {
-        for (const m of pot.members) {
-          ledgerEntries.push({ ts: nowIso, hash: m.hash, filename: m.filename, disposition });
+
+    if (!freeze.frozen) {
+      // Record EVERY new episode this wave digested into the ledger BEFORE the
+      // commit stages it. Disposition: composted if it was shed, else absorbed.
+      // This is the invariant's write point — hash recorded == will never be
+      // re-fed as new. Composted-set membership keyed by filename (validated to
+      // exist upstream).
+      const compostedNames = new Set(parsed.compost.map((m) => m.episode));
+      // LTP members were absorbed THROUGH their representative — they enter the
+      // ledger with it (never re-fed as new) and inherit its disposition.
+      const ledgerEntries: DigestedEntry[] = [];
+      for (const e of newEpisodesThisWave) {
+        const disposition = compostedNames.has(e.filename) ? ("composted" as const) : ("absorbed" as const);
+        ledgerEntries.push({ ts: nowIso, hash: e.hash, filename: e.filename, disposition });
+        const pot = ltp.get(e.filename);
+        if (pot) {
+          for (const m of pot.members) {
+            ledgerEntries.push({ ts: nowIso, hash: m.hash, filename: m.filename, disposition });
+          }
         }
       }
-    }
-    recordDigested(ledgerEntries);
-    const ltpCollapsed = [...ltp.values()].reduce((n, p) => n + p.members.length, 0);
-    if (ltpCollapsed > 0) {
-      ok({
-        process: "rem", phase: "ltp", correlation_id: corr,
-        summary: `long-term potentiation: ${ltpCollapsed} near-duplicate episode(s) collapsed into ${ltp.size} potentiated representative(s)`,
-        context: { clusters: [...ltp.entries()].map(([rep, p]) => ({ representative: rep, weight: p.weight, members: p.members.map((m) => m.filename) })) },
-      });
+      recordDigested(ledgerEntries);
+      const ltpCollapsed = [...ltp.values()].reduce((n, p) => n + p.members.length, 0);
+      if (ltpCollapsed > 0) {
+        ok({
+          process: "rem", phase: "ltp", correlation_id: corr,
+          summary: `long-term potentiation: ${ltpCollapsed} near-duplicate episode(s) collapsed into ${ltp.size} potentiated representative(s)`,
+          context: { clusters: [...ltp.entries()].map(([rep, p]) => ({ representative: rep, weight: p.weight, members: p.members.map((m) => m.filename) })) },
+        });
+      }
     }
 
+    // The scoreboard rem event is KEPT even while frozen — implicit-ok
+    // verdicts (R7) depend on its `propagated` array, and worldview_tokens
+    // must report reality (SELF.md untouched, so tokens are the OLD count).
     appendScoreboardEvent({
       ts: nowIso,
       type: "rem",
-      worldview_tokens: newSelfTokens,
+      worldview_tokens: freeze.frozen ? oldSelfTokens : newSelfTokens,
       propagated: parsed.propagated,
-      composted: parsed.compost.map((m) => m.episode),
-      self_changed: selfChanged,
+      composted: freeze.frozen ? [] : parsed.compost.map((m) => m.episode),
+      self_changed: freeze.frozen ? false : selfChanged,
     });
 
-    // Mutation-engine telemetry: what actually moved, what missed, and — on a
-    // NO-CHANGE wave — the confession that will be spoken at the next wake.
-    // Under this engine a silent flatline is structurally impossible: echo has
-    // no document to copy, and stagnation costs a signed justification.
-    if (noChangeJustification !== null) {
+    if (freeze.frozen) {
+      const backlogNow = countBacklog(allEpisodes);
+      ok({
+        process: "rem", phase: "absorb", correlation_id: corr,
+        summary: `absorb frozen: SELF.md/compost.md/digested.jsonl untouched; backlog holds ${backlogNow} undigested episode(s)`,
+        context: { frozen_reason: freeze.reason, backlog: backlogNow, would_have_absorbed: newEpisodeCount, batch, pass: opts.pass },
+      });
+    } else if (noChangeJustification !== null) {
+      // Mutation-engine telemetry: what actually moved, what missed, and — on a
+      // NO-CHANGE wave — the confession that will be spoken at the next wake.
+      // Under this engine a silent flatline is structurally impossible: echo has
+      // no document to copy, and stagnation costs a signed justification.
       degraded({
         process: "rem", phase: "absorb", correlation_id: corr,
         summary: `NO-CHANGE wave: worldview deliberately untouched despite ${newEpisodeCount} new episode(s)`,
@@ -1453,7 +1511,7 @@ async function runOnePass(opts: { dryRun: boolean; batch: number; pass: number; 
         });
       }
     }
-    if (parsed.malformedMutations.length > 0) {
+    if (!freeze.frozen && parsed.malformedMutations.length > 0) {
       degraded({
         process: "rem", phase: "absorb", correlation_id: corr,
         summary: `${parsed.malformedMutations.length} mutation line(s) violated the grammar and were dropped`,
@@ -1462,7 +1520,7 @@ async function runOnePass(opts: { dryRun: boolean; batch: number; pass: number; 
         next_action: "valid mutations proceeded; if malformed lines dominate every wave, tighten the grammar examples in the prompt",
       });
     }
-    if (parsed.droppedConfession !== null) {
+    if (!freeze.frozen && parsed.droppedConfession !== null) {
       degraded({
         process: "rem", phase: "absorb", correlation_id: corr,
         summary: "model claimed NO-CHANGE while also emitting mutations — confession dropped, mutations won",
@@ -1610,11 +1668,14 @@ async function runOnePass(opts: { dryRun: boolean; batch: number; pass: number; 
       }
     }
 
-    const subject = `rem: ${dateStr} — absorbed ${newEpisodeCount}, shed ${parsed.compost.length}, worldview ${Math.round(
-      newSelfTokens / 1000
-    )}k tokens`;
-    const body =
-      noChangeJustification !== null
+    const subject = freeze.frozen
+      ? `rem: ${dateStr} — ABSORB FROZEN (${freeze.reason ?? "no reason given"}); greeting updated, ${newEpisodeCount} episode(s) held in backlog`
+      : `rem: ${dateStr} — absorbed ${newEpisodeCount}, shed ${parsed.compost.length}, worldview ${Math.round(
+          newSelfTokens / 1000
+        )}k tokens`;
+    const body = freeze.frozen
+      ? `\n\nabsorb frozen: SELF.md/compost.md/digested.jsonl untouched this wave — only NOW.md and greeting.md updated from propagation judgment.`
+      : noChangeJustification !== null
         ? `\n\nno-change: ${noChangeJustification}`
         : `\n\nmutations:\n${appliedMutations.map((a) => `  - ${a}`).join("\n")}` +
           `\n\nmetabolism: ${direction.anabolic} anabolic, ${direction.catabolic} catabolic, ${direction.neutral} neutral` +
@@ -1627,6 +1688,8 @@ async function runOnePass(opts: { dryRun: boolean; batch: number; pass: number; 
     // must enter history BEFORE any shed ("git history is the archive",
     // MIND-SPEC Compost Rules). git rm on a file with unstaged edits refuses
     // without -f, so the shed must happen against a clean HEAD anyway.
+    // While frozen, SELF.md/compost.md/digested.jsonl are byte-identical to
+    // HEAD — staging them is a harmless no-op, not a write.
     execFileSync(
       "git",
       ["add", "SELF.md", "USER.md", "NOW.md", "greeting.md", "compost.md", "scoreboard.jsonl", "digested.jsonl", "episodes"],
@@ -1647,16 +1710,20 @@ async function runOnePass(opts: { dryRun: boolean; batch: number; pass: number; 
     // A composted representative sheds its whole potentiated cluster: the
     // members were absorbed through it, so they leave with it. Their content
     // sits one revision back in git like every other shed.
+    // While frozen, nothing is shed — the whole compost list stays in the
+    // backlog undigested (episode git-rm is explicitly skipped, per WS-0).
     const shedTargets: string[] = [];
     const spared: string[] = [];
-    for (const m of parsed.compost) {
-      if (deferredObsEpisodes.includes(m.episode)) {
-        spared.push(m.episode);
-        continue;
+    if (!freeze.frozen) {
+      for (const m of parsed.compost) {
+        if (deferredObsEpisodes.includes(m.episode)) {
+          spared.push(m.episode);
+          continue;
+        }
+        shedTargets.push(m.episode);
+        const pot = ltp.get(m.episode);
+        if (pot) shedTargets.push(...pot.members.map((mm) => mm.filename));
       }
-      shedTargets.push(m.episode);
-      const pot = ltp.get(m.episode);
-      if (pot) shedTargets.push(...pot.members.map((mm) => mm.filename));
     }
     if (shedTargets.length > 0) {
       for (const episodeFile of shedTargets) {
@@ -1688,12 +1755,27 @@ async function runOnePass(opts: { dryRun: boolean; batch: number; pass: number; 
       gitCommit(["commit", "-m", `rem: ${dateStr} — compost: ${shedTargets.join(", ")}`]);
     }
 
+    const committedAbsorbedCount = freeze.frozen ? 0 : newEpisodeCount;
     ok({
       process: "rem", phase: "commit", correlation_id: corr,
-      summary: absorbWasNoop
+      summary: freeze.frozen
+        ? `wave committed with absorb frozen: greeting updated, 0 absorbed, ${newEpisodeCount} held in backlog`
+        : absorbWasNoop
         ? `wave complete with nothing left to write — an earlier pass already committed these changes (absorbed ${newEpisodeCount}, shed ${shedTargets.length})`
         : `wave committed: absorbed ${newEpisodeCount}, shed ${shedTargets.length}`,
-      context: { absorbed: newEpisodeCount, shed: shedTargets.length, ...(spared.length ? { spared_for_deferred_observations: spared } : {}), worldview_tokens: newSelfTokens, self_delta: newSelfTokens - oldSelfTokens, redundancy_before: Number((similarityBefore * 100).toFixed(1)), redundancy_after: Number((similarityAfter * 100).toFixed(1)), anabolic: direction.anabolic, catabolic: direction.catabolic, collapsed: collapsedMutations, backlog_remaining: backlog, pass: opts.pass, batch, ...(sizeNotes.length ? { size_notes: sizeNotes } : {}) },
+      context: {
+        absorbed: committedAbsorbedCount,
+        shed: shedTargets.length,
+        ...(spared.length ? { spared_for_deferred_observations: spared } : {}),
+        worldview_tokens: freeze.frozen ? oldSelfTokens : newSelfTokens,
+        self_delta: freeze.frozen ? 0 : newSelfTokens - oldSelfTokens,
+        redundancy_before: Number((similarityBefore * 100).toFixed(1)),
+        redundancy_after: Number((similarityAfter * 100).toFixed(1)),
+        anabolic: direction.anabolic, catabolic: direction.catabolic, collapsed: collapsedMutations,
+        backlog_remaining: backlog, pass: opts.pass, batch,
+        ...(freeze.frozen ? { frozen: true, frozen_reason: freeze.reason } : {}),
+        ...(sizeNotes.length ? { size_notes: sizeNotes } : {}),
+      },
     });
     rlog(`committed. ${subject}`);
   } catch (err) {
@@ -1712,4 +1794,8 @@ async function runOnePass(opts: { dryRun: boolean; batch: number; pass: number; 
   return backlog > 0 ? "more-backlog" : "drained";
 }
 
-await main();
+// import.meta.main guard (mirror zoom.ts/replay.ts/sleep.ts): rem.ts became
+// importable (popmem WS-0 needs computeFreezeDecision/countBacklog in
+// rem.test.ts) — a plain top-level `await main()` would run a real REM wave
+// on import.
+if (import.meta.main) await main();
