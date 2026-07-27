@@ -24,6 +24,7 @@
 import * as fs from "fs";
 import * as path from "path";
 import { homedir } from "os";
+import { createHash } from "crypto";
 import { ok, degraded, correlation } from "./obs.ts";
 
 // CIRCADIAN_HOME overrides; default ~/circadian. See wake.ts for the contract.
@@ -59,7 +60,7 @@ function readOrEmpty(p: string): string {
   }
 }
 
-interface ScoreEvent {
+export interface ScoreEvent {
   ts: string;
   type: "wake" | "sleep" | "rem" | "verdict";
   worldview_tokens: number;
@@ -67,6 +68,16 @@ interface ScoreEvent {
   reason?: string;
   propagated?: string[];
   composted?: string[];
+  /** Did this wave actually change SELF.md? false = the model echoed its
+   * input back — the flatline signal doctor watches for. (rem.ts's copy) */
+  self_changed?: boolean;
+  /** R7 implicit-ok provenance: "propagation" = appended by SLEEP because a
+   * greeting-sourced rem judgment propagated; absent = explicit human verdict
+   * (--greet-ok / --greet-bad). */
+  source?: "propagation";
+  /** ts of the rem event this implicit verdict is based on — the dedupe key:
+   * one implicit ok per rem judgment, ever. */
+  basis?: string;
 }
 
 function loadScoreboard(): ScoreEvent[] {
@@ -82,6 +93,84 @@ function loadScoreboard(): ScoreEvent[] {
     }
   }
   return events;
+}
+
+export interface VerdictStreak {
+  kind: "ok" | "bad" | "none";
+  /** "ok": consecutive recent OK windows. "bad": weighted consecutive
+   * zero-ok windows (an explicit bad counts double). */
+  count: number;
+  killSwitch: boolean;
+}
+
+/**
+ * R7 fitness streak (docs/POPULATION-MEMORY.md §7 R7 — replaces the old
+ * "last 7 verdicts all bad" rule). A wake event opens a greeting window that
+ * closes at the next wake; only CLOSED windows are scored — the window since
+ * the last wake hasn't had its chance to earn a verdict yet, so scoring it
+ * would inflate a bad streak mid-session.
+ *
+ * A window is "ok" if any ok verdict — explicit (--greet-ok) or implicit (R7
+ * propagation) — is attributable to it. Attribution rule (simplest
+ * defensible reading, documented here per the WS-0 brief): an explicit
+ * verdict (ok or bad) attributes by its OWN ts falling inside the window; an
+ * implicit verdict attributes by its `basis` (the ts of the rem event it is
+ * based on) falling inside the window — the rem event ran during that
+ * window's session, and its propagated judgment is about that session.
+ *
+ * Explicit bad counts DOUBLE against the streak. The kill switch fires at a
+ * weighted streak >= KILL_SWITCH_STREAK consecutive zero-ok windows, walked
+ * newest-first.
+ */
+export function computeVerdictStreak(events: ScoreEvent[]): VerdictStreak {
+  const wakeTimes = events
+    .filter((e) => e.type === "wake")
+    .map((e) => e.ts)
+    .sort();
+  if (wakeTimes.length < 2) return { kind: "none", count: 0, killSwitch: false };
+
+  const windows = wakeTimes.slice(0, -1).map((start, i) => ({ start, end: wakeTimes[i + 1] }));
+
+  function windowIndexFor(ts: string): number | null {
+    for (let i = windows.length - 1; i >= 0; i--) {
+      if (ts >= windows[i].start && ts < windows[i].end) return i;
+    }
+    return null;
+  }
+
+  const hasOk = windows.map(() => false);
+  const hasExplicitBad = windows.map(() => false);
+
+  for (const e of events) {
+    if (e.type !== "verdict" || !e.greeting_verdict) continue;
+    if (e.greeting_verdict === "ok") {
+      const attributionTs = e.source === "propagation" && e.basis ? e.basis : e.ts;
+      const idx = windowIndexFor(attributionTs);
+      if (idx !== null) hasOk[idx] = true;
+    } else {
+      const idx = windowIndexFor(e.ts);
+      if (idx !== null) hasExplicitBad[idx] = true;
+    }
+  }
+
+  const newest = windows.length - 1;
+  if (hasOk[newest]) {
+    let count = 0;
+    let i = newest;
+    while (i >= 0 && hasOk[i]) {
+      count++;
+      i--;
+    }
+    return { kind: "ok", count, killSwitch: false };
+  }
+
+  let weighted = 0;
+  let i = newest;
+  while (i >= 0 && !hasOk[i]) {
+    weighted += hasExplicitBad[i] ? 2 : 1;
+    i--;
+  }
+  return { kind: "bad", count: weighted, killSwitch: weighted >= KILL_SWITCH_STREAK };
 }
 
 function extractNowLastSleep(nowMd: string): string | null {
@@ -118,12 +207,11 @@ function appendVerdict(verdict: "ok" | "bad", reason?: string) {
  * for the obs ok event context. A cold reader of the ledger gets the full
  * vitals payload without re-running status.
  */
-function collectVitals() {
+function collectVitals(scoreboard: ScoreEvent[]) {
   const nowMd = readOrEmpty(NOW_PATH);
   const selfMd = readOrEmpty(SELF_PATH);
   const userMd = readOrEmpty(USER_PATH);
   const compostMd = readOrEmpty(COMPOST_PATH);
-  const scoreboard = loadScoreboard();
 
   // --- last-sleep age ---
   let lastSleepIso = extractNowLastSleep(nowMd);
@@ -153,7 +241,7 @@ function collectVitals() {
   // --- greeting verdicts ---
   const verdicts = scoreboard.filter((e) => e.type === "verdict" && e.greeting_verdict);
   const last7 = verdicts.slice(-7);
-  const killSwitch = last7.length >= KILL_SWITCH_STREAK && last7.every((v) => v.greeting_verdict === "bad");
+  const streak = computeVerdictStreak(scoreboard);
 
   // --- propagation summary ---
   const remEvents = scoreboard.filter((e) => e.type === "rem");
@@ -167,7 +255,8 @@ function collectVitals() {
     verdicts: {
       total: verdicts.length,
       recent_7: last7.map((v) => ({ ts: v.ts, verdict: v.greeting_verdict, reason: v.reason ?? null })),
-      kill_switch: killSwitch,
+      streak,
+      kill_switch: streak.killSwitch,
     },
     propagation: {
       total_rem_events: remEvents.length,
@@ -213,9 +302,13 @@ function renderStatus(vitals: ReturnType<typeof collectVitals>) {
     }
   }
 
+  if (vitals.verdicts.streak.kind !== "none") {
+    console.log(`\nverdict streak: ${vitals.verdicts.streak.kind}×${vitals.verdicts.streak.count} (closed greeting windows, newest-first)`);
+  }
+
   if (vitals.verdicts.kill_switch) {
     console.log(
-      `\n!!! KILL SWITCH: the last ${KILL_SWITCH_STREAK} greeting verdicts are all "bad". Per MIND-SPEC.md "Kill Switch" this is the decommission trigger. The decision to actually decommission is human, not automated.`
+      `\n!!! KILL SWITCH: ${KILL_SWITCH_STREAK}+ consecutive greeting windows with zero ok verdict (R7). Per docs/POPULATION-MEMORY.md §7 R7 this is the decommission trigger. The decision to actually decommission is human, not automated.`
     );
   }
 
@@ -255,21 +348,75 @@ function sessionIdFromStdin(): string | null {
   }
 }
 
-function grazeCheckpoints(sessionId: string): number {
+/** One pass over logs/circadian.events.jsonl computing BOTH the graze
+ * checkpoint count (for this session) and today's degraded/failed count
+ * (R11 statusline requirement) — the file already grows without bound and
+ * --line is called many times a minute, so this must never become two
+ * full scans where one will do. */
+function scanEventsLog(sessionId: string | null): { grazeCount: number; degradedToday: number } {
   const p = path.join(CIRCADIAN_HOME, "logs", "circadian.events.jsonl");
-  let n = 0;
+  const today = new Date().toISOString().slice(0, 10);
+  let grazeCount = 0;
+  let degradedToday = 0;
   for (const line of readOrEmpty(p).split("\n")) {
-    // cheap pre-filter before JSON.parse — this file grows without bound
-    if (!line.includes(sessionId) || !line.includes("checkpoint-digested")) continue;
+    const t = line.trim();
+    if (!t) continue;
+    // cheap pre-filters before JSON.parse
+    const couldBeGraze = sessionId !== null && t.includes(sessionId) && t.includes("checkpoint-digested");
+    const couldBeDegraded = t.includes(`"outcome":"degraded"`) || t.includes(`"outcome":"failed"`);
+    if (!couldBeGraze && !couldBeDegraded) continue;
     try {
-      const e = JSON.parse(line);
-      const sid = e.session_id ?? e.context?.session_id;
-      if (e.process === "graze" && e.phase === "checkpoint-digested" && sid === sessionId) n++;
+      const e = JSON.parse(t);
+      if (couldBeGraze) {
+        const sid = e.session_id ?? e.context?.session_id;
+        if (e.process === "graze" && e.phase === "checkpoint-digested" && sid === sessionId) grazeCount++;
+      }
+      if (couldBeDegraded && typeof e.ts === "string" && e.ts.startsWith(today) && (e.outcome === "degraded" || e.outcome === "failed")) {
+        degradedToday++;
+      }
     } catch {
       // unparseable ledger line: skip — the default render already reports these
     }
   }
-  return n;
+  return { grazeCount, degradedToday };
+}
+
+/** REM absorb freeze marker (popmem WS-0): $CIRCADIAN_HOME/.rem-freeze. The
+ * existence check is a cheap stat — the expensive part (hashing every
+ * episode against digested.jsonl to count the backlog) only runs when the
+ * marker is actually present, so the unfrozen common case adds no scan. */
+function remFreezeStatus(): { frozen: boolean; backlog: number } {
+  const markerPath = path.join(CIRCADIAN_HOME, ".rem-freeze");
+  if (!fs.existsSync(markerPath)) return { frozen: false, backlog: 0 };
+
+  const episodesDir = path.join(MIND_DIR, "episodes");
+  let files: string[] = [];
+  try {
+    files = fs.readdirSync(episodesDir).filter((f) => f.endsWith(".md"));
+  } catch {
+    files = [];
+  }
+  const digested = new Set<string>();
+  for (const line of readOrEmpty(path.join(MIND_DIR, "digested.jsonl")).split("\n")) {
+    const t = line.trim();
+    if (!t) continue;
+    try {
+      const e = JSON.parse(t);
+      if (e && typeof e.hash === "string") digested.add(e.hash);
+    } catch {
+      // unparseable ledger line: skip
+    }
+  }
+  let backlog = 0;
+  for (const f of files) {
+    try {
+      const content = fs.readFileSync(path.join(episodesDir, f), "utf8");
+      if (!digested.has(createHash("sha256").update(content, "utf8").digest("hex"))) backlog++;
+    } catch {
+      // unreadable episode file: skip — must never break the render
+    }
+  }
+  return { frozen: true, backlog };
 }
 
 /** Worldview tokens at the first --line render of this session, so later
@@ -297,8 +444,7 @@ function sessionBaseline(sessionId: string, worldview: number): number {
   }
 }
 
-function renderLine(vitals: ReturnType<typeof collectVitals>, sessionId: string | null) {
-  const scoreboard = loadScoreboard();
+function renderLine(vitals: ReturnType<typeof collectVitals>, scoreboard: ScoreEvent[], sessionId: string | null) {
   const parts: string[] = [];
 
   const wakes = scoreboard.filter((e) => e.type === "wake");
@@ -307,8 +453,10 @@ function renderLine(vitals: ReturnType<typeof collectVitals>, sessionId: string 
   const self = vitals.token_counts["SELF.md"];
   parts.push(`self ${self.tokens}/${self.cap}${self.over ? " OVER" : ""}`);
 
+  const { grazeCount, degradedToday } = scanEventsLog(sessionId);
+
   if (sessionId) {
-    parts.push(`graze ${grazeCheckpoints(sessionId)}`);
+    parts.push(`graze ${grazeCount}`);
     const delta = vitals.worldview_tokens - sessionBaseline(sessionId, vitals.worldview_tokens);
     parts.push(`Δself ${delta >= 0 ? "+" : ""}${delta}`);
   }
@@ -317,6 +465,15 @@ function renderLine(vitals: ReturnType<typeof collectVitals>, sessionId: string 
   const remToday = scoreboard.filter((e) => e.type === "rem" && e.ts.startsWith(today));
   const lastRem = vitals.propagation.recent[vitals.propagation.recent.length - 1];
   parts.push(`rem ${remToday.length} today${lastRem ? ` (${lastRem.propagated} propagated)` : ""}`);
+
+  const freeze = remFreezeStatus();
+  if (freeze.frozen) parts.push(`rem FROZEN·backlog ${freeze.backlog}`);
+
+  if (vitals.verdicts.streak.kind !== "none") {
+    parts.push(`verdict ${vitals.verdicts.streak.kind}×${vitals.verdicts.streak.count}`);
+  }
+
+  if (degradedToday > 0) parts.push(`!${degradedToday} degraded`);
 
   if (vitals.verdicts.kill_switch) parts.push("!!! KILL SWITCH");
 
@@ -328,7 +485,8 @@ function main() {
   const corr = correlation("status");
 
   if (args.includes("--line")) {
-    renderLine(collectVitals(), sessionIdFromStdin());
+    const scoreboard = loadScoreboard();
+    renderLine(collectVitals(scoreboard), scoreboard, sessionIdFromStdin());
     return;
   }
 
@@ -369,7 +527,7 @@ function main() {
   }
 
   // Default run: render + emit ok with vitals as context.
-  const vitals = collectVitals();
+  const vitals = collectVitals(loadScoreboard());
   renderStatus(vitals);
 
   ok({
@@ -381,4 +539,8 @@ function main() {
   });
 }
 
-main();
+// import.meta.main guard (mirror zoom.ts/replay.ts/sleep.ts): status.ts
+// became importable (popmem WS-0 needs computeVerdictStreak reused by
+// scorecard.ts and status.test.ts) — a plain top-level `main()` would render
+// vitals and emit an obs event on import.
+if (import.meta.main) main();

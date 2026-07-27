@@ -16,6 +16,7 @@ import { homedir } from "node:os";
 import { join } from "node:path";
 import { spawn } from "node:child_process";
 import { ok, degraded, emit, correlation } from "./obs.ts";
+import { isFirstWakeToday, renderDailyReading, loadScoreboardFile, appendDailyReadingEntry } from "./scorecard.ts";
 
 // Path resolution (single-source, distributable): CIRCADIAN_HOME overrides;
 // otherwise ~/circadian. The mind data lives at $CIRCADIAN_HOME/mind. This is
@@ -188,8 +189,43 @@ async function runHook(): Promise<void> {
     });
   }
 
+  // THE DAILY READING (popmem WS-0, docs/POPULATION-MEMORY.md §17): a 3-line
+  // scorecard after the greeting, but ONLY on the first wake of a new
+  // calendar day. Detected here — BEFORE this run appends its own wake
+  // event below — or every morning's first wake would see its own arrival
+  // on the scoreboard and conclude the day already had one. Best-effort:
+  // any failure here must never withhold the wake injection (Law 7).
+  let finalPayload = payload;
+  try {
+    const scoreboard = loadScoreboardFile(join(MIND, "scoreboard.jsonl"));
+    const today = new Date().toISOString().slice(0, 10);
+    if (isFirstWakeToday(scoreboard, today)) {
+      const nowIso = new Date().toISOString();
+      const scorecard = renderDailyReading({ circadianHome: CIRCADIAN_HOME, scoreboard, today, nowIso });
+      finalPayload = payload + "\n\n" + scorecard.lines.join("\n");
+      appendDailyReadingEntry(CIRCADIAN_HOME, scorecard.entry);
+      ok({
+        process: "wake",
+        phase: "daily-reading",
+        correlation_id: corr,
+        summary: "Daily Reading scorecard emitted (first wake of the day)",
+        context: { day: scorecard.entry.day, lines: scorecard.lines },
+      });
+    }
+  } catch (e) {
+    degraded({
+      process: "wake",
+      phase: "daily-reading",
+      correlation_id: corr,
+      summary: "Daily Reading scorecard failed; wake injection proceeds without it",
+      context: {},
+      cause: (e as Error).message,
+      next_action: "inspect logs/circadian.events.jsonl for this event; the scorecard retries at the next first-wake-of-day",
+    });
+  }
+
   // Deliver the injection. Law 7: wake must always deliver, even when degraded.
-  process.stdout.write(payload + "\n");
+  process.stdout.write(finalPayload + "\n");
 
   // Scoreboard append (MIND-SPEC schema — kept for status.ts to read).
   try {

@@ -28,7 +28,7 @@ import { appendFileSync, existsSync, mkdirSync, readFileSync, renameSync, statSy
 import { homedir } from "node:os";
 import { dirname, join } from "node:path";
 import { complete } from "./llm.ts";
-import { ok, degraded, fail, correlation } from "./obs.ts";
+import { ok, idle, degraded, fail, correlation } from "./obs.ts";
 
 // ---------- observability ----------
 // SLEEP used to fail silently (every early return / swallowed catch left no
@@ -643,6 +643,120 @@ function appendSleepScoreboard(): void {
   }
 }
 
+// ---------------------------------------------------------------------
+// R7 implicit-ok verdict (popmem WS-0, docs/POPULATION-MEMORY.md §7 R7):
+// "silence is a verdict" — a greeting whose arc/flight-plan/live-tension
+// items propagate into the session it opened earns an implicit ok, at
+// SLEEP, for free. The ONLY manual act stays --greet-bad. status.ts's copy
+// of ScoreEvent is the canonical doc comment; this is sleep.ts's own copy
+// (house style: each process owns its scoreboard read).
+// ---------------------------------------------------------------------
+interface ScoreEvent {
+  ts: string;
+  type: "wake" | "sleep" | "rem" | "verdict";
+  worldview_tokens: number;
+  greeting_verdict?: "ok" | "bad";
+  reason?: string;
+  propagated?: string[];
+  composted?: string[];
+  self_changed?: boolean;
+  source?: "propagation";
+  basis?: string;
+}
+
+const GREETING_PROPAGATION_PREFIXES = ["NOW.Arc", "NOW.FlightPlan", "NOW.LiveTensions"];
+
+export interface ImplicitOkDecision {
+  event: ScoreEvent | null;
+  reason: string;
+}
+
+/** Pure: decide whether an implicit ok verdict is owed, given the loaded
+ * scoreboard and the ts/worldview-tokens to stamp a new verdict with. Finds
+ * the NEWEST rem event whose `propagated` carries a greeting-sourced
+ * address (Arc/FlightPlan/LiveTensions — never Serendipity, never Doctrine/
+ * Motifs, per the R7 design decision: those aren't what the greeting shows).
+ * If that rem event isn't already credited — dedupe key: an existing
+ * verdict's `basis` == that rem event's ts, one implicit ok per rem
+ * judgment ever — returns the verdict event to append. */
+export function decideImplicitOk(scoreboard: ScoreEvent[], nowIso: string, worldviewTokens: number): ImplicitOkDecision {
+  const remEvents = scoreboard.filter((e) => e.type === "rem");
+  for (let i = remEvents.length - 1; i >= 0; i--) {
+    const r = remEvents[i];
+    const hasGreetingProp = (r.propagated ?? []).some((addr) =>
+      GREETING_PROPAGATION_PREFIXES.some((p) => addr.startsWith(p))
+    );
+    if (!hasGreetingProp) continue;
+    const alreadyCredited = scoreboard.some((e) => e.type === "verdict" && e.basis === r.ts);
+    if (alreadyCredited) {
+      return {
+        event: null,
+        reason: `newest greeting-sourced rem event (${r.ts}) already has an implicit ok verdict recorded (basis dedupe)`,
+      };
+    }
+    return {
+      event: { ts: nowIso, type: "verdict", worldview_tokens: worldviewTokens, greeting_verdict: "ok", source: "propagation", basis: r.ts },
+      reason: `newest rem event (${r.ts}) propagated a greeting-sourced address; crediting implicit ok`,
+    };
+  }
+  return { event: null, reason: "no rem event has ever propagated a greeting-sourced address (NOW.Arc/FlightPlan/LiveTensions)" };
+}
+
+function loadScoreboardForImplicitOk(): ScoreEvent[] {
+  let raw = "";
+  try {
+    raw = readFileSync(join(MIND, "scoreboard.jsonl"), "utf8");
+  } catch {
+    return [];
+  }
+  const events: ScoreEvent[] = [];
+  for (const line of raw.split("\n")) {
+    const t = line.trim();
+    if (!t) continue;
+    try {
+      events.push(JSON.parse(t));
+    } catch {
+      // unparseable ledger line: skip — status.ts/rem.ts already surface these
+    }
+  }
+  return events;
+}
+
+/** Called right after appendSleepScoreboard() succeeds, so the newest rem
+ * event's propagation reflects the true current state. Always emits a
+ * context-bound obs event (Law 9): whether or not a verdict was appended IS
+ * the decision being reported, not a side effect to swallow. */
+export function checkImplicitOk(corr: string, sessionId: string): void {
+  try {
+    const scoreboard = loadScoreboardForImplicitOk();
+    const selfMd = existsSync(join(MIND, "SELF.md")) ? readFileSync(join(MIND, "SELF.md"), "utf8") : "";
+    const nowIso = new Date().toISOString();
+    const decision = decideImplicitOk(scoreboard, nowIso, Math.ceil(selfMd.length / 4));
+    if (decision.event) {
+      appendFileSync(join(MIND, "scoreboard.jsonl"), JSON.stringify(decision.event) + "\n");
+      ok({
+        process: "sleep", phase: "implicit-verdict", correlation_id: corr, session_id: sessionId,
+        summary: `implicit ok verdict recorded (R7 propagation): ${decision.reason}`,
+        context: { basis: decision.event.basis, verdict: "ok", source: "propagation" },
+      });
+    } else {
+      idle({
+        process: "sleep", phase: "implicit-verdict", correlation_id: corr, session_id: sessionId,
+        summary: `no implicit verdict recorded: ${decision.reason}`,
+        context: { reason: decision.reason },
+      });
+    }
+  } catch (e) {
+    degraded({
+      process: "sleep", phase: "implicit-verdict", correlation_id: corr, session_id: sessionId,
+      summary: "implicit-ok check failed; SLEEP's episode/NOW writes are unaffected",
+      context: {},
+      cause: (e as Error).message,
+      next_action: "inspect logs/circadian.events.jsonl for this event; the scoreboard rem/verdict data may need a manual look",
+    });
+  }
+}
+
 type DraftResult =
   | { status: "written" }
   | { status: "no-transcript" }
@@ -791,6 +905,7 @@ async function draftSessionEpisode(opts: {
   const epPath = writeEpisodeFile(date, draft.arc, episodeContent);
   writeNowFile(nowContent);
   appendSleepScoreboard();
+  checkImplicitOk(corr, sessionId);
   slog(mode, "SUCCESS: episode written", { episode: epPath, arc: draft.arc });
   // The letter was written. Success is as legible as failure.
   ok({
