@@ -16,6 +16,9 @@ function explicitBad(ts: string): ScoreEvent {
 function implicitOk(ts: string, basis: string): ScoreEvent {
   return { ts, type: "verdict", worldview_tokens: 1000, greeting_verdict: "ok", source: "propagation", basis };
 }
+function rem(ts: string, propagated: string[]): ScoreEvent {
+  return { ts, type: "rem", worldview_tokens: 1000, propagated };
+}
 
 // One wake per day — windows are exactly one day wide, easy to reason about.
 const W = [
@@ -101,5 +104,55 @@ describe("computeVerdictStreak", () => {
   test("no verdicts at all across every closed window => a plain (unweighted) bad streak", () => {
     const events = [wake(W[0]), wake(W[1]), wake(W[2])];
     expect(computeVerdictStreak(events)).toEqual({ kind: "bad", count: 2, killSwitch: false });
+  });
+
+  test("R7 raw propagation: a rem event with a greeting-sourced address credits its window ok with NO verdict row at all", () => {
+    const events = [
+      wake(W[0]), wake(W[1]),
+      rem("2026-07-01T12:00:00.000Z", ["NOW.Arc[0]"]), // window [W0,W1) — no verdict row exists
+    ];
+    expect(computeVerdictStreak(events)).toEqual({ kind: "ok", count: 1, killSwitch: false });
+  });
+
+  test("a rem event with only non-greeting propagation (e.g. SELF.Doctrine) does NOT credit the window", () => {
+    const events = [
+      wake(W[0]), wake(W[1]),
+      rem("2026-07-01T12:00:00.000Z", ["SELF.Doctrine[1]"]),
+    ];
+    expect(computeVerdictStreak(events)).toEqual({ kind: "bad", count: 1, killSwitch: false });
+  });
+
+  test("explicit bad OVERRIDES propagation credit for its own window — precedence: a human saying bad outranks ambient motion", () => {
+    const events = [
+      wake(W[0]), wake(W[1]),
+      rem("2026-07-01T06:00:00.000Z", ["NOW.FlightPlan[2]"]),
+      explicitBad("2026-07-01T12:00:00.000Z"), // same window [W0,W1)
+    ];
+    // Without the override this would read "ok" (propagation is not zero);
+    // the DECIDED precedence makes it bad, and still weighted double (the
+    // single closed window weighs 2, below the killSwitch threshold of 7).
+    expect(computeVerdictStreak(events)).toEqual({ kind: "bad", count: 2, killSwitch: false });
+  });
+
+  test("200 quiet historical windows + recent rem propagation => a small ok streak, no spurious kill switch", () => {
+    // Simulates the live defect: many old wake-to-wake windows with zero
+    // verdict rows (verdict rows only exist going forward from a re-arm),
+    // but the most recent windows have real rem propagation.
+    const baseMs = Date.parse("2026-01-01T00:00:00.000Z");
+    const manyWakes: ScoreEvent[] = [];
+    for (let i = 0; i < 203; i++) {
+      manyWakes.push(wake(new Date(baseMs + i * 86_400_000).toISOString()));
+    }
+    const lastWakeMs = baseMs + 202 * 86_400_000;
+    const events: ScoreEvent[] = [
+      ...manyWakes,
+      // Recent rem propagation in the last two closed windows only.
+      rem(new Date(lastWakeMs - 12 * 3_600_000).toISOString(), ["NOW.Arc[0]"]), // window [201,202)
+      rem(new Date(lastWakeMs - 36 * 3_600_000).toISOString(), ["NOW.LiveTensions[1]"]), // window [200,201)
+    ];
+    const streak = computeVerdictStreak(events);
+    expect(streak.kind).toBe("ok");
+    expect(streak.count).toBe(2);
+    expect(streak.killSwitch).toBe(false);
   });
 });

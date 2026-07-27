@@ -48,6 +48,12 @@ const CAPS: Record<string, number> = {
 const KILL_SWITCH_STREAK = 7;
 const RECENT_REM_EVENTS = 5;
 
+// R7 greeting-sourced propagation prefixes — sleep.ts's copy of this literal
+// (house style: each process keeps its own copy of shared literals, like
+// ScoreEvent). Used by computeVerdictStreak to credit a window from raw rem
+// propagation, independent of whether a verdict row was ever appended for it.
+const GREETING_PROPAGATION_PREFIXES = ["NOW.Arc", "NOW.FlightPlan", "NOW.LiveTensions"];
+
 function tokensOf(text: string): number {
   return Math.ceil(text.length / 4);
 }
@@ -110,17 +116,29 @@ export interface VerdictStreak {
  * the last wake hasn't had its chance to earn a verdict yet, so scoring it
  * would inflate a bad streak mid-session.
  *
- * A window is "ok" if any ok verdict — explicit (--greet-ok) or implicit (R7
- * propagation) — is attributable to it. Attribution rule (simplest
- * defensible reading, documented here per the WS-0 brief): an explicit
- * verdict (ok or bad) attributes by its OWN ts falling inside the window; an
- * implicit verdict attributes by its `basis` (the ts of the rem event it is
- * based on) falling inside the window — the rem event ran during that
- * window's session, and its propagated judgment is about that session.
+ * A window credits ok via EITHER of two independent routes:
+ *   1. Verdict attribution: an explicit (--greet-ok) or implicit (R7
+ *      propagation) ok verdict is attributable to it. An explicit verdict
+ *      (ok or bad) attributes by its OWN ts falling inside the window; an
+ *      implicit verdict attributes by its `basis` (the ts of the rem event
+ *      it is based on) falling inside the window.
+ *   2. Raw propagation (R7 conformance, WS-0 hotfix): a `type:"rem"` event
+ *      whose ts falls inside the window has a `propagated` address starting
+ *      with a greeting-sourced prefix (GREETING_PROPAGATION_PREFIXES), with
+ *      NO verdict row required. Verdict rows only exist going forward from
+ *      whenever the scoreboard started recording implicit-ok events; raw rem
+ *      propagation is the ground truth R7 actually names ("ZERO PROPAGATION
+ *      and no explicit ok" is the kill condition — propagation alone must be
+ *      enough), so historical windows rich in propagation but never scored
+ *      by a verdict row must not read as zero-ok.
  *
- * Explicit bad counts DOUBLE against the streak. The kill switch fires at a
- * weighted streak >= KILL_SWITCH_STREAK consecutive zero-ok windows, walked
- * newest-first.
+ * Precedence: an explicit bad in a window OVERRIDES that window's
+ * propagation credit — a human saying "bad" outranks ambient motion — but
+ * does NOT override an explicit/implicit ok verdict landing in the same
+ * window. Explicit bad counts DOUBLE against the weighted bad streak
+ * regardless of any propagation in its window. The kill switch fires at a
+ * weighted streak >= KILL_SWITCH_STREAK consecutive zero-credit windows,
+ * walked newest-first.
  */
 export function computeVerdictStreak(events: ScoreEvent[]): VerdictStreak {
   const wakeTimes = events
@@ -140,8 +158,18 @@ export function computeVerdictStreak(events: ScoreEvent[]): VerdictStreak {
 
   const hasOk = windows.map(() => false);
   const hasExplicitBad = windows.map(() => false);
+  const hasRemPropagation = windows.map(() => false);
 
   for (const e of events) {
+    if (e.type === "rem") {
+      const isGreetingSourced = (e.propagated ?? []).some((addr) =>
+        GREETING_PROPAGATION_PREFIXES.some((prefix) => addr.startsWith(prefix))
+      );
+      if (!isGreetingSourced) continue;
+      const idx = windowIndexFor(e.ts);
+      if (idx !== null) hasRemPropagation[idx] = true;
+      continue;
+    }
     if (e.type !== "verdict" || !e.greeting_verdict) continue;
     if (e.greeting_verdict === "ok") {
       const attributionTs = e.source === "propagation" && e.basis ? e.basis : e.ts;
@@ -153,11 +181,15 @@ export function computeVerdictStreak(events: ScoreEvent[]): VerdictStreak {
     }
   }
 
+  // Explicit bad overrides propagation credit for its own window, but not a
+  // verdict-attributed ok in that same window (see doc comment precedence).
+  const credited = windows.map((_, i) => (hasExplicitBad[i] ? hasOk[i] : hasOk[i] || hasRemPropagation[i]));
+
   const newest = windows.length - 1;
-  if (hasOk[newest]) {
+  if (credited[newest]) {
     let count = 0;
     let i = newest;
-    while (i >= 0 && hasOk[i]) {
+    while (i >= 0 && credited[i]) {
       count++;
       i--;
     }
@@ -166,7 +198,7 @@ export function computeVerdictStreak(events: ScoreEvent[]): VerdictStreak {
 
   let weighted = 0;
   let i = newest;
-  while (i >= 0 && !hasOk[i]) {
+  while (i >= 0 && !credited[i]) {
     weighted += hasExplicitBad[i] ? 2 : 1;
     i--;
   }
