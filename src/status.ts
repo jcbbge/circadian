@@ -116,29 +116,44 @@ export interface VerdictStreak {
  * the last wake hasn't had its chance to earn a verdict yet, so scoring it
  * would inflate a bad streak mid-session.
  *
- * A window credits ok via EITHER of two independent routes:
+ * Granularity fix (popmem WS-D, live defect: the streak kept growing all day
+ * because propagation is only judged at REM-time — twice daily — while this
+ * function scored EVERY closed wake-to-wake window, and the many worker-pane
+ * windows between REM runs are STRUCTURALLY zero-propagation). The fix scores
+ * at the data's real granularity: a rem event's judgment covers ALL windows
+ * SINCE THE PREVIOUS REM EVENT — that is literally the span it judged, not
+ * just the one window its own ts happens to fall in. A window is therefore
+ * either:
+ *   - SCORED, because some rem event's span covers it (`prevRemTs < window.end
+ *     && remTs >= window.start`, where `prevRemTs` is the ts of the
+ *     immediately preceding rem event by ledger order, or -Infinity for the
+ *     very first rem event ever — its judgment retroactively covers the dark
+ *     ages before verdict tracking existed) OR an explicit/implicit verdict
+ *     attributes to it directly; OR
+ *   - UNSCORED, when neither applies — this is exactly the trailing windows
+ *     newer than the last rem event (they haven't had their judgment yet,
+ *     same as the always-excluded open window). Unscored windows are removed
+ *     from the walk entirely: they neither extend nor break a streak.
+ *
+ * A SCORED window credits ok via EITHER route:
  *   1. Verdict attribution: an explicit (--greet-ok) or implicit (R7
  *      propagation) ok verdict is attributable to it. An explicit verdict
  *      (ok or bad) attributes by its OWN ts falling inside the window; an
  *      implicit verdict attributes by its `basis` (the ts of the rem event
  *      it is based on) falling inside the window.
- *   2. Raw propagation (R7 conformance, WS-0 hotfix): a `type:"rem"` event
- *      whose ts falls inside the window has a `propagated` address starting
- *      with a greeting-sourced prefix (GREETING_PROPAGATION_PREFIXES), with
- *      NO verdict row required. Verdict rows only exist going forward from
- *      whenever the scoreboard started recording implicit-ok events; raw rem
- *      propagation is the ground truth R7 actually names ("ZERO PROPAGATION
- *      and no explicit ok" is the kill condition — propagation alone must be
- *      enough), so historical windows rich in propagation but never scored
- *      by a verdict row must not read as zero-ok.
+ *   2. Raw propagation: the rem span covering this window belongs to a rem
+ *      event whose `propagated` addresses include a greeting-sourced prefix
+ *      (GREETING_PROPAGATION_PREFIXES). A span covering the window from a rem
+ *      event with NO greeting-sourced propagation is scored, but zero-credit
+ *      (bad) — the window WAS judged, and found nothing.
  *
  * Precedence: an explicit bad in a window OVERRIDES that window's
  * propagation credit — a human saying "bad" outranks ambient motion — but
  * does NOT override an explicit/implicit ok verdict landing in the same
  * window. Explicit bad counts DOUBLE against the weighted bad streak
  * regardless of any propagation in its window. The kill switch fires at a
- * weighted streak >= KILL_SWITCH_STREAK consecutive zero-credit windows,
- * walked newest-first.
+ * weighted streak >= KILL_SWITCH_STREAK consecutive zero-credit SCORED
+ * windows, walked newest-first.
  */
 export function computeVerdictStreak(events: ScoreEvent[]): VerdictStreak {
   const wakeTimes = events
@@ -158,18 +173,8 @@ export function computeVerdictStreak(events: ScoreEvent[]): VerdictStreak {
 
   const hasOk = windows.map(() => false);
   const hasExplicitBad = windows.map(() => false);
-  const hasRemPropagation = windows.map(() => false);
 
   for (const e of events) {
-    if (e.type === "rem") {
-      const isGreetingSourced = (e.propagated ?? []).some((addr) =>
-        GREETING_PROPAGATION_PREFIXES.some((prefix) => addr.startsWith(prefix))
-      );
-      if (!isGreetingSourced) continue;
-      const idx = windowIndexFor(e.ts);
-      if (idx !== null) hasRemPropagation[idx] = true;
-      continue;
-    }
     if (e.type !== "verdict" || !e.greeting_verdict) continue;
     if (e.greeting_verdict === "ok") {
       const attributionTs = e.source === "propagation" && e.basis ? e.basis : e.ts;
@@ -181,26 +186,55 @@ export function computeVerdictStreak(events: ScoreEvent[]): VerdictStreak {
     }
   }
 
+  // Span-based rem coverage: sort rem events by ts, pair each with the ts of
+  // the immediately preceding one (null = the very first ever, whose span
+  // therefore covers back to the dawn of the record — see doc comment).
+  const remSpans = events
+    .filter((e) => e.type === "rem")
+    .map((e) => ({
+      ts: e.ts,
+      greetingSourced: (e.propagated ?? []).some((addr) =>
+        GREETING_PROPAGATION_PREFIXES.some((prefix) => addr.startsWith(prefix))
+      ),
+    }))
+    .sort((a, b) => (a.ts < b.ts ? -1 : a.ts > b.ts ? 1 : 0))
+    .map((r, i, arr) => ({ ...r, prevTs: i === 0 ? null : arr[i - 1].ts }));
+
+  const hasAnyJudgment = windows.map(() => false);
+  const hasGreetingJudgment = windows.map(() => false);
+  windows.forEach((w, i) => {
+    for (const span of remSpans) {
+      const prevOk = span.prevTs === null || span.prevTs < w.end;
+      if (!prevOk || span.ts < w.start) continue;
+      hasAnyJudgment[i] = true;
+      if (span.greetingSourced) hasGreetingJudgment[i] = true;
+    }
+  });
+
   // Explicit bad overrides propagation credit for its own window, but not a
   // verdict-attributed ok in that same window (see doc comment precedence).
-  const credited = windows.map((_, i) => (hasExplicitBad[i] ? hasOk[i] : hasOk[i] || hasRemPropagation[i]));
+  const credited = windows.map((_, i) => (hasExplicitBad[i] ? hasOk[i] : hasOk[i] || hasGreetingJudgment[i]));
+  const scored = windows.map((_, i) => hasOk[i] || hasExplicitBad[i] || hasAnyJudgment[i]);
 
-  const newest = windows.length - 1;
+  const scoredIdx = windows.map((_, i) => i).filter((i) => scored[i]);
+  if (scoredIdx.length === 0) return { kind: "none", count: 0, killSwitch: false };
+
+  const newest = scoredIdx[scoredIdx.length - 1];
   if (credited[newest]) {
     let count = 0;
-    let i = newest;
-    while (i >= 0 && credited[i]) {
+    let k = scoredIdx.length - 1;
+    while (k >= 0 && credited[scoredIdx[k]]) {
       count++;
-      i--;
+      k--;
     }
     return { kind: "ok", count, killSwitch: false };
   }
 
   let weighted = 0;
-  let i = newest;
-  while (i >= 0 && !credited[i]) {
-    weighted += hasExplicitBad[i] ? 2 : 1;
-    i--;
+  let k = scoredIdx.length - 1;
+  while (k >= 0 && !credited[scoredIdx[k]]) {
+    weighted += hasExplicitBad[scoredIdx[k]] ? 2 : 1;
+    k--;
   }
   return { kind: "bad", count: weighted, killSwitch: weighted >= KILL_SWITCH_STREAK };
 }
@@ -451,6 +485,47 @@ function remFreezeStatus(): { frozen: boolean; backlog: number } {
   return { frozen: true, backlog };
 }
 
+// $CIRCADIAN_HOME/logs/.population-vitals.json — written once per run by
+// decay.ts (popmem WS-D), read here as the snapshot pattern WS-0's
+// remFreezeStatus established: a cheap existence check gates the (small,
+// non-growing) file read, so the common case adds no scan. Immune-size
+// (src_loc) stays in the snapshot/obs ledger, not the strip — strip real
+// estate is precious and it's already plotted data per R10.
+const POPULATION_VITALS_PATH = path.join(CIRCADIAN_HOME, "logs", ".population-vitals.json");
+const POPULATION_VITALS_STALE_MS = 36 * 3_600_000;
+
+export interface PopulationVitalsSnapshot {
+  ts: string;
+  src_loc: number;
+  population: number;
+  top_weight: number;
+  sank_below_floor: string[];
+}
+
+/** Pure: renders the `pop N (top W.W)[ · ↓K sank]` segment from a snapshot,
+ * or `pop stale` if it's older than POPULATION_VITALS_STALE_MS (degradation
+ * must stay visible per R11), or null if there's no snapshot at all (no
+ * population yet — pre-switchover reality, not a degraded state). */
+export function populationVitalsSegment(snapshot: PopulationVitalsSnapshot | null, nowIso: string): string | null {
+  if (!snapshot) return null;
+  const ageMs = Date.parse(nowIso) - Date.parse(snapshot.ts);
+  if (Number.isNaN(ageMs) || ageMs > POPULATION_VITALS_STALE_MS) return "pop stale";
+  let seg = `pop ${snapshot.population} (top ${snapshot.top_weight.toFixed(1)})`;
+  if (snapshot.sank_below_floor.length > 0) seg += ` ↓${snapshot.sank_below_floor.length} sank`;
+  return seg;
+}
+
+function readPopulationVitals(): PopulationVitalsSnapshot | null {
+  if (!fs.existsSync(POPULATION_VITALS_PATH)) return null; // cheap stat before any read
+  try {
+    const parsed = JSON.parse(fs.readFileSync(POPULATION_VITALS_PATH, "utf8"));
+    if (typeof parsed.ts !== "string" || typeof parsed.population !== "number") return null;
+    return parsed;
+  } catch {
+    return null;
+  }
+}
+
 /** Worldview tokens at the first --line render of this session, so later
  * renders can show the session's differential. Snapshots live in logs/ as
  * dotfiles; anything older than 7 days is swept on each call. */
@@ -500,6 +575,9 @@ function renderLine(vitals: ReturnType<typeof collectVitals>, scoreboard: ScoreE
 
   const freeze = remFreezeStatus();
   if (freeze.frozen) parts.push(`rem FROZEN·backlog ${freeze.backlog}`);
+
+  const popSeg = populationVitalsSegment(readPopulationVitals(), new Date().toISOString());
+  if (popSeg) parts.push(popSeg);
 
   if (vitals.verdicts.streak.kind !== "none") {
     parts.push(`verdict ${vitals.verdicts.streak.kind}×${vitals.verdicts.streak.count}`);
