@@ -1,18 +1,27 @@
-// mutate.test.ts — the mutation engine tested against the REAL SELF.md on
-// disk (repo doctrine: no mocks — real data). Every case exercises the exact
-// document REM will operate on tonight.
+// mutate.test.ts — the mutation engine tested against a REAL SELF.md (repo
+// doctrine: no mocks — real data). The fixture is PINNED to mind revision
+// 6271e09 (the 2026-07-26 rem wave) rather than read live: the 2026-07-27
+// 21:00 wave merged Doctrine 2/3/5 away mid-development and every test that
+// addressed those numbers went red — the living document is a moving target
+// by design (the metabolism rewrites it twice daily), and a suite anchored to
+// its momentary shape asserts the weather, not the engine. Git history is the
+// archive (MIND-SPEC), so the pinned document is real, permanent, and immune
+// to compost — the same cure ltp.test.ts applied when its flood fixture was
+// quarantined out from under it.
 import { describe, test, expect } from "bun:test";
 import * as fs from "fs";
 import * as path from "path";
 import { homedir } from "os";
-import { parseMutations, applyMutations, noChangeGreeting } from "./mutate.ts";
+import { execFileSync } from "child_process";
+import { parseMutations, applyMutations, noChangeGreeting, counterfeitQuotes, detectSelfStutter } from "./mutate.ts";
 
-const SELF_PATH = path.join(
+const MIND_DIR = path.join(
   process.env.CIRCADIAN_HOME || path.join(homedir(), "circadian"),
-  "mind",
-  "SELF.md"
+  "mind"
 );
-const realSelf = fs.readFileSync(SELF_PATH, "utf8");
+const SELF_PATH = path.join(MIND_DIR, "SELF.md");
+const PINNED_MIND_REV = "6271e090226a9970b158399d621d69eac15c5a80";
+const realSelf = execFileSync("git", ["show", `${PINNED_MIND_REV}:SELF.md`], { cwd: MIND_DIR, encoding: "utf8" });
 
 describe("parseMutations", () => {
   test("parses every grammar form", () => {
@@ -166,5 +175,238 @@ describe("applyMutations against the real SELF.md", () => {
     expect(r2.applied.length).toBe(2);
     expect(r2.text).toContain("first pass.");
     expect(r2.text).toContain("second pass.");
+  });
+});
+
+// ---------------------------------------------------------------------
+// origin-date stamping — the replay finding (2026-07-27): [ep:] stamps are
+// zoom addresses and must name the source episode's date, never the run date.
+// ---------------------------------------------------------------------
+describe("origin-date stamping", () => {
+  const fixture = [
+    "## Who I am across sessions", "", "I persist across context windows.", "",
+    "## Doctrine", "",
+    "**1. The first belief.** [ep:2026-07-10]",
+    "Body of the first belief with its why-chain. [ep:2026-07-10]", "",
+    "## Motifs", "", "- an existing motif line about rivers and lakes", "",
+    "## How we work", "", "- an existing working agreement about staging files explicitly", "",
+  ].join("\n");
+
+  test("a run-date stamp on a 2026-07-16 episode batch is corrected to [ep:2026-07-16]", () => {
+    const { mutations } = parseMutations(
+      "ADD DOCTRINE :: A genuinely new belief :: The body carries its full why-chain and reasoning. [ep:2026-07-27]"
+    );
+    const r = applyMutations(fixture, mutations, { episodeDates: ["2026-07-16"] });
+    expect(r.text).toContain("[ep:2026-07-16]");
+    expect(r.text).not.toContain("[ep:2026-07-27]");
+    expect(r.stampCorrections.length).toBe(1);
+    expect(r.stampCorrections[0].from).toBe("2026-07-27");
+    expect(r.stampCorrections[0].to).toBe("2026-07-16");
+  });
+
+  test("an unstamped ADD is stamped with the batch origin date, not today", () => {
+    const { mutations } = parseMutations(
+      "ADD DOCTRINE :: Another new belief :: A body with reasoning behind the conclusion."
+    );
+    const r = applyMutations(fixture, mutations, { episodeDates: ["2026-07-16"] });
+    const today = new Date().toISOString().slice(0, 10);
+    expect(r.text).toContain("**2. Another new belief.** [ep:2026-07-16]");
+    expect(r.text).not.toContain(`[ep:${today}]`);
+    expect(r.stampCorrections).toEqual([]); // nothing to correct — the engine stamped it right the first time
+  });
+
+  test("stamps the worldview already carries are preserved, and sloppy dates are zero-padded", () => {
+    const { mutations } = parseMutations(
+      "DEEPEN Doctrine[1] :: Restating held history keeps its address. [ep:2026-07-10]\n" +
+      "ADD MOTIF :: a theme born of the malformed stamp [ep:2026-7-16]"
+    );
+    const r = applyMutations(fixture, mutations, { episodeDates: ["2026-07-16"] });
+    expect(r.text).toContain("keeps its address. [ep:2026-07-10]"); // pre-existing SELF stamp survives
+    expect(r.text).toContain("[ep:2026-07-16]"); // 2026-7-16 normalized, in-set, no correction
+    expect(r.stampCorrections).toEqual([]);
+  });
+
+  test("without episodeDates the engine behaves as before (today's stamp, no correction pass)", () => {
+    const { mutations } = parseMutations("DEEPEN Doctrine[1] :: New reasoning without any stamp attached.");
+    const r = applyMutations(fixture, mutations);
+    const today = new Date().toISOString().slice(0, 10);
+    expect(r.text).toContain(`[ep:${today}]`);
+    expect(r.stampCorrections).toEqual([]);
+  });
+});
+
+// ---------------------------------------------------------------------
+// quote integrity — the replay finding (2026-07-27): quotation marks are
+// reserved for verbatim source text; a synthesized aphorism in quotes is
+// counterfeit verbatim, and the validator names it.
+// ---------------------------------------------------------------------
+describe("counterfeitQuotes", () => {
+  const episode =
+    'Session narrative with real testimony. jrg said "the grip returning to the hands that were open before" and the room went quiet.';
+
+  test("a fabricated quoted span (>= 40 chars) is flagged", () => {
+    const text =
+      'New belief body. "This synthesized aphorism was never spoken by anyone in any transcript at all." — distilled this wave.';
+    const misses = counterfeitQuotes(text, [episode]);
+    expect(misses.length).toBe(1);
+    expect(misses[0]).toContain("synthesized aphorism");
+  });
+
+  test("a genuine quoted span passes, tolerant of whitespace runs and curly quotes", () => {
+    const text = 'Belief. “the grip returning to the   hands that were open before” — evidence from the session.';
+    expect(counterfeitQuotes(text, [episode])).toEqual([]);
+  });
+
+  test("short scare-quotes are style, not testimony — ignored", () => {
+    expect(counterfeitQuotes('a "short quote" and a "slightly longer but still short one"', [episode])).toEqual([]);
+  });
+
+  test("the prior SELF.md is a legal source (pre-existing quotes never re-flagged)", () => {
+    const priorSelf = 'Doctrine body holding "an old quote that has lived in the worldview for many waves already".';
+    const text = 'Rewritten body still holding "an old quote that has lived in the worldview for many waves already".';
+    expect(counterfeitQuotes(text, [priorSelf])).toEqual([]);
+  });
+});
+
+// ---------------------------------------------------------------------
+// inward LTP — stutter detection pinned against the REAL SELF.md as of mind
+// commit 6271e09 (2026-07-26 rem wave), the revision where the live stutter
+// was measured: Doctrine 8/16/17 carry one "live status flow" belief and the
+// heartbeat motifs repeat. Git history is the archive (MIND-SPEC), so the
+// fixture can never rot out from under the test — same pattern as ltp.test.ts.
+// ---------------------------------------------------------------------
+describe("detectSelfStutter", () => {
+  const MIND = path.dirname(SELF_PATH);
+  const PINNED_REV = "6271e090226a9970b158399d621d69eac15c5a80";
+  const pinnedSelf = execFileSync("git", ["show", `${PINNED_REV}:SELF.md`], { cwd: MIND, encoding: "utf8" });
+
+  test("the live-status doctrine trio (8/16/17) clusters as one belief", () => {
+    const report = detectSelfStutter(pinnedSelf);
+    const family = report.doctrine.find((g) => g.some((d) => d.n === 8));
+    expect(family).toBeDefined();
+    const ns = family!.map((d) => d.n);
+    expect(ns).toContain(8);
+    expect(ns).toContain(16);
+    expect(ns).toContain(17);
+  });
+
+  test("the heartbeat / high-water motif clusters are found", () => {
+    const report = detectSelfStutter(pinnedSelf);
+    expect(report.motifs.length).toBeGreaterThanOrEqual(2);
+    const flat = report.motifs.flat().join(" | ");
+    expect(flat).toContain("heartbeat");
+    expect(flat).toContain("high-water mark");
+  });
+
+  test("genuinely distinct entries report nothing", () => {
+    const distinct = [
+      "## Who I am across sessions", "", "I persist.", "",
+      "## Doctrine", "",
+      "**1. The cliff is complexity accretion.** [ep:2026-07-16]",
+      "Layers accrete until nobody holds the whole system in their head; distrust breeds compensation.", "",
+      "**2. Storage dumb, metabolism smart.** [ep:2026-07-16]",
+      "Plain markdown in git; every gram of intelligence lives in the processes around it.", "",
+      "## Motifs", "",
+      "- Lake vs river: storage pools; memory must flow.",
+      "- The diamond: turn the problem in the light; every facet a different lens.", "",
+      "## How we work", "", "- stage files explicitly, never git add -A", "",
+    ].join("\n");
+    const report = detectSelfStutter(distinct);
+    expect(report.doctrine).toEqual([]);
+    expect(report.motifs).toEqual([]);
+  });
+
+  test("a malformed SELF.md yields silence, never a throw", () => {
+    expect(detectSelfStutter("not a worldview at all")).toEqual({
+      threshold: 0.3,
+      doctrine: [],
+      motifs: [],
+    });
+  });
+});
+
+// ---------------------------------------------------------------------
+// N-way MERGE — born from the real wave of 2026-07-26: the model emitted a
+// FIVE-way merge of the live-status stutter family (exactly what the merge
+// directive demands) and the pairwise-only grammar dropped it as malformed.
+// The fixture is shaped like the living Doctrine at mind commit 6271e09:
+// entries 4/8/13/16/17 carrying one belief under distinct [ep:] stamps.
+// ---------------------------------------------------------------------
+describe("N-way MERGE", () => {
+  const familyFixture = [
+    "## Who I am across sessions", "", "I persist.", "",
+    "## Doctrine", "",
+    "**1. The cliff is complexity accretion.** [ep:2026-07-16]",
+    "Layers accrete until nobody can hold the system in their head.", "",
+    "**2. Storage dumb, metabolism smart.** [ep:2026-07-16]",
+    "Plain markdown in git; the intelligence lives in the processes.", "",
+    "**4. Nine disconnected memory organs needed vasculature, not a tenth organ.** [ep:2026-07-24]",
+    "There is nothing left to build; there is only circulation to restore.", "",
+    "**8. Pi's live status is a visual contract.** [ep:2026-07-24] [confirmed:2026-07-25]",
+    "One line updating in place, a glyph, elapsed time, a hairline mark settling at turn-end.", "",
+    "**13. The board is the living pulse of the work.** [ep:2026-07-25]",
+    "High-water mark persistence across session restarts is the continuity metric. [ep:2026-07-25]", "",
+    "**16. The live status flow is a visual contract.** [ep:2026-07-26]",
+    "A single line updates in place, with a glyph and elapsed time.", "",
+    "**17. The live status flow is a living, responsive interface.** [ep:2026-07-26]",
+    "Its high-water mark persistence across restarts is the only metric that matters. [ep:2026-07-26]", "",
+    "## Motifs", "", "- Lake vs river: storage pools; memory must flow.", "",
+    "## How we work", "", "- stage files explicitly, never git add -A", "",
+  ].join("\n");
+
+  const FIVE_WAY =
+    "MERGE Doctrine[4] <- Doctrine[8] <- Doctrine[13] <- Doctrine[16] <- Doctrine[17] :: " +
+    "The live status flow is a visual contract — a single line updates in place, with a glyph and elapsed time, " +
+    "and a hairline mark settles when the exchange ends; its high-water mark persistence across session restarts is the continuity metric.";
+
+  test("the exact dropped 5-way line parses with all four sources", () => {
+    const { mutations, malformed } = parseMutations(FIVE_WAY);
+    expect(malformed).toEqual([]);
+    expect(mutations[0]).toEqual({
+      op: "merge-doctrine",
+      into: 4,
+      from: [8, 13, 16, 17],
+      text: expect.stringContaining("The live status flow is a visual contract"),
+    });
+  });
+
+  test("5-way merge yields ONE entry with the union of all five entries' [ep:] stamps, others gone, numbering consistent", () => {
+    const r = applyMutations(familyFixture, parseMutations(FIVE_WAY).mutations);
+    // one merged entry; the four sources are gone
+    const nums = [...r.text.matchAll(/^\*\*(\d+)\.\s/gm)].map((m) => parseInt(m[1], 10));
+    expect(nums).toEqual([1, 2, 4]); // survivors keep their numbers, no dupes, no ghosts
+    for (const gone of [8, 13, 16, 17]) expect(r.text).not.toMatch(new RegExp(`^\\*\\*${gone}\\.`, "m"));
+    // the surviving title line carries the stamp union, oldest first
+    const title = r.text.split("\n").find((l) => l.startsWith("**4."))!;
+    expect(title).toContain("[ep:2026-07-24] [ep:2026-07-25] [ep:2026-07-26]");
+    // the unified body replaced the target's
+    expect(r.text).toContain("hairline mark settles when the exchange ends");
+    expect(r.direction.catabolic).toBe(1);
+    expect(r.applied[0]).toContain("5 beliefs became one");
+    expect(r.applied[0]).toContain("3 origin stamp(s) preserved");
+  });
+
+  test("3-way merge folds both sources and unions stamps", () => {
+    const r = applyMutations(
+      familyFixture,
+      parseMutations("MERGE Doctrine[8] <- Doctrine[16] <- Doctrine[17] :: The live status flow is a visual contract, stated once.").mutations
+    );
+    const nums = [...r.text.matchAll(/^\*\*(\d+)\.\s/gm)].map((m) => parseInt(m[1], 10));
+    expect(nums).toEqual([1, 2, 4, 8, 13]);
+    const title = r.text.split("\n").find((l) => l.startsWith("**8."))!;
+    expect(title).toContain("[ep:2026-07-24] [ep:2026-07-26]");
+    expect(title).toContain("[confirmed:2026-07-25]"); // the target's confirmed trail survives
+  });
+
+  test("an unknown source index rejects the whole merge with a reason — not fatal, nothing half-folded", () => {
+    const r = applyMutations(
+      familyFixture,
+      parseMutations("CONFIRM Doctrine[1]\nMERGE Doctrine[4] <- Doctrine[8] <- Doctrine[99] :: whatever body").mutations
+    );
+    expect(r.rejected.length).toBe(1);
+    expect(r.rejected[0].reason).toContain("no such doctrine entry 99");
+    // nothing was folded: all seven entries still present
+    const nums = [...r.text.matchAll(/^\*\*(\d+)\.\s/gm)].map((m) => parseInt(m[1], 10));
+    expect(nums).toEqual([1, 2, 4, 8, 13, 16, 17]);
   });
 });

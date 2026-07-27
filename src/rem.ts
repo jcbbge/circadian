@@ -36,7 +36,7 @@ import { execFileSync, spawnSync } from "child_process";
 import { createHash } from "crypto";
 import { complete } from "./llm.ts";
 import { ok, idle, degraded, fail, correlation } from "./obs.ts";
-import { MUTATION_GRAMMAR, parseMutations, applyMutations, noChangeGreeting, selfSimilarity, type Mutation, type ParsedMutations } from "./mutate.ts";
+import { MUTATION_GRAMMAR, parseMutations, applyMutations, noChangeGreeting, selfSimilarity, counterfeitQuotes, detectSelfStutter, type Mutation, type ParsedMutations, type StampCorrection, type StutterReport } from "./mutate.ts";
 import { USER_MUTATION_GRAMMAR, parseUserMutations, applyUserMutations } from "./usermutate.ts";
 import { clusterEpisodes, type EpisodeCluster } from "./ltp.ts";
 
@@ -434,6 +434,39 @@ interface MindContext {
   transcripts: TranscriptExcerpt[];
   injectedItems: string[];
   ltp: Map<string, { weight: number; members: Episode[] }>;
+  /** Inward LTP: near-duplicate doctrine/motif groups detected in the CURRENT
+   * SELF.md before this wave — rendered as an explicit merge directive so the
+   * model is handed addresses, not a vibe. Null when the worldview is clean. */
+  stutter: StutterReport | null;
+}
+
+/** Inward-LTP merge directive. When detectSelfStutter finds near-duplicate
+ * doctrine entries or motif lines in the CURRENT worldview, the prompt names
+ * them explicitly and demands the merge — a directive with addresses, because
+ * "look for two doctrines saying the same thing" (the standing rule above)
+ * demonstrably did not find 8/16/17 on its own. Empty when the worldview is
+ * clean, so a clean wave pays zero prompt tokens for it. */
+function renderStutterDirective(stutter: StutterReport | null): string {
+  if (!stutter || (stutter.doctrine.length === 0 && stutter.motifs.length === 0)) return "";
+  const parts: string[] = [
+    "",
+    "=== STUTTER DETECTED — MERGE DIRECTIVE (mechanically measured on the current SELF.md; not optional) ===",
+    "The worldview is currently holding one belief in multiple entries. Your FIRST mutations this wave must collapse each group below:",
+  ];
+  for (const group of stutter.doctrine) {
+    parts.push(
+      `- Doctrine entries ${group.map((d) => `[${d.n}] "${d.title}"`).join(", ")} carry one belief. ` +
+        `MERGE them into ONE entry with a single N-way line into the lowest-numbered member (e.g. MERGE Doctrine[${group[0].n}] <- ${group.slice(1).map((d) => `Doctrine[${d.n}]`).join(" <- ")} :: <unified body>). ` +
+        `Keep the fullest why-chain; every distinct [ep:YYYY-MM-DD] stamp is preserved automatically — the stamps are provenance addresses and must survive the fold.`
+    );
+  }
+  for (const group of stutter.motifs) {
+    parts.push(
+      `- These motif lines are one theme told ${group.length} ways: ${group.map((l) => `"${l.replace(/^-\s*/, "").slice(0, 70)}"`).join(" / ")}. ` +
+        `Keep the fullest single line and RETRACT MOTIF the others (a motif is a recurring theme, not a log of its recurrences).`
+    );
+  }
+  return parts.join("\n");
 }
 
 function buildPrompt(ctx: MindContext): string {
@@ -450,10 +483,23 @@ function buildPrompt(ctx: MindContext): string {
     return `--- episode: ${e.filename} [${freshness}] [POTENTIATED x${pot.weight}: this same lesson was drafted ${pot.weight} times this cycle (${pot.members.map((m) => m.filename).join(", ")}) — treat recurrence as strong evidence, absorb it ONCE] ---`;
   };
 
+  // Provenance-leak guard (2026-07-27, found via replay): a composted episode
+  // carries a "taught -> absorbed-where: ... -> SELF.md Doctrine[N]" footer
+  // whose N was valid in the SELF.md of its composting day. Fed to the model,
+  // that stale address reads as an instruction — every replayed ACP episode
+  // made the model emit DEEPEN Doctrine[5] against a document with 3 entries.
+  // ltp.ts already strips these lines for similarity; the prompt gets the same
+  // hygiene. The footer is provenance for humans and zoom, never model input.
+  const stripAbsorbedWhere = (c: string): string =>
+    c
+      .split("\n")
+      .filter((l) => !/^\*\*taught -> absorbed-where:\*\*/i.test(l.trim()))
+      .join("\n");
+
   const episodesBlock =
     ctx.episodes.length === 0
       ? "(none — episodes/ is empty)"
-      : ctx.episodes.map((e) => `${epHeader(e)}\n${e.content}`).join("\n\n");
+      : ctx.episodes.map((e) => `${epHeader(e)}\n${stripAbsorbedWhere(e.content)}`).join("\n\n");
 
   const transcriptsBlock =
     ctx.transcripts.length === 0
@@ -506,9 +552,11 @@ Mutation rules:
 - Specifically look for: two doctrines saying the same thing (MERGE them), a HowWeWork bullet that has drifted into a paragraph (REVISE it shorter), identity prose that has accumulated restatements (REVISE WhoIAm with a distilled version), a motif that is really a log of its own recurrences (RETRACT MOTIF).
 - The worldview has a redundancy budget. If the digest above reports high redundancy, your FIRST mutations must reduce it.
 - DEEPEN and ADD must carry the why-chain — the reasoning, a verbatim quote where voice matters — never a bare conclusion. Ash is banned.
+- QUOTE INTEGRITY (hard rule): quotation marks are RESERVED for text that appears VERBATIM in an episode or transcript above. If you distill, synthesize, or paraphrase, write it UNQUOTED — a synthesized sentence wearing quotation marks is a forged quote, and every quoted span you emit is checked mechanically against the sources after this pass. When in doubt, drop the quotation marks.
 - CONFIRM is real work: a belief that keeps earning its residence should say so; beliefs nobody confirms are drifting toward compost.
 - If genuinely nothing moved, emit exactly ONE line: NO-CHANGE :: <justification>. The justification must name the WORK-side reason (e.g. "six sync-test episodes repeat a lesson Doctrine[5] already holds — the work is circling the same validation loop"), because it will be spoken to jrg at the next wake, to his face.
 - An empty MUTATIONS block is invalid. Mutate or confess — silence is not an option.
+${renderStutterDirective(ctx.stutter)}
 
 3. Using the transcript excerpts and the injected-items list, judge which injected items actually propagated (were read, referenced, or built upon) recently. Items with zero observed propagation across their lifetime are compost candidates (Law 6) — candidacy only, this does not by itself compost anything.
 
@@ -834,6 +882,15 @@ interface ValidatedRem {
   direction: { anabolic: number; catabolic: number; neutral: number };
   similarityBefore: number;
   similarityAfter: number;
+  /** Origin-date enforcement: [ep:] stamps the engine rewrote because they
+   * named a date outside the batch and outside the worldview's existing
+   * stamps. Surfaced as a degraded event by the caller — never fatal. */
+  stampCorrections: StampCorrection[];
+  /** Quote-integrity misses: quoted spans (>= 40 chars) in the new SELF.md
+   * that appear verbatim in neither the batch's episodes nor the prior
+   * SELF.md — counterfeit verbatim. Surfaced as a degraded event by the
+   * caller; never fatal, never auto-edited. */
+  counterfeitSpans: string[];
 }
 
 /** Pure: parses + validates claude's raw output against every MIND-SPEC rule.
@@ -851,7 +908,16 @@ function validateAndCompute(
   // structurally impossible — there is no full document in the model's output
   // to copy. applyMutations throws if every mutation misses its target
   // (back-pressure), and returns the confession on a NO-CHANGE wave.
-  const applied = applyMutations(ctx.selfMd, parsed.mutations);
+  // The batch's episode dates ride along so [ep:] stamps stay ORIGIN
+  // addresses (zoom-resolvable), never run dates — an out-of-set stamp is
+  // corrected deterministically and reported (the replay finding, 2026-07-27).
+  const episodeDates = ctx.episodes.filter((e) => e.isNew).map((e) => e.filename.slice(0, 10));
+  const applied = applyMutations(ctx.selfMd, parsed.mutations, { episodeDates });
+
+  // QUOTE INTEGRITY: every quoted span the wave leaves in SELF.md must exist
+  // verbatim in this batch's episodes or in the prior SELF.md. A miss is a
+  // forged quote — named, never silently accepted, never auto-edited.
+  const counterfeitSpans = counterfeitQuotes(applied.text, [ctx.selfMd, ...ctx.episodes.map((e) => e.content)]);
 
   // On a NO-CHANGE wave the greeting is MECHANICAL — the system's own flat
   // voice carrying the confession to jrg's face at wake. The model-drafted
@@ -915,6 +981,33 @@ function validateAndCompute(
   const newNowMd = replaceSection(ctx.nowMd, "Serendipity", parsed.serendipityLine);
   note(checkSize("NOW.md", newNowMd, TARGET_NOW_TOKENS), "NOW.md");
 
+  // Forged-address guard (2026-07-27, found via replay): a compost claim whose
+  // absorbed_where names a Doctrine[N] that does not exist in the rewritten
+  // SELF.md is a FALSE digestion-completeness statement — and once written to
+  // compost.md it feeds every future prompt (observed: six "lesson lives at
+  // SELF.md Doctrine[5]" compost lines teaching wave after wave to DEEPEN a
+  // phantom entry — the excretory organ as a self-sustaining poison feed).
+  // The claim is dropped and the episode STAYS for a later wave to compost
+  // with an address that exists. Emitted loud, never fatal (Law 4).
+  const doctrineExists = (n: number) => new RegExp(`^\\*\\*${n}\\.\\s`, "m").test(applied.text);
+  const forgedAddressClaims = parsed.compost.filter((m) => {
+    const idx = m.absorbed_where.match(/Doctrine\[(\d+)\]/);
+    return idx !== null && !doctrineExists(parseInt(idx[1], 10));
+  });
+  if (forgedAddressClaims.length > 0) {
+    parsed.compost = parsed.compost.filter((m) => !forgedAddressClaims.includes(m));
+    sizeNotes.push(
+      `${forgedAddressClaims.length} compost claim(s) rejected for forged addresses — absorbed_where named a Doctrine[N] absent from the rewritten SELF.md; episode(s) retained`
+    );
+    degraded({
+      process: "rem", phase: "compost-address",
+      summary: `${forgedAddressClaims.length} compost claim(s) named a nonexistent SELF.md address — rejected, episode(s) retained`,
+      context: { rejected: forgedAddressClaims.map((m) => ({ episode: m.episode, absorbed_where: m.absorbed_where })) },
+      cause: "the model's absorbed_where cited a Doctrine index that does not exist in the document it just rewrote (stale address from a composted episode's footer or from old compost.md lines)",
+      next_action: "none needed this wave — the episode stays and may compost later with a real address; if this recurs every wave, prune stale 'lesson lives at Doctrine[N]' lines from compost.md",
+    });
+  }
+
   const dateStr = new Date().toISOString().slice(0, 10);
   // Append, then let the compost log itself compost (oldest sections drop;
   // git history is the ledger). pruneCompost already keeps this near target;
@@ -949,6 +1042,8 @@ function validateAndCompute(
     dateStr,
     pruneInfo: { dropped_sections: pruned.dropped_sections, before_tokens: pruned.before_tokens, after_tokens: pruned.after_tokens },
     sizeNotes,
+    stampCorrections: applied.stampCorrections,
+    counterfeitSpans,
   };
 }
 
@@ -1141,6 +1236,27 @@ async function runOnePass(opts: { dryRun: boolean; batch: number; pass: number; 
   const transcripts = gatherTranscriptExcerpts();
   const injectedItems = enumerateInjectedItems(selfMd, nowMd);
 
+  // INWARD LTP: measure the current worldview for stutter BEFORE digesting.
+  // Findings become an explicit merge directive in the prompt (addresses, not
+  // vibes) and a degraded event — redundancy inside SELF.md is the accretion
+  // disease wearing doctrine numbers, and it must never be invisible again.
+  const stutterFound = detectSelfStutter(selfMd);
+  const hasStutter = stutterFound.doctrine.length > 0 || stutterFound.motifs.length > 0;
+  if (hasStutter) {
+    degraded({
+      process: "rem", phase: "stutter-detect", correlation_id: corr,
+      summary: `worldview stutter: ${stutterFound.doctrine.length} doctrine group(s) and ${stutterFound.motifs.length} motif group(s) carry duplicated beliefs`,
+      context: {
+        threshold: stutterFound.threshold,
+        doctrine_groups: stutterFound.doctrine.map((g) => g.map((d) => `Doctrine[${d.n}] ${d.title}`)),
+        motif_groups: stutterFound.motifs.map((g) => g.map((l) => l.slice(0, 80))),
+        pass: opts.pass,
+      },
+      cause: "near-duplicate doctrine entries / motif lines in the current SELF.md (overlap-coefficient clustering, same instrument as episode LTP)",
+      next_action: "this wave's prompt carries an explicit MERGE directive naming the groups; if the stutter survives several waves, run `bun src/replay.ts --stutter` and inspect whether the model is refusing the merge",
+    });
+  }
+
   const prompt = buildPrompt({
     specMd,
     selfMd,
@@ -1152,6 +1268,7 @@ async function runOnePass(opts: { dryRun: boolean; batch: number; pass: number; 
     transcripts,
     injectedItems,
     ltp,
+    stutter: hasStutter ? stutterFound : null,
   });
 
   if (dryRun) {
@@ -1209,7 +1326,35 @@ async function runOnePass(opts: { dryRun: boolean; batch: number; pass: number; 
     return "validation-failed";
   }
 
-  const { parsed, oldSelfTokens, newSelfTokens, selfChanged, newSelfMd, appliedMutations, rejectedMutations, noChangeJustification, newGreetingMd, newNowMd, newCompostMd, dateStr, pruneInfo, sizeNotes, collapsedMutations, direction, similarityBefore, similarityAfter } = computed;
+  const { parsed, oldSelfTokens, newSelfTokens, selfChanged, newSelfMd, appliedMutations, rejectedMutations, noChangeJustification, newGreetingMd, newNowMd, newCompostMd, dateStr, pruneInfo, sizeNotes, collapsedMutations, direction, similarityBefore, similarityAfter, stampCorrections, counterfeitSpans } = computed;
+
+  // ORIGIN-DATE ENFORCEMENT REPORT: stamps the engine had to rewrite because
+  // the model addressed a belief to a date outside the batch (typically the
+  // run date). The correction already happened mechanically; this event is
+  // the paper trail. Warn, never fatal (Law 4 spirit).
+  if (stampCorrections.length > 0) {
+    degraded({
+      process: "rem", phase: "stamp-correct", correlation_id: corr,
+      summary: `${stampCorrections.length} [ep:] stamp(s) corrected to origin dates — the model stamped run dates instead of episode dates`,
+      context: { corrections: stampCorrections, batch, pass: opts.pass },
+      cause: "mutation text carried [ep:] dates that match no episode in this batch and no stamp already in SELF.md",
+      next_action: "nothing to do — corrected mechanically to the batch's origin date; if this recurs every wave, the model is ignoring the stamp instruction in MUTATION_GRAMMAR",
+    });
+  }
+
+  // QUOTE-INTEGRITY REPORT: quoted spans in the new SELF.md that exist in no
+  // source (batch episodes + prior SELF.md). Counterfeit verbatim — named
+  // loudly, never auto-edited, never fatal: the forgery is now on record and
+  // a future wave (or human) can strip the quotes.
+  if (counterfeitSpans.length > 0) {
+    degraded({
+      process: "rem", phase: "quote-integrity", correlation_id: corr,
+      summary: `${counterfeitSpans.length} quoted span(s) in the new SELF.md appear verbatim in no source — counterfeit quotes`,
+      context: { spans: counterfeitSpans.map((s) => s.slice(0, 160)), batch, pass: opts.pass },
+      cause: "the model wrapped synthesized text in quotation marks; quotes are reserved for verbatim source text (Law 5 — a fabricated quote is forged provenance, worse than ash)",
+      next_action: "review the named spans in SELF.md and unquote or excise them in a future wave; the write proceeds — this validator warns, it does not jam the metabolism",
+    });
+  }
 
   // pruneCompost dropping sections is the compost log excreting old history —
   // normal metabolism (git is the archive), but surface it so a cold reader

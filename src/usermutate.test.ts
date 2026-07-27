@@ -13,6 +13,7 @@ import { describe, test, expect } from "bun:test";
 import * as fs from "fs";
 import * as path from "path";
 import { homedir } from "os";
+import { execFileSync } from "child_process";
 import {
   parseUserMutations,
   applyUserMutations,
@@ -21,7 +22,13 @@ import {
 } from "./usermutate.ts";
 
 const MIND = path.join(process.env.CIRCADIAN_HOME || path.join(homedir(), "circadian"), "mind");
-const realUser = () => fs.readFileSync(path.join(MIND, "USER.md"), "utf8");
+// PINNED to mind revision 6271e09, not read live: the metabolism rewrites
+// USER.md twice daily, and the size-discipline tests below depend on the
+// document's relationship to its target — the 2026-07-27 21:00 wave shrank it
+// and two tests went red without any code changing. Git history is the
+// archive (MIND-SPEC); the pinned document is real data, permanently stable.
+const PINNED_MIND_REV = "6271e090226a9970b158399d621d69eac15c5a80";
+const realUser = () => execFileSync("git", ["show", `${PINNED_MIND_REV}:USER.md`], { cwd: MIND, encoding: "utf8" });
 
 function run(block: string) {
   const { mutations } = parseUserMutations(block);

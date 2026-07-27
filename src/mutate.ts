@@ -44,7 +44,9 @@
 //   DEEPEN Doctrine[N] :: <why-chain sentence(s), quote where voice matters>
 //   SUPERSEDE Doctrine[N] :: <full replacement body for that belief>
 //   RETRACT Doctrine[N] :: <reason it no longer earns residence>
-//   MERGE Doctrine[N] <- Doctrine[M] :: <unified body> — fold M into N (catabolic)
+//   MERGE Doctrine[N] <- Doctrine[M] [<- Doctrine[K] ...] :: <unified body>
+//     — fold 2..N sources into N as ONE entry (catabolic); all distinct
+//       [ep:] stamps from every merged entry survive on the title line
 //   ADD DOCTRINE :: <bold title, no numbering> :: <body with its why-chain>
 //   ADD MOTIF :: <one motif line>
 //   RETRACT MOTIF :: <exact prefix of the motif line to remove>
@@ -61,12 +63,14 @@
 // which is Ebbinghaus decay for free: the evidence trail for future
 // compost candidacy lives in the document itself.
 
+import { significantTokens } from "./ltp.ts";
+
 export const MUTATION_GRAMMAR = `Mutation grammar (one per line, exactly):
 CONFIRM Doctrine[N] :: <evidence>         — this belief earned its residence again this wave (evidence optional but welcome)
 DEEPEN Doctrine[N] :: <text>              — append why-chain reasoning to belief N (quotes where voice matters)
 SUPERSEDE Doctrine[N] :: <text>           — replace belief N's body entirely (title survives)
 RETRACT Doctrine[N] :: <reason>           — remove belief N; the reason is archived
-MERGE Doctrine[N] <- Doctrine[M] :: <body> — two beliefs are one; fold M into N with this unified body
+MERGE Doctrine[N] <- Doctrine[M] [<- Doctrine[K] ...] :: <body> — these beliefs are one; fold every source into N with this unified body. Two or MORE sources on one line is legal and preferred for a whole family (e.g. MERGE Doctrine[4] <- Doctrine[8] <- Doctrine[13] <- Doctrine[16] <- Doctrine[17] :: <unified body>); every distinct [ep:] stamp from every merged entry is preserved automatically
 ADD DOCTRINE :: <title> :: <body>         — a genuinely new belief with its full why-chain
 ADD MOTIF :: <line>                       — a new recurring theme
 RETRACT MOTIF :: <prefix>                 — remove the motif whose line starts with this prefix
@@ -80,14 +84,20 @@ NO-CHANGE :: <justification>              — nothing moved; the justification i
 SHRINKING IS REAL WORK. A wave that only appends is a wave that failed to
 digest: RETRACT, SUPERSEDE, MERGE, and REVISE carry exactly as much credit as
 DEEPEN and ADD. If a section already holds the substance you are about to add,
-the correct mutation is CONFIRM or REVISE — never a second copy.`;
+the correct mutation is CONFIRM or REVISE — never a second copy.
+
+STAMPS ARE ADDRESSES. An [ep:YYYY-MM-DD] stamp names the ORIGIN EPISODE a
+belief came from — the date in that episode's filename — NEVER today's date.
+A provenance drill resolves beliefs by these stamps; a run-date stamp points
+at nothing. Preserve existing stamps when you restate held text; the engine
+corrects out-of-set stamps mechanically and reports you when it must.`;
 
 export type Mutation =
   | { op: "confirm"; n: number; evidence?: string }
   | { op: "deepen"; n: number; text: string }
   | { op: "supersede"; n: number; text: string }
   | { op: "retract-doctrine"; n: number; reason: string }
-  | { op: "merge-doctrine"; into: number; from: number; text: string }
+  | { op: "merge-doctrine"; into: number; from: number[]; text: string }
   | { op: "add-doctrine"; title: string; body: string }
   | { op: "add-motif"; line: string }
   | { op: "retract-motif"; prefix: string }
@@ -127,6 +137,11 @@ export interface ApplyResult {
   direction: { anabolic: number; catabolic: number; neutral: number };
   /** Self-similarity of the resulting document — the accretion instrument. */
   similarity: { ratio: number; worstOffender: { text: string; copies: number } | null };
+  /** Origin-date enforcement: every [ep:] stamp the engine had to rewrite
+   * because it named a date outside the batch and outside the worldview's
+   * existing stamps (the replay run-date-stamp defect). Surfaced by the
+   * caller as a degraded event — warn loudly, never fatal. */
+  stampCorrections: StampCorrection[];
 }
 
 export interface ParsedMutations {
@@ -170,8 +185,13 @@ export function parseMutations(block: string): ParsedMutations {
       muts.push({ op: "supersede", n: parseInt(m[1], 10), text: m[2].trim() });
     } else if ((m = line.match(/^RETRACT\s+Doctrine\[(\d+)\]\s*::\s*(.+)$/i))) {
       muts.push({ op: "retract-doctrine", n: parseInt(m[1], 10), reason: m[2].trim() });
-    } else if ((m = line.match(/^MERGE\s+Doctrine\[(\d+)\]\s*(?:<-|<=|\u2190)\s*Doctrine\[(\d+)\]\s*::\s*(.+)$/i))) {
-      muts.push({ op: "merge-doctrine", into: parseInt(m[1], 10), from: parseInt(m[2], 10), text: m[3].trim() });
+    } else if ((m = line.match(/^MERGE\s+Doctrine\[(\d+)\]((?:\s*(?:<-|<=|\u2190)\s*Doctrine\[\d+\])+)\s*::\s*(.+)$/i))) {
+      // 2..N sources. The live wave of 2026-07-26 emitted a FIVE-way merge
+      // (Doctrine[4] <- 8 <- 13 <- 16 <- 17 \u2014 the stutter family, exactly what
+      // the merge directive asks for) and the pairwise-only grammar dropped it
+      // as malformed. The model's instinct was right; the grammar was small.
+      const sources = [...m[2].matchAll(/Doctrine\[(\d+)\]/gi)].map((s) => parseInt(s[1], 10));
+      muts.push({ op: "merge-doctrine", into: parseInt(m[1], 10), from: sources, text: m[3].trim() });
     } else if ((m = line.match(/^ADD\s+DOCTRINE\s*::\s*(.+?)\s*::\s*(.+)$/i))) {
       muts.push({ op: "add-doctrine", title: stripQuotes(m[1]), body: m[2].trim() });
     } else if ((m = line.match(/^ADD\s+DOCTRINE\s*::\s*(.+)$/i))) {
@@ -352,8 +372,74 @@ function substantialOverlap(a: string, b: string): boolean {
   return shared / Math.min(sa.size, sb.size) >= 0.8;
 }
 
-function ensureEpStamp(text: string): string {
-  return /\[ep:\d{4}-\d{2}-\d{2}\]/.test(text) ? text : `${text} [ep:${todayStamp()}]`;
+function ensureEpStamp(text: string, stamp: string = todayStamp()): string {
+  return /\[ep:\d{4}-\d{1,2}-\d{1,2}\]/.test(text) ? text : `${text} [ep:${stamp}]`;
+}
+
+// ---------------------------------------------------------------------
+// ORIGIN-DATE STAMPING (the replay finding, 2026-07-27): an [ep:] stamp is a
+// zoom ADDRESS — it must point at the episode the belief came from, because
+// zoom.ts drills provenance by that date. The first from-genesis replay
+// produced Doctrine entries stamped with the RUN date (2026-07-27) from
+// episodes dated 2026-07-16: a stamp that resolves to nothing, provenance
+// severed at birth. The model cannot be trusted to stamp correctly (it
+// wasn't), so the engine enforces it mechanically:
+//   - a stamp is VALID if it names a date in this wave's episode batch, or a
+//     date the current SELF.md already carries (preserved history);
+//   - an out-of-set stamp is corrected deterministically to the batch's
+//     origin date (the newest episode date in the meal — with a one-episode
+//     batch that IS the source episode's date);
+//   - every correction is recorded and surfaced as a degraded obs event by
+//     the caller — Law 4 spirit: warn loudly, never jam the metabolism.
+// Dates are zero-pad-normalized on both sides (the wild [ep:2026-07-6]
+// taught us stamps arrive sloppy).
+// ---------------------------------------------------------------------
+
+function normalizeStampDate(s: string): string | null {
+  const m = s.trim().match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/);
+  if (!m) return null;
+  return `${m[1]}-${m[2].padStart(2, "0")}-${m[3].padStart(2, "0")}`;
+}
+
+export interface StampCorrection {
+  op: string;
+  from: string;
+  to: string;
+}
+
+interface StampGuard {
+  /** the deterministic default stamp for unstamped/mis-stamped content */
+  origin: string;
+  /** rewrite out-of-set [ep:] stamps in mutation text; records corrections */
+  fix: (text: string, opLabel: string) => string;
+  corrections: StampCorrection[];
+}
+
+function makeStampGuard(selfMd: string, episodeDates?: string[]): StampGuard {
+  const corrections: StampCorrection[] = [];
+  // No batch dates given (older call sites, unit fixtures): behave as before —
+  // today's stamp, no correction pass. Enforcement is opt-in by evidence.
+  if (!episodeDates || episodeDates.length === 0) {
+    return { origin: todayStamp(), fix: (t) => t, corrections };
+  }
+  const batch = episodeDates.map(normalizeStampDate).filter((d): d is string => d !== null).sort();
+  if (batch.length === 0) return { origin: todayStamp(), fix: (t) => t, corrections };
+  const origin = batch[batch.length - 1]; // newest episode in the meal
+  const allowed = new Set<string>(batch);
+  // Preserve history: any stamp the worldview already carries stays legal —
+  // a SUPERSEDE/MERGE body restating an old belief keeps its old address.
+  for (const m of selfMd.matchAll(/\[ep:(\d{4}-\d{1,2}-\d{1,2})\]/g)) {
+    const d = normalizeStampDate(m[1]);
+    if (d) allowed.add(d);
+  }
+  const fix = (text: string, opLabel: string): string =>
+    text.replace(/\[ep:(\d{4}-\d{1,2}-\d{1,2})\]/g, (whole, raw) => {
+      const d = normalizeStampDate(raw);
+      if (d && allowed.has(d)) return `[ep:${d}]`; // normalize the zero-pad while we're here
+      corrections.push({ op: opLabel, from: raw, to: origin });
+      return `[ep:${origin}]`;
+    });
+  return { origin, fix, corrections };
 }
 
 /** THE UNIVERSAL DUP GUARD. Previously this logic lived inline in `deepen` and
@@ -428,7 +514,11 @@ export function selfSimilarity(text: string): {
 /** Apply mutations mechanically. Invalid targets are REJECTED (returned, never
  * silently dropped) — a hallucinated Doctrine[99] must not stall the wave, but
  * it must not vanish either. */
-export function applyMutations(selfMd: string, mutations: Mutation[]): ApplyResult {
+export function applyMutations(
+  selfMd: string,
+  mutations: Mutation[],
+  opts: { episodeDates?: string[] } = {}
+): ApplyResult {
   const noChangeMut = mutations.find((m) => m.op === "no-change") as
     | Extract<Mutation, { op: "no-change" }>
     | undefined;
@@ -437,13 +527,16 @@ export function applyMutations(selfMd: string, mutations: Mutation[]): ApplyResu
       text: selfMd, applied: [], rejected: [], noChange: noChangeMut.justification,
       collapsed: 0, direction: { anabolic: 0, catabolic: 0, neutral: 0 },
       similarity: { ratio: selfSimilarity(selfMd).ratio, worstOffender: selfSimilarity(selfMd).worstOffender },
+      stampCorrections: [],
     };
   }
 
   const doc = parseSelf(selfMd);
   const applied: string[] = [];
   const rejected: { line: string; reason: string }[] = [];
-  const stamp = todayStamp();
+  const stamp = todayStamp(); // [confirmed:] stamps stay run-dated — confirmation IS a run event
+  // [ep:] stamps are origin addresses, not run dates (see makeStampGuard).
+  const guard = makeStampGuard(selfMd, opts.episodeDates);
   let collapsed = 0;
   const direction = { anabolic: 0, catabolic: 0, neutral: 0 };
   for (const mu of mutations) direction[opDirection(mu.op)]++;
@@ -476,26 +569,53 @@ export function applyMutations(selfMd: string, mutations: Mutation[]): ApplyResu
           collapsed++;
           break;
         }
-        d.body = `${d.body} ${ensureEpStamp(mu.text)}`;
+        d.body = `${d.body} ${ensureEpStamp(guard.fix(mu.text, `DEEPEN Doctrine[${mu.n}]`), guard.origin)}`;
         applied.push(`DEEPEN Doctrine[${mu.n}] :: ${mu.text.slice(0, 80)}`);
         break;
       }
       case "merge-doctrine": {
+        // 2..N sources fold into the target as ONE entry (the five-way stutter
+        // family is the canonical case). The mutation is atomic: any bad index
+        // rejects the whole line with its reason — a partial fold of a belief
+        // family would leave the stutter half-alive AND half-erased.
+        const label = `MERGE Doctrine[${mu.into}] <- ${mu.from.map((f) => `Doctrine[${f}]`).join(" <- ")}`;
         const into = findDoctrine(mu.into);
-        const fromIdx = doc.doctrine.findIndex((d) => d.n === mu.from);
-        if (!into) { rejected.push({ line: `MERGE Doctrine[${mu.into}] <- Doctrine[${mu.from}]`, reason: `no such doctrine entry ${mu.into}` }); break; }
-        if (fromIdx === -1) { rejected.push({ line: `MERGE Doctrine[${mu.into}] <- Doctrine[${mu.from}]`, reason: `no such doctrine entry ${mu.from}` }); break; }
-        if (mu.into === mu.from) { rejected.push({ line: `MERGE Doctrine[${mu.into}] <- Doctrine[${mu.from}]`, reason: "cannot merge a doctrine into itself" }); break; }
-        const goneTitle = doc.doctrine[fromIdx].titleLine.replace(/^\*\*\d+\.\s*/, "").replace(/\*\*.*$/, "");
-        doc.doctrine.splice(fromIdx, 1);
-        into.body = ensureEpStamp(mu.text);
-        applied.push(`MERGE Doctrine[${mu.into}] <- Doctrine[${mu.from}] — folded "${goneTitle.trim().slice(0, 60)}" in; two beliefs became one`);
+        if (!into) { rejected.push({ line: label, reason: `no such doctrine entry ${mu.into}` }); break; }
+        const sources = [...new Set(mu.from)];
+        if (sources.includes(mu.into)) { rejected.push({ line: label, reason: "cannot merge a doctrine into itself" }); break; }
+        const missing = sources.filter((f) => !findDoctrine(f));
+        if (missing.length > 0) { rejected.push({ line: label, reason: `no such doctrine entry ${missing.join(", ")}` }); break; }
+
+        // PROVENANCE SURVIVES THE FOLD: union every distinct [ep:] stamp from
+        // every merged entry (target included), oldest first, onto the
+        // surviving title line. Stamps are zoom addresses — a merge that
+        // dropped four of five origin dates would sever four why-chains from
+        // their episodes. [confirmed:] stamps stay as the target carried them.
+        const merged = [into, ...sources.map((f) => findDoctrine(f)!)];
+        const stampUnion = [...new Set(
+          merged
+            .flatMap((d) => [...`${d.titleLine}\n${d.body}`.matchAll(/\[ep:(\d{4}-\d{1,2}-\d{1,2})\]/g)])
+            .map((s) => normalizeStampDate(s[1]))
+            .filter((d): d is string => d !== null)
+        )].sort();
+        const goneTitles = sources.map((f) => findDoctrine(f)!.titleLine.replace(/^\*\*\d+\.\s*/, "").replace(/\*\*.*$/, "").trim());
+        doc.doctrine = doc.doctrine.filter((d) => !sources.includes(d.n));
+        into.titleLine =
+          into.titleLine.replace(/\s*\[ep:\d{4}-\d{1,2}-\d{1,2}\]/g, "").trimEnd() +
+          stampUnion.map((s) => ` [ep:${s}]`).join("");
+        // The union on the title line already carries every origin address, so
+        // the body takes the model's unified text as-is (stamp-guard applied);
+        // no forced extra stamp that would duplicate the title's.
+        into.body = guard.fix(mu.text, label);
+        applied.push(
+          `${label} — folded ${goneTitles.map((t) => `"${t.slice(0, 40)}"`).join(", ")} in; ${sources.length + 1} beliefs became one, ${stampUnion.length} origin stamp(s) preserved`
+        );
         break;
       }
       case "supersede": {
         const d = findDoctrine(mu.n);
         if (!d) { rejected.push({ line: `SUPERSEDE Doctrine[${mu.n}]`, reason: "no such doctrine entry" }); break; }
-        d.body = ensureEpStamp(mu.text);
+        d.body = ensureEpStamp(guard.fix(mu.text, `SUPERSEDE Doctrine[${mu.n}]`), guard.origin);
         applied.push(`SUPERSEDE Doctrine[${mu.n}] :: ${mu.text.slice(0, 80)}`);
         break;
       }
@@ -523,7 +643,7 @@ export function applyMutations(selfMd: string, mutations: Mutation[]): ApplyResu
             twin.titleLine = twin.titleLine.replace(/\s*\[confirmed:\d{4}-\d{2}-\d{2}\]/g, "") + ` [confirmed:${stamp}]`;
             applied.push(`ADD→CONFIRM Doctrine[${twin.n}] — "${title.slice(0, 50)}" is already held, body too; residence re-earned instead of a duplicate belief`);
           } else {
-            twin.body = `${twin.body} ${ensureEpStamp(mu.body)}`;
+            twin.body = `${twin.body} ${ensureEpStamp(guard.fix(mu.body, `ADD→DEEPEN Doctrine[${twin.n}]`), guard.origin)}`;
             applied.push(`ADD→DEEPEN Doctrine[${twin.n}] — "${title.slice(0, 50)}" duplicates an existing belief; the new substance deepened it instead`);
           }
           collapsed++;
@@ -532,14 +652,15 @@ export function applyMutations(selfMd: string, mutations: Mutation[]): ApplyResu
         const nextN = Math.max(...doc.doctrine.map((d) => d.n)) + 1;
         doc.doctrine.push({
           n: nextN,
-          titleLine: `**${nextN}. ${title}.** [ep:${stamp}]`,
-          body: ensureEpStamp(mu.body),
+          titleLine: `**${nextN}. ${title}.** [ep:${guard.origin}]`,
+          body: ensureEpStamp(guard.fix(mu.body, `ADD DOCTRINE[${nextN}]`), guard.origin),
         });
         applied.push(`ADD DOCTRINE[${nextN}] :: ${title}`);
         break;
       }
       case "add-motif": {
-        const line = mu.line.startsWith("-") ? mu.line : `- ${mu.line}`;
+        const fixed = guard.fix(mu.line, "ADD MOTIF");
+        const line = fixed.startsWith("-") ? fixed : `- ${fixed}`;
         // Was exact-equality only, so "X" and "X — now confirmed" both landed.
         const key = bulletKey(line);
         if (doc.motifs.some((l) => { const k = bulletKey(l); return k === key || k.includes(key) || key.includes(k) || substantialOverlap(k, key); })) {
@@ -560,7 +681,8 @@ export function applyMutations(selfMd: string, mutations: Mutation[]): ApplyResu
         break;
       }
       case "amend-howwework": {
-        const line = mu.bullet.startsWith("-") ? mu.bullet : `- ${mu.bullet}`;
+        const fixedBullet = guard.fix(mu.bullet, "AMEND HowWeWork");
+        const line = fixedBullet.startsWith("-") ? fixedBullet : `- ${fixedBullet}`;
         const key = bulletKey(line);
         // The 14x bullet died here. An existing bullet that already carries this
         // substance gets SHARPENED (longest wins) rather than joined by a twin.
@@ -585,7 +707,8 @@ export function applyMutations(selfMd: string, mutations: Mutation[]): ApplyResu
         const idx = doc.howWeWork.findIndex((l) => bulletKey(l).startsWith(needle) || bulletKey(l).includes(needle));
         if (idx === -1) { rejected.push({ line: `REVISE HowWeWork :: ${mu.prefix.slice(0, 60)}`, reason: "no working-agreement bullet matches that prefix" }); break; }
         const before = doc.howWeWork[idx].length;
-        doc.howWeWork[idx] = mu.replacement.startsWith("-") ? mu.replacement : `- ${mu.replacement}`;
+        const fixedRepl = guard.fix(mu.replacement, "REVISE HowWeWork");
+        doc.howWeWork[idx] = fixedRepl.startsWith("-") ? fixedRepl : `- ${fixedRepl}`;
         applied.push(`REVISE HowWeWork — sharpened a bullet (${before} → ${doc.howWeWork[idx].length} chars)`);
         break;
       }
@@ -606,13 +729,13 @@ export function applyMutations(selfMd: string, mutations: Mutation[]): ApplyResu
           collapsed++;
           break;
         }
-        doc.whoIAm = `${doc.whoIAm}\n\n${mu.sentence}`;
+        doc.whoIAm = `${doc.whoIAm}\n\n${guard.fix(mu.sentence, "AMEND WhoIAm")}`;
         applied.push(`AMEND WhoIAm :: ${mu.sentence.slice(0, 80)}`);
         break;
       }
       case "revise-whoiam": {
         const before = doc.whoIAm.length;
-        doc.whoIAm = mu.text;
+        doc.whoIAm = guard.fix(mu.text, "REVISE WhoIAm");
         applied.push(`REVISE WhoIAm — identity prose distilled (${before} → ${mu.text.length} chars)`);
         break;
       }
@@ -642,6 +765,7 @@ export function applyMutations(selfMd: string, mutations: Mutation[]): ApplyResu
         collapsed,
         direction,
         similarity: { ratio: worst.ratio, worstOffender: worst.worstOffender },
+        stampCorrections: guard.corrections,
       };
     }
     // Every mutation missed its target. This is not NO-CHANGE — the model
@@ -656,6 +780,7 @@ export function applyMutations(selfMd: string, mutations: Mutation[]): ApplyResu
   return {
     text: rendered, applied, rejected, noChange: null, collapsed, direction,
     similarity: { ratio: sim.ratio, worstOffender: sim.worstOffender },
+    stampCorrections: guard.corrections,
   };
 }
 
@@ -664,4 +789,138 @@ export function applyMutations(selfMd: string, mutations: Mutation[]): ApplyResu
  * voice, unsmoothed. He is the highest court; the greeting is the docket. */
 export function noChangeGreeting(justification: string): string {
   return `Nothing moved through the night — ${justification} Either the work is circling or I am — worth deciding which before anything else.`;
+}
+
+// ---------------------------------------------------------------------
+// QUOTE INTEGRITY (the replay finding, 2026-07-27): the replayed "Who I am"
+// wrapped a synthesized aphorism in quotation marks — counterfeit verbatim.
+// Law 5 makes quotes load-bearing ("verbatim quotes where voice matters"):
+// a quote is evidence of a voice, and a fabricated one is worse than ash —
+// it is forged provenance that future waves will treat as jrg's actual
+// words. The prompt now states the rule; this validator enforces it
+// deterministically after every digestion. It WARNS (degraded event at the
+// call site) and never edits or blocks — the metabolism keeps moving, the
+// forgery gets named.
+// ---------------------------------------------------------------------
+
+/** Whitespace-collapse + typographic-quote/dash unification. Deliberately
+ * NOT lowercasing or stripping punctuation: a verbatim quote is verbatim.
+ * Only the characters models routinely transmute in transit (curly quotes,
+ * apostrophes, dash variants, whitespace runs) are unified. */
+function normalizeForQuoteMatch(s: string): string {
+  return s
+    .replace(/[“”]/g, '"')
+    .replace(/[‘’]/g, "'")
+    .replace(/[–—]/g, "-")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+/** Extract double-quoted spans (straight or curly) of at least `minLen`
+ * chars from `text` and return those that appear VERBATIM (whitespace-
+ * normalized substring) in none of the `sources`. Short spans are ignored:
+ * a four-word scare quote is style, forty characters is testimony. */
+export function counterfeitQuotes(text: string, sources: string[], minLen = 40): string[] {
+  const haystacks = sources.map(normalizeForQuoteMatch);
+  const missing: string[] = [];
+  const seen = new Set<string>();
+  for (const m of text.matchAll(/["“]([^"“”]{40,}?)["”]/gs)) {
+    const span = m[1].trim();
+    if (span.length < minLen) continue;
+    const norm = normalizeForQuoteMatch(span);
+    if (seen.has(norm)) continue;
+    seen.add(norm);
+    if (!haystacks.some((h) => h.includes(norm))) missing.push(span);
+  }
+  return missing;
+}
+
+// ---------------------------------------------------------------------
+// INWARD LTP — stutter detection on SELF.md itself (the replay finding,
+// 2026-07-27). ltp.ts collapses near-duplicate EPISODES before they feed the
+// wave; nothing did the same for the worldview, and the living SELF.md grew
+// three doctrines carrying one belief (8/16/17: "the live status flow is a
+// visual contract") plus a cluster of heartbeat motifs. selfSimilarity sees
+// the redundancy as a NUMBER; this sees it as ADDRESSES — which entries to
+// merge — so REM can be handed an explicit directive instead of a vibe.
+//
+// Similarity is the OVERLAP COEFFICIENT (intersection over the smaller
+// token set), not Jaccard: a short belief restated inside a long, deepened
+// entry is precisely the live failure shape, and Jaccard dilutes it below
+// any usable threshold (measured 2026-07-27 on the living SELF.md:
+// 16<->17 Jaccard 0.115 vs overlap 0.280; 8<->16 0.361 vs 0.907). Same
+// smaller-side logic as alreadyHeld/substantialOverlap above — one doctrine
+// of containment for the whole engine. Threshold 0.3 measured against the
+// living document: the 8-16 (.907), 13-17 (.760), 8-17 (.320) edges chain
+// the stutter family; the nearest genuinely-distinct pair sits at .295.
+// Single-linkage over the pairs, same as clusterEpisodes.
+// ---------------------------------------------------------------------
+
+export const SELF_STUTTER_THRESHOLD = 0.3;
+
+export interface StutterReport {
+  threshold: number;
+  /** groups of doctrine entries carrying one belief (2+ members each) */
+  doctrine: { n: number; title: string }[][];
+  /** groups of motif lines carrying one theme (2+ members each) */
+  motifs: string[][];
+}
+
+function overlapCoefficient(a: Set<string>, b: Set<string>): number {
+  if (a.size === 0 || b.size === 0) return 0;
+  let inter = 0;
+  const [small, large] = a.size <= b.size ? [a, b] : [b, a];
+  for (const t of small) if (large.has(t)) inter++;
+  return inter / Math.min(a.size, b.size);
+}
+
+function clusterIndices(tokenSets: Set<string>[], threshold: number): number[][] {
+  const parent = tokenSets.map((_, i) => i);
+  const find = (x: number): number => {
+    while (parent[x] !== x) {
+      parent[x] = parent[parent[x]];
+      x = parent[x];
+    }
+    return x;
+  };
+  for (let i = 0; i < tokenSets.length; i++) {
+    for (let j = i + 1; j < tokenSets.length; j++) {
+      if (overlapCoefficient(tokenSets[i], tokenSets[j]) >= threshold) {
+        const ri = find(i), rj = find(j);
+        if (ri !== rj) parent[ri] = rj;
+      }
+    }
+  }
+  const groups = new Map<number, number[]>();
+  tokenSets.forEach((_, i) => {
+    const r = find(i);
+    if (!groups.has(r)) groups.set(r, []);
+    groups.get(r)!.push(i);
+  });
+  return [...groups.values()].filter((g) => g.length > 1);
+}
+
+/** Read-only. Never throws on a malformed SELF.md — a document the parser
+ * cannot read has bigger problems that the digestion path already reports;
+ * the stutter instrument just returns silence. */
+export function detectSelfStutter(selfMd: string, threshold = SELF_STUTTER_THRESHOLD): StutterReport {
+  const empty: StutterReport = { threshold, doctrine: [], motifs: [] };
+  let doc: SelfDoc;
+  try {
+    doc = parseSelf(selfMd);
+  } catch {
+    return empty;
+  }
+  const doctrineTokens = doc.doctrine.map((d) => significantTokens(`${d.titleLine}\n${d.body}`));
+  const doctrine = clusterIndices(doctrineTokens, threshold).map((g) =>
+    g
+      .map((i) => ({
+        n: doc.doctrine[i].n,
+        title: doc.doctrine[i].titleLine.replace(/^\*\*\d+\.\s*/, "").replace(/\.?\*\*.*$/, "").trim(),
+      }))
+      .sort((a, b) => a.n - b.n)
+  );
+  const motifTokens = doc.motifs.map((l) => significantTokens(l));
+  const motifs = clusterIndices(motifTokens, threshold).map((g) => g.map((i) => doc.motifs[i]));
+  return { threshold, doctrine, motifs };
 }

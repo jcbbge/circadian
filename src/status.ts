@@ -231,9 +231,106 @@ function renderStatus(vitals: ReturnType<typeof collectVitals>) {
   }
 }
 
+// ---------------------------------------------------------------------------
+// --line: the one-line vitals strip. Consumed by two harness surfaces that
+// both pass hook JSON on stdin (session_id included): the SessionStart hook
+// (visible at the top of every session, next to the wake injection) and the
+// Claude Code statusLine (persistently visible, so the end-of-session state
+// and the session diff are always on screen). Read-only render of state other
+// processes already deposited — it makes no decision and mutates nothing, so
+// it does NOT emit to the obs ledger: the statusline re-runs many times a
+// minute and would bury real events under render noise (the same jam Law 9
+// exists to surface, caused by the instrument built to satisfy it).
+// ---------------------------------------------------------------------------
+
+function sessionIdFromStdin(): string | null {
+  try {
+    if (process.stdin.isTTY) return null;
+    const raw = fs.readFileSync(0, "utf8");
+    if (!raw.trim()) return null;
+    const j = JSON.parse(raw);
+    return typeof j.session_id === "string" ? j.session_id : null;
+  } catch {
+    return null;
+  }
+}
+
+function grazeCheckpoints(sessionId: string): number {
+  const p = path.join(CIRCADIAN_HOME, "logs", "circadian.events.jsonl");
+  let n = 0;
+  for (const line of readOrEmpty(p).split("\n")) {
+    // cheap pre-filter before JSON.parse — this file grows without bound
+    if (!line.includes(sessionId) || !line.includes("checkpoint-digested")) continue;
+    try {
+      const e = JSON.parse(line);
+      const sid = e.session_id ?? e.context?.session_id;
+      if (e.process === "graze" && e.phase === "checkpoint-digested" && sid === sessionId) n++;
+    } catch {
+      // unparseable ledger line: skip — the default render already reports these
+    }
+  }
+  return n;
+}
+
+/** Worldview tokens at the first --line render of this session, so later
+ * renders can show the session's differential. Snapshots live in logs/ as
+ * dotfiles; anything older than 7 days is swept on each call. */
+function sessionBaseline(sessionId: string, worldview: number): number {
+  const logsDir = path.join(CIRCADIAN_HOME, "logs");
+  const p = path.join(logsDir, `.status-snap-${sessionId}.json`);
+  try {
+    for (const f of fs.readdirSync(logsDir)) {
+      if (!f.startsWith(".status-snap-")) continue;
+      const fp = path.join(logsDir, f);
+      if (Date.now() - fs.statSync(fp).mtimeMs > 7 * 86_400_000) fs.unlinkSync(fp);
+    }
+  } catch {
+    // sweep is best-effort; a failed sweep must never break the render
+  }
+  try {
+    return JSON.parse(fs.readFileSync(p, "utf8")).worldview;
+  } catch {
+    try {
+      fs.writeFileSync(p, JSON.stringify({ worldview, ts: new Date().toISOString() }));
+    } catch {}
+    return worldview;
+  }
+}
+
+function renderLine(vitals: ReturnType<typeof collectVitals>, sessionId: string | null) {
+  const scoreboard = loadScoreboard();
+  const parts: string[] = [];
+
+  const wakes = scoreboard.filter((e) => e.type === "wake");
+  parts.push(wakes.length ? `wake ${fmtAge(wakes[wakes.length - 1].ts)}` : "wake NONE");
+
+  const self = vitals.token_counts["SELF.md"];
+  parts.push(`self ${self.tokens}/${self.cap}${self.over ? " OVER" : ""}`);
+
+  if (sessionId) {
+    parts.push(`graze ${grazeCheckpoints(sessionId)}`);
+    const delta = vitals.worldview_tokens - sessionBaseline(sessionId, vitals.worldview_tokens);
+    parts.push(`Δself ${delta >= 0 ? "+" : ""}${delta}`);
+  }
+
+  const today = new Date().toISOString().slice(0, 10);
+  const remToday = scoreboard.filter((e) => e.type === "rem" && e.ts.startsWith(today));
+  const lastRem = vitals.propagation.recent[vitals.propagation.recent.length - 1];
+  parts.push(`rem ${remToday.length} today${lastRem ? ` (${lastRem.propagated} propagated)` : ""}`);
+
+  if (vitals.verdicts.kill_switch) parts.push("!!! KILL SWITCH");
+
+  console.log(`circadian · ${parts.join(" · ")}`);
+}
+
 function main() {
   const args = process.argv.slice(2);
   const corr = correlation("status");
+
+  if (args.includes("--line")) {
+    renderLine(collectVitals(), sessionIdFromStdin());
+    return;
+  }
 
   if (args.includes("--greet-ok")) {
     appendVerdict("ok");

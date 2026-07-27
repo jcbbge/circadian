@@ -45,7 +45,11 @@
 
 const BASE_URL =
   process.env.CIRCADIAN_LLM_BASE_URL || process.env.LOCAL_LLM_BASE_URL || "http://127.0.0.1:10240/v1";
-const MODEL = process.env.CIRCADIAN_LLM_MODEL || "mlx-community/Qwen3-4B-Instruct-2507-4bit";
+// 2026-07-27: default moved 4B → 30B-A3B (same Instruct-2507 family/template,
+// MoE with 3B ACTIVE params — 4B-class speed and heat, ~16 GB resident).
+// Head-to-head on the replay bench: counterfeit quotes 3→1, malformed grammar
+// lines 1→0 vs the 4B. The dense-32B ban above still stands; this is not that.
+const MODEL = process.env.CIRCADIAN_LLM_MODEL || "mlx-community/Qwen3-30B-A3B-Instruct-2507-4bit";
 const API_KEY = process.env.CIRCADIAN_LLM_API_KEY || process.env.LOCAL_LLM_API_KEY || "local";
 const ALLOW_THINK = process.env.CIRCADIAN_LLM_THINK === "1";
 const FALLBACK_BASE_URL = process.env.CIRCADIAN_LLM_FALLBACK_BASE_URL || "";
