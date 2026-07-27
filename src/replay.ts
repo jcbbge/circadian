@@ -159,6 +159,76 @@ export function collectAllEpisodes(mindDir: string = REAL_MIND): ReplayEpisode[]
   return episodes;
 }
 
+/** Same shed-episode recovery as gitDeletedEpisodes, but the commit walk is
+ * constrained to history reachable from `rev` (`git log <rev> -- ...`
+ * instead of the default HEAD walk) — so a mind that keeps composting after
+ * `rev` never leaks a later deletion into an enumeration pinned to the past. */
+function gitDeletedEpisodesAt(mindDir: string, rev: string): Map<string, string> {
+  const map = new Map<string, string>();
+  let out = "";
+  try {
+    out = execFileSync(
+      "git",
+      ["log", rev, "--diff-filter=D", "--name-only", "--pretty=format:%h", "--", "episodes/"],
+      { cwd: mindDir, encoding: "utf8" }
+    );
+  } catch {
+    return map;
+  }
+  let commit = "";
+  for (const line of out.split("\n")) {
+    const t = line.trim();
+    if (!t) continue;
+    if (!t.startsWith("episodes/")) {
+      commit = t;
+      continue;
+    }
+    const f = t.replace(/^episodes\//, "");
+    if (!map.has(f)) map.set(f, commit); // newest-first: first hit is the final shed
+  }
+  return map;
+}
+
+/** collectAllEpisodes, pinned to a mind git revision instead of the live
+ * working tree — deterministic and byte-stable regardless of how many times
+ * REM composts between calls (the mind moves twice daily; a gauntlet corpus
+ * must not). "live" here means "present in the tree at `rev`", read via
+ * `git show <rev>:episodes/<f>` rather than fs.readFileSync, so two calls
+ * against the same rev are byte-identical even if the real working tree has
+ * since changed. Existing collectAllEpisodes (working-tree + HEAD-history)
+ * behavior is untouched. */
+export function collectAllEpisodesAt(rev: string, mindDir: string = REAL_MIND): ReplayEpisode[] {
+  const episodes: ReplayEpisode[] = [];
+  const seen = new Set<string>();
+  let liveFiles: string[] = [];
+  try {
+    const out = execFileSync("git", ["ls-tree", "-r", "--name-only", rev, "--", "episodes/"], { cwd: mindDir, encoding: "utf8" });
+    liveFiles = out
+      .split("\n")
+      .map((l) => l.trim())
+      .filter((l) => l.endsWith(".md"))
+      .map((l) => l.replace(/^episodes\//, ""));
+  } catch {
+    liveFiles = [];
+  }
+  for (const f of liveFiles) {
+    const content = execFileSync("git", ["show", `${rev}:episodes/${f}`], { cwd: mindDir, encoding: "utf8" });
+    episodes.push({ filename: f, content, source: "live" });
+    seen.add(f);
+  }
+  for (const [f, commit] of gitDeletedEpisodesAt(mindDir, rev)) {
+    if (seen.has(f)) continue;
+    try {
+      const content = execFileSync("git", ["show", `${commit}^:episodes/${f}`], { cwd: mindDir, encoding: "utf8" });
+      episodes.push({ filename: f, content, source: "git" });
+    } catch {
+      /* unreachable parent — skip, never fabricate */
+    }
+  }
+  episodes.sort((a, b) => a.filename.localeCompare(b.filename));
+  return episodes;
+}
+
 // ---------------------------------------------------------------------
 // sandbox construction — genesis conditions, from templates/
 // ---------------------------------------------------------------------
