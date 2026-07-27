@@ -38,11 +38,20 @@
  *   2. overlap: jaccard >= LTP_THRESHOLD (0.30) vs the
  *               highest-overlap existing atom            -> auto-SAME, stack
  *   3. band:    highest overlap in [BAND_LOW, LTP_THRESHOLD)
- *               -> COMPARE against that atom:
- *                    SAME | SUPERSEDES_B -> stack (existing wins)
- *                    SUPERSEDES_A        -> new atom born, existing
- *                                            superseded (weight transfers)
- *                    DISTINCT (or unrecognized) -> new atom
+ *               -> COMPARE against up to COMPARE_TOP_K (2) highest-overlap
+ *                  in-band atoms, highest first:
+ *                    SAME | SUPERSEDES_B -> stack (existing wins), and
+ *                                            short-circuits any remaining
+ *                                            in-band candidate (no more calls)
+ *                    SUPERSEDES_A        -> remembered, but the loop keeps
+ *                                            checking (a later SAME still
+ *                                            wins); if no SAME/SUPERSEDES_B
+ *                                            is found, the FIRST such
+ *                                            candidate supersedes: new atom
+ *                                            born, existing superseded
+ *                                            (weight transfers)
+ *                    DISTINCT (or unrecognized) from every consulted
+ *                    candidate                           -> new atom
  *   4. below BAND_LOW vs everything                      -> new atom
  * Candidates within one extraction batch dedupe against EACH OTHER through
  * this same pipeline, in deterministic (extraction) order: a candidate that
@@ -79,8 +88,11 @@
  * beyond the brief's own stacked/bumped/new/rejected vocabulary, an extra
  * `superseded` (how many of the new atoms this run also superseded an old
  * one) and `compareCalls`/`compareInvalid` (how many COMPARE calls were made
- * at all, and how many came back malformed) — the split makes "how much did
- * the deterministic layers save" a number in the event context, not a vibe:
+ * at all, across every in-band candidate consulted per routeCandidate call —
+ * not one per candidate claim, since COMPARE_TOP_K may consult more than one
+ * existing atom — and how many of those calls came back malformed) — the
+ * split makes "how much did the deterministic layers save" a number in the
+ * event context, not a vibe:
  *   new        — brand-new atom files written this episode (DISTINCT or
  *                SUPERSEDES_A cases)
  *   superseded — subset of `new` where an existing atom was also superseded
@@ -124,8 +136,28 @@ export const CLAIM_MAX_CHARS = 280;
 /** overlap >= this vs the highest-overlap existing atom -> auto-SAME, no
  * COMPARE call (re-exported ltp.ts knob — one threshold, one owner). */
 export const BAND_HIGH = LTP_THRESHOLD;
-/** overlap >= this (and < BAND_HIGH) routes to COMPARE. Below this: new atom. */
-export const BAND_LOW = 0.15;
+/** overlap >= this (and < BAND_HIGH) routes to COMPARE. Below this: new atom.
+ * Widened from 0.15 (popmem WS-C2, §10 fallback): the 14-flood acceptance run
+ * showed most near-dup candidates landing BELOW the old band, so the
+ * deterministic layers never fired and COMPARE was never even consulted. A
+ * false auto-SAME loses a belief permanently; a wider CONSULT band only costs
+ * an extra model call (COMPARE ran 8/8 correct when consulted in the
+ * baseline) — so the fallback widens the band that reaches the model, never
+ * the auto-collapse threshold. */
+export const BAND_LOW = 0.05;
+/** how many highest-overlap existing atoms (within the band) COMPARE
+ * consults before falling back to DISTINCT/new (popmem WS-C2, §10 fallback:
+ * widen deterministic routing, not the model). Priority across the
+ * consulted set is SAME/SUPERSEDES_B > SUPERSEDES_A > DISTINCT; a SAME/
+ * SUPERSEDES_B match short-circuits the remaining candidates. */
+export const COMPARE_TOP_K = 2;
+/** EXTRACT runs at temperature 0 (COMPARE keeps the llm.ts default):
+ * near-dup flood episodes should paraphrase a belief IDENTICALLY, not
+ * differently each time, so the same content yields the same candidate
+ * claim and the deterministic hash/overlap layers collapse it for free
+ * before COMPARE is ever needed — this also hardens the idempotence
+ * suspenders layer (same content -> same candidate -> exact hash hit). */
+export const EXTRACT_TEMPERATURE = 0;
 
 const KINDS: readonly AtomKind[] = ["identity", "doctrine", "motif", "agreement"];
 
@@ -325,75 +357,130 @@ export interface RouteDecision {
   targetAtomId?: string;
   overlap: number;
   compareUsed: boolean;
+  /** token that decided the outcome (the winning SAME/SUPERSEDES_*, or the
+   * last DISTINCT/unrecognized token seen when every consulted candidate
+   * came back DISTINCT). Undefined when compareUsed is false. */
   compareToken?: CompareToken;
+  /** validity of the DECIDING call (see compareToken). Undefined when
+   * compareUsed is false. */
   compareValid?: boolean;
+  /** actual number of compare() invocations made for this candidate — may be
+   * >1 when COMPARE_TOP_K consults more than one in-band atom. Always 0 when
+   * compareUsed is false. */
+  compareCallCount: number;
+  /** how many of those calls came back unrecognized (coerced to DISTINCT). */
+  compareInvalidCount: number;
 }
 
 /**
  * Routes one candidate claim against the existing (active-only) population.
  * Layer 1 (exact hash) and layer 2 (overlap >= BAND_HIGH) never call compare.
- * Layer 3 (overlap in [BAND_LOW, BAND_HIGH)) calls compare exactly once,
- * against the single highest-overlap existing atom. Below BAND_LOW: new atom,
- * no COMPARE call. `existing` is mutated by nobody here — the caller owns
- * in-batch population updates between calls (module header: in-batch stutter
- * dedupes through repeated calls to this same function).
+ * Layer 3 (overlap in [BAND_LOW, BAND_HIGH)) consults up to `topK`
+ * (COMPARE_TOP_K) highest-overlap in-band atoms, highest overlap first:
+ * a SAME/SUPERSEDES_B verdict short-circuits (stack, no further calls); a
+ * SUPERSEDES_A is remembered but the loop keeps checking (a later SAME still
+ * wins the whole candidate — priority is SAME/SUPERSEDES_B > SUPERSEDES_A >
+ * DISTINCT); if every consulted atom comes back DISTINCT (or unrecognized),
+ * the candidate is new. Below BAND_LOW: new atom, no COMPARE call. `existing`
+ * is mutated by nobody here — the caller owns in-batch population updates
+ * between calls (module header: in-batch stutter dedupes through repeated
+ * calls to this same function).
  */
 export async function routeCandidate(
   claim: string,
   existing: ExistingAtomView[],
   compare: Comparator,
-  opts?: { sameThreshold?: number; bandLow?: number }
+  opts?: { sameThreshold?: number; bandLow?: number; topK?: number }
 ): Promise<RouteDecision> {
   const sameThreshold = opts?.sameThreshold ?? BAND_HIGH;
   const bandLow = opts?.bandLow ?? BAND_LOW;
+  const topK = opts?.topK ?? COMPARE_TOP_K;
 
   // Layer 1: exact content-hash.
   const id = atomId(claim);
   const exact = existing.find((e) => e.id === id);
   if (exact) {
-    return { action: "stack", targetAtomId: exact.id, overlap: 1, compareUsed: false };
+    return { action: "stack", targetAtomId: exact.id, overlap: 1, compareUsed: false, compareCallCount: 0, compareInvalidCount: 0 };
   }
 
-  // Layer 2/3: token-overlap against every existing atom; highest wins.
+  // Layer 2/3: token-overlap against every existing atom, ranked descending.
   const claimTokens = significantTokens(claim);
-  let best: { e: ExistingAtomView; overlap: number } | null = null;
-  for (const e of existing) {
-    const overlap = jaccard(claimTokens, significantTokens(e.claim));
-    if (!best || overlap > best.overlap) best = { e, overlap };
-  }
+  const ranked = existing
+    .map((e) => ({ e, overlap: jaccard(claimTokens, significantTokens(e.claim)) }))
+    .sort((a, b) => b.overlap - a.overlap);
+  const best = ranked[0] ?? null;
 
   if (best && best.overlap >= sameThreshold) {
-    return { action: "stack", targetAtomId: best.e.id, overlap: best.overlap, compareUsed: false };
+    return {
+      action: "stack",
+      targetAtomId: best.e.id,
+      overlap: best.overlap,
+      compareUsed: false,
+      compareCallCount: 0,
+      compareInvalidCount: 0,
+    };
   }
 
   if (best && best.overlap >= bandLow) {
-    const raw = await compare(claim, best.e.claim);
-    const { token, valid } = parseCompareToken(raw);
-    if (token === "SAME" || token === "SUPERSEDES_B") {
-      return {
-        action: "stack",
-        targetAtomId: best.e.id,
-        overlap: best.overlap,
-        compareUsed: true,
-        compareToken: token,
-        compareValid: valid,
-      };
+    const inBand = ranked.filter((r) => r.overlap >= bandLow && r.overlap < sameThreshold).slice(0, topK);
+    let compareCallCount = 0;
+    let compareInvalidCount = 0;
+    let supersedeCandidate: { e: ExistingAtomView; overlap: number; token: CompareToken; valid: boolean } | null = null;
+    let lastToken: CompareToken = "DISTINCT";
+    let lastValid = true;
+
+    for (const cand of inBand) {
+      const raw = await compare(claim, cand.e.claim);
+      compareCallCount++;
+      const { token, valid } = parseCompareToken(raw);
+      if (!valid) compareInvalidCount++;
+      lastToken = token;
+      lastValid = valid;
+
+      if (token === "SAME" || token === "SUPERSEDES_B") {
+        return {
+          action: "stack",
+          targetAtomId: cand.e.id,
+          overlap: cand.overlap,
+          compareUsed: true,
+          compareToken: token,
+          compareValid: valid,
+          compareCallCount,
+          compareInvalidCount,
+        };
+      }
+      if (token === "SUPERSEDES_A" && !supersedeCandidate) {
+        supersedeCandidate = { e: cand.e, overlap: cand.overlap, token, valid };
+      }
+      // DISTINCT (or unrecognized, already coerced to DISTINCT above): keep
+      // checking the next in-band candidate.
     }
-    if (token === "SUPERSEDES_A") {
+
+    if (supersedeCandidate) {
       return {
         action: "supersede",
-        targetAtomId: best.e.id,
-        overlap: best.overlap,
+        targetAtomId: supersedeCandidate.e.id,
+        overlap: supersedeCandidate.overlap,
         compareUsed: true,
-        compareToken: token,
-        compareValid: valid,
+        compareToken: supersedeCandidate.token,
+        compareValid: supersedeCandidate.valid,
+        compareCallCount,
+        compareInvalidCount,
       };
     }
-    // DISTINCT, or an unrecognized token coerced to DISTINCT.
-    return { action: "new", overlap: best.overlap, compareUsed: true, compareToken: token, compareValid: valid };
+
+    return {
+      action: "new",
+      overlap: best.overlap,
+      compareUsed: true,
+      compareToken: lastToken,
+      compareValid: lastValid,
+      compareCallCount,
+      compareInvalidCount,
+    };
   }
 
-  return { action: "new", overlap: best?.overlap ?? 0, compareUsed: false };
+  return { action: "new", overlap: best?.overlap ?? 0, compareUsed: false, compareCallCount: 0, compareInvalidCount: 0 };
 }
 
 // ---------------------------------------------------------------------
@@ -553,7 +640,11 @@ export async function stackEpisode(ctx: StackEpisodeContext): Promise<StackEpiso
   const extractPrompt = buildExtractPrompt(episodeContent);
   let rawExtract: string;
   try {
-    rawExtract = await complete(extractPrompt, { timeoutMs: EXTRACT_TIMEOUT_MS, maxTokens: EXTRACT_MAX_TOKENS });
+    rawExtract = await complete(extractPrompt, {
+      timeoutMs: EXTRACT_TIMEOUT_MS,
+      maxTokens: EXTRACT_MAX_TOKENS,
+      temperature: EXTRACT_TEMPERATURE,
+    });
   } catch (err) {
     fail({
       process: "stack",
@@ -602,8 +693,8 @@ export async function stackEpisode(ctx: StackEpisodeContext): Promise<StackEpiso
 
     const decision = await routeCandidate(candidate.claim, population, comparator);
     if (decision.compareUsed) {
-      counts.compareCalls++;
-      if (decision.compareValid === false) counts.compareInvalid++;
+      counts.compareCalls += decision.compareCallCount;
+      counts.compareInvalid += decision.compareInvalidCount;
     }
 
     if (decision.action === "stack") {
