@@ -32,7 +32,12 @@ import {
   planMigration,
   seedSandbox,
   adaptRenderedForStutterCheck,
+  clusterDoctrineByClaimLine,
+  normalizeClaimForDedup,
+  normalizedClaimEdges,
+  unionFindGroups,
   CLAIM_MAX_CHARS,
+  CLAIM_CLUSTER_THRESHOLD,
   type ParsedDoc,
 } from "./migrate.ts";
 
@@ -319,6 +324,126 @@ describe("resolveQuote — never fabricates, always verifiable via stack.ts", ()
       expect(quotesAreVerbatim([r.quote], episodes[0].content)).toBe(true); // the actual counterfeit assert, from stack.ts
     }
   });
+
+  test("rawText is tried as a whole-text candidate when the claim/why text carries no quote marks at all", () => {
+    // most motif/how-we-work/identity lines have zero embedded quote marks —
+    // extractQuoteSpans on claim+why alone would find nothing without rawText
+    const r = resolveQuote(["2026-02-01"], "no quote marks in here whatsoever", episodes, {
+      rawText: "this exact sentence appears verbatim here",
+    });
+    expect("quote" in r).toBe(true);
+    if ("quote" in r) expect(r.quote).toBe("this exact sentence appears verbatim here");
+  });
+
+  test("zero [ep:] stamps + no genesis episode -> no-eps (unchanged WS-E behavior)", () => {
+    const r = resolveQuote([], "no stamps at all", episodes, { rawText: "no stamps at all" });
+    expect("reason" in r && r.reason).toBe("no-eps");
+  });
+
+  test("WS-E2 OPTION (a): zero [ep:] stamps + a genesis episode that verifies -> resolves against it", () => {
+    const genesis: ReplayEpisode = {
+      filename: "2026-07-28-genesis-archaeology.md",
+      content: "mind@abc1234 (2026-07-16): a founding motif with no episode of its own",
+      source: "live",
+    };
+    const withGenesis = resolveQuote([], "claim text\nwhy text", [], {
+      rawText: "a founding motif with no episode of its own",
+      genesisEpisode: genesis,
+    });
+    expect("quote" in withGenesis).toBe(true);
+    if ("quote" in withGenesis) {
+      expect(withGenesis.source).toBe("2026-07-28-genesis-archaeology.md");
+      expect(withGenesis.quote).toBe("a founding motif with no episode of its own");
+    }
+  });
+
+  test("zero [ep:] stamps + a genesis episode that does NOT verify -> no-verbatim-quote, never fabricated", () => {
+    const genesis: ReplayEpisode = { filename: "2026-07-28-genesis-archaeology.md", content: "completely unrelated content", source: "live" };
+    const r = resolveQuote([], "claim text", [], { rawText: "text that is not in the genesis episode at all", genesisEpisode: genesis });
+    expect("reason" in r && r.reason).toBe("no-verbatim-quote");
+  });
+});
+
+// ---------------------------------------------------------------------
+// FIX 1 in isolation — clusterDoctrineByClaimLine, synthetic corpus
+// ---------------------------------------------------------------------
+
+describe("clusterDoctrineByClaimLine — complete linkage, synthetic corpus", () => {
+  function raw(n: number, title: string): ReturnType<typeof parseDoctrineEntries>[number] {
+    return { n, titleLine: `**${n}. ${title}.**`, title, body: "irrelevant body text, never compared", eps: ["2026-01-01"] };
+  }
+
+  test("a candidate with even one weak link is excluded (complete linkage, not single)", () => {
+    // A-B strong, B-C strong, A-C weak: single-linkage would chain A-B-C into
+    // one group; complete linkage must keep C out since A-C fails threshold.
+    const doctrine = [
+      raw(1, "the quick brown fox jumps over"),
+      raw(2, "the quick brown fox leaps over"),
+      raw(3, "leaps over lazy sleeping dogs today"),
+    ];
+    const { groups } = clusterDoctrineByClaimLine(doctrine, 0.5);
+    const sorted = groups.map((g) => [...g].sort((a, b) => a - b));
+    expect(sorted).toContainEqual([1, 2]);
+    expect(sorted).toContainEqual([3]);
+  });
+
+  test("an isolated title with zero significant overlap to anything is always a singleton", () => {
+    const doctrine = [raw(1, "completely unrelated topic alpha"), raw(2, "totally different subject beta")];
+    const { groups } = clusterDoctrineByClaimLine(doctrine, CLAIM_CLUSTER_THRESHOLD);
+    expect(groups.map((g) => g.length).sort()).toEqual([1, 1]);
+  });
+
+  test("matrix diagonal is always 1 and matrix is symmetric for any input", () => {
+    const doctrine = [raw(1, "alpha beta gamma"), raw(2, "alpha beta delta"), raw(3, "totally unrelated epsilon")];
+    const { matrix } = clusterDoctrineByClaimLine(doctrine);
+    for (let i = 0; i < matrix.length; i++) {
+      expect(matrix[i][i]).toBe(1);
+      for (let j = 0; j < matrix.length; j++) expect(matrix[i][j]).toBe(matrix[j][i]);
+    }
+  });
+});
+
+// ---------------------------------------------------------------------
+// WS-E3 Fix A helpers in isolation — normalizeClaimForDedup, normalizedClaimEdges,
+// unionFindGroups
+// ---------------------------------------------------------------------
+
+describe("normalizeClaimForDedup — comparison key only, never a rewrite", () => {
+  test("strips ASCII and curly leading/trailing quote chars, collapses whitespace", () => {
+    expect(normalizeClaimForDedup('"Trust is ambient, not narrated.')).toBe("Trust is ambient, not narrated.");
+    expect(normalizeClaimForDedup("Trust is ambient, not narrated.")).toBe("Trust is ambient, not narrated.");
+    expect(normalizeClaimForDedup("“Curly quoted.”")).toBe("Curly quoted.");
+    expect(normalizeClaimForDedup("‘Curly single.’")).toBe("Curly single.");
+    expect(normalizeClaimForDedup("  extra   whitespace   here  ")).toBe("extra whitespace here");
+  });
+
+  test("never strips an apostrophe in the middle of a word", () => {
+    expect(normalizeClaimForDedup("it's fine, don't strip apostrophes mid-word")).toBe("it's fine, don't strip apostrophes mid-word");
+  });
+});
+
+describe("normalizedClaimEdges + unionFindGroups", () => {
+  test("identical-after-normalization claims produce an edge; distinct claims do not", () => {
+    const claims = ['"Same belief.', "Same belief.", "A different belief entirely."];
+    const edges = normalizedClaimEdges(claims);
+    expect(edges).toEqual([[0, 1]]);
+    const groups = unionFindGroups(claims.length, edges).map((g) => [...g].sort((a, b) => a - b));
+    expect(groups).toContainEqual([0, 1]);
+    expect(groups).toContainEqual([2]);
+  });
+
+  test("unionFindGroups combines two independent edge sets transitively (the motifs jaccard+claim-norm union)", () => {
+    // 0-1 linked only via "jaccard", 1-2 linked only via "claim-norm" -> all three merge
+    const jaccardEdges: [number, number][] = [[0, 1]];
+    const claimEdges: [number, number][] = [[1, 2]];
+    const groups = unionFindGroups(3, [...jaccardEdges, ...claimEdges]).map((g) => [...g].sort((a, b) => a - b));
+    expect(groups).toEqual([[0, 1, 2]]);
+  });
+
+  test("an item with no edges at all comes back as its own singleton group", () => {
+    const groups = unionFindGroups(3, []).map((g) => [...g].sort((a, b) => a - b));
+    expect(groups.sort()).toEqual([[0], [1], [2]]);
+  });
 });
 
 // ---------------------------------------------------------------------
@@ -341,25 +466,50 @@ describe("planMigration against the real pinned mind", () => {
     }
   });
 
-  test("detectSelfStutter's real single-linkage output on this corpus collapses all 9 doctrine entries into ONE cluster (verified independently) — migrate.ts must fold it into exactly one atom, weight = total occurrence count across every member", () => {
+  test("WS-E2 FIX 1: claim-line complete-linkage replaces the old body-level megacluster (documented regression marker — detectSelfStutter body-level still chains all 9, which is exactly why FIX 1 exists)", () => {
     const stutter = detectSelfStutter(liveSelfMd);
     expect(stutter.doctrine.length).toBe(1);
-    expect(stutter.doctrine[0].length).toBe(9); // 1,4,5,7,8,12,13,16,17 — the real megacluster
+    expect(stutter.doctrine[0].length).toBe(9); // the WS-E megacluster — unchanged upstream behavior
+
+    // migrate.ts no longer uses stutter.doctrine for the collapse decision —
+    // clusterDoctrineByClaimLine (claim titles only, complete linkage) does.
+    expect(plan.doctrineClustering.groups.length).toBe(6); // [1],[4],[5],[7],[8,12,16],[13,17]
+    const sorted = plan.doctrineClustering.groups.map((g) => [...g].sort((a, b) => a - b));
+    expect(sorted).toContainEqual([1]);
+    expect(sorted).toContainEqual([4]);
+    expect(sorted).toContainEqual([5]);
+    expect(sorted).toContainEqual([7]);
+    expect(sorted).toContainEqual([8, 12, 16]);
+    expect(sorted).toContainEqual([13, 17]);
 
     const doctrineAtoms = plan.candidates.filter((c) => c.kind === "doctrine");
-    expect(doctrineAtoms.length).toBe(1); // stutter collapse, not 9
-    const merged = doctrineAtoms[0];
-    expect(merged.claim).toBe("The cliff is complexity accretion."); // Doctrine[1] — earliest origin (2026-07-16) wins
-    expect(merged.label).toContain("stutter cluster");
+    // Doctrine[1] and Doctrine[4] resolve a real verbatim quote standing
+    // alone; Doctrine[5], Doctrine[7], and both new clusters do not (they
+    // borrowed Doctrine[1]'s quote under the old megacluster) — a documented,
+    // honest new finding, not a bug (see migrate.test.ts's exceptions test below).
+    expect(doctrineAtoms.map((c) => c.label).sort()).toEqual(["Doctrine[1]", "Doctrine[4]"]);
+    expect(doctrineAtoms.find((c) => c.label === "Doctrine[1]")!.claim).toBe("The cliff is complexity accretion.");
+  });
 
-    // weight = copy count: sum of every member's own live [ep:] occurrences
+  test("the pairwise claim-line matrix is symmetric with a unit diagonal, and every cluster is genuinely complete-linked", () => {
+    const { matrix, groups } = plan.doctrineClustering;
+    const n = matrix.length;
+    for (let i = 0; i < n; i++) {
+      expect(matrix[i][i]).toBe(1);
+      for (let j = 0; j < n; j++) expect(matrix[i][j]).toBeCloseTo(matrix[j][i], 10);
+    }
     const sections = parseSelfSections(liveSelfMd);
     const liveDoctrine = parseDoctrineEntries(sections.doctrine);
-    const expectedWeight = stutter.doctrine[0].reduce((sum, g) => {
-      const d = liveDoctrine.find((x) => x.n === g.n)!;
-      return sum + d.eps.length;
-    }, 0);
-    expect(merged.occurrences.length).toBe(expectedWeight);
+    const indexOfN = new Map(liveDoctrine.map((d, idx) => [d.n, idx]));
+    for (const group of groups) {
+      if (group.length < 2) continue;
+      for (const a of group) {
+        for (const b of group) {
+          if (a === b) continue;
+          expect(matrix[indexOfN.get(a)!][indexOfN.get(b)!]).toBeGreaterThanOrEqual(CLAIM_CLUSTER_THRESHOLD);
+        }
+      }
+    }
   });
 
   test("every candidate's quote is genuinely verbatim in its resolved source episode (the counterfeit-quote assert, R3)", () => {
@@ -389,6 +539,128 @@ describe("planMigration against the real pinned mind", () => {
   test("planMigration is pure and deterministic: identical inputs -> deep-equal plan", () => {
     const again = planMigration(liveSelfMd, history, episodes);
     expect(again).toEqual(plan);
+  });
+});
+
+// ---------------------------------------------------------------------
+// WS-E2 OPTION (a) + WS-E3 fix B — the real authored genesis episode
+// resolves all 25 zero-[ep:] exceptions AND the 4 residual doctrine
+// exceptions FIX 1's claim-line clustering surfaced
+// ---------------------------------------------------------------------
+
+describe("OPTION (a) + fix B: the staged genesis-archaeology episode resolves all 29 exceptions", () => {
+  const GENESIS_PATH = path.join(process.cwd(), "docs", "genesis-archaeology.episode.md");
+  const genesisContent = fs.readFileSync(GENESIS_PATH, "utf8");
+  const genesisEpisode: ReplayEpisode = { filename: "2026-07-28-genesis-archaeology.md", content: genesisContent, source: "live" };
+
+  const liveSelfMd = pinnedSelfMd();
+  const history = buildHistory(PINNED_REV, MIND);
+  const episodes = collectAllEpisodesAt(PINNED_REV, MIND);
+  const planWithoutGenesis = planMigration(liveSelfMd, history, episodes);
+  const planWithGenesis = planMigration(liveSelfMd, history, episodes, genesisEpisode);
+
+  test("every non-doctrine zero-eps exception from the no-genesis run is RESOLVED with the genesis episode", () => {
+    const zeroEpsLabels = new Set(
+      planWithoutGenesis.exceptions.filter((e) => e.kind !== "doctrine" && e.reason.includes("no [ep:] stamp")).map((e) => e.label)
+    );
+    // 25 raw entries (identity 2 + motifs 15 + how-we-work 8), but two pairs
+    // correctly cluster into one label each even before genesis resolution:
+    // "Lake vs river"/"river has forgotten" (motifs, stutter+claim-normalized)
+    // and the two "Trust is ambient, not narrated." how-we-work entries
+    // (WS-E3 claim normalization — see the dedicated tests below) — 23
+    // distinct labels, all 25 raw entries still accounted for.
+    expect(zeroEpsLabels.size).toBe(23);
+
+    const resolvedLabels = new Set(planWithGenesis.candidates.map((c) => c.label));
+    for (const label of zeroEpsLabels) expect(resolvedLabels.has(label)).toBe(true);
+  });
+
+  test("WS-E3 fix B: the 4 residual doctrine exceptions (Doctrine[5], [7], [8,12,16], [13,17]) all resolve against the extended genesis episode — the exceptions table is EMPTY", () => {
+    const doctrineExceptionsBefore = planWithoutGenesis.exceptions.filter((e) => e.kind === "doctrine");
+    expect(doctrineExceptionsBefore.length).toBe(4); // the WS-E2 finding, still reproducible without genesis
+
+    expect(planWithGenesis.exceptions.length).toBe(0); // EMPTY exceptions table, the acceptance bar
+
+    const doctrineCandidates = planWithGenesis.candidates.filter((c) => c.kind === "doctrine");
+    expect(doctrineCandidates.length).toBe(6); // 1, 4, 5, 7, {8,12,16}, {13,17}
+    const labels = doctrineCandidates.map((c) => c.label);
+    expect(labels.some((l) => l === "Doctrine[5]")).toBe(true);
+    expect(labels.some((l) => l === "Doctrine[7]")).toBe(true);
+    expect(labels.some((l) => l.startsWith("Doctrine[8,12,16]"))).toBe(true);
+    expect(labels.some((l) => l.startsWith("Doctrine[13,17]"))).toBe(true);
+
+    // each residual doctrine atom's weight is still the REAL accreted [ep:]
+    // occurrence count (genesis only supplies the quote, never the
+    // recurrence signal) — never collapsed to a flat genesis birth-event
+    for (const c of doctrineCandidates) {
+      if (["Doctrine[5]", "Doctrine[7]"].includes(c.label) || c.label.startsWith("Doctrine[8,12,16]") || c.label.startsWith("Doctrine[13,17]")) {
+        expect(c.occurrences.length).toBeGreaterThan(0);
+        expect(c.quote.source).toBe(genesisEpisode.filename);
+        expect(quotesAreVerbatim([c.quote.quote], genesisEpisode.content)).toBe(true);
+      }
+    }
+  });
+
+  test("the 'Lake vs river' / 'river has forgotten' motif pair merges into ONE atom, weight 2 (regression: detectSelfStutter's motif lines carry their '-' bullet prefix; a stripped comparison is required or the cluster silently fails to match)", () => {
+    const merged = planWithGenesis.candidates.find((c) => c.label.includes("stutter cluster"));
+    expect(merged).toBeDefined();
+    expect(merged!.kind).toBe("motif");
+    expect(merged!.occurrences).toEqual(["2026-07-28", "2026-07-28"]); // 2 raw entries folded in, not flattened to 1
+    // and it must NOT also appear as two separate un-clustered atoms
+    const riverLabels = planWithGenesis.candidates.filter((c) => /river|Lake vs river/i.test(c.label));
+    expect(riverLabels.length).toBe(1);
+  });
+
+  test("WS-E3 Fix A: the two 'Trust is ambient, not narrated.' agreement entries merge via claim normalization, weight 2 (they differ only by a leading typographic quote char — a punctuation-only divergence, not two beliefs)", () => {
+    const merged = planWithGenesis.candidates.find((c) => c.label.includes("claim-normalized cluster") && c.kind === "agreement");
+    expect(merged).toBeDefined();
+    expect(merged!.occurrences).toEqual(["2026-07-28", "2026-07-28"]);
+    // both raw forms normalize identically; the ORIGINAL (unnormalized) text
+    // is what actually lands in the atom — never rewritten
+    expect(normalizeClaimForDedup(merged!.claim)).toBe("Trust is ambient, not narrated.");
+    // must not also appear as two separate agreement atoms
+    const trustAtoms = planWithGenesis.candidates.filter((c) => c.kind === "agreement" && normalizeClaimForDedup(c.claim) === "Trust is ambient, not narrated.");
+    expect(trustAtoms.length).toBe(1);
+  });
+
+  test("every genesis-sourced atom's quote is genuinely verbatim in the staged file (the counterfeit-quote assert, real fixture)", () => {
+    const genesisSourced = planWithGenesis.candidates.filter((c) => c.quote.source === genesisEpisode.filename);
+    expect(genesisSourced.length).toBe(27); // 23 non-doctrine (25 raw, two merged pairs) + 4 residual doctrine (fix B)
+    for (const c of genesisSourced) {
+      expect(quotesAreVerbatim([c.quote.quote], genesisEpisode.content)).toBe(true);
+    }
+
+    // non-doctrine genesis atoms: one occurrence PER raw entry folded in
+    // (birth events, no prior LIVE recurrence), dated to the genesis episode
+    // itself — 1 for every singleton, 2 for the two merged pairs.
+    const nonDoctrineGenesisSourced = genesisSourced.filter((c) => c.kind !== "doctrine");
+    expect(nonDoctrineGenesisSourced.length).toBe(23);
+    for (const c of nonDoctrineGenesisSourced) {
+      expect(c.occurrences.every((d) => d === "2026-07-28")).toBe(true);
+      expect(c.occurrences.length).toBeGreaterThanOrEqual(1);
+    }
+    const totalOccurrences = nonDoctrineGenesisSourced.reduce((s, c) => s + c.occurrences.length, 0);
+    expect(totalOccurrences).toBe(25); // every one of the 25 raw non-doctrine entries is accounted for exactly once
+
+    // doctrine genesis atoms: weight is the REAL accreted [ep:] occurrence
+    // count, never flattened to a genesis birth event (genesis only ever
+    // supplies the quote for these, not the recurrence signal)
+    const doctrineGenesisSourced = genesisSourced.filter((c) => c.kind === "doctrine");
+    expect(doctrineGenesisSourced.length).toBe(4);
+    for (const c of doctrineGenesisSourced) expect(c.occurrences.some((d) => d !== "2026-07-28")).toBe(true);
+  });
+
+  test("the genesis episode is a valid v1 episode: frontmatter date/session/arc present", () => {
+    expect(genesisContent).toMatch(/^---\ndate: \d{4}-\d{2}-\d{2}\nsession: .+\narc: .+\n---\n/);
+  });
+
+  test("adding the genesis episode changes nothing about the non-doctrine, non-merged candidates (the one pre-existing real-episode agreement atom)", () => {
+    // Doctrine and the Trust-is-ambient pair change WITH genesis by design
+    // (that's the point of fix A/B) — only the untouched singleton with a
+    // real episode source should be identical either way.
+    const before = planWithoutGenesis.candidates.find((c) => c.label.includes("Show, never describe"));
+    const after = planWithGenesis.candidates.find((c) => c.label.includes("Show, never describe"));
+    expect(after).toEqual(before);
   });
 });
 
