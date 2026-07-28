@@ -4,6 +4,11 @@ session: 00000000-0000-4000-8000-000000000e2e
 arc: Genesis Archaeology
 ---
 
+> AUTHORED GENESIS ARTIFACT — 1,962 tokens, exempted from the 1k episode
+> target by human ruling (2026-07-27, WS-F GO): the runaway guard governs
+> metabolism writes; this file enters via the human-gated manual switchover
+> commit, and its 29 tellings are verbatim by requirement and cannot compress.
+
 This is not a live session transcript — it is an authored archaeology episode (popmem WS-E2/E3, GATE 2 ruling OPTION (a) + WS-E3 fix B): the founding tellings of every live SELF.md entry that migrate.ts could not otherwise trace to a real episode — the 25 zero-[ep:]-stamp entries (identity, motifs, unstamped how-we-work) that predate the [ep:] stamp convention entirely (the mind's founding archaeology import from pre-Circadian shards, mind git history, earliest around commit 6d31278, 2026-07-16), PLUS 4 doctrine entries whose own dated episode citation doesn't literally contain their claim (WS-E3: splitting the WS-E stutter megacluster removed the verbatim quote each of these borrowed from Doctrine[1]). Each telling below is copied VERBATIM from the earliest mind git revision that carries it (git show <rev>:SELF.md), attributed by short revision and commit date, so the counterfeit-quote assert (stack.ts quotesAreVerbatim) has a real, checkable, non-fabricated source instead of an unverifiable founding claim. migrate.ts seeds this file into the sandbox's mind/episodes/ (never the live mind directly — WS-F's gated commit places the real one).
 
 ## Identity
