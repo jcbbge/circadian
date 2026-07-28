@@ -268,18 +268,23 @@ export default function circadianMind(pi: ExtensionAPI) {
     }
 
     if (!existsSync(transcriptPath)) {
-      degraded({
+      // Pi writes the transcript lazily on the first session entry. No file
+      // at shutdown therefore means zero entries were ever written — an
+      // empty session (opened and quit before the first prompt) with nothing
+      // to metabolize. Absence ⇔ empty session, deterministically: had any
+      // entry been written, the file would exist. This is idle, not a
+      // failure — 2026-07-28: an 8-second open-and-quit session paged the
+      // doctor as DEGRADED over a non-event (sleep-ms3y2esz-4x7g).
+      ok({
         process: "sleep",
         phase: "session-end",
         correlation_id: corr,
-        summary: "transcript file does not exist at session shutdown",
+        summary: "no transcript on disk — empty session, nothing to sleep",
         context: piContext({
           session_id: sessionId,
           transcript_path: transcriptPath,
           shutdown_reason: event.reason,
         }),
-        cause: `transcript file not found at ${transcriptPath}`,
-        next_action: "verify the session produced a transcript file on disk",
       });
       return;
     }
