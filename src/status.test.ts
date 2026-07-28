@@ -339,6 +339,41 @@ describe("status.ts --line CLI — sandboxed", () => {
     expect(stdout).toContain("pop 41 (top 6.2) ↓1 sank");
   });
 
+  test("a rem-popmem scoreboard event with stacked/bumped shows both in the rem segment", () => {
+    const home = tmpDir();
+    seedMind(home);
+    const remEvent: ScoreEvent = {
+      ts: new Date().toISOString(),
+      type: "rem",
+      worldview_tokens: 1000,
+      propagated: ["SELF.Doctrine[1]"],
+      composted: [],
+      stacked: 3,
+      bumped: 5,
+    };
+    fs.writeFileSync(path.join(home, "mind", "scoreboard.jsonl"), JSON.stringify(remEvent) + "\n");
+    const { status, stdout } = runStatusLine(home);
+    expect(status).toBe(0);
+    expect(stdout).toContain("rem 1 today (1 propagated, stacked 3, bumped 5)");
+  });
+
+  test("a pre-switchover v1 rem event (no stacked/bumped fields) keeps the old propagated-only phrasing", () => {
+    const home = tmpDir();
+    seedMind(home);
+    const remEvent: ScoreEvent = {
+      ts: new Date().toISOString(),
+      type: "rem",
+      worldview_tokens: 1000,
+      propagated: ["SELF.Doctrine[1]", "SELF.Doctrine[2]"],
+      composted: [],
+    };
+    fs.writeFileSync(path.join(home, "mind", "scoreboard.jsonl"), JSON.stringify(remEvent) + "\n");
+    const { status, stdout } = runStatusLine(home);
+    expect(status).toBe(0);
+    expect(stdout).toContain("rem 1 today (2 propagated)");
+    expect(stdout).not.toContain("stacked");
+  });
+
   test("--line never appends to logs/circadian.events.jsonl — obs-silent by design (Law 9's one exception)", () => {
     const home = tmpDir();
     seedMind(home);

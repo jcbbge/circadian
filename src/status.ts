@@ -84,6 +84,12 @@ export interface ScoreEvent {
   /** ts of the rem event this implicit verdict is based on — the dedupe key:
    * one implicit ok per rem judgment, ever. */
   basis?: string;
+  /** rem-popmem.ts (popmem WS-F): brand-new atoms / weight bumps this cycle
+   * (its own buildCommitMessage counts, mirrored onto the scoreboard event
+   * so the strip's last-REM segment can show them — R11). Absent on
+   * pre-switchover v1 rem events. */
+  stacked?: number;
+  bumped?: number;
 }
 
 function loadScoreboard(): ScoreEvent[] {
@@ -331,6 +337,8 @@ function collectVitals(scoreboard: ScoreEvent[]) {
         worldview_tokens: r.worldview_tokens,
         propagated: r.propagated?.length ?? 0,
         composted: r.composted?.length ?? 0,
+        stacked: r.stacked,
+        bumped: r.bumped,
       })),
     },
     worldview_tokens: tokensOf(selfMd),
@@ -571,7 +579,12 @@ function renderLine(vitals: ReturnType<typeof collectVitals>, scoreboard: ScoreE
   const today = new Date().toISOString().slice(0, 10);
   const remToday = scoreboard.filter((e) => e.type === "rem" && e.ts.startsWith(today));
   const lastRem = vitals.propagation.recent[vitals.propagation.recent.length - 1];
-  parts.push(`rem ${remToday.length} today${lastRem ? ` (${lastRem.propagated} propagated)` : ""}`);
+  const lastRemDetail = lastRem
+    ? typeof lastRem.stacked === "number" || typeof lastRem.bumped === "number"
+      ? ` (${lastRem.propagated} propagated, stacked ${lastRem.stacked ?? 0}, bumped ${lastRem.bumped ?? 0})`
+      : ` (${lastRem.propagated} propagated)`
+    : "";
+  parts.push(`rem ${remToday.length} today${lastRemDetail}`);
 
   const freeze = remFreezeStatus();
   if (freeze.frozen) parts.push(`rem FROZEN·backlog ${freeze.backlog}`);

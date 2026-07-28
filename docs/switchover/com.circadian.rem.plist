@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>_Metadata</key>
+    <dict>
+        <key>Purpose</key>
+        <string>Circadian REM consolidator — twice-daily population-memory pass over CIRCADIAN_HOME/mind (stack new episodes into weighted atoms, decay + re-potentiate the population, render SELF.md deterministically, draft the next greeting.md, commit the mind repo). Drafting uses the system local-LLM service (127.0.0.1:10240), not a cloud CLI. Successor payload to rem.ts's editor-grammar wave (popmem WS-F switchover); same schedule, same job label.</string>
+        <key>Tier</key>
+        <string>system</string>
+        <key>Port</key>
+        <string>n/a</string>
+        <key>Runs</key>
+        <string>bun /Users/jrg/circadian/src/rem-popmem.ts (one-shot, 09:00 and 21:00 daily)</string>
+    </dict>
+    <key>Label</key>
+    <string>com.circadian.rem</string>
+    <key>ProgramArguments</key>
+    <array>
+        <string>/Users/jrg/.bun/bin/bun</string>
+        <string>/Users/jrg/circadian/src/rem-popmem.ts</string>
+    </array>
+    <key>StartCalendarInterval</key>
+    <array>
+        <dict>
+            <key>Hour</key>
+            <integer>9</integer>
+            <key>Minute</key>
+            <integer>0</integer>
+        </dict>
+        <dict>
+            <key>Hour</key>
+            <integer>21</integer>
+            <key>Minute</key>
+            <integer>0</integer>
+        </dict>
+    </array>
+    <key>RunAtLoad</key>
+    <false/>
+    <key>StandardOutPath</key>
+    <string>/Users/jrg/circadian/logs/rem.log</string>
+    <key>StandardErrorPath</key>
+    <string>/Users/jrg/circadian/logs/rem.error.log</string>
+    <key>EnvironmentVariables</key>
+    <dict>
+        <key>PATH</key>
+        <string>/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/Users/jrg/.bun/bin</string>
+        <key>CIRCADIAN_HOME</key>
+        <string>/Users/jrg/circadian</string>
+    </dict>
+    <key>WorkingDirectory</key>
+    <string>/Users/jrg/circadian</string>
+</dict>
+</plist>

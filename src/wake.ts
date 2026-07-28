@@ -264,7 +264,10 @@ async function runHook(): Promise<void> {
   // this is safe to fire on every single wake.
   try {
     const bun = process.env.CIRCADIAN_BUN_BIN || join(homedir(), ".bun/bin/bun");
-    const child = spawn(bun, ["run", join(CIRCADIAN_HOME, "src/rem.ts"), "--if-due"], {
+    // popmem WS-F switchover: rem.ts's editor-grammar wave is retired; the
+    // scheduled payload is now rem-popmem.ts (stack -> propagation judgment
+    // -> decay -> render -> greeting -> mind commit). Same --if-due contract.
+    const child = spawn(bun, ["run", join(CIRCADIAN_HOME, "src/rem-popmem.ts"), "--if-due"], {
       detached: true,
       stdio: "ignore",
       env: { ...process.env, CIRCADIAN_INTERNAL: "1" },
