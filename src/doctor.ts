@@ -34,7 +34,7 @@ import { homedir } from "os";
 import { execSync } from "child_process";
 import { appendFileSync, mkdirSync } from "fs";
 import { ok, correlation } from "./obs.ts";
-import { selfSimilarity } from "./mutate.ts";
+import { selfSimilarity } from "./immune.ts";
 
 const CIRCADIAN_HOME = process.env.CIRCADIAN_HOME || path.join(homedir(), "circadian");
 const LOG_DIR = path.join(CIRCADIAN_HOME, "logs");

@@ -173,8 +173,24 @@ describe("replay genesis bootstrap shim", () => {
     }
   });
 
-  test("the living SELF.md never needs the shim", () => {
-    const selfMd = fs.readFileSync(path.join(MIND, "SELF.md"), "utf8");
+  test("a v1-shaped worldview (numbered Doctrine) never needs the shim", () => {
+    // PINNED, not live — this file's established pattern (see PINNED_MIND_REV
+    // above). Root cause (popmem, not a pre-existing flake): the WS-F
+    // switchover rewrote the live SELF.md into render.ts's atom-rendered
+    // shape ("**claim** — quotes eps", no numbered "**N. " entries).
+    // seedNeedsShim's check is the v1-envelope shape mutate.ts's parseSelf
+    // (now src/immune.ts's internal parseSelf) requires — a real, populated
+    // atom-rendered document reads as an EMPTY Doctrine section to that
+    // check, a false positive against the NEW shape, not a regression in
+    // seedNeedsShim itself (which nothing asked to understand render.ts's
+    // format). buildSandbox only ever calls seedNeedsShim against
+    // templates/SELF.md (a fixed, checked-in v1-shaped file) — never the
+    // live mind's current SELF.md — so this invariant was never actually
+    // exercised against the live document in production. Pinning to a rev
+    // where the live document was still v1-shaped preserves the real
+    // invariant: a genuinely populated Doctrine section never triggers the
+    // genesis shim.
+    const selfMd = pinnedMindFile("SELF.md");
     expect(seedNeedsShim(selfMd)).toBe(false);
   });
 });

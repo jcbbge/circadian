@@ -26,9 +26,9 @@
  *
  *   (b) ACROSS entries: the same belief held under multiple doctrine numbers
  *       (observed: 8/16/17, 13/17) or duplicate motif lines. Fix:
- *       detectSelfStutter (mutate.ts, imported — not modified; it retires
- *       under WS-H but survives as an extracted utility per the program
- *       brief §3) clusters the PINNED live SELF.md exactly as REM consults it
+ *       detectSelfStutter (src/immune.ts, imported — not modified; extracted
+ *       from mutate.ts under WS-H per the program brief §3) clusters the
+ *       PINNED live SELF.md exactly as REM consults it
  *       before a wave. Each cluster becomes ONE atom (the member whose own
  *       earliest telling is chronologically first wins); every member's own
  *       live [ep:] occurrences become ledger stack events on that one atom.
@@ -57,7 +57,7 @@ import { writeAtom, type AtomKind, type LedgerEvent, appendLedger } from "./atom
 import { collectAllEpisodesAt, assertSandboxSafe, type ReplayEpisode } from "./replay.ts";
 import { normalizeDate } from "./zoom.ts";
 import { quotesAreVerbatim } from "./stack.ts";
-import { detectSelfStutter } from "./mutate.ts";
+import { detectSelfStutter } from "./immune.ts";
 import { significantTokens, jaccard } from "./ltp.ts";
 import { ok, degraded, fail, correlation } from "./obs.ts";
 
@@ -862,12 +862,13 @@ function flagValue(args: string[], name: string): string | undefined {
 }
 
 /** Rewraps a render.ts-produced SELF.md into the v1-shaped envelope
- * mutate.ts's parseSelf (and therefore detectSelfStutter, imported not
- * modified) requires to parse at all: numbered "**N. **" doctrine blocks and
- * "- " bulleted motif/how-we-work lines. The rendered atom TEXT carries
- * through completely unchanged — only the wrapper an unrelated legacy parser
- * needs is added — so this is a faithful adapter, not a rewrite: any real
- * duplication in the rendered content still shows up as a cluster. */
+ * immune.ts's internal parseSelf (and therefore detectSelfStutter, imported
+ * not modified — see WS-H) requires to parse at all: numbered "**N. **"
+ * doctrine blocks and "- " bulleted motif/how-we-work lines. The rendered
+ * atom TEXT carries through completely unchanged — only the wrapper an
+ * unrelated legacy parser needs is added — so this is a faithful adapter,
+ * not a rewrite: any real duplication in the rendered content still shows
+ * up as a cluster. */
 export function adaptRenderedForStutterCheck(renderedMd: string): string {
   const sections = parseSelfSections(renderedMd);
   const splitAtoms = (body: string): string[] =>

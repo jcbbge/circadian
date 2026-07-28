@@ -10,7 +10,7 @@ import { execFileSync } from "child_process";
 import { readAtoms, readLedger, foldWeights } from "./atoms.ts";
 import { renderSelf } from "./render.ts";
 import { quotesAreVerbatim } from "./stack.ts";
-import { detectSelfStutter } from "./mutate.ts";
+import { detectSelfStutter } from "./immune.ts";
 import { collectAllEpisodesAt, type ReplayEpisode } from "./replay.ts";
 import {
   parseSelfSections,
