@@ -1,395 +1,138 @@
 # MIND-SPEC.md — Circadian Memory Substrate
 
-This is the contract for `~/circadian/mind`. It is the design authority for every
-process that reads or writes this repo (wake, sleep, rem, status, content
-archaeology). If a process's behavior conflicts with this document, the
-process is wrong.
+This is the contract for `~/circadian/mind`. It is the design authority for
+every process that reads or writes this repo (wake, graze, sleep, rem,
+status, zoom, replay). If a process's behavior conflicts with this document,
+the process is wrong.
 
 The mind repo is a plain git repository. It has no remote, ever. `USER.md` is
 private relational memory and never leaves this machine.
 
----
-
-## The Eight Laws
-
-1. **Storage dumb, metabolism smart.** The mind is plain markdown in git at
-   `~/circadian/mind`; all intelligence lives in the processes around it (wake, sleep,
-   rem, status), not in the storage layer. No database sits in the critical
-   path of reading or writing the mind.
-
-2. **Push, not pull.** Memory is injected at session start. The working
-   agent has zero memory duties during a session — it does not need to
-   query, search, or fetch anything to "remember." The transcript itself is
-   the deposit; nothing has to be manually saved.
-
-3. **Load-bearing or dead.** Every wake begins with a greeting composed from
-   memory, placed directly in the user's face. The greeting is the test: if
-   the memory in it isn't good enough to say out loud to the user at the
-   top of a session, it isn't earning its keep.
-
-4. **Finite body.** Size targets force excretion (composting). A mind that
-   never forgets is not a mind, it is a landfill. But the targets are SOFT —
-   ranges the metabolism aims for, never walls that abort a digestion for a
-   small overage. The process prefers shrinking to growing (distill, do not
-   accrete) and grows only when there is genuinely more worldview to hold.
-   Sizes are measured by character count using the rule chars/4 = tokens (see
-   "Token Targets" below). Over-target is surfaced as telemetry, never fatal.
-   The ONLY size condition that stops a write is a gross RUNAWAY (past 1.75x a
-   target) — a corruption signal (a dumped transcript, not a worldview) — and
-   even then it fails loudly with a reason, never silently truncates. A guard
-   that kills the whole metabolism because it is a few tokens over is itself a
-   defect (the same jam this system's excretory organ was redesigned to avoid).
-
-5. **Ash banned.** Retained conclusions must carry their why-chain and, where
-   voice matters, verbatim quotes. A summary that flattens voice down to a
-   bare conclusion is a defect, not an optimization. "jrg prefers X" without
-   the reasoning behind it is ash.
-
-6. **Motion is the metric.** REM records which injected items actually
-   propagated — were read, referenced, or built upon — during the session
-   they were injected into. Items with zero propagation across their
-   lifetime become compost candidates. Memory that sits inert is not memory,
-   it is inventory.
-
-7. **The mind survives infra death.** If SurrealDB, daemons, or any other
-   service is down, wake still works, because wake is file reads only. No
-   step in WAKE may depend on a running service.
-
-8. **Anchor-aware.** Greetings orient the user to the work — the current
-   arc, the live tension, the next move — never to the memory system
-   itself. A greeting that talks about Circadian instead of the work has
-   failed law 3.
-
-9. **Nothing silent.** Every signal is context-bound. If code in this system
-   can fail, warn, or make a decision, it emits a context-bound event to the
-   obs ledger (`logs/circadian.events.jsonl`) via `src/obs.ts` — enough that
-   an agent picking it up cold knows WHAT happened, in WHICH process and
-   phase, WHY, and WHAT TO DO NEXT. A bare exit code is not telemetry. See
-   `docs/OBSERVABILITY.md` for the full doctrine: four-word outcomes
-   (ok | idle | degraded | failed); degraded/failed MUST carry cause +
-   next_action; every event surfaces to stderr + the ledger + the tower bus.
-   A process that runs and produces NO event is operating silently — the
-   cardinal sin this law exists to prevent.
-
----
-
-## The Cycle
-
-Five phases: WAKE, GRAZE, LIVE, SLEEP, REM.
-
-Two tempos govern the cycle:
-- **Per-meal fast path** (GRAZE + SLEEP): the transcript is metabolized
-  in-session via graze checkpoints, then consolidated into an episode at
-  session end. Immediate digestion — the letter is written while the ink is
-  still wet.
-- **Twice-daily worldview consolidation** (REM): at 09:00 and 21:00, REM
-  absorbs new episodes into `SELF.md`, composts what's been digested, plants
-  a serendipity, and drafts tomorrow's greeting. The slow fold.
-
-### WAKE
-
-Triggered by SessionStart. A hook injects, in order:
-- `SELF.md`
-- `USER.md`
-- `NOW.md`
-- the greeting instruction (present the precomputed `greeting.md` content to
-  the user at the top of the session)
-
-WAKE is file reads only (Law 7). If `NOW.md`'s "Last sleep" timestamp is
-more than 48 hours old, the injected greeting MUST be prepended with an
-explicit staleness warning line before it reaches the user.
-
-The wake injection payload aims for roughly 15k tokens. If it drifts over,
-WAKE emits a loud telemetry line identifying the offending file(s) and the
-overage — it never silently truncates any file's content. Only a gross
-runaway (past 1.75x, i.e. ~26k tokens) is treated as a real fault.
-
-### GRAZE
-
-In-session metabolizer. Fires from cheap, frequent Claude Code hooks
-(PostToolUse / UserPromptSubmit), self-throttles to one real checkpoint per
-~15 minutes. Each checkpoint reads only the transcript DELTA since the last
-checkpoint (byte offset in a per-session state file), digests it via the local
-LLM into 2-4 bullet notes, and appends them to `mind/meals/<session_id>.md`
-— working memory, never committed to git.
-
-GRAZE is the per-meal fast path: the transcript is metabolized WHILE the
-session happens, not after. At SessionEnd, SLEEP folds the accumulated meal
-notes into its whole-meal digest prompt (as pre-chewed context) and deletes
-the meal file — the episode supersedes it.
-
-### LIVE
-
-The working agent carries zero memory duties for the duration of the
-session. It does not write to `~/circadian/mind`, does not curate what it says,
-does not manage its own memory. The full transcript is implicitly the
-deposit that SLEEP will later read. GRAZE runs beneath LIVE as the
-in-session checkpoint layer; the agent itself is unaware of it.
-
-### SLEEP
-
-Triggered by SessionEnd, via a detached worker. SLEEP:
-- drafts an episode file (`episodes/YYYY-MM-DD-<slug>.md`) from the session
-  transcript
-- rewrites `NOW.md` (arc, flight plan, live tensions, commitments,
-  serendipity, last-sleep timestamp)
-- may fall back to composing `greeting.md` if REM has not run since (see
-  "Greeting Protocol")
-
-SLEEP does not commit `~/circadian/mind`. Only REM commits (see below), except for
-the two bootstrap commits: the founding commit (Worker A) and the
-archaeology commit (Worker D, content-population).
-
-### REM
-
-A launchd job, scheduled twice daily at 09:00 and 21:00. REM:
-1. reads new episodes against `SELF.md`, asking of each claim: does it
-   confirm, contradict, supersede, or deepen the existing worldview?
-2. rewrites the worldview file (`SELF.md`), preferring to shrink (distill)
-   but free to grow when there is genuinely more to hold. Growth needs no
-   justification and is never rejected; an optional one-line note MAY
-   accompany meaningful growth (informational only). Only a runaway past
-   1.75x target is refused.
-3. composts eligible episodes under the digestion-completeness rule (see
-   "Compost Rules").
-4. plants exactly ONE labeled serendipity association in `NOW.md`'s
-   "Serendipity" section (format: a single line starting "Might be
-   nothing:").
-5. drafts tomorrow's `greeting.md` (see "Greeting Protocol").
-6. appends one `rem`-type event to `scoreboard.jsonl`.
-7. commits `~/circadian/mind` with the REM commit convention (see below).
-
-REM is the only regular committer of the mind repo. SLEEP and WAKE never
-commit.
-
----
-
-## Token Targets
-
-Rule: **chars / 4 = tokens.** Every number below is a SOFT TARGET the
-metabolism aims for — not a wall. Overshooting a target by a few or a few
-hundred tokens is normal and allowed; it is recorded as telemetry, never
-fatal. Only crossing the RUNAWAY threshold (1.75x the target) stops a write,
-because that signals corruption (a dumped transcript) rather than a
-worldview. Silent truncation is never permitted, at any size, for any file.
-
-| File | Target (tokens) | Target (chars) | Runaway (1.75x, tokens) |
-|---|---|---|---|
-| `SELF.md` | 6,000 | 24,000 | 10,500 |
-| `USER.md` | 2,000 | 8,000 | 3,500 |
-| `NOW.md` | 3,000 | 12,000 | 5,250 |
-| `compost.md` | 1,000 | 4,000 | 1,750 |
-| each file in `episodes/` | 1,000 | 4,000 | 1,750 |
-| **Wake injection payload (total)** | **15,000** | 60,000 | 26,250 |
-
-Growth of `SELF.md` needs no justification or permission slip. The process
-prefers to shrink (distill), but it grows freely when there is more to hold.
-An optional one-line note MAY accompany meaningful growth; it is
-informational, never a gate. This is a free and open metabolism: it is
-steered by targets and a runaway guard, never stifled by hard caps.
-
----
-
-## File Formats
-
-- **`SELF.md`** — four sections, exactly: "Who I am across sessions",
-  "Doctrine" (each belief stamped with its origin episode, `[ep:YYYY-MM-DD]`),
-  "Motifs" (recurring themes, aim ~10 lines), "How we work". Target: 6k
-  tokens / 24k chars.
-
-- **`USER.md`** — relational memory: who the user is, registers, arcs, and
-  preferences observed across sessions. PRIVATE: never pushed to any
-  remote; the mind repo has no remote configured, ever. Target: 2k tokens / 8k
-  chars.
-
-- **`NOW.md`** — six sections, exactly: "Arc", "Flight plan" (the
-  successor session's first move), "Live tensions" (3 plus-or-minus 1
-  open items, loaded but not resolved), "Commitments", "Serendipity" (one
-  line, must start with "Might be nothing:"), "Last sleep" (an ISO-8601
-  timestamp of the most recent SLEEP). Target: 3k tokens / 12k chars.
-
-- **`greeting.md`** — at most 3 lines, precomputed by REM (or by SLEEP as
-  fallback): an arc summary, the flight plan, and one live tension.
-  Anchor-aware per Law 8. If `NOW.md`'s "Last sleep" is more than 48 hours
-  old at the time of injection, WAKE must prepend an explicit staleness
-  warning line ahead of this content.
-
-- **`episodes/YYYY-MM-DD-<slug>.md`** — frontmatter with `date`, `session
-  id`, and `arc`; a narrative body containing at least 2 verbatim quotes;
-  explicit why-chains for any conclusion recorded; a "what-changed" line
-  classifying the episode's relationship to `SELF.md` as one of
-  confirm / contradict / supersede / deepen. When an episode is composted, a
-  "taught -> absorbed-where" line is added to it recording what it taught
-  and where that lesson now lives. Target: 1k tokens / 4k chars per episode.
-
-- **`compost.md`** — a ROLLING WINDOW log of shed episodes (NOT append-only):
-  what was shed, why it was shed, and where the lesson now lives (which
-  file/section absorbed it). Entries open with the fixed form
-  `Composted: <what> — <why> — lesson lives at <where>`.
-  When the file exceeds its target, REM prunes the OLDEST dated sections until
-  it fits comfortably (90%) — git history is the permanent archive, so old
-  compost entries lose nothing by being dropped. No entries at genesis.
-  Target: 1k tokens / 4k chars (soft).
-
-- **`mind/meals/<session_id>.md`** — in-session working memory, written by
-  GRAZE. Bullet notes from each checkpoint. Deleted by SLEEP at SessionEnd
-  after the episode is drafted (the episode supersedes it). NEVER committed
-  to git — it is working memory, not archive.
-
-- **`scoreboard.jsonl`** — append-only, one JSON object per line. See
-  "Scoreboard Schema" below.
-
----
-
-## Scoreboard Schema
-
-`scoreboard.jsonl` is append-only. One JSON object per line, newline
-terminated. Fields:
-
-```json
-{
-  "ts": "ISO-8601 timestamp, required",
-  "type": "wake | sleep | rem | verdict, required",
-  "worldview_tokens": "integer, current SELF.md token count, required",
-  "greeting_verdict": "ok | bad, optional — only present on type=verdict events",
-  "propagated": ["array of strings identifying injected items that propagated this session, optional"],
-  "composted": ["array of strings identifying episodes/items composted this cycle, optional"]
-}
-```
-
-Notes:
-- `verdict` events are appended by the status CLI's `--greet-ok` /
-  `--greet-bad "<reason>"` flags. `greeting_verdict` is `"ok"` or `"bad"`;
-  when bad, an optional `reason` field carries the free-text reason string.
-- `wake` events are appended at WAKE time; `sleep` events at SLEEP time;
-  `rem` events at REM time, once per REM run (twice daily).
-
----
-
-## Greeting Protocol
-
-The greeting is composed by REM (twice daily, the normal path) or by SLEEP (as
-a same-day fallback if REM has not yet run since the last sleep). It is at
-most 3 lines:
-
-1. Arc summary.
-2. Flight plan — the successor session's first move.
-3. One live tension.
-
-Anchor-aware (Law 8): the greeting orients to the work — the current arc,
-Infinity, whatever is live — never to the memory system itself.
-
-Staleness rule: at WAKE, if `NOW.md`'s "Last sleep" timestamp is more than
-48 hours old, the injected greeting MUST be prepended with an explicit
-staleness warning line before being shown to the user. This warning is
-generated at WAKE time (a live check against the current clock), not
-precomputed.
-
----
-
-## Compost Rules
-
-**Digestion-completeness rule.** An episode is demoted (composted) ONLY when
-REM can state, in the same pass, both:
-(a) what the episode taught, and
-(b) where that lesson now lives (which file/section of the mind absorbed
-    it).
-
-Both facts are recorded twice:
-- as a dated entry in `compost.md` (what was shed, why, where the lesson now
-  lives), and
-- as a "taught -> absorbed-where" line appended to the episode file itself
-  before it is removed.
-
-An episode that cannot satisfy both (a) and (b) is not eligible for
-composting in that REM pass, regardless of age or token pressure.
-
-**Physical mechanics.** Once digestion-completeness is satisfied, the
-composted episode file is `git rm`'d in the same REM commit that records the
-compost. Git history is the permanent archive of the raw episode; `compost.md`
-carries the living, human-readable record of what was shed and where it
-went.
-
-**Rolling window.** `compost.md` is NOT append-only — it is a rolling window
-around its target. After each REM pass appends new entries, if the file
-exceeds 90% of its target, REM prunes the OLDEST dated sections until it fits
-comfortably. Git history is the archive; the compost log is recent history
-only. This is what keeps the excretory organ from becoming a landfill — and
-from jamming: the target is a rolling boundary the prune maintains, never a
-wall that rejects a digestion.
-
-Zero-propagation trigger (Law 6): injected items that show zero
-propagation across their observed lifetime are compost candidates, subject to
-the same digestion-completeness rule above — zero propagation makes an
-item a candidate, it does not bypass the rule.
-
----
-
-## Digestion Ledger
-
-`mind/digested.jsonl` is the single source of truth for "have I absorbed this
-episode?" — it replaces the old mtime-based heuristic. Each line is a JSON
-object:
-
-```json
-{
-  "ts": "ISO-8601 timestamp of digestion",
-  "hash": "sha256 hex of the episode's on-disk content at digestion time",
-  "filename": "the episode filename (e.g. 2026-07-22-arc-name.md)",
-  "disposition": "absorbed | composted"
-}
-```
-
-Content-keyed, not time-keyed: `isNew = sha256(content) NOT IN ledger`. This
-is rename-proof, mtime-touch-proof, and survives corrupt lines (a malformed
-line is skipped, not fatal). An episode whose content changes is re-flagged
-as new; an episode whose filename changes but content is identical is
-correctly seen as already digested. REM appends to this ledger inside the
-same commit that absorbs/composts the episode, so the invariant holds:
-hash recorded == will never be re-fed as new.
-
----
-
-## REM Commit Convention
-
-Every REM commit uses exactly this subject line format:
+This one page is the whole design. If a change doesn't fit on this page, the
+change is wrong (Doctrine[1]: the cliff is complexity accretion). This is the
+population-memory spec, authoritative since the 2026-07-28 switchover
+(commit `d045196`); it supersedes the v1 document-editing spec, which lives
+in git history. The full blueprint is `docs/POPULATION-MEMORY.md`.
+
+## The five sentences
+
+1. Beliefs are immutable weighted atoms.
+2. Recurrence bumps weight instead of adding copies.
+3. Forgetting is a nightly multiply.
+4. `SELF.md` is a deterministic render of the top of the population.
+5. The model compares atoms — it never composes the document.
+
+## The Nine Laws
+
+1. **Storage dumb, metabolism smart.** The mind is plain markdown in git;
+   all intelligence lives in the processes around it. No database sits in
+   the critical path of reading or writing the mind.
+2. **Push, not pull.** Memory is injected at session start; the working
+   agent has zero memory duties. The transcript itself is the deposit.
+3. **Load-bearing or dead.** Every wake opens with a greeting composed from
+   memory, placed in the user's face. If it isn't good enough to say out
+   loud, it isn't earning its keep.
+4. **Finite body.** Size targets force excretion. v1's token targets live on
+   as render budgets and whole-file caps — SOFT targets, never walls
+   (chars/4 = tokens; only a gross runaway past 1.75x fails loudly; silent
+   truncation is never permitted).
+5. **Ash banned.** Retained conclusions carry their why-chain and verbatim
+   quotes — enforced structurally by the atom shape below.
+6. **Motion is the metric.** Propagation re-potentiates an atom; a
+   never-moving atom decays below the render floor. Memory that sits inert
+   is not memory, it is inventory.
+7. **The mind survives infra death.** Wake is file reads only. No step in
+   WAKE may depend on a running service.
+8. **Anchor-aware.** Greetings orient to the work — the current arc, the
+   live tension, the next move — never to the memory system itself.
+9. **Nothing silent.** Every process emits context-bound events to
+   `logs/circadian.events.jsonl` via `src/obs.ts` (four-word outcomes:
+   ok | idle | degraded | failed; degraded/failed carry cause +
+   next_action). See `docs/OBSERVABILITY.md`. A process that runs and
+   produces no event is operating silently — the cardinal sin.
+
+## The atom — `mind/beliefs/<id>.md`, one belief per file, never edited
+
+- **id** = first 12 hex of sha256(claim, whitespace-normalized). Identity is content.
+- **Fixed slots, rejected by shape at parse (no validator prose):**
+  `kind:` identity | doctrine | motif | agreement (maps 1:1 to the v1 SELF.md sections)
+  `claim:` ≤280 chars — the belief, one telling
+  `why:` the why-chain (Law 5: ash banned, structurally)
+  `quote:` ≥1 verbatim quote + `source:` episode filename — the quote MUST appear
+  verbatim in that episode or the atom is rejected at extraction (counterfeits
+  impossible at rest)
+  `[ep:YYYY-MM-DD]` origin stamps — zoom resolves every atom to its episode via git
+- Weight and status are NOT in the file. The file is immutable, forever.
+
+## The ledger — `mind/beliefs.jsonl`, append-only (the digested.jsonl pattern)
+
+One JSON object per line; malformed lines skipped, never fatal. Events:
+- `{"ev":"stack","atom":<id>,"ep":<episode>,"ts":…}` — birth or recurrence: weight +1.
+  Adding and merging are the same operation; merge-then-readd is inexpressible.
+- `{"ev":"decay","factor":0.95,"ts":…}` — nightly, one line, multiplies every active atom.
+- `{"ev":"potentiate","atom":<id>,"ts":…}` — a rendered line propagated (scoreboard
+  `propagated`): weight +1. Motion is the metric (Law 6).
+- `{"ev":"supersede","winner":<id>,"loser":<id>,"ts":…}` — loser's current weight
+  TRANSFERS to winner; loser keeps its file and lineage, status becomes
+  superseded-by:<winner>. Zoom shows the old telling forever.
+
+**Weight is never stored — it is fold(ledger), deterministic.** Defaults (knobs):
+birth 1, bump +1, decay ×0.95/night, RENDER_FLOOR 0.5. A never-bumped singleton
+renders ~13 nights, then defocuses; its file stays (defocus, never delete); one
+propagation brings it back.
+
+## The stacker — the only writer of atoms
+
+episode → EXTRACT (≤5 candidate atoms, fixed shape) → dedupe pipeline:
+exact content-hash → token-overlap ≥ threshold auto-SAME (ltp.ts jaccard, 0.3) →
+only the borderline band reaches COMPARE. Model surface is exactly two calls,
+both via llm.ts, local only: **EXTRACT** (episode → candidates) and **COMPARE**
+(two claims → one token: SAME | DISTINCT | SUPERSEDES(A>B|B>A)). The engine does
+all arithmetic; the model never holds the pen.
+
+## The render — `SELF.md = fold(beliefs/, ledger)`
+
+Deterministic, byte-identical re-runs, no clock in the fold. Four v1 sections,
+folded by kind; within a section, atoms sort weight desc (tiebreak: id lex),
+strongest telling verbatim with its `[ep:]` stamps. v1 token targets become
+**render budgets**: selection stops at the budget — atom text is never truncated.
+Invariant (asserted in `bun test` and after every REM): render(archive) ==
+committed SELF.md, byte-identical.
+
+## The REM payload
+
+stack(new episodes) → decay → render → greeting. An episode is new iff its
+content hash is absent from `mind/digested.jsonl` (content-keyed, rename-proof;
+lines shaped `{ts, hash, filename, disposition}`, malformed lines skipped —
+`src/rem-popmem.ts recordDigested`). Commit subject convention (exact):
 
 ```
-rem: <date> — absorbed N, shed M, worldview XXk tokens
+rem: <date> — stacked N, bumped M, sank K, population P
 ```
 
-Where `<date>` is the REM run's date (YYYY-MM-DD), `N` is the count of
-episodes/claims absorbed into `SELF.md` this pass, `M` is the count of
-episodes composted this pass, and `XXk` is `SELF.md`'s resulting token count
-rounded to the nearest thousand, suffixed `k`.
+The commit body auto-records the "sank below floor" list (compost.md is frozen
+as historical; git is the archive). Render-time health checks: stutter-detect,
+counterfeit-quote assert.
 
-The commit body MAY carry an optional one-line note when `SELF.md` grew
-meaningfully during the pass — e.g. `justification: <why growth was
-warranted>`. This is informational only: growth is free and never rejected,
-and no note is required whether or not `SELF.md` grew.
+## What survives v1 unchanged
 
----
+Episodes; GRAZE (in-session checkpoint metabolizer → `mind/meals/`, folded by
+SLEEP at session end); SLEEP drafting; WAKE injection (~15k-token payload cap,
+loud telemetry on overage); NOW.md; USER.md; the greeting protocol (≤3 lines —
+arc, flight plan, one live tension; a "Last sleep" older than 48h prepends an
+explicit staleness warning at WAKE); hook wiring. Whole-file token caps
+(SELF 6k / USER 2k / NOW 3k / compost 1k) and per-section render budgets
+(identity 600 / doctrine 3400 / motif 800 / agreement 1200) are knobs in code —
+`src/status.ts` CAPS, `src/render.ts` DEFAULT_BUDGETS; the scoreboard schema is
+the `ScoreEvent` interface in `src/status.ts`. For every number, code is truth.
 
-## Kill Switch
+## Fitness — silence is a verdict
 
-The user records a verdict on each greeting via the status CLI:
-`--greet-ok` or `--greet-bad "<reason>"`. Each verdict is appended to
-`scoreboard.jsonl` as a `verdict`-type event (see "Scoreboard Schema").
-
-The system must earn its keep in week one: **seven consecutive "bad"
-verdicts is the decommission trigger.** The status CLI is responsible for
-surfacing when this threshold is reached (tracking the running streak of
-consecutive bad verdicts, reset by any "ok"); the decision to actually
-decommission is made by the human, not automated.
-
----
-
-## v1.1 Deferred
-
-The following are explicitly deferred and must NOT be built as part of
-this v1 system:
-
-- ambient recall hook
-- embeddings
-- weekly flux entrainment report
-- retirement of the tower doorbell line
+A greeting whose items propagate earns an implicit `ok` (appended at SLEEP,
+`source:"propagation"`). The only manual act is `--greet-bad "<reason>"` (counts
+double against the streak). Kill switch: 7 consecutive greetings with zero
+propagation and no explicit ok surfaces the decommission question. The statusline
+strip is the contract (R11): wake age · worldview tokens · population count ·
+last REM (stacked/bumped/sank) · verdict streak · loud degraded marker. Every
+organ reports into it; a process that runs without moving the strip is in
+violation of Law 9.

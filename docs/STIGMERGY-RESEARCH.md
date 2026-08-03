@@ -17,7 +17,7 @@ mind/beliefs/           # 84 atom files, content-addressed
 mind/beliefs.jsonl      # append-only ledger (574 events)
 ```
 
-The architecture follows these five sentences (MIND-SPEC.v.next.md):
+The architecture follows these five sentences (MIND-SPEC.md, the population-memory spec):
 1. Beliefs are immutable weighted atoms.
 2. Recurrence bumps weight instead of adding copies.
 3. Forgetting is a nightly multiply.

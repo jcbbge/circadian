@@ -19,6 +19,10 @@ The installer scaffolds your private `mind/` from `templates/`, initializes it
 as a local git repo (no remote — your memory never leaves your machine), and
 installs the twice-daily REM job (09:00 & 21:00). It prints the Claude Code hook config to add.
 
+One central install spans your whole machine — every project, every directory.
+The cloned repo is the program, not a project dependency; local installation
+never touches project source. Memory lives only in the per-user `~/circadian/mind/`.
+
 ## Layout
 
 - `src/` — the four processes (`wake`, `sleep`, `rem`, `status`)
