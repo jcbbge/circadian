@@ -90,6 +90,7 @@ import {
 import { renderSelf, RENDER_FLOOR, type RenderManifestEntry } from "./render.ts";
 import { stackEpisode, type StackCounts } from "./stack.ts";
 import { DECAY_FACTOR, computePotentiateEvents, computeSankBelowFloor, type RemPropagationEvent } from "./decay.ts";
+import { sweepMeals } from "./janitor.ts";
 import { complete } from "./llm.ts";
 import { ok, idle, degraded, fail, correlation } from "./obs.ts";
 
@@ -815,6 +816,26 @@ async function main() {
       context: { error: (err as Error).message, mind_dir: MIND_DIR },
       cause: (err as Error).message,
       next_action: `inspect ${MIND_DIR} with 'git status'; the mind repo may hold uncommitted writes from this run`,
+    });
+  }
+
+  // -------------------------------------------------------------------
+  // 7. JANITOR SWEEP (meals/ working-memory GC)
+  // -------------------------------------------------------------------
+  // Tail phase, after the commit: meals/ is gitignored working memory, so
+  // deletions ride no commit — and the sweep can never preempt REM's core
+  // path. sweepMeals never throws (its own event carries the counts — that
+  // line IS the sweep's entry in the REM run log); the catch below is pure
+  // paranoia so a janitor bug can never crack the REM host.
+  try {
+    sweepMeals({ dryRun, correlationId: corr });
+  } catch (err) {
+    degraded({
+      process: "rem", phase: "janitor", correlation_id: corr,
+      summary: "janitor sweep threw past its internal guards; REM's core run completed unaffected",
+      context: {},
+      cause: (err as Error).message,
+      next_action: "reproduce standalone with `bun src/janitor.ts --dry-run`",
     });
   }
 }
