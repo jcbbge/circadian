@@ -383,29 +383,94 @@ function checkLLMPatchIntegrity(): void {
   }
 }
 
+/** HARNESS-AWARE session hooks (brief 05).
+ *
+ * The original check read only ~/.claude/settings.json — so from a pi session
+ * doctor reported "hooks installed in Claude Code" while the pi extension
+ * could be missing entirely (it passed by luck on machines where CC happens
+ * to be wired). Now: detect which harness(es) have recent session evidence
+ * (the same transcript probe the per-process checks use) and verify each
+ * ACTIVE harness's own registration surface:
+ *
+ *   Claude Code → ~/.claude/settings.json mentions wake.ts/sleep.ts/graze.ts.
+ *   pi          → ~/.pi/agent/extensions/circadian-mind.ts — a generated SHIM
+ *                 whose whole body is one default re-export. Resolve the
+ *                 re-export target FROM THE SHIM CONTENT (never hard-coded,
+ *                 so any install location works), then verify the target
+ *                 exists and references all three processes (markers: spawns
+ *                 of wake.ts, graze.ts --worker, sleep.ts --worker).
+ *
+ * Severity stays WARN on any gap — registration drift is worth a look, never
+ * a page; the per-process ledger checks own FAIL semantics. File presence is
+ * the probe; whether pi has actually /reload-loaded the extension is out of
+ * scope. Both harnesses can be live simultaneously — report per harness. */
 function checkHooks(): void {
-  const settings = path.join(homedir(), ".claude", "settings.json");
-  const raw = readOrEmpty(settings);
-  if (!raw) {
-    add("session hooks", "WARN", `~/.claude/settings.json not found — wake/sleep/graze hooks can't be verified`);
-    return;
-  }
-  const wake = raw.includes("wake.ts");
-  const sleep = raw.includes("sleep.ts");
-  const graze = raw.includes("graze.ts");
-  if (wake && sleep && graze) {
-    add("session hooks", "OK", "wake + sleep + graze hooks installed in Claude Code");
-  } else {
-    const missing: string[] = [];
-    if (!wake) missing.push("wake");
-    if (!sleep) missing.push("sleep");
-    if (!graze) missing.push("graze");
+  const ccActive = findRecentTranscripts([PROJECTS_DIR], SESSION_EXPECTED_HOURS).found;
+  const piActive = findRecentTranscripts([PI_SESSIONS_DIR], SESSION_EXPECTED_HOURS).found;
+
+  if (!ccActive && !piActive) {
     add(
       "session hooks",
       "WARN",
-      `hooks incomplete: ${missing.join(", ")} missing — memory won't inject/deposit/checkpoint`
+      "no recent session evidence for either harness — wake/sleep/graze registration can't be verified"
     );
+    return;
   }
+
+  const parts: string[] = [];
+  let anyGap = false;
+
+  if (ccActive) {
+    const raw = readOrEmpty(path.join(homedir(), ".claude", "settings.json"));
+    if (!raw) {
+      anyGap = true;
+      parts.push("CC: WARN — ~/.claude/settings.json not found");
+    } else {
+      const missing = ["wake.ts", "sleep.ts", "graze.ts"].filter((p) => !raw.includes(p));
+      if (missing.length === 0) {
+        parts.push("CC: ok (wake + sleep + graze in settings.json)");
+      } else {
+        anyGap = true;
+        parts.push(`CC: WARN — ${missing.map((m) => m.replace(".ts", "")).join(", ")} missing from settings.json`);
+      }
+    }
+  }
+
+  if (piActive) {
+    const shimPath = path.join(homedir(), ".pi", "agent", "extensions", "circadian-mind.ts");
+    const shim = readOrEmpty(shimPath);
+    if (!shim) {
+      anyGap = true;
+      parts.push("pi: WARN — extension shim missing at ~/.pi/agent/extensions/circadian-mind.ts");
+    } else {
+      const m = shim.match(/export\s*\{\s*default\s*\}\s*from\s*["']([^"']+)["']/);
+      const target = m?.[1];
+      if (!target) {
+        anyGap = true;
+        parts.push("pi: WARN — shim has no default re-export (hand-edited? regenerate via install.sh)");
+      } else {
+        const real = readOrEmpty(target);
+        if (!real) {
+          anyGap = true;
+          parts.push(`pi: WARN — shim re-export target ${target} not found`);
+        } else {
+          const missing = ["wake.ts", "sleep.ts", "graze.ts"].filter((p) => !real.includes(p));
+          if (missing.length === 0) {
+            parts.push(`pi: ok (shim → ${target} spawns wake + sleep + graze)`);
+          } else {
+            anyGap = true;
+            parts.push(`pi: WARN — ${target} has no ${missing.map((x) => x.replace(".ts", "")).join(", ")} reference`);
+          }
+        }
+      }
+    }
+  }
+
+  add(
+    "session hooks",
+    anyGap ? "WARN" : "OK",
+    parts.join("; ") + (anyGap ? " — memory won't inject/deposit/checkpoint on the gapped harness" : "")
+  );
 }
 
 function checkMindRepo(): void {
