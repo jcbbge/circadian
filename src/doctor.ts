@@ -34,7 +34,8 @@ import { homedir } from "os";
 import { execSync } from "child_process";
 import { appendFileSync, mkdirSync } from "fs";
 import { ok, correlation } from "./obs.ts";
-import { selfSimilarity } from "./immune.ts";
+import { selfSimilarity, detectSelfStutter } from "./immune.ts";
+import { adaptRenderedForStutterCheck, parseSelfSections } from "./migrate.ts";
 
 const CIRCADIAN_HOME = process.env.CIRCADIAN_HOME || path.join(homedir(), "circadian");
 const LOG_DIR = path.join(CIRCADIAN_HOME, "logs");
@@ -382,29 +383,94 @@ function checkLLMPatchIntegrity(): void {
   }
 }
 
+/** HARNESS-AWARE session hooks (brief 05).
+ *
+ * The original check read only ~/.claude/settings.json — so from a pi session
+ * doctor reported "hooks installed in Claude Code" while the pi extension
+ * could be missing entirely (it passed by luck on machines where CC happens
+ * to be wired). Now: detect which harness(es) have recent session evidence
+ * (the same transcript probe the per-process checks use) and verify each
+ * ACTIVE harness's own registration surface:
+ *
+ *   Claude Code → ~/.claude/settings.json mentions wake.ts/sleep.ts/graze.ts.
+ *   pi          → ~/.pi/agent/extensions/circadian-mind.ts — a generated SHIM
+ *                 whose whole body is one default re-export. Resolve the
+ *                 re-export target FROM THE SHIM CONTENT (never hard-coded,
+ *                 so any install location works), then verify the target
+ *                 exists and references all three processes (markers: spawns
+ *                 of wake.ts, graze.ts --worker, sleep.ts --worker).
+ *
+ * Severity stays WARN on any gap — registration drift is worth a look, never
+ * a page; the per-process ledger checks own FAIL semantics. File presence is
+ * the probe; whether pi has actually /reload-loaded the extension is out of
+ * scope. Both harnesses can be live simultaneously — report per harness. */
 function checkHooks(): void {
-  const settings = path.join(homedir(), ".claude", "settings.json");
-  const raw = readOrEmpty(settings);
-  if (!raw) {
-    add("session hooks", "WARN", `~/.claude/settings.json not found — wake/sleep/graze hooks can't be verified`);
-    return;
-  }
-  const wake = raw.includes("wake.ts");
-  const sleep = raw.includes("sleep.ts");
-  const graze = raw.includes("graze.ts");
-  if (wake && sleep && graze) {
-    add("session hooks", "OK", "wake + sleep + graze hooks installed in Claude Code");
-  } else {
-    const missing: string[] = [];
-    if (!wake) missing.push("wake");
-    if (!sleep) missing.push("sleep");
-    if (!graze) missing.push("graze");
+  const ccActive = findRecentTranscripts([PROJECTS_DIR], SESSION_EXPECTED_HOURS).found;
+  const piActive = findRecentTranscripts([PI_SESSIONS_DIR], SESSION_EXPECTED_HOURS).found;
+
+  if (!ccActive && !piActive) {
     add(
       "session hooks",
       "WARN",
-      `hooks incomplete: ${missing.join(", ")} missing — memory won't inject/deposit/checkpoint`
+      "no recent session evidence for either harness — wake/sleep/graze registration can't be verified"
     );
+    return;
   }
+
+  const parts: string[] = [];
+  let anyGap = false;
+
+  if (ccActive) {
+    const raw = readOrEmpty(path.join(homedir(), ".claude", "settings.json"));
+    if (!raw) {
+      anyGap = true;
+      parts.push("CC: WARN — ~/.claude/settings.json not found");
+    } else {
+      const missing = ["wake.ts", "sleep.ts", "graze.ts"].filter((p) => !raw.includes(p));
+      if (missing.length === 0) {
+        parts.push("CC: ok (wake + sleep + graze in settings.json)");
+      } else {
+        anyGap = true;
+        parts.push(`CC: WARN — ${missing.map((m) => m.replace(".ts", "")).join(", ")} missing from settings.json`);
+      }
+    }
+  }
+
+  if (piActive) {
+    const shimPath = path.join(homedir(), ".pi", "agent", "extensions", "circadian-mind.ts");
+    const shim = readOrEmpty(shimPath);
+    if (!shim) {
+      anyGap = true;
+      parts.push("pi: WARN — extension shim missing at ~/.pi/agent/extensions/circadian-mind.ts");
+    } else {
+      const m = shim.match(/export\s*\{\s*default\s*\}\s*from\s*["']([^"']+)["']/);
+      const target = m?.[1];
+      if (!target) {
+        anyGap = true;
+        parts.push("pi: WARN — shim has no default re-export (hand-edited? regenerate via install.sh)");
+      } else {
+        const real = readOrEmpty(target);
+        if (!real) {
+          anyGap = true;
+          parts.push(`pi: WARN — shim re-export target ${target} not found`);
+        } else {
+          const missing = ["wake.ts", "sleep.ts", "graze.ts"].filter((p) => !real.includes(p));
+          if (missing.length === 0) {
+            parts.push(`pi: ok (shim → ${target} spawns wake + sleep + graze)`);
+          } else {
+            anyGap = true;
+            parts.push(`pi: WARN — ${target} has no ${missing.map((x) => x.replace(".ts", "")).join(", ")} reference`);
+          }
+        }
+      }
+    }
+  }
+
+  add(
+    "session hooks",
+    anyGap ? "WARN" : "OK",
+    parts.join("; ") + (anyGap ? " — memory won't inject/deposit/checkpoint on the gapped harness" : "")
+  );
 }
 
 function checkMindRepo(): void {
@@ -510,6 +576,58 @@ function checkRedundancy(): void {
     add("worldview redundancy", "FAIL", `${findings.join("; ")} — the worldview is repeating itself; REM must MERGE/REVISE/RETRACT before absorbing more`);
   } else {
     add("worldview redundancy", "WARN", `${findings.join("; ")} — watch for stutter; distillation is overdue`);
+  }
+}
+
+/** SEMANTIC STUTTER — the belief-level sibling of checkRedundancy (brief 04).
+ *
+ * checkRedundancy measures LINE-level duplication and reports 0.0% on the
+ * current SELF.md because each paraphrase is a distinct line. The semantic
+ * instrument already exists — the migration guard (migrate.ts) runs
+ * detectSelfStutter over the adapter-wrapped render before committing — but
+ * nothing surfaced it here, so the doctrine section re-accreted a dozen
+ * paraphrased "mechanical fidelity" entries while every check said OK.
+ *
+ * This check runs the SAME pair the migration guard runs —
+ * detectSelfStutter(adaptRenderedForStutterCheck(SELF.md)) — consistency is
+ * the point, and the adapter is mandatory (parseSelf only reads the v1
+ * envelope; unwrapped rendered input parses to silence and the check would
+ * lie). Severity follows the accretion-instrument pattern: OK = 0 clusters,
+ * WARN = 1, FAIL = >= 2 — redundancy has no legitimate reason to exist, so
+ * this instrument is allowed to FAIL. */
+function checkSemanticStutter(): void {
+  const text = readOrEmpty(path.join(MIND_DIR, "SELF.md"));
+  if (!text) {
+    add("semantic stutter", "IDLE", "no SELF.md to check");
+    return;
+  }
+  const report = detectSelfStutter(adaptRenderedForStutterCheck(text));
+  const total = report.doctrine.length + report.motifs.length;
+  if (total === 0) {
+    add("semantic stutter", "OK", `no belief stated twice at threshold ${report.threshold}`);
+    return;
+  }
+  // Cluster member numbers cite the rendered Doctrine section 1:1 (paragraph
+  // order = the adapter's numbering). Snippet each doctrine cluster's first
+  // member so the detail line names the belief, not just its positions — the
+  // adapter titles every entry "atom", so titles alone would say nothing.
+  const doctrineParagraphs = parseSelfSections(text)
+    .doctrine.split("\n\n")
+    .map((l) => l.trim())
+    .filter((l) => l && !l.startsWith("(empty"));
+  const parts: string[] = [];
+  for (const g of report.doctrine) {
+    const first = (doctrineParagraphs[g[0].n - 1] ?? "").replace(/\*\*/g, "").trim();
+    parts.push(`doctrine {${g.map((d) => "#" + d.n).join(", ")}}${first ? ` "${first.slice(0, 60)}"` : ""}`);
+  }
+  for (const g of report.motifs) {
+    parts.push(`motifs {${g.map((m) => `"${m.slice(0, 40)}"`).join(", ")}}`);
+  }
+  const detail = `${total} cluster(s): ${parts.join("; ")}`;
+  if (total === 1) {
+    add("semantic stutter", "WARN", `${detail} — one belief, multiple tellings; REM should merge on the next wave`);
+  } else {
+    add("semantic stutter", "FAIL", `${detail} — the worldview is saying the same thing ${total} ways; distillation is overdue (see 2026-07-28-the-stutter-resolved)`);
   }
 }
 
@@ -727,6 +845,7 @@ function main() {
   checkMindRepo();
   checkCaps();
   checkRedundancy();
+  checkSemanticStutter();
   checkEcho(events);
   checkEpisodes(events);
   checkWorldviewMotion();
