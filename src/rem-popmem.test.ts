@@ -25,8 +25,15 @@ import {
   GREETING_MAX_LINES,
   buildCommitMessage,
   assertRenderInvariant,
+  planDistillation,
+  runDistillPhase,
+  DISTILL_CAP,
   type DigestedEntry,
 } from "./rem-popmem.ts";
+import { readAtoms, readLedger, foldWeights } from "./atoms.ts";
+import { renderSelf, RENDER_FLOOR } from "./render.ts";
+import { detectSelfStutter } from "./immune.ts";
+import { adaptRenderedForStutterCheck } from "./migrate.ts";
 
 const dirs: string[] = [];
 function tmpDir(): string {
@@ -328,19 +335,41 @@ describe("parseGreetingResponse", () => {
 // commit message assembly
 // ---------------------------------------------------------------------
 describe("buildCommitMessage", () => {
-  test("subject follows the documented convention", () => {
-    const { subject } = buildCommitMessage({ date: "2026-07-27", stacked: 3, bumped: 5, sank: 1, population: 41, sankIds: ["abc123"] });
-    expect(subject).toBe("rem: 2026-07-27 — stacked 3, bumped 5, sank 1, population 41");
+  test("subject distinguishes newly-sank from below-floor and shows potentiated + distilled", () => {
+    const { subject } = buildCommitMessage({
+      date: "2026-07-27", stacked: 3, bumped: 5, newlySank: 1, belowFloor: 27,
+      potentiated: 19, distilled: 4, population: 41, belowFloorIds: ["abc123"],
+    });
+    expect(subject).toBe(
+      "rem: 2026-07-27 — stacked 3, bumped 5, sank 1 · 27 below floor, potentiated 19, distilled 4, population 41"
+    );
   });
 
-  test("body lists sank-below-floor ids when present", () => {
-    const { body } = buildCommitMessage({ date: "2026-07-27", stacked: 0, bumped: 0, sank: 2, population: 10, sankIds: ["aaa", "bbb"] });
-    expect(body).toBe("\n\nsank below floor: aaa, bbb");
+  test("newly-sank and below-floor are independent counters (the sank-27-forever bug)", () => {
+    // The regression: 27 was the standing below-floor STATE, printed as if it
+    // were a per-run transition across three identical commits. Here nothing
+    // crossed the floor THIS run (newlySank 0) while 27 sit below it.
+    const { subject } = buildCommitMessage({
+      date: "2026-08-04", stacked: 0, bumped: 0, newlySank: 0, belowFloor: 27,
+      potentiated: 0, distilled: 0, population: 104, belowFloorIds: ["a", "b"],
+    });
+    expect(subject).toContain("sank 0 · 27 below floor");
   });
 
-  test("body states none when nothing sank", () => {
-    const { body } = buildCommitMessage({ date: "2026-07-27", stacked: 1, bumped: 0, sank: 0, population: 10, sankIds: [] });
-    expect(body).toBe("\n\nsank below floor: (none)");
+  test("body lists the below-floor state ids when present", () => {
+    const { body } = buildCommitMessage({
+      date: "2026-07-27", stacked: 0, bumped: 0, newlySank: 2, belowFloor: 2,
+      potentiated: 0, distilled: 0, population: 10, belowFloorIds: ["aaa", "bbb"],
+    });
+    expect(body).toBe("\n\nbelow floor: aaa, bbb");
+  });
+
+  test("body states none when nothing is below floor", () => {
+    const { body } = buildCommitMessage({
+      date: "2026-07-27", stacked: 1, bumped: 0, newlySank: 0, belowFloor: 0,
+      potentiated: 0, distilled: 0, population: 10, belowFloorIds: [],
+    });
+    expect(body).toBe("\n\nbelow floor: (none)");
   });
 });
 
@@ -392,5 +421,218 @@ describe("assertRenderInvariant", () => {
 
     const result = assertRenderInvariant(beliefsDir, ledgerPath, before);
     expect(result.ok).toBe(false);
+  });
+});
+
+// ---------------------------------------------------------------------
+// DISTILL phase — auto-supersede live stutter clusters (brief 06 §5). Real
+// tmp fixtures, no mocks (house style): a beliefs dir + ledger seeded with
+// genuinely paraphrased doctrine claims that the UNMODIFIED detector pair
+// clusters, plus a distinct atom that must survive.
+// ---------------------------------------------------------------------
+describe("planDistillation / DISTILL phase", () => {
+  // Three near-duplicate "mechanical fidelity" claims (share >= 30% of their
+  // significant tokens, so detectSelfStutter clusters them) + one distinct
+  // claim about an unrelated belief.
+  const FID_A = "Mechanical fidelity to exact output format is non-negotiable for trust and operational continuity.";
+  const FID_B = "Mechanical fidelity to the exact output format is the non-negotiable basis of trust and continuity.";
+  const FID_C = "Trust and operational continuity demand mechanical fidelity to the exact output format, always.";
+  const DISTINCT = "The cliff is complexity accretion: layers pile up until nobody holds the whole system in their head.";
+
+  /** Seeds beliefs/ + ledger with the given (claim, stackCount) atoms. Stack
+   * count sets folded weight (each stack = +1), so the winner rule (highest
+   * weight) is controllable. Returns dir + the atom ids in input order. */
+  function seedPopulation(specs: { claim: string; stacks: number; kind?: Atom["kind"]; ep?: string }[]): {
+    beliefsDir: string;
+    ledgerPath: string;
+    ids: string[];
+  } {
+    const dir = tmpDir();
+    const beliefsDir = path.join(dir, "beliefs");
+    const ledgerPath = path.join(dir, "beliefs.jsonl");
+    const ids: string[] = [];
+    for (const s of specs) {
+      const { id } = writeAtom(beliefsDir, {
+        kind: s.kind ?? "doctrine",
+        claim: s.claim,
+        why: "because the work demands it",
+        // Quote = the claim itself (as in the live mind, the strongest telling
+        // IS a verbatim span of the belief). A shared boilerplate quote would
+        // otherwise cluster unrelated atoms, since the detector tokenizes the
+        // whole rendered line (claim + quote) — not the claim alone.
+        quotes: [{ text: s.claim, source: "ep.md" }],
+        eps: [s.ep ?? "2026-07-16"],
+      });
+      ids.push(id);
+      for (let i = 0; i < s.stacks; i++) {
+        appendLedger(ledgerPath, { ev: "stack", atom: id, ep: `ep-${id}-${i}.md`, ts: "2026-07-16T00:00:00.000Z" });
+      }
+    }
+    return { beliefsDir, ledgerPath, ids };
+  }
+
+  const foldOf = (ledgerPath: string) => foldWeights(readLedger(ledgerPath));
+  const TS = "2026-08-04T12:00:00.000Z";
+
+  test("detects a paraphrase cluster and picks the highest-weight winner", () => {
+    // A=5, B=3, C=2 stacks -> A is the clear winner; B and C are losers.
+    const { beliefsDir, ledgerPath, ids } = seedPopulation([
+      { claim: FID_A, stacks: 5 },
+      { claim: FID_B, stacks: 3 },
+      { claim: FID_C, stacks: 2 },
+      { claim: DISTINCT, stacks: 4 },
+    ]);
+    const atoms = readAtoms(beliefsDir);
+    const plan = planDistillation(atoms, foldOf(ledgerPath), TS);
+
+    expect(plan.clusters.length).toBe(1);
+    const c = plan.clusters[0];
+    expect(c.winner).toBe(ids[0]); // FID_A, weight 5
+    expect(c.losers.sort()).toEqual([ids[1], ids[2]].sort()); // FID_B, FID_C
+    expect(plan.deferred).toBe(0);
+    // one supersede event per loser, all naming the same winner
+    expect(plan.supersedeEvents.length).toBe(2);
+    for (const ev of plan.supersedeEvents) {
+      expect(ev.ev).toBe("supersede");
+      expect(ev.winner).toBe(ids[0]);
+      expect(ev.ts).toBe(TS);
+    }
+  });
+
+  test("tie on weight breaks to the earliest [ep:] stamp", () => {
+    // B and C both weight 2; A weight 2 too — all tied on weight, so the
+    // earliest ep wins. A carries the earliest stamp.
+    const { beliefsDir, ids } = seedPopulation([
+      { claim: FID_A, stacks: 2, ep: "2026-06-01" },
+      { claim: FID_B, stacks: 2, ep: "2026-07-01" },
+      { claim: FID_C, stacks: 2, ep: "2026-08-01" },
+    ]);
+    const atoms = readAtoms(beliefsDir);
+    const ledgerPath = path.join(path.dirname(beliefsDir), "beliefs.jsonl");
+    const plan = planDistillation(atoms, foldOf(ledgerPath), TS);
+    expect(plan.clusters.length).toBe(1);
+    expect(plan.clusters[0].winner).toBe(ids[0]); // earliest ep 2026-06-01
+  });
+
+  test("weight transfers to the winner; losers fall below floor and drop from the render", () => {
+    const { beliefsDir, ledgerPath, ids } = seedPopulation([
+      { claim: FID_A, stacks: 5 },
+      { claim: FID_B, stacks: 3 },
+      { claim: FID_C, stacks: 2 },
+    ]);
+    const atoms = readAtoms(beliefsDir);
+    const before = foldOf(ledgerPath);
+    const plan = planDistillation(atoms, before, TS);
+
+    // Fold the plan's supersede events in and re-check state.
+    const after = foldWeights([...readLedger(ledgerPath), ...plan.supersedeEvents]);
+    // Winner absorbs both losers' weight: 5 + 3 + 2 = 10.
+    expect(after.get(ids[0])!.weight).toBe(10);
+    // Losers: weight 0, status superseded-by winner, and gone from the render.
+    for (const loser of [ids[1], ids[2]]) {
+      expect(after.get(loser)!.weight).toBe(0);
+      expect(after.get(loser)!.status).toBe(`superseded-by:${ids[0]}`);
+    }
+    const { manifest } = renderSelf(atoms, after);
+    const renderedIds = new Set(manifest.map((m) => m.atom));
+    expect(renderedIds.has(ids[0])).toBe(true);
+    expect(renderedIds.has(ids[1])).toBe(false);
+    expect(renderedIds.has(ids[2])).toBe(false);
+  });
+
+  test("re-render after distill is clean: the cluster is gone", () => {
+    const { beliefsDir, ledgerPath } = seedPopulation([
+      { claim: FID_A, stacks: 5 },
+      { claim: FID_B, stacks: 3 },
+      { claim: FID_C, stacks: 2 },
+      { claim: DISTINCT, stacks: 4 },
+    ]);
+    const atoms = readAtoms(beliefsDir);
+    const before = foldOf(ledgerPath);
+    // before: the cluster is present
+    const r0 = detectSelfStutter(adaptRenderedForStutterCheck(renderSelf(atoms, before).md));
+    expect(r0.doctrine.length).toBe(1);
+    // after: distill, re-fold, re-render — clean
+    const plan = planDistillation(atoms, before, TS);
+    const after = foldWeights([...readLedger(ledgerPath), ...plan.supersedeEvents]);
+    const r1 = detectSelfStutter(adaptRenderedForStutterCheck(renderSelf(atoms, after).md));
+    expect(r1.doctrine.length).toBe(0);
+    expect(r1.motifs.length).toBe(0);
+  });
+
+  test("cap: at most DISTILL_CAP clusters resolved per run, the rest deferred", () => {
+    // Build DISTILL_CAP + 2 independent 2-member clusters. Each cluster is a
+    // distinct topic family; within a family the two claims paraphrase.
+    // Per-family UNIQUE tokens (suffixed with the family index) so families
+    // never cross-cluster; within a family the two claims share five of six
+    // tokens (>= the 0.3 overlap threshold) and differ only in the last.
+    const specs: { claim: string; stacks: number }[] = [];
+    for (let i = 0; i < DISTILL_CAP + 2; i++) {
+      specs.push({ claim: `Aardvark${i} basilisk${i} cormorant${i} dromedary${i} eagle${i} gecko${i}.`, stacks: 3 });
+      specs.push({ claim: `Aardvark${i} basilisk${i} cormorant${i} dromedary${i} eagle${i} heron${i}.`, stacks: 2 });
+    }
+    const { beliefsDir, ledgerPath } = seedPopulation(specs);
+    const atoms = readAtoms(beliefsDir);
+    const plan = planDistillation(atoms, foldOf(ledgerPath), TS, DISTILL_CAP);
+    expect(plan.clusters.length).toBe(DISTILL_CAP);
+    expect(plan.deferred).toBe(2);
+    // exactly one loser per 2-member cluster, capped
+    expect(plan.supersedeEvents.length).toBe(DISTILL_CAP);
+  });
+
+  test("runDistillPhase appends the supersede events to the ledger (real run)", () => {
+    const { beliefsDir, ledgerPath, ids } = seedPopulation([
+      { claim: FID_A, stacks: 5 },
+      { claim: FID_B, stacks: 3 },
+    ]);
+    const atoms = readAtoms(beliefsDir);
+    const before = readLedger(ledgerPath).length;
+    const plan = runDistillPhase(atoms, foldOf(ledgerPath), ledgerPath, TS, "test-corr", false);
+    const after = readLedger(ledgerPath);
+    expect(after.length).toBe(before + 1); // one loser -> one supersede appended
+    const appended = after[after.length - 1];
+    expect(appended.ev).toBe("supersede");
+    expect(appended.winner).toBe(ids[0]);
+    expect(appended.loser).toBe(ids[1]);
+    expect(plan.clusters.length).toBe(1);
+  });
+
+  test("runDistillPhase --dry-run appends NOTHING", () => {
+    const { beliefsDir, ledgerPath } = seedPopulation([
+      { claim: FID_A, stacks: 5 },
+      { claim: FID_B, stacks: 3 },
+    ]);
+    const atoms = readAtoms(beliefsDir);
+    const before = readLedger(ledgerPath).length;
+    const plan = runDistillPhase(atoms, foldOf(ledgerPath), ledgerPath, TS, "test-corr", true);
+    expect(readLedger(ledgerPath).length).toBe(before); // dry-run: no writes
+    expect(plan.clusters.length).toBe(1); // but the plan still reports what it WOULD do
+  });
+
+  test("paranoia: a throwing detector cannot kill REM — the phase degrades", () => {
+    // planDistillation delegates to renderSelf/detectSelfStutter, neither of
+    // which throws by contract. This asserts the phase's own robustness: a
+    // population with zero clusters returns an empty plan, never throws.
+    const { beliefsDir, ledgerPath } = seedPopulation([
+      { claim: FID_A, stacks: 5 },
+      { claim: DISTINCT, stacks: 4 },
+    ]);
+    const atoms = readAtoms(beliefsDir);
+    const plan = planDistillation(atoms, foldOf(ledgerPath), TS);
+    expect(plan.clusters).toEqual([]);
+    expect(plan.supersedeEvents).toEqual([]);
+    expect(plan.deferred).toBe(0);
+  });
+
+  test("subject counters under newly-sank 0, potentiated > 0, distilled > 0", () => {
+    // The brief's required subject case: nothing crossed the floor this run,
+    // propagation potentiated some atoms, and distill superseded some.
+    const { subject } = buildCommitMessage({
+      date: "2026-08-04", stacked: 0, bumped: 0, newlySank: 0, belowFloor: 27,
+      potentiated: 19, distilled: 15, population: 104, belowFloorIds: ["x"],
+    });
+    expect(subject).toContain("sank 0 · 27 below floor");
+    expect(subject).toContain("potentiated 19");
+    expect(subject).toContain("distilled 15");
   });
 });

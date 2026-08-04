@@ -90,6 +90,8 @@ import {
 import { renderSelf, RENDER_FLOOR, type RenderManifestEntry } from "./render.ts";
 import { stackEpisode, type StackCounts } from "./stack.ts";
 import { DECAY_FACTOR, computePotentiateEvents, computeSankBelowFloor, type RemPropagationEvent } from "./decay.ts";
+import { detectSelfStutter } from "./immune.ts";
+import { adaptRenderedForStutterCheck, parseSelfSections } from "./migrate.ts";
 import { sweepMeals } from "./janitor.ts";
 import { complete } from "./llm.ts";
 import { ok, idle, degraded, fail, correlation } from "./obs.ts";
@@ -427,21 +429,179 @@ export interface RemCommitStats {
   // overlap hits AND COMPARE-won hits both count as "bumped"; potentiate
   // events from propagation are a separate mechanism and are NOT counted
   // here, to keep "bumped" meaning "this episode recurred a belief")
-  sank: number; // atoms whose folded weight fell below RENDER_FLOOR this cycle
+  // Law 9: every counter below means exactly what it says. `newlySank` is a
+  // per-run TRANSITION (atoms that crossed from >=floor to <floor THIS run);
+  // `belowFloor` is the below-floor STATE total (the number that recurred
+  // verbatim across 99b996d/6d585fc/7509352 because it was mislabeled
+  // "sank"). They are different quantities and never conflated again.
+  newlySank: number; // atoms whose folded weight crossed below RENDER_FLOOR this cycle
+  belowFloor: number; // total ACTIVE atoms currently below floor (state, not transition)
+  potentiated: number; // potentiate ledger events appended this cycle
+  distilled: number; // loser atoms superseded by the distill phase this cycle
   population: number; // total atom files on disk (regardless of render-floor status)
-  sankIds: string[];
+  belowFloorIds: string[];
 }
 
-/** `rem: <date> — stacked N, bumped M, sank K, population P` + a body that
- * auto-records the sank-below-floor id list (MIND-SPEC's REM payload
- * section: "commit body auto-records the sank below floor list"). */
+/** `rem: <date> — stacked N, bumped M, sank K · P below floor, potentiated Q,
+ * distilled D, population T` + a body that auto-records the below-floor id
+ * list. Every counter is a distinct quantity (Law 9): `sank K` is this run's
+ * downward floor crossings, `P below floor` is the standing below-floor state,
+ * `potentiated Q` and `distilled D` are this run's potentiate/supersede event
+ * counts. The body carries the below-floor STATE list (the historical
+ * "sank below floor" body, renamed to match what it is). */
 export function buildCommitMessage(stats: RemCommitStats): { subject: string; body: string } {
-  const subject = `rem: ${stats.date} — stacked ${stats.stacked}, bumped ${stats.bumped}, sank ${stats.sank}, population ${stats.population}`;
+  const subject =
+    `rem: ${stats.date} — stacked ${stats.stacked}, bumped ${stats.bumped}, ` +
+    `sank ${stats.newlySank} · ${stats.belowFloor} below floor, ` +
+    `potentiated ${stats.potentiated}, distilled ${stats.distilled}, population ${stats.population}`;
   const body =
-    stats.sankIds.length > 0
-      ? `\n\nsank below floor: ${stats.sankIds.join(", ")}`
-      : `\n\nsank below floor: (none)`;
+    stats.belowFloorIds.length > 0
+      ? `\n\nbelow floor: ${stats.belowFloorIds.join(", ")}`
+      : `\n\nbelow floor: (none)`;
   return { subject, body };
+}
+
+// ---------------------------------------------------------------------
+// DISTILL phase — resolve live semantic-stutter clusters via the ledger's
+// existing `supersede` mechanic (atoms.ts fold: loser's weight transfers to
+// winner, loser keeps its file + a `superseded-by:` status, so render.ts
+// drops it — defocus, never delete). Pure and deterministic: it renders the
+// current population, runs the SAME detector pair the migration guard and
+// doctor run (detectSelfStutter ∘ adaptRenderedForStutterCheck), and returns
+// a supersede plan. No I/O, no obs, no clock beyond the caller-supplied ts —
+// the caller appends the events and emits the Law 9 events. detectSelfStutter,
+// the adapter, and renderSelf are all reused UNMODIFIED (brief §6).
+// ---------------------------------------------------------------------
+export const DISTILL_CAP = 10;
+
+export interface DistillCluster {
+  kind: "doctrine" | "motif";
+  winner: string; // highest current fold weight; tie -> earliest [ep:]; tie -> id asc
+  losers: string[];
+  transferredWeight: number; // sum of losers' current weights (transfers to winner)
+}
+
+export interface DistillPlan {
+  clusters: DistillCluster[]; // resolved this run (<= cap)
+  deferred: number; // clusters beyond the cap, deferred to the next run
+  supersedeEvents: LedgerEvent[]; // one per loser, in resolved order
+}
+
+/** Detects stutter clusters over `atoms`/`states` and returns a supersede
+ * plan. Winner rule (brief §4, resolved decision 3): highest current
+ * fold(ledger) weight; tie -> earliest `[ep:]` stamp; tie -> atom id asc
+ * (total order, so the plan is deterministic). Cap `DISTILL_CAP` clusters
+ * per run; the overflow is reported as `deferred` and naturally re-detected
+ * next run. Reuses the render manifest to map each cluster member's rendered
+ * address (`SELF.Doctrine[n]` / `SELF.Motifs[n]`) back to its atom id. */
+export function planDistillation(
+  atoms: Atom[],
+  states: Map<string, AtomState>,
+  ts: string,
+  cap = DISTILL_CAP
+): DistillPlan {
+  const { md, manifest } = renderSelf(atoms, states);
+  const adapted = adaptRenderedForStutterCheck(md);
+  const report = detectSelfStutter(adapted);
+  const addrToAtom = new Map(manifest.map((m) => [m.address, m.atom]));
+  const atomsById = new Map(atoms.map((a) => [a.id, a]));
+  // Reconstruct the motif bullet list exactly as the adapter/parser saw it,
+  // so a motif cluster's line string maps back to SELF.Motifs[i+1]. Doctrine
+  // clusters already carry their 1-based paragraph number `n` directly.
+  const motifBullets = parseSelfSections(adapted)
+    .motifs.split("\n")
+    .map((l) => l.trim())
+    .filter((l) => l.startsWith("-"));
+
+  const raw: { kind: "doctrine" | "motif"; ids: string[] }[] = [];
+  for (const g of report.doctrine) {
+    const ids = g.map((d) => addrToAtom.get(`SELF.Doctrine[${d.n}]`)).filter((x): x is string => !!x);
+    if (ids.length >= 2) raw.push({ kind: "doctrine", ids });
+  }
+  for (const g of report.motifs) {
+    const ids = g
+      .map((s) => {
+        const i = motifBullets.indexOf(s);
+        return i >= 0 ? addrToAtom.get(`SELF.Motifs[${i + 1}]`) : undefined;
+      })
+      .filter((x): x is string => !!x);
+    if (ids.length >= 2) raw.push({ kind: "motif", ids });
+  }
+
+  const weightOf = (id: string): number => states.get(id)?.weight ?? 0;
+  const earliestEp = (id: string): string => (atomsById.get(id)?.eps ?? []).slice().sort()[0] ?? "9999-99-99";
+
+  const all: DistillCluster[] = raw.map(({ kind, ids }) => {
+    const ranked = [...ids].sort((a, b) => {
+      const dw = weightOf(b) - weightOf(a);
+      if (dw !== 0) return dw;
+      const ea = earliestEp(a);
+      const eb = earliestEp(b);
+      if (ea !== eb) return ea < eb ? -1 : 1;
+      return a < b ? -1 : a > b ? 1 : 0;
+    });
+    const [winner, ...losers] = ranked;
+    const transferredWeight = losers.reduce((s, l) => s + weightOf(l), 0);
+    return { kind, winner, losers, transferredWeight };
+  });
+
+  const clusters = all.slice(0, cap);
+  const deferred = all.length - clusters.length;
+  const supersedeEvents: LedgerEvent[] = [];
+  for (const c of clusters) for (const loser of c.losers) supersedeEvents.push({ ev: "supersede", winner: c.winner, loser, ts });
+  return { clusters, deferred, supersedeEvents };
+}
+
+/** Runs the distill plan against the given population: appends the supersede
+ * events to the ledger (unless dryRun) and emits the Law 9 events — one obs
+ * per supersede `{winner, loser, transferred_weight}`, one phase summary, and
+ * a WARN (degraded) if the cap deferred any clusters. Returns the plan so the
+ * caller can re-fold the ledger over the applied events. This is the SINGLE
+ * body both the inline REM phase and the standalone `--distill-only` entry
+ * call — the supersede appends + obs travel one code path (brief §5). The
+ * caller wraps this in the janitor try/catch (a distill bug never cracks the
+ * REM host); planDistillation is pure, so a detector throw appends nothing. */
+export function runDistillPhase(
+  atoms: Atom[],
+  states: Map<string, AtomState>,
+  ledgerPath: string,
+  ts: string,
+  corr: string,
+  dryRun: boolean,
+  cap = DISTILL_CAP
+): DistillPlan {
+  const plan = planDistillation(atoms, states, ts, cap);
+
+  if (!dryRun) for (const ev of plan.supersedeEvents) appendLedger(ledgerPath, ev);
+
+  for (const c of plan.clusters) {
+    for (const loser of c.losers) {
+      ok({
+        process: "rem", phase: "distill", correlation_id: corr,
+        summary: `supersede ${c.kind}: ${loser} -> ${c.winner}${dryRun ? " (dry-run)" : ""}`,
+        context: { winner: c.winner, loser, transferred_weight: Math.round((states.get(loser)?.weight ?? 0) * 10000) / 10000, kind: c.kind, dry_run: dryRun },
+      });
+    }
+  }
+
+  if (plan.deferred > 0) {
+    degraded({
+      process: "rem", phase: "distill", correlation_id: corr,
+      summary: `distill cap ${cap} reached: ${plan.clusters.length} cluster(s) resolved, ${plan.deferred} deferred to the next run`,
+      context: { resolved: plan.clusters.length, deferred: plan.deferred, cap, dry_run: dryRun },
+      cause: `more than ${cap} stutter cluster(s) present this run; the overflow is left for the next REM wave to re-detect and resolve`,
+      next_action: "none required — the deferred clusters re-detect and resolve on the next scheduled REM run; this is the designed backpressure",
+    });
+  }
+
+  const distilled = plan.clusters.reduce((s, c) => s + c.losers.length, 0);
+  ok({
+    process: "rem", phase: "distill", correlation_id: corr,
+    summary: `distill: ${plan.clusters.length} cluster(s) resolved, ${distilled} atom(s) superseded${plan.deferred ? `, ${plan.deferred} deferred` : ""}${dryRun ? " (dry-run, nothing written)" : ""}`,
+    context: { clusters: plan.clusters.length, distilled, deferred: plan.deferred, population: atoms.length, dry_run: dryRun },
+  });
+
+  return plan;
 }
 
 // ---------------------------------------------------------------------
@@ -513,7 +673,101 @@ async function main() {
   const args = process.argv.slice(2);
   const dryRun = args.includes("--dry-run");
   const ifDue = args.includes("--if-due");
+  const distillOnly = args.includes("--distill-only");
   const corr = correlation("rem");
+
+  // Standalone DISTILL verification path (brief §4/§5): a minimal wave that
+  // runs DISTILL -> RENDER -> R8 assert -> mind commit against the LIVE
+  // population, reusing the EXACT functions a full REM run uses (runDistill-
+  // Phase, renderSelf, assertRenderInvariant, atomicWrite, gitCommit) — so
+  // the supersede appends, the render, and the mind-repo commit travel the
+  // SAME code path REM uses at 21:00. It deliberately does NOT: run the LLM
+  // (no propagation/greeting), decay, or write a scoreboard `rem` event — so
+  // tonight's unattended 21:00 REM still sees itself as due and absorbs the
+  // new episodes normally (the distill and absorb phases are independent,
+  // brief §7). --dry-run previews the cluster->winner mapping and the would-
+  // be render, writing nothing.
+  if (distillOnly) {
+    if (!fs.existsSync(BELIEFS_DIR)) {
+      idle({
+        process: "rem", phase: "distill", correlation_id: corr,
+        summary: "--distill-only: no population yet -- mind/beliefs/ missing",
+        context: { beliefs_dir: BELIEFS_DIR },
+      });
+      return;
+    }
+    const atoms = readAtoms(BELIEFS_DIR);
+    const ledgerBefore = readLedger(LEDGER_PATH);
+    const statesBefore = foldWeights(ledgerBefore);
+    const ts = new Date().toISOString();
+    let plan: DistillPlan;
+    try {
+      plan = runDistillPhase(atoms, statesBefore, LEDGER_PATH, ts, corr, dryRun);
+    } catch (err) {
+      fail({
+        process: "rem", phase: "distill", correlation_id: corr,
+        summary: "--distill-only threw past planDistillation's purity; nothing appended",
+        context: { dry_run: dryRun },
+        cause: (err as Error).message,
+        next_action: "inspect the stutter detector / render against the live mind",
+      });
+    }
+    // Re-fold over the (appended, or in dry-run previewed) supersedes and
+    // render the distilled population — the SAME renderSelf a full run calls.
+    const statesAfter = foldWeights([...ledgerBefore, ...plan.supersedeEvents]);
+    const atomsForRender = readAtoms(BELIEFS_DIR);
+    const oldSelfMd = readOrEmpty(SELF_PATH);
+    const { md: newSelfMd, manifest: newManifest } = renderSelf(atomsForRender, statesAfter);
+
+    if (dryRun) {
+      idle({
+        process: "rem", phase: "distill", correlation_id: corr,
+        summary: `--distill-only --dry-run: ${plan.clusters.length} cluster(s), ${plan.supersedeEvents.length} supersede(s) previewed; render ${newManifest.length}/${atomsForRender.length} atoms above floor; nothing written`,
+        context: { clusters: plan.clusters.length, would_supersede: plan.supersedeEvents.length, would_render: newManifest.length, population: atomsForRender.length },
+      });
+      return;
+    }
+
+    atomicWrite(SELF_PATH, newSelfMd);
+    atomicWrite(MANIFEST_PATH, JSON.stringify(newManifest, null, 2) + "\n");
+    const invariant = assertRenderInvariant(BELIEFS_DIR, LEDGER_PATH, newSelfMd);
+    if (!invariant.ok) {
+      fail({
+        process: "rem", phase: "render", correlation_id: corr,
+        summary: "R8 invariant violated in --distill-only: a fresh render from disk does not match the SELF.md just written",
+        context: { expected_length: invariant.expectedLength, actual_length: invariant.actualLength },
+        cause: "renderSelf(readAtoms(disk), foldWeights(readLedger(disk))) !== the bytes just written to SELF.md",
+        next_action: `inspect ${MIND_DIR} for a partial write or an atoms/ledger read discrepancy`,
+      });
+    }
+    ok({
+      process: "rem", phase: "render", correlation_id: corr,
+      summary: `--distill-only render: ${newManifest.length}/${atomsForRender.length} atoms above floor, SELF.md ${oldSelfMd === newSelfMd ? "unchanged" : "rewritten"}`,
+      context: { population: atomsForRender.length, rendered: newManifest.length, self_changed: oldSelfMd !== newSelfMd },
+    });
+
+    const distilled = plan.clusters.reduce((s, c) => s + c.losers.length, 0);
+    const subject = `rem(distill): ${ts.slice(0, 10)} — ${plan.clusters.length} cluster(s) resolved, ${distilled} atom(s) superseded, population ${atomsForRender.length}`;
+    const body = `\n\nstandalone distill verification (brief 06): auto-superseded live semantic-stutter clusters via the ledger's supersede mechanic; no decay/propagation/greeting; scoreboard untouched so the 21:00 REM slot stays due.`;
+    try {
+      execFileSync("git", ["add", "beliefs.jsonl", "SELF.md", "render-manifest.json"], { cwd: MIND_DIR });
+      const commitResult = gitCommit(["commit", "-m", subject + body]);
+      ok({
+        process: "rem", phase: "commit", correlation_id: corr,
+        summary: commitResult === "__NOTHING_TO_COMMIT__" ? "--distill-only: nothing to commit (population already clean)" : `--distill-only committed: ${subject}`,
+        context: { clusters: plan.clusters.length, distilled, population: atomsForRender.length, no_op: commitResult === "__NOTHING_TO_COMMIT__" },
+      });
+    } catch (err) {
+      fail({
+        process: "rem", phase: "commit", correlation_id: corr,
+        summary: "--distill-only mind commit failed after distill + render succeeded",
+        context: { error: (err as Error).message, mind_dir: MIND_DIR },
+        cause: (err as Error).message,
+        next_action: `inspect ${MIND_DIR} with 'git status'; the mind repo may hold uncommitted distill writes`,
+      });
+    }
+    return;
+  }
 
   if (ifDue) {
     const scoreboardCheck = readScoreboardEvents(SCOREBOARD_PATH);
@@ -657,14 +911,17 @@ async function main() {
   }
 
   const statesAfterDecay = foldWeights([...ledgerBeforeDecay, ...potentiateEvents, decayEvent]);
-  const sankBelowFloor = computeSankBelowFloor(atomsBeforeDecay, statesAfterDecay);
+  // Below-floor STATE before distill folds in — the baseline the newly-sank
+  // TRANSITION is measured against (a distilled loser drops to weight 0, but
+  // that is a supersede, not a floor crossing; it must not inflate `sank`).
+  const belowFloorPreDistill = new Set(computeSankBelowFloor(atomsBeforeDecay, statesAfterDecay));
   const topWeight = atomsBeforeDecay.reduce((max, a) => Math.max(max, statesAfterDecay.get(a.id)?.weight ?? 0), 0);
 
   if (unmappedCount > 0) {
     degraded({
       process: "rem", phase: "decay", correlation_id: corr,
       summary: `decay: ${potentiateEvents.length} potentiate event(s), ${unmappedCount} unmapped propagated address(es)`,
-      context: { population: atomsBeforeDecay.length, potentiated: potentiateEvents.length, new_rem_events: newRemCount, unmapped_addresses: unmappedCount, sank_below_floor: sankBelowFloor, dry_run: dryRun },
+      context: { population: atomsBeforeDecay.length, potentiated: potentiateEvents.length, new_rem_events: newRemCount, unmapped_addresses: unmappedCount, below_floor: belowFloorPreDistill.size, dry_run: dryRun },
       cause: `${unmappedCount} propagated address(es) had no matching entry in ${MANIFEST_PATH}`,
       next_action: "check whether render-manifest.json is stale relative to scoreboard.jsonl's rem events",
     });
@@ -672,16 +929,51 @@ async function main() {
     ok({
       process: "rem", phase: "decay", correlation_id: corr,
       summary: `decay: ${potentiateEvents.length} potentiate event(s) from ${newRemCount} prior rem event(s), 1 decay event${dryRun ? " (dry-run)" : ""}`,
-      context: { population: atomsBeforeDecay.length, potentiated: potentiateEvents.length, sank_below_floor: sankBelowFloor, top_weight: Math.round(topWeight * 10000) / 10000, dry_run: dryRun },
+      context: { population: atomsBeforeDecay.length, potentiated: potentiateEvents.length, below_floor: belowFloorPreDistill.size, top_weight: Math.round(topWeight * 10000) / 10000, dry_run: dryRun },
     });
   }
+
+  // -------------------------------------------------------------------
+  // 3b. DISTILL (after DECAY, before RENDER — resolved decision 2). Wrapped
+  // in the janitor paranoia pattern: planDistillation is pure and
+  // detectSelfStutter never throws, but a distill bug must NEVER crack the
+  // REM host — a throw here degrades and the run proceeds to RENDER over the
+  // undistilled (but still valid) population. One render per run reflects
+  // whatever the distill left behind.
+  // -------------------------------------------------------------------
+  let distilledCount = 0;
+  let statesAfterDistill = statesAfterDecay;
+  try {
+    const distillTs = new Date().toISOString();
+    const plan = runDistillPhase(atomsBeforeDecay, statesAfterDecay, LEDGER_PATH, distillTs, corr, dryRun);
+    distilledCount = plan.clusters.reduce((s, c) => s + c.losers.length, 0);
+    // Re-fold so RENDER, greeting, and the R8 assert all see the distilled
+    // population. In dry-run nothing was appended to disk, so fold the plan's
+    // events in memory to preview the distilled render truthfully.
+    statesAfterDistill = foldWeights([...ledgerBeforeDecay, ...potentiateEvents, decayEvent, ...plan.supersedeEvents]);
+  } catch (err) {
+    degraded({
+      process: "rem", phase: "distill", correlation_id: corr,
+      summary: "distill phase threw past planDistillation's purity; REM proceeds to render over the undistilled population",
+      context: { dry_run: dryRun },
+      cause: (err as Error).message,
+      next_action: "reproduce standalone with `bun src/rem-popmem.ts --distill-only --dry-run`",
+    });
+  }
+
+  // Newly-sank is a TRANSITION: active atoms below floor AFTER distill that
+  // were NOT below floor before it. A superseded loser is no longer `active`,
+  // so computeSankBelowFloor already excludes it — the set difference is clean
+  // and a distilled loser can never inflate the newly-sank count.
+  const belowFloorPostDistill = computeSankBelowFloor(atomsBeforeDecay, statesAfterDistill);
+  const newlySank = belowFloorPostDistill.filter((id) => !belowFloorPreDistill.has(id));
 
   // -------------------------------------------------------------------
   // 4. RENDER + R8 assert
   // -------------------------------------------------------------------
   const atomsForRender = readAtoms(BELIEFS_DIR); // fresh: absorb may have added files since atomsBeforeDecay was read
   const oldSelfMd = readOrEmpty(SELF_PATH);
-  const { md: newSelfMd, manifest: newManifest } = renderSelf(atomsForRender, statesAfterDecay);
+  const { md: newSelfMd, manifest: newManifest } = renderSelf(atomsForRender, statesAfterDistill);
 
   if (!dryRun) {
     atomicWrite(SELF_PATH, newSelfMd);
@@ -711,8 +1003,8 @@ async function main() {
   // 5. GREETING
   // -------------------------------------------------------------------
   const topAtoms = [...atomsForRender]
-    .filter((a) => (statesAfterDecay.get(a.id)?.status ?? "active") === "active")
-    .sort((a, b) => (statesAfterDecay.get(b.id)?.weight ?? 0) - (statesAfterDecay.get(a.id)?.weight ?? 0))
+    .filter((a) => (statesAfterDistill.get(a.id)?.status ?? "active") === "active")
+    .sort((a, b) => (statesAfterDistill.get(b.id)?.weight ?? 0) - (statesAfterDistill.get(a.id)?.weight ?? 0))
     .slice(0, 5);
   const nowMdForGreeting = readOrEmpty(NOW_PATH);
   let greetingLines: string[] = [];
@@ -753,7 +1045,7 @@ async function main() {
     idle({
       process: "rem", phase: "commit", correlation_id: corr,
       summary: "dry-run: no writes, no commit",
-      context: { would_absorb: newEpisodes.length, would_sank: sankBelowFloor.length },
+      context: { would_absorb: newEpisodes.length, would_distill: distilledCount, would_below_floor: belowFloorPostDistill.length },
     });
     return;
   }
@@ -771,6 +1063,7 @@ async function main() {
     self_changed: selfChanged,
     stacked: aggCounts.new,
     bumped: aggCounts.stacked + aggCounts.bumped,
+    distilled: distilledCount,
   });
 
   const vitals = {
@@ -778,7 +1071,7 @@ async function main() {
     src_loc: countSrcLoc(),
     population: atomsForRender.length,
     top_weight: Math.round(topWeight * 10000) / 10000,
-    sank_below_floor: sankBelowFloor,
+    sank_below_floor: belowFloorPostDistill,
   };
   fs.mkdirSync(path.dirname(VITALS_PATH), { recursive: true });
   fs.writeFileSync(VITALS_PATH, JSON.stringify(vitals, null, 2) + "\n");
@@ -788,9 +1081,12 @@ async function main() {
     date: dateStr,
     stacked: aggCounts.new,
     bumped: aggCounts.stacked + aggCounts.bumped,
-    sank: sankBelowFloor.length,
+    newlySank: newlySank.length,
+    belowFloor: belowFloorPostDistill.length,
+    potentiated: potentiateEvents.length,
+    distilled: distilledCount,
     population: atomsForRender.length,
-    sankIds: sankBelowFloor,
+    belowFloorIds: belowFloorPostDistill,
   });
 
   try {
@@ -805,7 +1101,9 @@ async function main() {
       process: "rem", phase: "commit", correlation_id: corr,
       summary: wasNoop ? "wave complete with nothing left to write" : `wave committed: ${subject}`,
       context: {
-        stacked: aggCounts.new, bumped: aggCounts.stacked + aggCounts.bumped, sank: sankBelowFloor.length,
+        stacked: aggCounts.new, bumped: aggCounts.stacked + aggCounts.bumped,
+        newly_sank: newlySank.length, below_floor: belowFloorPostDistill.length,
+        potentiated: potentiateEvents.length, distilled: distilledCount,
         population: atomsForRender.length, propagated: propagatedAddresses.length, no_op: wasNoop,
       },
     });
