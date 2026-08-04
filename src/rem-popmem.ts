@@ -93,6 +93,7 @@ import { DECAY_FACTOR, computePotentiateEvents, computeSankBelowFloor, type RemP
 import { detectSelfStutter } from "./immune.ts";
 import { adaptRenderedForStutterCheck, parseSelfSections } from "./migrate.ts";
 import { sweepMeals } from "./janitor.ts";
+import { buildIndex, updateIndex, loadIndex, saveIndex } from "./relindex.ts";
 import { complete } from "./llm.ts";
 import { ok, idle, degraded, fail, correlation } from "./obs.ts";
 
@@ -1134,6 +1135,64 @@ async function main() {
       context: {},
       cause: (err as Error).message,
       next_action: "reproduce standalone with `bun src/janitor.ts --dry-run`",
+    });
+  }
+
+  // -------------------------------------------------------------------
+  // 8. RELATIONAL INDEX (b07, briefs/07-relindex-wake-retrieval.md)
+  // -------------------------------------------------------------------
+  // Tail phase, after the commit + janitor: mind/index/ is a gitignored,
+  // rebuildable DERIVED VIEW over episodes/ + beliefs/, so its writes ride no
+  // commit (like meals/) and this phase can never preempt REM's core path.
+  // INCREMENTAL by construction (updateIndex re-ingests only changed/new
+  // units); a full build only when no prior index exists. Paranoia-wrapped
+  // exactly like the janitor: an index bug must NEVER crack the REM host.
+  // Dense embeddings are NOT rebuilt here (BM25 floor stays fresh; a full
+  // `--reindex` with CIRCADIAN_EMBED=1 refreshes vectors on demand) so the
+  // phase never depends on a running service.
+  try {
+    if (dryRun) {
+      idle({
+        process: "rem", phase: "relindex", correlation_id: corr,
+        summary: "dry-run: relational index not updated",
+        context: {},
+      });
+    } else {
+      const t0 = Date.now();
+      const loaded = loadIndex(MIND_DIR);
+      if (!loaded) {
+        const { index } = await buildIndex(MIND_DIR);
+        saveIndex(MIND_DIR, index, null);
+        ok({
+          process: "rem", phase: "relindex", correlation_id: corr,
+          summary: `relational index: first build, ${index.meta.unitCount} units, ${index.meta.entityCount} entities in ${Date.now() - t0}ms`,
+          context: { units: index.meta.unitCount, entities: index.meta.entityCount, build_ms: Date.now() - t0, mode: "full" },
+        });
+      } else {
+        const { index, changed, deleted } = updateIndex(MIND_DIR, loaded.index);
+        if (changed === 0 && deleted === 0) {
+          idle({
+            process: "rem", phase: "relindex", correlation_id: corr,
+            summary: "relational index already fresh — nothing changed",
+            context: { units: index.meta.unitCount },
+          });
+        } else {
+          saveIndex(MIND_DIR, index, loaded.vectors); // preserve any existing dense vectors
+          ok({
+            process: "rem", phase: "relindex", correlation_id: corr,
+            summary: `relational index updated: ${changed} changed/new, ${deleted} deleted, ${index.meta.unitCount} units in ${Date.now() - t0}ms`,
+            context: { changed, deleted, units: index.meta.unitCount, entities: index.meta.entityCount, build_ms: Date.now() - t0, mode: "incremental" },
+          });
+        }
+      }
+    }
+  } catch (err) {
+    degraded({
+      process: "rem", phase: "relindex", correlation_id: corr,
+      summary: "relational index update threw; REM's core run completed unaffected",
+      context: {},
+      cause: (err as Error).message,
+      next_action: "reproduce standalone with `bun src/relindex.ts --update`",
     });
   }
 }

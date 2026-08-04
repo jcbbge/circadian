@@ -72,7 +72,14 @@ else
   git -C "$MIND_DIR" init -q
   # mind/ is standalone; guard the private file even if the dir is ever nested
   cat > "$MIND_DIR/.gitignore" <<'EOF'
-# nothing ignored inside mind/ — the whole repo is private and never pushed
+# mind/ is a private git repo (no remote) and never pushed. Two derived,
+# rebuildable stores are never committed:
+#   meals/  — graze in-session checkpoints SLEEP folds into episodes then deletes.
+#   index/  — the relational evidence index (a read-optimized view over
+#             episodes/ + beliefs/, rebuilt by `bun src/relindex.ts --reindex`
+#             and refreshed each REM run). Per-user derived data; not source.
+meals/
+index/
 EOF
   git -C "$MIND_DIR" add -A
   git -C "$MIND_DIR" commit -q -m "founding: circadian mind scaffolded from templates"
