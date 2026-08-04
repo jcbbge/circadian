@@ -1,7 +1,7 @@
 #!/usr/bin/env bun
 /**
  * atoms.ts — the atom store (popmem WS-B, docs/POPULATION-MEMORY.md §7 R1-R3,
- * templates/MIND-SPEC.v.next.md "The atom" + "The ledger").
+ * templates/MIND-SPEC.md "The atom" + "The ledger").
  *
  * Beliefs are immutable weighted atoms (five sentences, #1). A belief file
  * (`mind/beliefs/<id>.md`) is written once and never edited again — weight
@@ -279,7 +279,7 @@ export function appendLedger(ledgerPath: string, ev: LedgerEvent): void {
 // ---------------------------------------------------------------------
 
 /** Folds the ledger into a weight/status per atom id. Pure — no clock, no
- * I/O. Semantics (templates/MIND-SPEC.v.next.md "The ledger"):
+ * I/O. Semantics (templates/MIND-SPEC.md "The ledger"):
  *   - weight starts at 0 for every atom.
  *   - `stack{atom}`: weight +1. Also the ONLY event that makes an atom
  *     eligible for `decay` (an atom stacked after a decay event in the

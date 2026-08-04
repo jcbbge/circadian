@@ -1,7 +1,7 @@
 #!/usr/bin/env bun
 /**
  * stack.ts — the stacker, the only writer of atoms (popmem WS-C,
- * docs/POPULATION-MEMORY.md §7 R2/R3/R5, templates/MIND-SPEC.v.next.md
+ * docs/POPULATION-MEMORY.md §7 R2/R3/R5, templates/MIND-SPEC.md
  * "The stacker").
  *
  * episode -> EXTRACT (<=5 candidate atoms via the local LLM) -> deterministic

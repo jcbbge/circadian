@@ -1,7 +1,7 @@
 #!/usr/bin/env bun
 /**
  * migrate.ts — WS-E: live SELF.md -> seed atoms (popmem, docs/POPULATION-MEMORY.md
- * §11 migration-fidelity DECIDED items, §12 WS-E; templates/MIND-SPEC.v.next.md).
+ * §11 migration-fidelity DECIDED items, §12 WS-E; templates/MIND-SPEC.md).
  *
  * Deterministic, NO-LLM, one-shot-but-testable: converts a PINNED revision of
  * the live SELF.md into seed atoms + ledger in a SANDBOX mind (never the real

@@ -1,7 +1,7 @@
 #!/usr/bin/env bun
 /**
  * rem-popmem.ts — the composite REM payload (popmem WS-F, docs/POPULATION-MEMORY.md
- * §12 WS-F, templates/MIND-SPEC.v.next.md "The REM payload").
+ * §12 WS-F, templates/MIND-SPEC.md "The REM payload").
  *
  * Replaces rem.ts's editor-grammar wave as the scheduled job. One run does,
  * in order (the spec's exact sequence): stack(new episodes) -> propagation

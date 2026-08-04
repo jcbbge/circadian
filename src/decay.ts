@@ -1,7 +1,7 @@
 #!/usr/bin/env bun
 /**
  * decay.ts — nightly multiply + propagation re-potentiation (popmem WS-D,
- * docs/POPULATION-MEMORY.md §7 R6/R9/R10, templates/MIND-SPEC.v.next.md
+ * docs/POPULATION-MEMORY.md §7 R6/R9/R10, templates/MIND-SPEC.md
  * "The ledger" + "The REM payload").
  *
  * Forgetting is a nightly multiply (five sentences, #3): one run appends

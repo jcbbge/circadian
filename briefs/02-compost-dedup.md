@@ -6,7 +6,7 @@
 Remove the duplicate pre-switchover entries in `mind/compost.md` so the frozen historical record is clean and `zoom.ts` provenance lookups aren't noisy.
 
 ## 2. Context
-- compost.md is **DECIDED frozen as historical**: `templates/MIND-SPEC.v.next.md` line 65 ("compost.md is frozen as historical; git is the archive") and `docs/POPULATION-MEMORY.md` ("DECIDED — compost.md is frozen as historical; the decay step auto-generates a [sank list]").
+- compost.md is **DECIDED frozen as historical**: `templates/MIND-SPEC.md` line 113 ("compost.md is frozen as historical; git is the archive") and `docs/POPULATION-MEMORY.md` ("DECIDED — compost.md is frozen as historical; the decay step auto-generates a [sank list]").
 - The population-memory REM **does not write compost** — `src/rem-popmem.ts:48` ("composted: [] -- nothing composts in the population-memory world") and `:769` (`composted: []`). The sank-below-floor list lives in the commit body, not compost.md.
 - The file's last entries are dated **2026-07-26 and 2026-07-27** — the day before the 2026-07-28 switchover (commit `d045196`). These are pre-switchover fossils from the retired v1 pruner path.
 - The `## 2026-07-26` and `## 2026-07-27` sections **each appear twice, identical** (verified by reading the file). Pure duplicates.

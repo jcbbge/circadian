@@ -1,7 +1,7 @@
 #!/usr/bin/env bun
 /**
  * render.ts — the render (popmem WS-B, docs/POPULATION-MEMORY.md §7 R4,
- * templates/MIND-SPEC.v.next.md "The render"): `SELF.md = fold(beliefs/,
+ * templates/MIND-SPEC.md "The render"): `SELF.md = fold(beliefs/,
  * ledger)`. Deterministic, byte-identical for identical inputs — no clock,
  * no LLM, no randomness anywhere in `renderSelf`. The model never composes
  * this document (five sentences, #5); it only ever compares atoms upstream,
