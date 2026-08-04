@@ -17,6 +17,7 @@ import { join } from "node:path";
 import { spawn } from "node:child_process";
 import { ok, degraded, emit, correlation } from "./obs.ts";
 import { isFirstWakeToday, renderDailyReading, loadScoreboardFile, appendDailyReadingEntry } from "./scorecard.ts";
+import { loadIndex, retrieveForWake } from "./relindex.ts";
 
 // Path resolution (single-source, distributable): CIRCADIAN_HOME overrides;
 // otherwise ~/circadian. The mind data lives at $CIRCADIAN_HOME/mind. This is
@@ -42,8 +43,8 @@ function extractLastSleep(nowMd: string): string | null {
   return match ? match[1].trim() : null;
 }
 
-function buildPayload(files: { self: string; user: string; now: string; greeting: string }): string {
-  const { self, user, now, greeting } = files;
+function buildPayload(files: { self: string; user: string; now: string; greeting: string; evidence?: string }): string {
+  const { self, user, now, greeting, evidence } = files;
 
   const lastSleepRaw = extractLastSleep(now);
   const lastSleepDate = lastSleepRaw ? new Date(lastSleepRaw) : null;
@@ -75,6 +76,10 @@ function buildPayload(files: { self: string; user: string; now: string; greeting
     now.trim(),
     "</mind:now>",
     "",
+    // b07: the session-anchored evidence slice, when the relational index
+    // surfaced anything relevant to this session's cwd/continuation. Empty
+    // string → the block is absent and wake behaves exactly as before.
+    ...(evidence ? [evidence, ""] : []),
     "<mind:greeting-instruction>",
     "Open your FIRST reply to the user by SPEAKING the greeting below, verbatim, before anything else — it is the mind's own voice (the dream-echo from the last consolidation), not a label or a report. Deliver it as if you are the mind resuming mid-thought. It orients to the work — the arc, the live tension, the next move — never to the memory system itself (Law 8). If it passes, the user continues the thread as if no time passed.",
     "",
@@ -136,11 +141,72 @@ async function runHook(): Promise<void> {
     });
   }
 
+  // b07: session-anchored evidence slice. Law 7 to the letter — file reads
+  // only (loadIndex reads mind/index/*.json; retrieveForWake never touches the
+  // network), and any failure here degrades to today's exact behavior
+  // (worldview-only) without ever withholding the injection. The slice renders
+  // INSIDE the existing 15k cap: it is part of `body`, so buildPayload's own
+  // OVER-CAP accounting already covers it. Budget ≤ 2000 tokens (brief §4).
+  let evidence = "";
+  try {
+    const loaded = loadIndex(MIND);
+    const source = process.env.CIRCADIAN_WAKE_SOURCE || process.env.CLAUDE_SESSION_SOURCE;
+    const slice = retrieveForWake(loaded, process.cwd(), { source, k: 5, budgetTokens: 2000 });
+    evidence = slice.block;
+    if (slice.reason === "injected") {
+      ok({
+        process: "wake", phase: "session-evidence", correlation_id: corr,
+        summary: `injected ${slice.units.length} session-relevant unit(s) from ${slice.anchors.chain.join("+")}`,
+        context: {
+          anchors: slice.anchors.chain,
+          known_entities: slice.anchors.knownEntities,
+          units: slice.units.map((u) => ({ id: u.id, score: u.score })),
+          evidence_tokens: Math.ceil(slice.block.length / 4),
+          index_age_ms: slice.ageMs,
+        },
+      });
+    } else if (slice.reason === "no-index") {
+      // Not degraded on a fresh install (the index may simply not exist yet);
+      // an idle event keeps it legible without crying wolf (zoom's pattern).
+      ok({
+        process: "wake", phase: "session-evidence", correlation_id: corr,
+        summary: "no relational index on disk — worldview-only (today's behavior)",
+        context: { reason: slice.reason, index_dir: join(MIND, "index"), next_action: "run `bun src/relindex.ts --reindex` (also runs each REM)" },
+      });
+    } else if (slice.reason === "stale-index") {
+      degraded({
+        process: "wake", phase: "session-evidence", correlation_id: corr,
+        summary: "relational index is stale (>48h) — worldview-only",
+        context: { reason: slice.reason, index_age_ms: slice.ageMs },
+        cause: "mind/index was built more than 48h ago",
+        next_action: "run `bun src/relindex.ts --reindex` or let the next REM refresh it",
+      });
+    } else {
+      // no-anchors | no-relevant-units: a legitimate worldview-only wake
+      // (unrelated cwd, or anchors that light no known entity). Not a fault.
+      ok({
+        process: "wake", phase: "session-evidence", correlation_id: corr,
+        summary: `worldview-only — ${slice.reason} (${slice.anchors.chain.join("+") || "no anchors"})`,
+        context: { reason: slice.reason, anchors: slice.anchors.chain, known_entities: slice.anchors.knownEntities, cwd: process.cwd() },
+      });
+    }
+  } catch (e) {
+    degraded({
+      process: "wake", phase: "session-evidence", correlation_id: corr,
+      summary: "session-evidence slice threw; wake proceeds worldview-only",
+      context: {},
+      cause: (e as Error).message,
+      next_action: "inspect logs/circadian.events.jsonl for this event; reproduce with `bun src/relindex.ts --query <cwd>`",
+    });
+    evidence = "";
+  }
+
   const payload = buildPayload({
     self: files["SELF.md"],
     user: files["USER.md"],
     now: files["NOW.md"],
     greeting: files["greeting.md"],
+    evidence,
   });
 
   const payloadTokens = Math.ceil(payload.length / 4);

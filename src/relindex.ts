@@ -813,6 +813,127 @@ export function renderEvidenceBlock(results: RetrievedUnit[], budgetTokens: numb
 }
 
 // ---------------------------------------------------------------------
+// wake anchor chain (b07 §5) — pure, deterministic, NO network, NO writes
+// ---------------------------------------------------------------------
+
+export interface WakeAnchors {
+  /** the query text assembled from the anchors (cwd path + source signal) */
+  query: string;
+  /** entities the anchor bears that the index ACTUALLY knows (the gate) */
+  knownEntities: string[];
+  /** which anchors fired, for the obs event */
+  chain: string[];
+}
+
+/**
+ * Derive the session anchor from what wake HAS at session start. The brief's
+ * chain (§5) in order:
+ *   1. cwd-derived project/repo entities  — ALWAYS available (process.cwd()
+ *      in Pi, the hook's `cwd`/CLAUDE cwd in CC).
+ *   2. resume/continuation signal (CC SessionStart `source`: resume|compact
+ *      vs startup) — best-effort; absent in Pi, so it simply never fires.
+ *   3. first user message — CANNOT fire: wake runs BEFORE the first prompt in
+ *      BOTH harnesses (verified b07: circadian-mind.ts injects at
+ *      before_agent_start with no event body; CC SessionStart stdin carries
+ *      no prompt). Documented, deliberately not implemented.
+ *   4. none — worldview-only (today's exact behavior).
+ *
+ * The GATE (why an unrelated cwd stays worldview-only): only entities the
+ * index actually knows count. A path like ~/circadian/worktrees/b07 yields
+ * known entities (`circadian`, `b07`); an unrelated ~/some/rust/thing yields
+ * none — knownEntities empty → the caller injects nothing. Deterministic
+ * relevance without a learned threshold.
+ */
+export function deriveAnchors(index: IndexData, cwd: string, source?: string): WakeAnchors {
+  const chain: string[] = [];
+  const parts: string[] = [];
+  // 1. cwd: split into path segments; each becomes a candidate token/entity.
+  //    Drop generic filesystem noise so `Users`, `home` never anchor.
+  const NOISE = new Set(["users", "home", "jrg", "documents", "desktop", "tmp", "var", "opt", "private", "worktrees", "src"]);
+  const segs = cwd.split(/[\/\\]/).filter((s) => s && !NOISE.has(s.toLowerCase()));
+  if (segs.length > 0) {
+    chain.push("cwd");
+    parts.push(...segs);
+  }
+  // 2. resume/continuation signal: a resumed/compacted session is continuing
+  //    a thread — record it so the obs event shows the anchor, and let it
+  //    contribute the word to the query (harmless if unknown to the index).
+  if (source && /resume|compact|continu/i.test(source)) {
+    chain.push(`source:${source}`);
+    parts.push("continuation");
+  }
+  const query = parts.join(" ");
+  // the gate: which anchor tokens/entities does the corpus actually know?
+  const cand = new Set<string>();
+  for (const seg of parts) {
+    for (const e of extractEntities(seg).keys()) cand.add(e);
+    for (const e of slugEntities(`${seg}.md`).keys()) cand.add(e);
+    cand.add(seg.toLowerCase());
+  }
+  const knownEntities = [...cand].filter((e) => index.entities[e]).sort();
+  return { query, knownEntities, chain };
+}
+
+export interface WakeSlice {
+  /** the provenance-pinned evidence block, or "" when worldview-only */
+  block: string;
+  /** units actually injected (for the obs event) */
+  units: RetrievedUnit[];
+  /** anchors that fired */
+  anchors: WakeAnchors;
+  /** why the slice decided what it did (obs) */
+  reason: "injected" | "no-anchors" | "no-relevant-units" | "stale-index" | "no-index";
+  /** index staleness in ms when known (null when no index) */
+  ageMs: number | null;
+}
+
+/**
+ * The wake retrieval slice (b07 commit 2). Pure over its inputs — the caller
+ * (wake.ts) loads the index with file reads only (Law 7) and passes it in;
+ * this function NEVER touches the network and NEVER writes. Returns the block
+ * to inject plus a fully-legible decision for the obs event.
+ *
+ * Staleness mirrors wake's own convention (>48h → degraded, still proceeds
+ * worldview-only). No anchors, or anchors that light no known entity →
+ * worldview-only. Otherwise: top-k fused, rendered inside `budgetTokens`.
+ *
+ * Wake uses BM25 + graph + temporal only (no queryVector) so it stays
+ * network-free even when vectors.json exists on disk.
+ */
+export function retrieveForWake(
+  loaded: { index: IndexData; vectors: VectorStore | null } | null,
+  cwd: string,
+  opts: { source?: string; k?: number; budgetTokens?: number; staleMs?: number; nowMs?: number } = {},
+): WakeSlice {
+  const empty = (reason: WakeSlice["reason"], anchors: WakeAnchors, ageMs: number | null): WakeSlice => ({
+    block: "", units: [], anchors, reason, ageMs,
+  });
+  if (!loaded) {
+    return empty("no-index", { query: "", knownEntities: [], chain: [] }, null);
+  }
+  const { index } = loaded;
+  const anchors = deriveAnchors(index, cwd, opts.source);
+  const builtAtMs = Date.parse(index.meta.builtAt);
+  const ageMs = Number.isNaN(builtAtMs) ? null : (opts.nowMs ?? Date.now()) - builtAtMs;
+  const staleMs = opts.staleMs ?? 48 * 60 * 60 * 1000;
+  if (ageMs !== null && ageMs > staleMs) return empty("stale-index", anchors, ageMs);
+  if (anchors.knownEntities.length === 0) return empty("no-anchors", anchors, ageMs);
+
+  const results = queryIndex(index, anchors.query, { k: opts.k ?? 5 }); // NO queryVector: network-free
+  if (results.length === 0) return empty("no-relevant-units", anchors, ageMs);
+  const { text, used } = renderEvidenceBlock(results, opts.budgetTokens ?? 2000);
+  if (used.length === 0) return empty("no-relevant-units", anchors, ageMs);
+  const block = [
+    "<mind:session-evidence>",
+    "Session-relevant memories, retrieved by relational index from this session's anchor (cwd/continuation). Each cites its source — open it with `bun src/zoom.ts <source>` to drill to the raw episode.",
+    "",
+    text,
+    "</mind:session-evidence>",
+  ].join("\n");
+  return { block, units: used, anchors, reason: "injected", ageMs };
+}
+
+// ---------------------------------------------------------------------
 // CLI
 // ---------------------------------------------------------------------
 
