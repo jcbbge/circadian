@@ -113,6 +113,54 @@ const DIGESTED_PATH = path.join(MIND_DIR, "digested.jsonl");
 const EPISODES_DIR = path.join(MIND_DIR, "episodes");
 const IO_LOG_PATH = path.join(CIRCADIAN_HOME, "logs", "stacker-io.jsonl");
 const VITALS_PATH = path.join(CIRCADIAN_HOME, "logs", ".population-vitals.json");
+// Single-flight lock for --if-due: wake.ts fires one catch-up per session, so a
+// slow/hung LLM run could otherwise stack N duplicates (18 reaped 2026-08-06).
+// The scoreboard due-check only guards on COMPLETED slots; an in-flight run that
+// never writes its completion event is invisible to it. This lock closes that
+// gap structurally — a live holder means bail immediately.
+const IFDUE_LOCK_PATH = path.join(CIRCADIAN_HOME, "logs", ".rem-popmem.ifdue.lock");
+
+// Acquire the --if-due single-flight lock. Returns a release fn on success, or
+// null if a LIVE process already holds it (caller must bail). Stale locks (dead
+// PID, or older than maxAgeMs) are reclaimed. Never throws — lock failure must
+// not take wake down (Law 7).
+function acquireIfDueLock(maxAgeMs = 30 * 60 * 1000): (() => void) | null {
+  try {
+    fs.mkdirSync(path.dirname(IFDUE_LOCK_PATH), { recursive: true });
+    if (fs.existsSync(IFDUE_LOCK_PATH)) {
+      let holderPid = 0;
+      let heldMs = Infinity;
+      try {
+        const raw = JSON.parse(fs.readFileSync(IFDUE_LOCK_PATH, "utf8"));
+        holderPid = Number(raw.pid) || 0;
+        heldMs = Date.now() - (Number(raw.ts) || 0);
+      } catch {
+        // unparseable lock -> treat as stale, reclaim below
+      }
+      let holderAlive = false;
+      if (holderPid > 0) {
+        try { process.kill(holderPid, 0); holderAlive = true; } catch { holderAlive = false; }
+      }
+      if (holderAlive && heldMs < maxAgeMs) return null; // live holder -> bail
+      try { fs.unlinkSync(IFDUE_LOCK_PATH); } catch { /* reclaim best-effort */ }
+    }
+    fs.writeFileSync(IFDUE_LOCK_PATH, JSON.stringify({ pid: process.pid, ts: Date.now() }), { flag: "wx" });
+    let released = false;
+    const release = () => {
+      if (released) return;
+      released = true;
+      try {
+        const raw = JSON.parse(fs.readFileSync(IFDUE_LOCK_PATH, "utf8"));
+        if (Number(raw.pid) === process.pid) fs.unlinkSync(IFDUE_LOCK_PATH);
+      } catch { /* already gone / not ours */ }
+    };
+    process.once("exit", release);
+    return release;
+  } catch {
+    // wx race (another run won the create) or FS error -> treat as "held", bail.
+    return null;
+  }
+}
 
 function readOrEmpty(p: string): string {
   try {
@@ -771,6 +819,19 @@ async function main() {
   }
 
   if (ifDue) {
+    // Single-flight guard FIRST: a prior --if-due run hung on the LLM never
+    // writes a completion event, so the scoreboard still reads "due" and each
+    // new session stacks another process (18 reaped 2026-08-06). Bail if a live
+    // holder exists; the lock releases on exit so a clean run frees it.
+    const releaseLock = acquireIfDueLock();
+    if (releaseLock === null) {
+      idle({
+        process: "rem", phase: "schedule-guard", correlation_id: corr,
+        summary: "--if-due: another rem-popmem --if-due run is already in flight; bailing (single-flight lock held)",
+        context: { lock_path: IFDUE_LOCK_PATH },
+      });
+      return;
+    }
     const scoreboardCheck = readScoreboardEvents(SCOREBOARD_PATH);
     if (!isDue(scoreboardCheck, new Date())) {
       idle({
