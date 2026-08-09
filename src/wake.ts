@@ -18,6 +18,7 @@ import { spawn } from "node:child_process";
 import { ok, degraded, emit, correlation } from "./obs.ts";
 import { isFirstWakeToday, renderDailyReading, loadScoreboardFile, appendDailyReadingEntry } from "./scorecard.ts";
 import { loadIndex, retrieveForWake } from "./relindex.ts";
+import { computeVerdictStreak } from "./status.ts";
 
 // Path resolution (single-source, distributable): CIRCADIAN_HOME overrides;
 // otherwise ~/circadian. The mind data lives at $CIRCADIAN_HOME/mind. This is
@@ -43,8 +44,17 @@ function extractLastSleep(nowMd: string): string | null {
   return match ? match[1].trim() : null;
 }
 
-function buildPayload(files: { self: string; user: string; now: string; greeting: string; evidence?: string }): string {
-  const { self, user, now, greeting, evidence } = files;
+function buildPayload(files: {
+  self: string;
+  user: string;
+  now: string;
+  greeting: string;
+  evidence?: string;
+  constitution?: string;
+  constitutionJosh?: string;
+  killSwitch?: boolean;
+}): string {
+  const { self, user, now, greeting, evidence, constitution, constitutionJosh, killSwitch } = files;
 
   const lastSleepRaw = extractLastSleep(now);
   const lastSleepDate = lastSleepRaw ? new Date(lastSleepRaw) : null;
@@ -61,31 +71,67 @@ function buildPayload(files: { self: string; user: string; now: string; greeting
     greetingBlock = `${staleLine}\n${greetingBlock}`;
   }
 
-  const body = [
-    "[Circadian] WAKE — memory substrate injection from the mind repo (see mind/MIND-SPEC.md).",
-    "",
-    "<mind:self>",
-    self.trim(),
-    "</mind:self>",
-    "",
-    "<mind:user>",
-    user.trim(),
-    "</mind:user>",
-    "",
-    "<mind:now>",
-    now.trim(),
-    "</mind:now>",
-    "",
-    // b07: the session-anchored evidence slice, when the relational index
-    // surfaced anything relevant to this session's cwd/continuation. Empty
-    // string → the block is absent and wake behaves exactly as before.
-    ...(evidence ? [evidence, ""] : []),
-    "<mind:greeting-instruction>",
-    "Open your FIRST reply to the user by SPEAKING the greeting below, verbatim, before anything else — it is the mind's own voice (the dream-echo from the last consolidation), not a label or a report. Deliver it as if you are the mind resuming mid-thought. It orients to the work — the arc, the live tension, the next move — never to the memory system itself (Law 8). If it passes, the user continues the thread as if no time passed.",
-    "",
-    greetingBlock,
-    "</mind:greeting-instruction>",
-  ].join("\n");
+  // THE CONSTITUTION LAYER (2026-08-09): injected FIRST, verbatim, above
+  // memory. The constitution is never rendered, never re-derived, never
+  // decayed — experience has no write access to it (see the poisoning
+  // post-mortem: nine days of fleet drills rewrote the rendered SELF into
+  // obedience doctrine; the constitution is the layer that cannot be).
+  const constitutionBlocks = [
+    ...(constitution
+      ? ["<mind:constitution>", constitution.trim(), "</mind:constitution>", ""]
+      : []),
+  ];
+  const constitutionJoshBlocks = [
+    ...(constitutionJosh
+      ? ["<mind:constitution-josh>", constitutionJosh.trim(), "</mind:constitution-josh>", ""]
+      : []),
+  ];
+
+  // KILL-SWITCH FAIL-SAFE: when the greeting-fitness kill switch has fired
+  // (R7), the memory organs are the failing instrument — SELF/USER/greeting
+  // are withheld this wake so a degraded worldview cannot speak with the
+  // mind's authority. The constitution and NOW still inject (Law 7: wake
+  // always delivers; the constitution is not derived from the failing
+  // organ). The decommission decision stays human.
+  const body = killSwitch
+    ? [
+        "[Circadian] WAKE — memory substrate injection from the mind repo (see mind/MIND-SPEC.md).",
+        "",
+        "KILL SWITCH ACTIVE: greeting fitness failed (R7). SELF/USER/greeting are withheld this wake — constitution and NOW only. The decommission decision is human; do not speak the memory's voice until it is made.",
+        "",
+        ...constitutionBlocks,
+        ...constitutionJoshBlocks,
+        "<mind:now>",
+        now.trim(),
+        "</mind:now>",
+      ].join("\n")
+    : [
+        "[Circadian] WAKE — memory substrate injection from the mind repo (see mind/MIND-SPEC.md).",
+        "",
+        ...constitutionBlocks,
+        "<mind:self>",
+        self.trim(),
+        "</mind:self>",
+        "",
+        ...constitutionJoshBlocks,
+        "<mind:user>",
+        user.trim(),
+        "</mind:user>",
+        "",
+        "<mind:now>",
+        now.trim(),
+        "</mind:now>",
+        "",
+        // b07: the session-anchored evidence slice, when the relational index
+        // surfaced anything relevant to this session's cwd/continuation. Empty
+        // string → the block is absent and wake behaves exactly as before.
+        ...(evidence ? [evidence, ""] : []),
+        "<mind:greeting-instruction>",
+        "Open your FIRST reply to the user by SPEAKING the greeting below, verbatim, before anything else — it is the mind's own voice (the dream-echo from the last consolidation), not a label or a report. Deliver it as if you are the mind resuming mid-thought. It orients to the work — the arc, the live tension, the next move — never to the memory system itself (Law 8). If it passes, the user continues the thread as if no time passed.",
+        "",
+        greetingBlock,
+        "</mind:greeting-instruction>",
+      ].join("\n");
 
   const tokens = Math.ceil(body.length / 4);
   if (tokens > CAP_TOKENS) {
@@ -111,6 +157,8 @@ async function runHook(): Promise<void> {
   // visible). Previously all four reads lived in one try/catch: a single
   // missing file swallowed the entire injection silently.
   const fileSpecs = [
+    ["CONSTITUTION.md", join(MIND, "CONSTITUTION.md")],
+    ["CONSTITUTION-JOSH.md", join(MIND, "CONSTITUTION-JOSH.md")],
     ["SELF.md", join(MIND, "SELF.md")],
     ["USER.md", join(MIND, "USER.md")],
     ["NOW.md", join(MIND, "NOW.md")],
@@ -201,12 +249,37 @@ async function runHook(): Promise<void> {
     evidence = "";
   }
 
+  // KILL-SWITCH check (R7): computed from the scoreboard, best-effort. Any
+  // failure here degrades to a normal full wake (Law 7 — never withhold the
+  // injection because an instrument misfired).
+  let killSwitch = false;
+  try {
+    const streak = computeVerdictStreak(loadScoreboardFile(join(MIND, "scoreboard.jsonl")));
+    killSwitch = streak.killSwitch;
+  } catch {
+    killSwitch = false;
+  }
+  if (killSwitch) {
+    degraded({
+      process: "wake",
+      phase: "kill-switch",
+      correlation_id: corr,
+      summary: "kill switch active (R7) — SELF/USER/greeting withheld this wake; constitution + NOW injected",
+      context: { fail_safe: "constitution+now" },
+      cause: "7+ consecutive zero-credit scored greeting windows (weighted)",
+      next_action: "human decision: decommission or repair the memory fitness loop; wake stays in fail-safe until the streak clears",
+    });
+  }
+
   const payload = buildPayload({
     self: files["SELF.md"],
     user: files["USER.md"],
     now: files["NOW.md"],
     greeting: files["greeting.md"],
     evidence,
+    constitution: files["CONSTITUTION.md"],
+    constitutionJosh: files["CONSTITUTION-JOSH.md"],
+    killSwitch,
   });
 
   const payloadTokens = Math.ceil(payload.length / 4);
