@@ -17,6 +17,9 @@
 import { readFileSync } from "node:fs";
 
 const DRONE_OPENINGS: RegExp[] = [
+  // SELF-TALK.md rule 3: drills declare themselves. A session opening with
+  // the literal [drill] marker is a wiring test by contract — never memory.
+  /^\s*\[drill\]/i,
   /^you are (the |a |an )?[\w-]{1,60}\b[\s\S]{0,200}\b(worker|orchestrat|orch-|ws-[a-z0-9]+|telemetry sink|brief)/i,
   /read and execute/i,
   /execute (your|the|this) [\s\S]{0,60}brief/i,
