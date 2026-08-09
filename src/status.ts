@@ -26,6 +26,7 @@ import * as path from "path";
 import { homedir } from "os";
 import { createHash } from "crypto";
 import { ok, degraded, correlation } from "./obs.ts";
+import { renderRedundancy } from "./redundancy.ts";
 
 // CIRCADIAN_HOME overrides; default ~/circadian. See wake.ts for the contract.
 const CIRCADIAN_HOME = process.env.CIRCADIAN_HOME || path.join(homedir(), "circadian");
@@ -597,6 +598,22 @@ function renderLine(vitals: ReturnType<typeof collectVitals>, scoreboard: ScoreE
   }
 
   if (degradedToday > 0) parts.push(`!${degradedToday} degraded`);
+
+  // Mode-collapse gauge (the danger model, 2026-08-09): semantic redundancy
+  // of the rendered worldview. Quiet when healthy; loud with the receipts
+  // when the render is converging on one voice. See src/redundancy.ts.
+  try {
+    const red = renderRedundancy(MIND_DIR);
+    if (red) {
+      parts.push(
+        red.collapse
+          ? `!! MODE COLLAPSE (μ${red.meanOverlap.toFixed(3)}, "${red.modalToken}" ${Math.round(red.modalShare * 100)}%)`
+          : "mode ok"
+      );
+    }
+  } catch {
+    /* instrument failure must never break the strip */
+  }
 
   if (vitals.verdicts.kill_switch) parts.push("!!! KILL SWITCH");
 
