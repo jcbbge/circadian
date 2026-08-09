@@ -196,11 +196,16 @@ describe("replay genesis bootstrap shim", () => {
 });
 
 describe("replay section accounting", () => {
-  test("sectionTokens splits the four MIND-SPEC sections of the real SELF.md", () => {
+  test("sectionTokens splits the MIND-SPEC sections of the real SELF.md — identity ceded to CONSTITUTION.md (2026-08-09)", () => {
     const selfMd = fs.readFileSync(path.join(MIND, "SELF.md"), "utf8");
     const sections = sectionTokens(selfMd);
     expect(Object.keys(sections)).toEqual(["Who I am across sessions", "Doctrine", "Motifs", "How we work"]);
-    for (const v of Object.values(sections)) expect(v).toBeGreaterThan(0);
+    // "Who I am" renders at budget 0 since 2026-08-09 (the constitution layer
+    // owns identity); its accounting stays present and reads zero.
+    expect(sections["Who I am across sessions"]).toBe(0);
+    expect(sections["Doctrine"]).toBeGreaterThan(0);
+    expect(sections["Motifs"]).toBeGreaterThan(0);
+    expect(sections["How we work"]).toBeGreaterThan(0);
     // Doctrine is the heavyweight section of the living worldview
     expect(sections["Doctrine"]).toBeGreaterThan(sections["Motifs"]);
   });

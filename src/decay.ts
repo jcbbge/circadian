@@ -6,9 +6,10 @@
  *
  * Forgetting is a nightly multiply (five sentences, #3): one run appends
  * exactly one `{ev:"decay", factor:0.95}` ledger event, which foldWeights
- * (atoms.ts) applies to every atom with a prior `stack` event. Below
- * RENDER_FLOOR an atom leaves the render (render.ts); the file stays —
- * defocus, never delete.
+ * (atoms.ts) applies to every atom with a prior `stack` event, followed by
+ * exactly one `{ev:"renorm", target}` event — the homeostatic ceiling (see
+ * TOTAL_WEIGHT_TARGET below). Below RENDER_FLOOR an atom leaves the render
+ * (render.ts); the file stays — defocus, never delete.
  *
  * Before decaying, a run re-potentiates: scoreboard rem events carry a
  * `propagated` array of rendered addresses (`SELF.Doctrine[n]`, etc. —
@@ -48,6 +49,13 @@ const SCOREBOARD_PATH = path.join(MIND_DIR, "scoreboard.jsonl");
 const VITALS_PATH = path.join(CIRCADIAN_HOME, "logs", ".population-vitals.json");
 
 export const DECAY_FACTOR = 0.95;
+
+/** Homeostatic renormalization ceiling (synaptic scaling paired with LTP):
+ * after the nightly decay, one `{ev:"renorm",target}` line caps the total
+ * weight of active atoms. foldWeights (atoms.ts) scales every active atom by
+ * target/total iff total > target — never up. Strengthening one belief now
+ * costs the others; uniform decay alone preserves rank order forever. */
+export const TOTAL_WEIGHT_TARGET = 400;
 
 // ---------------------------------------------------------------------
 // pure decision logic — no clock, no I/O
@@ -217,8 +225,9 @@ async function main() {
     runTs
   );
   const decayEvent: LedgerEvent = { ev: "decay", factor: DECAY_FACTOR, ts: runTs };
+  const renormEvent: LedgerEvent = { ev: "renorm", target: TOTAL_WEIGHT_TARGET, ts: runTs };
 
-  const statesAfter = foldWeights([...ledgerBefore, ...potentiateEvents, decayEvent]);
+  const statesAfter = foldWeights([...ledgerBefore, ...potentiateEvents, decayEvent, renormEvent]);
   const sankBelowFloor = computeSankBelowFloor(atoms, statesAfter);
   const topWeight = atoms.reduce((max, a) => Math.max(max, statesAfter.get(a.id)?.weight ?? 0), 0);
   const srcLoc = countSrcLoc();
@@ -226,6 +235,7 @@ async function main() {
   if (!dryRun) {
     for (const ev of potentiateEvents) appendLedger(LEDGER_PATH, ev);
     appendLedger(LEDGER_PATH, decayEvent);
+    appendLedger(LEDGER_PATH, renormEvent);
 
     const vitals = {
       ts: runTs,
@@ -264,7 +274,7 @@ async function main() {
       process: "decay",
       phase: "run",
       correlation_id: corr,
-      summary: `decay run: ${potentiateEvents.length} potentiate event(s) from ${newRemCount} new rem event(s), 1 decay event${dryRun ? " (dry-run, nothing written)" : " applied"}`,
+      summary: `decay run: ${potentiateEvents.length} potentiate event(s) from ${newRemCount} new rem event(s), 1 decay event, 1 renorm event (target ${TOTAL_WEIGHT_TARGET})${dryRun ? " (dry-run, nothing written)" : " applied"}`,
       context,
     });
   }

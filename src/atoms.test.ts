@@ -277,6 +277,123 @@ describe("foldWeights", () => {
     expect(foldWeights([]).size).toBe(0);
   });
 
+  test("renorm scales every active atom by target/total when total exceeds target", () => {
+    const events: LedgerEvent[] = [
+      { ev: "stack", atom: "A", ts: "t1" },
+      { ev: "stack", atom: "A", ts: "t2" },
+      { ev: "stack", atom: "A", ts: "t3" }, // A = 3
+      { ev: "stack", atom: "B", ts: "t4" }, // B = 1; total 4
+      { ev: "renorm", target: 2, ts: "t5" }, // scale = 2/4 = 0.5
+    ];
+    const states = foldWeights(events);
+    expect(states.get("A")!.weight).toBeCloseTo(1.5, 10);
+    expect(states.get("B")!.weight).toBeCloseTo(0.5, 10);
+  });
+
+  test("renorm is a ceiling, not a thermostat: total at/below target is untouched (never scales up)", () => {
+    const events: LedgerEvent[] = [
+      { ev: "stack", atom: "A", ts: "t1" }, // total 1
+      { ev: "renorm", target: 400, ts: "t2" },
+    ];
+    const states = foldWeights(events);
+    expect(states.get("A")!.weight).toBe(1); // exactly 1, no scaling at all
+
+    // exactly at target: also untouched
+    const atTarget: LedgerEvent[] = [
+      { ev: "stack", atom: "A", ts: "t1" },
+      { ev: "stack", atom: "B", ts: "t2" },
+      { ev: "renorm", target: 2, ts: "t3" },
+    ];
+    const s2 = foldWeights(atTarget);
+    expect(s2.get("A")!.weight).toBe(1);
+    expect(s2.get("B")!.weight).toBe(1);
+  });
+
+  test("renorm excludes superseded atoms from the total and never scales them", () => {
+    const events: LedgerEvent[] = [
+      { ev: "stack", atom: "W", ts: "t1" },
+      { ev: "stack", atom: "L", ts: "t2" },
+      { ev: "stack", atom: "L", ts: "t3" }, // L = 2
+      { ev: "supersede", winner: "W", loser: "L", ts: "t4" }, // W = 3, L = 0 superseded
+      { ev: "stack", atom: "C", ts: "t5" }, // C = 1; active total 4
+      { ev: "renorm", target: 2, ts: "t6" }, // scale 0.5 over active only
+    ];
+    const states = foldWeights(events);
+    expect(states.get("W")!.weight).toBeCloseTo(1.5, 10);
+    expect(states.get("C")!.weight).toBeCloseTo(0.5, 10);
+    expect(states.get("L")).toEqual({ weight: 0, status: "superseded-by:W" });
+  });
+
+  test("renorm preserves rank order within the event (uniform scale)", () => {
+    const events: LedgerEvent[] = [
+      { ev: "stack", atom: "hi", ts: "t1" },
+      { ev: "stack", atom: "hi", ts: "t2" },
+      { ev: "stack", atom: "hi", ts: "t3" },
+      { ev: "stack", atom: "mid", ts: "t4" },
+      { ev: "stack", atom: "mid", ts: "t5" },
+      { ev: "stack", atom: "lo", ts: "t6" },
+      { ev: "renorm", target: 3, ts: "t7" }, // total 6 -> scale 0.5
+    ];
+    const states = foldWeights(events);
+    const w = (id: string) => states.get(id)!.weight;
+    expect(w("hi")).toBeGreaterThan(w("mid"));
+    expect(w("mid")).toBeGreaterThan(w("lo"));
+    // ratios are exactly preserved by a uniform scale
+    expect(w("hi") / w("lo")).toBeCloseTo(3, 10);
+  });
+
+  test("renorm with a missing or non-positive target is a no-op (malformed-line tolerance)", () => {
+    const base: LedgerEvent[] = [
+      { ev: "stack", atom: "A", ts: "t1" },
+      { ev: "stack", atom: "A", ts: "t2" },
+    ];
+    for (const bad of [{}, { target: 0 }, { target: -5 }, { target: NaN }] as Partial<LedgerEvent>[]) {
+      const states = foldWeights([...base, { ev: "renorm", ts: "t3", ...bad } as LedgerEvent]);
+      expect(states.get("A")!.weight).toBe(2);
+    }
+  });
+
+  test("renorm is competitive with later earnings: post-renorm stacks are worth relatively more", () => {
+    // Champion piles up weight, then a renorm caps the total; a newcomer's
+    // single stack after the cap moves it proportionally further than it
+    // would have against the uncapped champion.
+    const events: LedgerEvent[] = [
+      { ev: "stack", atom: "champ", ts: "t1" },
+      { ev: "stack", atom: "champ", ts: "t2" },
+      { ev: "stack", atom: "champ", ts: "t3" },
+      { ev: "stack", atom: "champ", ts: "t4" }, // champ 4
+      { ev: "renorm", target: 2, ts: "t5" }, // champ -> 2
+      { ev: "stack", atom: "newbie", ts: "t6" }, // newbie 1: half the champ, vs 1/4 uncapped
+    ];
+    const states = foldWeights(events);
+    expect(states.get("newbie")!.weight / states.get("champ")!.weight).toBeCloseTo(0.5, 10);
+  });
+
+  test("backward compatibility: a ledger with no renorm lines folds exactly as before", () => {
+    const events: LedgerEvent[] = [
+      { ev: "stack", atom: "AAA", ts: "t1" },
+      { ev: "stack", atom: "BBB", ts: "t2" },
+      { ev: "decay", factor: 0.5, ts: "t3" },
+      { ev: "potentiate", atom: "AAA", ts: "t4" },
+    ];
+    const states = foldWeights(events);
+    expect(states.get("AAA")).toEqual({ weight: 1.5, status: "active" });
+    expect(states.get("BBB")).toEqual({ weight: 0.5, status: "active" });
+  });
+
+  test("determinism: folding the same renorm-bearing ledger twice yields identical states", () => {
+    const events: LedgerEvent[] = [
+      { ev: "stack", atom: "A", ts: "t1" },
+      { ev: "stack", atom: "B", ts: "t2" },
+      { ev: "stack", atom: "B", ts: "t3" },
+      { ev: "decay", factor: 0.95, ts: "t4" },
+      { ev: "renorm", target: 1.5, ts: "t5" },
+    ];
+    const a = foldWeights(events);
+    const b = foldWeights(events);
+    expect([...a.entries()]).toEqual([...b.entries()]);
+  });
+
   test("the ~13-night decay runway: weight 1, 13 decays >= floor 0.5, 14th < floor", () => {
     const events: LedgerEvent[] = [{ ev: "stack", atom: "X", ts: "t0" }];
     for (let i = 0; i < 13; i++) events.push({ ev: "decay", factor: 0.95, ts: `d${i}` });

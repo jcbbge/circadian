@@ -43,13 +43,18 @@ export interface Atom {
 }
 
 export interface LedgerEvent {
-  ev: "stack" | "decay" | "potentiate" | "supersede";
+  ev: "stack" | "decay" | "potentiate" | "supersede" | "renorm";
   ts: string;
   atom?: string;
   ep?: string;
+  /** fractional deposit multiplier for a stack event (flash exposures).
+   * Absent => 1 (full weight). Stack stays the decay-eligibility event
+   * regardless of grain. */
+  grain?: number;
   factor?: number;
   winner?: string;
   loser?: string;
+  target?: number;
 }
 
 export interface AtomState {
@@ -281,7 +286,9 @@ export function appendLedger(ledgerPath: string, ev: LedgerEvent): void {
 /** Folds the ledger into a weight/status per atom id. Pure — no clock, no
  * I/O. Semantics (templates/MIND-SPEC.md "The ledger"):
  *   - weight starts at 0 for every atom.
- *   - `stack{atom}`: weight +1. Also the ONLY event that makes an atom
+ *   - `stack{atom, grain?}`: weight +1, or +`grain` when present (flash
+ *     exposures deposit at fractional grain; absent grain = 1). Also the
+ *     ONLY event that makes an atom
  *     eligible for `decay` (an atom stacked after a decay event in the
  *     ledger is unaffected by that earlier decay — "decay-before-birth").
  *   - `potentiate{atom}`: weight +1. Does NOT by itself make an atom
@@ -291,6 +298,14 @@ export function appendLedger(ledgerPath: string, ev: LedgerEvent): void {
  *   - `supersede{winner,loser}`: loser's current weight transfers to
  *     winner; loser's weight becomes 0 and its status becomes
  *     `superseded-by:<winner>`.
+ *   - `renorm{target}`: homeostatic ceiling (synaptic scaling). If the
+ *     total weight of active atoms exceeds `target`, every active atom's
+ *     weight scales by `target / total`. Never scales UP — a young sparse
+ *     mind is untouched. Uniform within one event (rank order preserved);
+ *     the competitive pressure is the interaction with stack/potentiate:
+ *     new earnings are worth relatively more when the total is capped.
+ *     A missing or non-positive `target` makes the event a no-op (the
+ *     malformed-line tolerance, applied at fold level).
  * Events are processed strictly in array order — append order is truth. */
 export function foldWeights(events: LedgerEvent[]): Map<string, AtomState> {
   const states = new Map<string, AtomState>();
@@ -309,7 +324,7 @@ export function foldWeights(events: LedgerEvent[]): Map<string, AtomState> {
     switch (ev.ev) {
       case "stack": {
         if (!ev.atom) break;
-        ensure(ev.atom).weight += 1;
+        ensure(ev.atom).weight += ev.grain ?? 1; // absent grain = full weight (backward compatible)
         everStacked.add(ev.atom);
         break;
       }
@@ -333,6 +348,16 @@ export function foldWeights(events: LedgerEvent[]): Map<string, AtomState> {
         winner.weight += loser.weight;
         loser.weight = 0;
         loser.status = `superseded-by:${ev.winner}`;
+        break;
+      }
+      case "renorm": {
+        const target = ev.target;
+        if (typeof target !== "number" || !Number.isFinite(target) || target <= 0) break;
+        let total = 0;
+        for (const s of states.values()) if (s.status === "active") total += s.weight;
+        if (total <= target) break; // ceiling, not a thermostat: never scale up
+        const scale = target / total;
+        for (const s of states.values()) if (s.status === "active") s.weight *= scale;
         break;
       }
     }

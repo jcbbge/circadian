@@ -9,7 +9,12 @@ mind/
 # runtime logs (launchd stdout/stderr + event ledgers)
 logs/*.log
 logs/*.jsonl
+logs/.population-vitals.json
+logs/.status-snap-*.json
 logs/fleet/
+
+# pi's per-project runtime state (session state, not source)
+.pi/
 
 # os / editor cruft
 .DS_Store

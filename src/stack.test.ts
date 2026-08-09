@@ -4,6 +4,7 @@
 // mind commit 6271e090226a9970b158399d621d69eac15c5a80 (the zoom.test.ts /
 // gauntlet.test.ts pattern — no mocks of code under test).
 import { describe, test, expect } from "bun:test";
+import * as fs from "fs";
 import * as path from "path";
 import { homedir } from "os";
 import {
@@ -22,9 +23,16 @@ import {
   frontmatterDate,
   buildExtractPrompt,
   buildComparePrompt,
+  FLASH_GRAIN,
+  FLASH_BODY_MAX,
+  FLASH_PAIRS_MAX,
+  classifyExposure,
+  stripFrontmatter,
+  parseExposureTranscript,
   type ExistingAtomView,
+  type ExposureClass,
 } from "./stack.ts";
-import { atomId } from "./atoms.ts";
+import { atomId, foldWeights, type LedgerEvent } from "./atoms.ts";
 import { significantTokens, jaccard } from "./ltp.ts";
 import { collectAllEpisodesAt } from "./replay.ts";
 
@@ -479,5 +487,188 @@ describe("prompt builders", () => {
     expect(p).toContain("claim A text");
     expect(p).toContain("claim B text");
     for (const token of ["SAME", "DISTINCT", "SUPERSEDES_A", "SUPERSEDES_B"]) expect(p).toContain(token);
+  });
+});
+
+// ---------------------------------------------------------------------
+// exposure metering — flash vs standard (wave-optics W2)
+// ---------------------------------------------------------------------
+
+/** Reads a REAL episode pinned at the pre-purge snapshot rev (no mocks of
+ * code under test — the repo doctrine). These fixtures were originally read
+ * from the working tree; the 2026-08-09 purge (mind commit 87436ff) expelled
+ * the drone corpus from disk, and the snapshot commit 7c4dc18 is where that
+ * evidence lives forever. Same episodes, same ids, preserved location — the
+ * pin is now actually content-stable, as the original comment intended. */
+const PRE_PURGE_REV = "7c4dc18";
+function readEpisode(filename: string): { name: string; body: string } {
+  const r = Bun.spawnSync(["git", "-C", MIND, "show", `${PRE_PURGE_REV}:episodes/${filename}`]);
+  if (r.exitCode !== 0) {
+    throw new Error(
+      `pinned episode ${filename} not found at mind rev ${PRE_PURGE_REV} — ` +
+        `the evidence this suite is pinned to must exist in the snapshot; do not retarget`
+    );
+  }
+  return { name: filename, body: r.stdout.toString() };
+}
+
+// The ACK / genesis fixtures — the canonical flash vs standard anchors:
+const ACK_EPISODE = () => readEpisode("2026-08-05-passive-telemetry-sink.md");
+const GENESIS_EPISODE = () => readEpisode("2026-07-28-genesis-archaeology.md");
+
+describe("exposure metering knobs (W2)", () => {
+  test("FLASH_GRAIN is 0.25 — flash deposits at a quarter weight", () => {
+    expect(FLASH_GRAIN).toBe(0.25);
+  });
+  test("FLASH_BODY_MAX / FLASH_PAIRS_MAX are tuned, bounded knobs", () => {
+    expect(FLASH_BODY_MAX).toBe(2600);
+    expect(FLASH_PAIRS_MAX).toBe(2);
+  });
+});
+
+describe("classifyExposure — real episodes, PINNED (W2)", () => {
+  test("the ACK episode (passive-telemetry-sink) classifies FLASH", () => {
+    const ep = ACK_EPISODE();
+    expect(classifyExposure(ep)).toBe("flash");
+  });
+
+  test("genesis-archaeology (authored archaeology, 8k chars) classifies STANDARD", () => {
+    const ep = GENESIS_EPISODE();
+    expect(classifyExposure(ep)).toBe("standard");
+  });
+
+  test("verdict-hook-validation-3 — identical-quote echo — classifies FLASH", () => {
+    const ep = readEpisode("2026-07-28-verdict-hook-validation-3.md");
+    expect(classifyExposure(ep)).toBe("flash");
+  });
+
+  test("hello-world-write (prose rendition) classifies FLASH via transcript head", () => {
+    const ep = readEpisode("2026-08-03-hello-world-write.md");
+    expect(classifyExposure(ep)).toBe("flash");
+  });
+
+  test("a role-brief worker execution (ws-g-execution) classifies FLASH", () => {
+    const ep = readEpisode("2026-07-27-ws-g-execution.md");
+    expect(classifyExposure(ep)).toBe("flash");
+  });
+
+  test("a substantive short session (tower-gate, 618 chars) classifies STANDARD — body evidence over length", () => {
+    const ep = readEpisode("2026-07-27-tower-gate.md");
+    expect(classifyExposure(ep)).toBe("standard");
+  });
+
+  test("a multi-pair design session (the-river-remembers) classifies STANDARD", () => {
+    const ep = readEpisode("2026-07-28-the-river-remembers.md");
+    expect(classifyExposure(ep)).toBe("standard");
+  });
+
+  test("a real engineering finding (instrument-over-model) classifies STANDARD", () => {
+    const ep = readEpisode("2026-08-06-instrument-over-model.md");
+    expect(classifyExposure(ep)).toBe("standard");
+  });
+
+  test("flash requires body evidence — a long echo-looking transcript is standard", () => {
+    const ep = readEpisode("2026-08-03-neural-avalanche-integration.md");
+    expect(classifyExposure(ep)).toBe("standard"); // 2638 chars > FLASH_BODY_MAX
+  });
+});
+
+describe("parseExposureTranscript — real episodes (W2)", () => {
+  test("ACK episode: 1 labeled pair, first user turn is the role brief", () => {
+    const t = parseExposureTranscript(stripFrontmatter(ACK_EPISODE().body));
+    expect(t.pairs).toBe(1);
+    expect(t.firstUserTurn).toContain("passive telemetry sink");
+  });
+  test("CAIRN kickoff-4: unlabeled alternating quote pair", () => {
+    const ep = readEpisode("2026-08-06-cairn-kickoff-4.md");
+    const t = parseExposureTranscript(stripFrontmatter(ep.body));
+    expect(t.pairs).toBeGreaterThanOrEqual(1);
+    expect(t.firstUserTurn).toMatch(/CAIRN/);
+  });
+  test("genesis-archaeology: prose, no transcript pairs", () => {
+    const t = parseExposureTranscript(stripFrontmatter(GENESIS_EPISODE().body));
+    expect(t.pairs).toBe(0);
+  });
+});
+
+describe("grain — flash stack events deposit fractionally in fold (W2)", () => {
+  test("absent grain folds as full weight (backward compatibility — the ACK episode's siblings never carried grain)", () => {
+    const events: LedgerEvent[] = [
+      { ev: "stack", atom: "A", ep: "2026-07-28-genesis-archaeology.md", ts: "t1" },
+      { ev: "stack", atom: "A", ep: "2026-07-28-genesis-archaeology.md", ts: "t2" },
+    ];
+    expect(foldWeights(events).get("A")?.weight).toBe(2);
+  });
+
+  test("grain 0.25 stack events deposit at a quarter, and stack still marks decay-eligibility", () => {
+    const events: LedgerEvent[] = [
+      { ev: "stack", atom: "A", ep: "2026-08-05-passive-telemetry-sink.md", ts: "t1", grain: FLASH_GRAIN },
+      { ev: "stack", atom: "A", ep: "2026-08-05-passive-telemetry-sink.md", ts: "t2", grain: FLASH_GRAIN },
+      { ev: "decay", factor: 0.5, ts: "t3" },
+    ];
+    const states = foldWeights(events);
+    // 0.25 + 0.25 = 0.5, then decay x0.5 = 0.25
+    expect(states.get("A")?.weight).toBeCloseTo(0.25);
+    expect(states.get("A")?.status).toBe("active");
+  });
+
+  test("a grain-bearing flash stack makes an atom decay-eligible exactly like a full stack", () => {
+    const events: LedgerEvent[] = [
+      { ev: "stack", atom: "A", ep: "2026-08-05-passive-telemetry-sink.md", ts: "t1", grain: FLASH_GRAIN },
+      { ev: "decay", factor: 0.9, ts: "t2" },
+    ];
+    const states = foldWeights(events);
+    expect(states.get("A")?.weight).toBeCloseTo(0.225); // 0.25 * 0.9
+  });
+
+  test("mixed ledger: flash grain and full-weight stacks fold independently", () => {
+    const events: LedgerEvent[] = [
+      { ev: "stack", atom: "FLASH", ep: "2026-08-05-passive-telemetry-sink.md", ts: "t1", grain: FLASH_GRAIN },
+      { ev: "stack", atom: "FULL", ep: "2026-07-28-genesis-archaeology.md", ts: "t2" },
+      { ev: "stack", atom: "FULL", ep: "2026-07-28-genesis-archaeology.md", ts: "t3" },
+    ];
+    const states = foldWeights(events);
+    expect(states.get("FLASH")?.weight).toBeCloseTo(0.25);
+    expect(states.get("FULL")?.weight).toBe(2);
+  });
+});
+
+describe("classifyExposure — other real flashes and standards (W2)", () => {
+  test("the whole ack/verdict/ok/pong/cairn family classifies flash", () => {
+    const flashes = [
+      "2026-08-03-ok-acknowledgment.md",
+      "2026-08-06-ok-acknowledgment.md",
+      "2026-08-03-ok-acknowledgment-2.md",
+      "2026-07-28-verdict-hook-confirmation.md",
+      "2026-07-28-verdict-hook-validation-2.md",
+      "2026-07-28-pong-echo.md",
+      "2026-08-06-cairn-kickoff-4.md",
+      "2026-08-06-worker-1-done-confirmation.md",
+      "2026-08-05-telemetry-sink-confirmation.md",
+      "2026-08-03-hello-world-echo.md",
+      "2026-08-05-ready-confirmation.md",
+      "2026-08-03-hello-world-write-3.md",
+      "2026-07-27-ws-0-fix-hotfix.md",
+      "2026-08-05-claim-gate-validation.md",
+    ];
+    for (const f of flashes) {
+      expect(classifyExposure(readEpisode(f))).toBe("flash");
+    }
+  });
+
+  test("substantive sessions classify standard — relay, finding, debugging, orchestration", () => {
+    const standards = [
+      "2026-08-06-ws-f2-acceptance-finalization.md",
+      "2026-08-05-tower-scoping-fix.md",
+      "2026-08-04-tunick-s-ghost.md",
+      "2026-08-05-control-plane-illusion.md",
+      "2026-08-05-orchestrator-launch.md",
+      "2026-08-06-bb-app-crash.md",
+      "2026-08-06-water-as-negative-mold.md",
+      "2026-08-06-e-is-live.md",
+    ];
+    for (const f of standards) {
+      expect(classifyExposure(readEpisode(f))).toBe("standard");
+    }
   });
 });

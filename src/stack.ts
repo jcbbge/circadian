@@ -159,6 +159,156 @@ export const COMPARE_TOP_K = 2;
  * suspenders layer (same content -> same candidate -> exact hash hit). */
 export const EXTRACT_TEMPERATURE = 0;
 
+// ---------------------------------------------------------------------
+// exposure metering — flash vs standard (w2 brief: the light meter)
+// ---------------------------------------------------------------------
+
+/** Flash exposures deposit at this fraction of full weight. Absent `grain`
+ * on a ledger stack event folds as 1 (append-only backward compat). */
+export const FLASH_GRAIN = 0.25;
+/** A flash episode's body (frontmatter stripped) must be at most this long —
+ * tuned on the real corpus: the longest flash episodes (CAIRN narration
+ * renditions, ~2.4k chars) sit below it; substantive sessions (neural-
+ * avalanche SELECTOR run at ~2.6k, genesis-archaeology at ~8k) clear it. */
+export const FLASH_BODY_MAX = 2600;
+/** A flash episode's transcript must consist of at most this many
+ * user/assistant exchange pairs. */
+export const FLASH_PAIRS_MAX = 2;
+
+export type ExposureClass = "flash" | "standard";
+
+export interface EpisodeView {
+  name: string;
+  body: string;
+}
+
+// ---------------------------------------------------------------------
+// instruction-echo / role-brief patterns — body evidence, not filename.
+// Each pattern was tuned against the real 155-episode corpus on 2026-08-09:
+// the flash set is the ack/verdict/ok/pong/cairn echo family plus the
+// disposable-worker role briefs ("You are the %s worker. Read … execute it
+// fully") whose identity atoms contaminated the mind (w2 report, boundary
+// notes). A pure body scanner keeps filenames as hints, not truth.
+// ---------------------------------------------------------------------
+
+const ECHO_PATTERNS: RegExp[] = [
+  /\breply with (exactly|only|the (single )?word)\b/i,
+  /\breply (exactly|only|OK|READY|PONG|ACK|DONE)\b/i,
+  /\b(say|answer|respond) (exactly |only )?(OK|READY|CAIRN|PONG|ACK|DONE)\b/i,
+  /\bwrite (exactly )?['"][^'"]{1,40}['"] to \/tmp\b/i,
+  /\bprint the word [A-Za-z]+\b/i,
+  /\bthe single word [A-Z]+\b/i,
+  // role briefs from disposable herdr workers
+  /\byou are (a|an|the)? ?[^.\n]{0,100}?\b(worker|orchestrator|probe|selector|sink|gate-brain)\b/i,
+  /\bthe worker contract (it references )?binds you\b/i,
+  /\bcontract binds\b/i,
+  /\b(execute|read) (it|your brief|the brief) fully\b/i,
+  /\bexecute the brief at\b/i,
+  /\bwrite your complete output to\b/i,
+];
+
+function matchesEcho(text: string): boolean {
+  return ECHO_PATTERNS.some((re) => re.test(text));
+}
+
+/** Strips the episode YAML frontmatter block (`---\n…\n---\n`). */
+export function stripFrontmatter(content: string): string {
+  const m = content.match(/^---\n[\s\S]*?\n---\n?/);
+  return m ? content.slice(m[0].length) : content;
+}
+
+/** Parses the body's leading transcript region (up to the first analysis
+ * marker: user-observed/what-changed/meta) into exchange pairs and the
+ * first user turn. Handles labeled `"User: …" / "Assistant: …"` lines and
+ * unlabeled consecutive quoted lines (alternating user/assistant). */
+export function parseExposureTranscript(body: string): {
+  pairs: number;
+  firstUserTurn: string | null;
+} {
+  const lines = body.split("\n").map((l) => l.trim()).filter((l) => l.length > 0);
+  const transcript: string[] = [];
+  for (const line of lines) {
+    if (/^(user-observed|what-changed|meta)\s*:/i.test(line)) break;
+    if (line.startsWith("#")) continue;
+    if (line.startsWith('"User:') || line.startsWith('"Assistant:') || /^["'“]/.test(line) || /^User:|^Assistant:/i.test(line)) {
+      transcript.push(line);
+      continue;
+    }
+    if (transcript.length > 0) break; // prose after the transcript ends it
+  }
+
+  const labeledUser: string[] = [];
+  const labeledAsst: string[] = [];
+  const unlabeled: string[] = [];
+  for (const line of transcript) {
+    const mu = line.match(/^"?User:\s*(.*?)"?\s*$/is);
+    if (mu) {
+      labeledUser.push(mu[1].trim().replace(/["“”]$/, ""));
+      continue;
+    }
+    const ma = line.match(/^"?Assistant:\s*(.*?)"?\s*$/is);
+    if (ma) {
+      labeledAsst.push(ma[1].trim().replace(/["“”]$/, ""));
+      continue;
+    }
+    const q = line.match(/^["'“”](.*)["'“”]\s*$/s);
+    if (q) {
+      unlabeled.push(q[1].trim());
+      continue;
+    }
+  }
+
+  const pairs = labeledUser.length + labeledAsst.length > 0
+    ? Math.min(labeledUser.length, labeledAsst.length)
+    : Math.floor(unlabeled.length / 2);
+
+  const firstUserTurn = labeledUser[0] ?? unlabeled[0] ?? null;
+  return { pairs, firstUserTurn };
+}
+
+/** Classification — a pure function over the episode file (no LLM, no
+ * network). An episode is a FLASH exposure when it is structurally trivial:
+ * short body, <= FLASH_PAIRS_MAX exchange pairs, and its opening shows an
+ * instruction-echo or disposable-role-brief pattern. Decided by BODY
+ * EVIDENCE — the filename is a hint, not truth.
+ *
+ * Signals (w2 brief, tuned on the real corpus):
+ *   1. total body length below FLASH_BODY_MAX;
+ *   2. transcript consists of <= FLASH_PAIRS_MAX user/assistant pairs;
+ *   3. the user turn (or, for prose-rendered episodes, the transcript head)
+ *      matches an instruction-echo pattern ("Reply with exactly", "say OK",
+ *      single-word expected output) or a disposable-worker role brief;
+ *   3b. a verbatim identical-quote echo (user turn == assistant turn) is a
+ *      one-token test regardless of which side carried the instruction.
+ */
+export function classifyExposure(episode: EpisodeView): ExposureClass {
+  const body = stripFrontmatter(episode.body);
+
+  // Signal 1: body length.
+  if (body.length > FLASH_BODY_MAX) return "standard";
+
+  const t = parseExposureTranscript(body);
+
+  // Signal 2: exchange pairs.
+  if (t.pairs > FLASH_PAIRS_MAX) return "standard";
+
+  // Signal 3: instruction-echo / role-brief in the user turn, else the raw
+  // transcript head (prose renditions — e.g. CAIRN kickoff narratives embed
+  // the whole exchange in one paragraph).
+  const marker = body.search(/\nuser-observed:|\nwhat-changed:|\nmeta\s*:/i);
+  const transcriptHead = (marker > 0 ? body.slice(0, marker) : body.slice(0, 600)).slice(0, 600);
+  if (matchesEcho(t.firstUserTurn ?? transcriptHead)) return "flash";
+
+  // Signal 3b: identical-quote echo (e.g. verdict-hook-validation-3).
+  const quoted = body.split("\n")
+    .map((l) => l.trim())
+    .map((l) => l.match(/^["'“”](.+)['"“”]$/)?.[1]?.trim())
+    .filter((x): x is string => Boolean(x));
+  if (quoted.length >= 2 && quoted[0].toLowerCase() === quoted[1].toLowerCase()) return "flash";
+
+  return "standard";
+}
+
 const KINDS: readonly AtomKind[] = ["identity", "doctrine", "motif", "agreement"];
 
 // EXTRACT: episode-sized single call, same 90s single-call budget as
@@ -586,6 +736,12 @@ export interface StackCounts {
   droppedOverCap: number;
   compareCalls: number;
   compareInvalid: number;
+  /** identity-kind candidates suppressed because this episode is a flash
+   * exposure (w2: flash exposures are barred from minting identity). */
+  identitySuppressed?: number;
+  /** "flash" | "standard" — the exposure class this episode was metered as
+   * (w2 exposure metering). */
+  exposure?: ExposureClass;
 }
 
 export interface StackEpisodeResult {
@@ -660,6 +816,32 @@ export async function stackEpisode(ctx: StackEpisodeContext): Promise<StackEpiso
 
   const { candidates, rejected, droppedOverCap } = processExtractCompletion(rawExtract, episodeContent);
 
+  // w2 exposure metering: classify the episode BEFORE dedupe. A flash
+  // exposure (a) deposits at fractional grain and (b) is barred from
+  // kind:identity — its identity-kind candidates are dropped here, with an
+  // obs event (Law 9: nothing silent).
+  const exposure = classifyExposure({ name: ctx.filename, body: episodeContent });
+  const grain = exposure === "flash" ? FLASH_GRAIN : undefined;
+  const candidatePool = exposure === "flash" ? candidates.filter((c) => c.kind !== "identity") : candidates;
+  const identitySuppressed = candidates.length - candidatePool.length;
+  if (identitySuppressed > 0) {
+    ok({
+      process: "stack",
+      phase: "flash-identity-bar",
+      correlation_id: ctx.correlationId,
+      summary: "identity candidate suppressed: flash exposure",
+      context: {
+        filename: ctx.filename,
+        exposure,
+        grain,
+        count: identitySuppressed,
+        claims: candidates
+          .filter((c) => c.kind === "identity")
+          .map((c) => c.claim.slice(0, 200)),
+      },
+    });
+  }
+
   const priorStates = foldWeights(priorEvents);
   let population: ExistingAtomView[] = readAtoms(ctx.beliefsDir)
     .filter((a) => (priorStates.get(a.id)?.status ?? "active") === "active")
@@ -674,9 +856,11 @@ export async function stackEpisode(ctx: StackEpisodeContext): Promise<StackEpiso
     droppedOverCap,
     compareCalls: 0,
     compareInvalid: 0,
+    identitySuppressed,
+    exposure,
   };
 
-  for (const candidate of candidates) {
+  for (const candidate of candidatePool) {
     const comparator: Comparator = async (a, b) => {
       const prompt = buildComparePrompt(a, b);
       let raw: string;
@@ -703,6 +887,7 @@ export async function stackEpisode(ctx: StackEpisodeContext): Promise<StackEpiso
         atom: decision.targetAtomId!,
         ep: ctx.filename,
         ts: new Date().toISOString(),
+        ...(grain !== undefined ? { grain } : {}),
       });
       if (decision.compareUsed) counts.bumped++;
       else counts.stacked++;
@@ -719,7 +904,13 @@ export async function stackEpisode(ctx: StackEpisodeContext): Promise<StackEpiso
       quotes: candidate.quotes.map((text) => ({ text, source: ctx.filename })),
       eps: [episodeDate],
     });
-    appendLedger(ctx.ledgerPath, { ev: "stack", atom: written.id, ep: ctx.filename, ts: new Date().toISOString() });
+    appendLedger(ctx.ledgerPath, {
+      ev: "stack",
+      atom: written.id,
+      ep: ctx.filename,
+      ts: new Date().toISOString(),
+      ...(grain !== undefined ? { grain } : {}),
+    });
     counts.new++;
 
     if (decision.action === "supersede") {

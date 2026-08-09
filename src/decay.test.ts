@@ -10,7 +10,7 @@ import { tmpdir, homedir } from "os";
 import { spawnSync } from "child_process";
 import { foldWeights, appendLedger, readLedger, type LedgerEvent, type Atom, type AtomState } from "./atoms.ts";
 import { RENDER_FLOOR } from "./render.ts";
-import { DECAY_FACTOR, findNewRemEvents, computePotentiateEvents, computeSankBelowFloor, type RemPropagationEvent } from "./decay.ts";
+import { DECAY_FACTOR, TOTAL_WEIGHT_TARGET, findNewRemEvents, computePotentiateEvents, computeSankBelowFloor, type RemPropagationEvent } from "./decay.ts";
 
 const BUN_BIN = process.env.CIRCADIAN_BUN_BIN || path.join(homedir(), ".bun/bin/bun");
 const DECAY_SCRIPT = path.join(import.meta.dir, "decay.ts");
@@ -220,7 +220,7 @@ describe("decay.ts CLI — sandboxed", () => {
     expect(fs.existsSync(path.join(home, "logs", ".population-vitals.json"))).toBe(false);
   });
 
-  test("a real run appends exactly one decay event and writes logs/.population-vitals.json", () => {
+  test("a real run appends exactly one decay event AND one renorm event (renorm after decay), and writes logs/.population-vitals.json", () => {
     const home = tmpDir();
     const beliefsDir = path.join(home, "mind", "beliefs");
     fs.mkdirSync(beliefsDir, { recursive: true });
@@ -235,9 +235,66 @@ describe("decay.ts CLI — sandboxed", () => {
     const decayEvents = events.filter((e) => e.ev === "decay");
     expect(decayEvents.length).toBe(1);
 
+    // homeostatic renorm: exactly one, carrying the knob, appended AFTER the decay line
+    const renormEvents = events.filter((e) => e.ev === "renorm");
+    expect(renormEvents.length).toBe(1);
+    expect(renormEvents[0].target).toBe(TOTAL_WEIGHT_TARGET);
+    expect(events.indexOf(renormEvents[0])).toBeGreaterThan(events.indexOf(decayEvents[0]));
+
     const vitals = JSON.parse(fs.readFileSync(path.join(home, "logs", ".population-vitals.json"), "utf8"));
     expect(vitals.population).toBe(0); // beliefs/ is empty in this fixture
     expect(Array.isArray(vitals.sank_below_floor)).toBe(true);
     expect(typeof vitals.src_loc).toBe("number");
+  });
+
+  test("a second run appends a second decay+renorm pair — append-only, no rewrites", () => {
+    const home = tmpDir();
+    const beliefsDir = path.join(home, "mind", "beliefs");
+    fs.mkdirSync(beliefsDir, { recursive: true });
+    fs.writeFileSync(path.join(home, "mind", "render-manifest.json"), "[]\n");
+    const ledgerPath = path.join(home, "mind", "beliefs.jsonl");
+    appendLedger(ledgerPath, { ev: "stack", atom: "seed", ep: "2026-07-16-ep.md", ts: "2026-07-16T00:00:00.000Z" });
+
+    expect(runDecayCli(home).status).toBe(0);
+    const afterFirst = fs.readFileSync(ledgerPath, "utf8");
+    expect(runDecayCli(home).status).toBe(0);
+    const afterSecond = fs.readFileSync(ledgerPath, "utf8");
+
+    // append-only: the first run's bytes are an exact prefix of the second's
+    expect(afterSecond.startsWith(afterFirst)).toBe(true);
+    const events = readLedger(ledgerPath);
+    expect(events.filter((e) => e.ev === "decay").length).toBe(2);
+    expect(events.filter((e) => e.ev === "renorm").length).toBe(2);
+  });
+});
+
+// ---------------------------------------------------------------------
+// homeostatic renorm — fold semantics driven from the decay knob (the
+// nightly pipeline's exact event pair: decay then renorm)
+// ---------------------------------------------------------------------
+describe("nightly decay+renorm pair (via foldWeights)", () => {
+  test("total above target: the pair caps total active weight at exactly the target", () => {
+    const events: LedgerEvent[] = [];
+    // 3 atoms stacked heavily enough that the total clearly exceeds a small target
+    for (const [atom, n] of [["a", 5], ["b", 3], ["c", 2]] as [string, number][]) {
+      for (let i = 0; i < n; i++) events.push({ ev: "stack", atom, ts: `t-${atom}-${i}` });
+    }
+    events.push({ ev: "decay", factor: DECAY_FACTOR, ts: "n1" });
+    events.push({ ev: "renorm", target: 4, ts: "n1" });
+    const states = foldWeights(events);
+    const total = [...states.values()].filter((s) => s.status === "active").reduce((t, s) => t + s.weight, 0);
+    expect(total).toBeCloseTo(4, 10);
+    // rank order preserved
+    expect(states.get("a")!.weight).toBeGreaterThan(states.get("b")!.weight);
+    expect(states.get("b")!.weight).toBeGreaterThan(states.get("c")!.weight);
+  });
+
+  test("total below target: the renorm line is inert — fold equals the renorm-free fold (young sparse mind untouched)", () => {
+    const base: LedgerEvent[] = [
+      { ev: "stack", atom: "only", ts: "t1" },
+      { ev: "decay", factor: DECAY_FACTOR, ts: "n1" },
+    ];
+    const withRenorm = [...base, { ev: "renorm", target: TOTAL_WEIGHT_TARGET, ts: "n1" } as LedgerEvent];
+    expect([...foldWeights(withRenorm).entries()]).toEqual([...foldWeights(base).entries()]);
   });
 });
