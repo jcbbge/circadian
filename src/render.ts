@@ -48,7 +48,11 @@ export interface RenderBudgets {
   agreement: number;
 }
 
-export const DEFAULT_BUDGETS: RenderBudgets = { identity: 600, doctrine: 3400, motif: 800, agreement: 1200 };
+// identity: 0 since 2026-08-09 — identity lives in CONSTITUTION.md (the
+// layer above memory, injected first at wake) and is never minted from
+// evidence. Identity-kind atoms still stack in the population; they just
+// don't render. A budget of 0 removes the section entirely (no heading).
+export const DEFAULT_BUDGETS: RenderBudgets = { identity: 0, doctrine: 3400, motif: 800, agreement: 1200 };
 export const RENDER_FLOOR = 0.5;
 
 /** chars/4 = tokens (MIND-SPEC.md "Token Targets"), matching status.ts/rem.ts/wake.ts. */
@@ -117,6 +121,9 @@ export function renderSelf(
   const parts: string[] = [];
 
   for (const section of SECTIONS) {
+    // budget 0 = the section is owned by another layer (e.g. identity ->
+    // CONSTITUTION.md) and is not rendered at all — no heading, no filler.
+    if (merged[section.kind] <= 0) continue;
     const eligible = atoms.filter((a) => {
       if (a.kind !== section.kind) return false;
       const { weight, status } = weightOf(states, a.id);

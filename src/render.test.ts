@@ -25,8 +25,14 @@ describe("renderSelf", () => {
     expect(second.manifest).toEqual(first.manifest);
   });
 
-  test("four v1 section headings, exactly, in v1 order", () => {
+  test("default render: three sections in v1 order — identity is owned by CONSTITUTION.md (budget 0, no heading)", () => {
     const { md } = renderSelf([], new Map());
+    const headingLines = md.split("\n").filter((l) => l.startsWith("## "));
+    expect(headingLines).toEqual(["## Doctrine", "## Motifs", "## How we work"]);
+  });
+
+  test("identity section still renders when explicitly budgeted (the mechanism survives the default)", () => {
+    const { md } = renderSelf([], new Map(), { identity: 600 });
     const headingLines = md.split("\n").filter((l) => l.startsWith("## "));
     expect(headingLines).toEqual(["## Who I am across sessions", "## Doctrine", "## Motifs", "## How we work"]);
   });
@@ -152,8 +158,9 @@ describe("renderSelf", () => {
     expect(md).toContain("(empty — no atoms above the render floor yet)");
   });
 
-  test("default budgets sum to the v1 6,000-token target", () => {
+  test("default budgets sum to 5,400 — v1's 6,000 minus the identity 600 ceded to CONSTITUTION.md (2026-08-09)", () => {
     const sum = DEFAULT_BUDGETS.identity + DEFAULT_BUDGETS.doctrine + DEFAULT_BUDGETS.motif + DEFAULT_BUDGETS.agreement;
-    expect(sum).toBe(6000);
+    expect(DEFAULT_BUDGETS.identity).toBe(0);
+    expect(sum).toBe(5400);
   });
 });

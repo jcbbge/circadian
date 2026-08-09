@@ -127,7 +127,7 @@ function buildPayload(files: {
         // string → the block is absent and wake behaves exactly as before.
         ...(evidence ? [evidence, ""] : []),
         "<mind:greeting-instruction>",
-        "Open your FIRST reply to the user by SPEAKING the greeting below, verbatim, before anything else — it is the mind's own voice (the dream-echo from the last consolidation), not a label or a report. Deliver it as if you are the mind resuming mid-thought. It orients to the work — the arc, the live tension, the next move — never to the memory system itself (Law 8). If it passes, the user continues the thread as if no time passed.",
+        "Open your FIRST reply by speaking the greeting below verbatim — the mind resuming mid-thought, oriented to the work, never to the memory system itself (Law 8).",
         "",
         greetingBlock,
         "</mind:greeting-instruction>",
@@ -199,7 +199,9 @@ async function runHook(): Promise<void> {
   try {
     const loaded = loadIndex(MIND);
     const source = process.env.CIRCADIAN_WAKE_SOURCE || process.env.CLAUDE_SESSION_SOURCE;
-    const slice = retrieveForWake(loaded, process.cwd(), { source, k: 5, budgetTokens: 2000 });
+    // budget halved 2000 -> 1000 (2026-08-09 stitch audit): the worldview +
+    // constitutions carry the identity load; evidence is a garnish, not a meal.
+    const slice = retrieveForWake(loaded, process.cwd(), { source, k: 5, budgetTokens: 1000 });
     evidence = slice.block;
     if (slice.reason === "injected") {
       ok({
