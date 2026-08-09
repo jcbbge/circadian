@@ -29,6 +29,7 @@ import { homedir } from "node:os";
 import { dirname, join } from "node:path";
 import { complete } from "./llm.ts";
 import { ok, idle, degraded, fail, correlation } from "./obs.ts";
+import { isDroneOpening, firstUserTurnFromText } from "./provenance.ts";
 
 // ---------- observability ----------
 // SLEEP used to fail silently (every early return / swallowed catch left no
@@ -832,6 +833,23 @@ async function draftSessionEpisode(opts: {
     return { status: "empty-transcript" };
   }
   slog(mode, "transcript extracted", { chars: transcriptText.length });
+
+  // FLEET-DRONE GUARD (2026-08-09 poisoning post-mortem): a worker or
+  // orchestrator session opens with its brief, not a conversation. 134 such
+  // sessions entered the mind as lived experience, were attributed to jrg,
+  // and by sheer recurrence rewrote SELF into obedience doctrine. The words
+  // an orchestrator says to a worker are not the user's words. Drone
+  // sessions leave no letter. See src/provenance.ts.
+  const firstTurn = firstUserTurnFromText(transcriptText);
+  if (isDroneOpening(firstTurn)) {
+    slog(mode, "skip: fleet-drone session — worker-brief opening, no episode", { sessionId });
+    ok({
+      process: "sleep", phase: "provenance", correlation_id: corr, session_id: sessionId,
+      summary: "fleet-drone session detected (worker-brief opening); no episode written",
+      context: { session_id: sessionId, first_turn_head: firstTurn.slice(0, 120) },
+    });
+    return { status: "no-transcript" };
+  }
 
   // Fold in meal notes from graze (in-session checkpoints) — pre-chewed
   // context that SLEEP digests alongside the full transcript.

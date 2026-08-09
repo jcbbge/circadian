@@ -42,6 +42,7 @@ import { homedir } from "node:os";
 import { dirname, join } from "node:path";
 import { complete } from "./llm.ts";
 import { ok, idle, degraded, fail, correlation } from "./obs.ts";
+import { isDroneOpening, firstUserTurnFromTranscript } from "./provenance.ts";
 
 const CIRCADIAN_HOME = process.env.CIRCADIAN_HOME || join(homedir(), "circadian");
 const MIND = join(CIRCADIAN_HOME, "mind");
@@ -240,6 +241,21 @@ async function runWorker(): Promise<void> {
         context: { transcript_path: transcriptPath ?? null, session_id: sessionId ?? null },
         cause: "CIRCADIAN_GRAZE_EVENT env var or stdin carried no transcript_path/session_id, or the transcript file does not exist",
         next_action: "verify the hook passes transcript_path + session_id via CIRCADIAN_GRAZE_EVENT; check logs/graze.log for the raw event",
+      });
+      return;
+    }
+
+    // FLEET-DRONE GUARD (2026-08-09 poisoning post-mortem): worker and
+    // orchestrator sessions open with a brief, not a conversation. Their
+    // checkpoints must never become meals — SLEEP folds meals into episodes,
+    // and 134 drone episodes rewrote SELF into obedience doctrine. The gate
+    // reads the transcript's opening user turn. See src/provenance.ts.
+    if (isDroneOpening(firstUserTurnFromTranscript(transcriptPath))) {
+      glog("worker", "skip: fleet-drone session — worker-brief opening, no checkpoint", { sessionId });
+      idle({
+        process: "graze", phase: "provenance", correlation_id: corr, session_id: sessionId,
+        summary: "fleet-drone session detected (worker-brief opening); no checkpoint written",
+        context: { session_id: sessionId, transcript: transcriptPath },
       });
       return;
     }
