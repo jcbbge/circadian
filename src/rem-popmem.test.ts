@@ -22,6 +22,7 @@ import {
   enumeratePropagationAddresses,
   parsePropagationResponse,
   parseGreetingResponse,
+  greetingHasAnchor,
   GREETING_MAX_LINES,
   buildCommitMessage,
   assertRenderInvariant,
@@ -328,6 +329,89 @@ describe("parseGreetingResponse", () => {
 
   test("whitespace-only completion is malformed", () => {
     expect(parseGreetingResponse("   \n\n  ")).toEqual({ lines: [], malformed: true });
+  });
+
+  // Backward-compat: with no NOW.md the gate is skipped -- pure structural
+  // validation, so the anchorless-but-nonempty draft is still well-formed.
+  test("no NOW.md supplied: gate is skipped, structural shape only", () => {
+    const r = parseGreetingResponse("Motion is the only truth.");
+    expect(r.malformed).toBe(false);
+    expect(r.lines).toEqual(["Motion is the only truth."]);
+  });
+
+  test("with NOW.md: an anchorless register-echo draft is rejected as malformed", () => {
+    const nowMd = "## Arc\nFinalize RELEASE.md and ship the memory engine.\n";
+    const r = parseGreetingResponse("Motion is the only truth -- the work is already moving.", nowMd);
+    expect(r.malformed).toBe(true);
+  });
+
+  test("with NOW.md: a draft naming a concrete NOW.md noun passes", () => {
+    const nowMd = "## Flight plan\nFinalize the RELEASE.md document for the release.\n";
+    const r = parseGreetingResponse("Finish RELEASE.md so the release can ship.", nowMd);
+    expect(r.malformed).toBe(false);
+    expect(r.lines).toEqual(["Finish RELEASE.md so the release can ship."]);
+  });
+});
+
+// ---------------------------------------------------------------------
+// greeting shape gate: the R7 root-cause fix. A greeting must name a
+// concrete, addressable anchor (path / command / distinctive NOW.md noun),
+// never content-free register-echo. Pinned against the exact collapse drafts
+// from logs/rem.error.log (the brief's verbatim samples).
+// ---------------------------------------------------------------------
+describe("greetingHasAnchor", () => {
+  const NOW_MD = [
+    "<!-- cap: 3k tokens -->",
+    "## Arc",
+    "Ship circadian as a standalone, user-agnostic memory engine.",
+    "## Flight plan",
+    "Finalize the RELEASE.md document, replacing user-specific references.",
+    "## Live tensions",
+    "The constitution builder must not become a second truth plane.",
+    "## Commitments",
+    "Replace all user-specific references in RELEASE.md with placeholders.",
+  ].join("\n");
+
+  // The verbatim collapse drafts the brief cites -- each names nothing
+  // addressable, so each must be rejected.
+  const COLLAPSE_DRAFTS = [
+    "The board holds the pulse -- stay in the flow.",
+    "Raw passthrough is active; align coordinates now.",
+    "Slice engaged, motion driving.",
+    "Motion is the only truth -- the work is already moving.",
+    "E is live -- spawn confirmed.",
+  ];
+
+  for (const draft of COLLAPSE_DRAFTS) {
+    test(`rejects the collapse draft: ${JSON.stringify(draft)}`, () => {
+      expect(greetingHasAnchor([draft], NOW_MD)).toBe(false);
+    });
+  }
+
+  test("accepts a draft that names a NOW.md noun (RELEASE.md via path rule)", () => {
+    expect(greetingHasAnchor(["Finalize RELEASE.md, then re-init the mind repo from scratch."], NOW_MD)).toBe(true);
+  });
+
+  test("accepts a draft that names the constitution builder from Live tensions", () => {
+    expect(greetingHasAnchor(["Make the constitution builder accessible without the post-mortem."], NOW_MD)).toBe(true);
+  });
+
+  test("accepts a draft naming a backtick command even with no NOW.md nouns", () => {
+    expect(greetingHasAnchor(["Run `bun test` before the release cut."], NOW_MD)).toBe(true);
+  });
+
+  test("accepts a draft naming a file path even against empty NOW.md", () => {
+    expect(greetingHasAnchor(["Start in src/rem-popmem.ts."], "")).toBe(true);
+  });
+
+  test("empty NOW.md and no path/command: nothing concrete to name, rejected", () => {
+    expect(greetingHasAnchor(["Motion is the metric."], "")).toBe(false);
+  });
+
+  test("headings and the cap comment do not count as anchors", () => {
+    // "Arc"/"Flight"/"tensions" live in headings; "cap"/"tokens" in the
+    // comment -- a greeting reusing only those must still be rejected.
+    expect(greetingHasAnchor(["Arc tensions, flight in tokens."], NOW_MD)).toBe(false);
   });
 });
 

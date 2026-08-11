@@ -441,29 +441,135 @@ export interface GreetingResult {
   malformed: boolean;
 }
 
-export function parseGreetingResponse(raw: string): GreetingResult {
+export function parseGreetingResponse(raw: string, nowMd?: string): GreetingResult {
   const lines = raw
     .split("\n")
     .map((l) => l.trim())
     .filter((l) => l.length > 0 && !l.startsWith("#"));
   if (lines.length === 0) return { lines: [], malformed: true };
-  return { lines: lines.slice(0, GREETING_MAX_LINES), malformed: false };
+  const capped = lines.slice(0, GREETING_MAX_LINES);
+  // Shape gate (Law 8 in the machine): a greeting that names no concrete
+  // anchor is a category error -- it mirrors register instead of orienting to
+  // the work (Constitution Art. 11/15), which IS the R7 collapse. When NOW.md
+  // is supplied we reject an anchorless draft as malformed, so greeting.md is
+  // left untouched -- the same safe branch an empty completion already takes.
+  // Called with no nowMd, the gate is skipped (pure structural validation),
+  // so callers that only care about line-count shape are unaffected.
+  if (nowMd !== undefined && !greetingHasAnchor(capped, nowMd)) {
+    return { lines: capped, malformed: true };
+  }
+  return { lines: capped, malformed: false };
+}
+
+// Common words that carry no anchoring specificity -- their presence in a
+// greeting proves nothing about whether it named real work.
+const GREETING_STOPWORDS = new Set([
+  "the", "and", "for", "are", "but", "not", "you", "all", "any", "can", "our",
+  "out", "has", "how", "new", "now", "its", "let", "put", "say", "too", "use",
+  "that", "this", "with", "from", "have", "will", "your", "must", "into", "than",
+  "then", "them", "they", "been", "when", "what", "which", "were", "would",
+  "there", "their", "about", "these", "those", "some", "such", "only", "over",
+  "also", "more", "most", "work", "works", "working", "being", "across",
+  "without", "again", "should", "still", "just", "next", "here", "onto", "upon",
+]);
+
+// A path/filename (dotted extension or a slash) or a backtick-quoted command:
+// unambiguous concrete anchors independent of NOW.md's vocabulary.
+const GREETING_PATH_RE = /[A-Za-z0-9_-]+\/[A-Za-z0-9_./-]+|[A-Za-z0-9_-]+\.[a-z]{1,6}\b/;
+const GREETING_COMMAND_RE = /`[^`]+`/;
+
+/** Distinctive lowercased content tokens from a string (>= 4 chars,
+ * non-stopword). The unit of concrete meaning a greeting can reuse. */
+function distinctiveTokens(text: string): string[] {
+  const out: string[] = [];
+  for (const tok of text.match(/[A-Za-z][A-Za-z0-9_.-]{3,}/g) ?? []) {
+    const lower = tok.toLowerCase();
+    if (!GREETING_STOPWORDS.has(lower)) out.push(lower);
+  }
+  return out;
+}
+
+interface AnchorVocab {
+  tokens: Set<string>; // distinctive single tokens from NOW.md's BODY (not headings)
+  bigrams: Set<string>; // adjacent distinctive-token pairs, per line, "a\u0000b"
+}
+
+/** Extracts the anchor vocabulary from NOW.md's BODY only (headings and the
+ * cap comment excluded, so "Arc"/"Flight"/"tensions" never count as anchors).
+ * Bigrams are the robust signal: a single shared common word ("truth", "flow")
+ * is coincidence, but a shared adjacent PHRASE ("constitution builder",
+ * "memory engine") is genuine reuse of the work's own nouns -- exactly what
+ * later propagates into NOW.Arc/FlightPlan/LiveTensions, the only thing R7
+ * credits (src/status.ts GREETING_PROPAGATION_PREFIXES). */
+function extractAnchorVocab(nowMd: string): AnchorVocab {
+  const tokens = new Set<string>();
+  const bigrams = new Set<string>();
+  for (const line of nowMd.split("\n")) {
+    if (line.startsWith("#") || line.trimStart().startsWith("<!--")) continue;
+    const toks = distinctiveTokens(line);
+    for (let i = 0; i < toks.length; i++) {
+      tokens.add(toks[i]);
+      if (i + 1 < toks.length) bigrams.add(`${toks[i]}\u0000${toks[i + 1]}`);
+    }
+  }
+  return { tokens, bigrams };
+}
+
+/** True iff the greeting names at least one concrete, addressable anchor:
+ *   1. a file path (`src/rem-popmem.ts`) or `backtick` command;
+ *   2. a proper noun (Capitalized, >= 4 chars) it shares with NOW.md's body
+ *      ("RELEASE.md", "Circadian") -- the brief's "proper noun from NOW.md";
+ *   3. a distinctive bigram it shares with NOW.md ("constitution builder").
+ * A single lowercase common word shared with NOW.md is deliberately NOT enough
+ * -- that is the coincidence that let register-echo ("motion is the only
+ * truth", with "truth" also in a NOW tension) slip through. Register-echo
+ * ("the board holds the pulse", "slice engaged, motion driving") names none of
+ * these and is rejected. */
+export function greetingHasAnchor(lines: string[], nowMd: string): boolean {
+  const text = lines.join(" ");
+  if (GREETING_PATH_RE.test(text)) return true;
+  if (GREETING_COMMAND_RE.test(text)) return true;
+  const vocab = extractAnchorVocab(nowMd);
+  if (vocab.tokens.size === 0) return false; // nothing concrete exists to name
+
+  // 2. proper noun (capitalized in the greeting) present in NOW.md's body.
+  for (const proper of text.match(/\b[A-Z][A-Za-z0-9_.-]{3,}/g) ?? []) {
+    const lower = proper.toLowerCase();
+    if (!GREETING_STOPWORDS.has(lower) && vocab.tokens.has(lower)) return true;
+  }
+
+  // 3. distinctive bigram shared with NOW.md.
+  const gToks = distinctiveTokens(text);
+  for (let i = 0; i + 1 < gToks.length; i++) {
+    if (vocab.bigrams.has(`${gToks[i]}\u0000${gToks[i + 1]}`)) return true;
+  }
+  return false;
 }
 
 const GREETING_TIMEOUT_MS = 60 * 1000;
 const GREETING_MAX_TOKENS = 300;
 
-function buildGreetingPrompt(nowMd: string, topAtoms: Atom[]): string {
-  const topLines = topAtoms.map((a) => `- ${a.claim}`).join("\n");
+export function buildGreetingPrompt(nowMd: string): string {
+  const nowItems = enumerateNowItems(nowMd);
+  const anchorMenu =
+    nowItems.length > 0
+      ? nowItems.map((it) => `- [${it.address}] ${it.text}`).join("\n")
+      : "(NOW.md lists no concrete items -- take your anchor from a file, command, or task named in its text below.)";
   return (
-    `Draft a greeting of at most ${GREETING_MAX_LINES} short lines that orients to the ` +
-    `CURRENT WORK -- never to the memory system, the mind, or "atoms"/"beliefs" ` +
-    `itself (that would be a category error: the greeting is for the work, not about ` +
-    `its own remembering).\n\n` +
-    `NOW.md:\n${nowMd}\n\n` +
-    `Strongest-held current beliefs (for grounding tone, not for quoting verbatim):\n${topLines}\n\n` +
-    `Respond with ONLY the greeting lines, one per line, no preamble, no markdown ` +
-    `headers, at most ${GREETING_MAX_LINES} lines.`
+    `You are drafting the first thing a mind reads on waking. Its ONLY job is to ` +
+    `orient to the CURRENT WORK: point at the next concrete, addressable thing to do.\n\n` +
+    `HARD REQUIREMENT: name at least one concrete anchor -- a file path, a command, ` +
+    `or a specific task/subject drawn from the current work below, reusing its exact ` +
+    `nouns. NEVER a mood, a slogan, or an abstraction. ("Motion is the only truth", ` +
+    `"the board holds the pulse -- stay in the flow", "slice engaged, motion driving" ` +
+    `are all FAILURES: they name nothing you can act on.)\n\n` +
+    `Do NOT mention the memory system, the mind, atoms, beliefs, or greetings ` +
+    `themselves -- that is a category error: the greeting is for the work, not about ` +
+    `its own remembering.\n\n` +
+    `The current work (draw your anchor from here):\n${anchorMenu}\n\n` +
+    `Full NOW.md for context:\n${nowMd}\n\n` +
+    `Respond with ONLY the greeting: at most ${GREETING_MAX_LINES} short lines, one ` +
+    `per line, no preamble, no markdown headers.`
   );
 }
 
@@ -1064,24 +1170,33 @@ async function main() {
   // -------------------------------------------------------------------
   // 5. GREETING
   // -------------------------------------------------------------------
-  const topAtoms = [...atomsForRender]
-    .filter((a) => (statesAfterDistill.get(a.id)?.status ?? "active") === "active")
-    .sort((a, b) => (statesAfterDistill.get(b.id)?.weight ?? 0) - (statesAfterDistill.get(a.id)?.weight ?? 0))
-    .slice(0, 5);
+  // The greeting anchors to NOW.md's concrete work only. Abstract top-weight
+  // doctrine claims are deliberately NOT fed in: grounding tone on "motion is
+  // the metric"/"the board is the pulse" is what mode-collapsed the generator
+  // into content-free register-echo and tripped R7 (Constitution Art. 11).
   const nowMdForGreeting = readOrEmpty(NOW_PATH);
   let greetingLines: string[] = [];
   if (!dryRun) {
     try {
-      const prompt = buildGreetingPrompt(nowMdForGreeting, topAtoms);
-      const raw = await complete(prompt, { timeoutMs: GREETING_TIMEOUT_MS, maxTokens: GREETING_MAX_TOKENS, temperature: 0.3 });
-      const greeting = parseGreetingResponse(raw);
+      const prompt = buildGreetingPrompt(nowMdForGreeting);
+      // AIMD spirit: one reroll at a higher temperature when the first draft
+      // names no concrete anchor (shape rejected). If both fail the gate,
+      // treat it as malformed and leave greeting.md untouched -- a greeting
+      // that names nothing must not ship, exactly as an empty one doesn't.
+      const temps = [0.3, 0.7];
+      let greeting: GreetingResult = { lines: [], malformed: true };
+      for (const temperature of temps) {
+        const raw = await complete(prompt, { timeoutMs: GREETING_TIMEOUT_MS, maxTokens: GREETING_MAX_TOKENS, temperature });
+        greeting = parseGreetingResponse(raw, nowMdForGreeting);
+        if (!greeting.malformed) break;
+      }
       if (greeting.malformed) {
         degraded({
           process: "rem", phase: "greeting", correlation_id: corr,
-          summary: "greeting completion was malformed; greeting.md left unchanged",
-          context: {},
-          cause: "LLM response had no non-empty lines",
-          next_action: "inspect the raw completion under this correlation id in logs/circadian.events.jsonl",
+          summary: "greeting named no concrete anchor after reroll; greeting.md left unchanged",
+          context: { last_draft: greeting.lines },
+          cause: "LLM response was empty or was register-echo naming no file/command/task from NOW.md (shape gate)",
+          next_action: "inspect the raw completion under this correlation id in logs/circadian.events.jsonl; check NOW.md has concrete Arc/Flight-plan/tension items to anchor to",
         });
       } else {
         greetingLines = greeting.lines;
