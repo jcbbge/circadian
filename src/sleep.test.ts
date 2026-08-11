@@ -4,6 +4,10 @@
 // scoreboard and appending the verdict — happens in checkImplicitOk, which
 // this suite does not need to exercise to prove the decision logic).
 import { describe, test, expect } from "bun:test";
+import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+import { spawnSync } from "node:child_process";
 import { decideImplicitOk, type ImplicitOkDecision } from "./sleep.ts";
 
 function remEvent(ts: string, propagated: string[]): any {
@@ -97,5 +101,73 @@ describe("decideImplicitOk", () => {
     const decision = decideImplicitOk(scoreboard, NOW, 100);
     expect(decision.event).not.toBeNull();
     expect(decision.event?.basis).toBe(remTs);
+  });
+});
+
+describe("pending sleep drain self-heal", () => {
+  test("dead-letters stale failures and retains fresh failures with ratcheted attempts", () => {
+    const home = mkdtempSync(join(tmpdir(), "circadian-pending-"));
+    try {
+      const logs = join(home, "logs");
+      const transcriptPath = join(home, "transcript.jsonl");
+      const now = Date.now();
+      const stale = {
+        ts: new Date(now).toISOString(),
+        session_id: "session-stale-fixture",
+        transcript_path: transcriptPath,
+        transcript_chars: 0,
+        attempts: 4,
+        last_error: "previous fixture failure",
+        queued_at: new Date(now - 3 * 24 * 3_600_000).toISOString(),
+      };
+      const fresh = {
+        ...stale,
+        session_id: "session-fresh-fixture",
+        attempts: 2,
+        queued_at: new Date(now).toISOString(),
+      };
+      const staleLine = JSON.stringify(stale);
+      const freshLine = JSON.stringify(fresh);
+
+      writeFileSync(transcriptPath, '{"type":"system","text":"no conversation turns"}\n');
+      mkdirSync(logs, { recursive: true });
+      writeFileSync(join(logs, "pending-sleep.jsonl"), `${staleLine}\n${freshLine}\n`);
+
+      const run = spawnSync(process.execPath, [join(import.meta.dir, "sleep.ts"), "--drain"], {
+        cwd: join(import.meta.dir, ".."),
+        env: { ...process.env, CIRCADIAN_HOME: home },
+        encoding: "utf8",
+      });
+      expect(run.status).toBe(0);
+
+      const remainingLines = readFileSync(join(logs, "pending-sleep.jsonl"), "utf8").trim().split("\n");
+      expect(remainingLines).toHaveLength(1);
+      expect(JSON.parse(remainingLines[0])).toMatchObject({
+        session_id: fresh.session_id,
+        attempts: 4,
+      });
+
+      const deadLines = readFileSync(join(logs, "pending-sleep.dead.jsonl"), "utf8").trim().split("\n");
+      expect(deadLines).toEqual([staleLine]);
+
+      const events = readFileSync(join(logs, "circadian.events.jsonl"), "utf8")
+        .trim()
+        .split("\n")
+        .map((line) => JSON.parse(line));
+      expect(events).toContainEqual(
+        expect.objectContaining({
+          outcome: "degraded",
+          phase: "drain-deadletter",
+          session_id: stale.session_id,
+          context: expect.objectContaining({
+            attempts: 6,
+            queued_at: stale.queued_at,
+            last_error: "transcript yielded no user/assistant text",
+          }),
+        })
+      );
+    } finally {
+      rmSync(home, { recursive: true, force: true });
+    }
   });
 });

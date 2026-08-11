@@ -36,6 +36,7 @@ import { appendFileSync, mkdirSync } from "fs";
 import { ok, correlation } from "./obs.ts";
 import { selfSimilarity, detectSelfStutter } from "./immune.ts";
 import { adaptRenderedForStutterCheck, parseSelfSections } from "./migrate.ts";
+import { isPendingEntryStuck, PENDING_ATTEMPTS_CAP, PENDING_STALE_HOURS } from "./sleep.ts";
 
 const CIRCADIAN_HOME = process.env.CIRCADIAN_HOME || path.join(homedir(), "circadian");
 const LOG_DIR = path.join(CIRCADIAN_HOME, "logs");
@@ -61,9 +62,6 @@ const PI_SESSIONS_DIR = path.join(homedir(), ".pi", "agent", "sessions");
 const REM_EXPECTED_HOURS = 15; // twice daily at 09:00 & 21:00
 const SESSION_EXPECTED_HOURS = 48; // sessions should happen at least every 48h
 const UNADDRESSED_WINDOW_HOURS = 24; // degraded/failed within this window is "recent"
-const PENDING_ATTEMPTS_CAP = 8; // W1 retry cap — at the cap an entry has survived every automatic drain
-const PENDING_STALE_HOURS = 24; // queued longer than this = survived multiple REM drains
-
 const CAPS: Record<string, number> = {
   "SELF.md": 6000,
   "USER.md": 2000,
@@ -758,9 +756,7 @@ function checkPendingSleepQueue(): void {
     }
   }
 
-  const stuck = entries.filter(
-    (e) => (e.attempts ?? 0) >= PENDING_ATTEMPTS_CAP || (e.queued_at !== undefined && (hoursSince(e.queued_at) ?? 0) > PENDING_STALE_HOURS)
-  );
+  const stuck = entries.filter((e) => isPendingEntryStuck(e));
   const ages = entries
     .map((e) => (e.queued_at !== undefined ? hoursSince(e.queued_at) : null))
     .filter((h): h is number => h !== null)

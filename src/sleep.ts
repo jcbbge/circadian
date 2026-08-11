@@ -20,8 +20,8 @@
 // appends the session to logs/pending-sleep.jsonl BEFORE reporting the
 // failure, and `--drain` (which REM also runs before digesting) replays that
 // queue oldest-first through the SAME drafting path. A line leaves the queue
-// only when its episode is written or its transcript is gone for good; at 8
-// attempts the drain stops and fails loud for a human decision.
+// only when its episode is written or its transcript is gone for good; stuck
+// entries are dead-lettered loudly so one poison pill cannot block the queue.
 
 import { spawn } from "node:child_process";
 import { appendFileSync, existsSync, mkdirSync, readFileSync, renameSync, statSync, unlinkSync, writeFileSync } from "node:fs";
@@ -69,9 +69,12 @@ const MIN_TRANSCRIPT_BYTES = 10 * 1024; // one-shot -p sessions leave tiny trans
 // ---------- pending queue (durability) ----------
 // FIXED CONTRACT — doctor.ts (W3) reads this exact path and line shape.
 const PENDING_QUEUE = join(CIRCADIAN_HOME, "logs", "pending-sleep.jsonl");
+const PENDING_DEAD_QUEUE = join(CIRCADIAN_HOME, "logs", "pending-sleep.dead.jsonl");
 const PENDING_LOCK = join(CIRCADIAN_HOME, "logs", "pending-sleep.lock");
 const DRAFT_ATTEMPTS = 2; // LLM tries per drafting round (live worker or one drain pass)
-const PENDING_ATTEMPTS_CAP = 8; // at/above this a human must decide — retrying is no longer obviously right
+// The stuck policy lives here because doctor imports sleep.ts and sleep has no doctor dependency.
+export const PENDING_ATTEMPTS_CAP = 8; // at/above this a human must decide — retrying is no longer obviously right
+export const PENDING_STALE_HOURS = 24; // queued longer than this = survived multiple REM drains
 const LOCK_STALE_MS = 15 * 60 * 1000; // a lock older than this belonged to a drain that died mid-run
 
 interface PendingSleep {
@@ -82,6 +85,17 @@ interface PendingSleep {
   attempts: number;
   last_error: string;
   queued_at: string;
+  raw_line?: string;
+}
+
+export function isPendingEntryStuck(
+  entry: { attempts?: number; queued_at?: string },
+  nowMs = Date.now()
+): boolean {
+  if ((entry.attempts ?? 0) >= PENDING_ATTEMPTS_CAP) return true;
+  if (!entry.queued_at) return false;
+  const queuedMs = Date.parse(entry.queued_at);
+  return !Number.isNaN(queuedMs) && nowMs - queuedMs > PENDING_STALE_HOURS * 3_600_000;
 }
 
 // Identity of a queue line for the post-drain merge: queued_at is minted at
@@ -99,7 +113,9 @@ function readPendingQueue(): PendingSleep[] {
     try {
       const e = JSON.parse(line);
       if (typeof e?.transcript_path === "string" && typeof e?.session_id === "string") {
-        entries.push({ attempts: 0, last_error: "", queued_at: "", ...e });
+        const entry: PendingSleep = { attempts: 0, last_error: "", queued_at: "", ...e };
+        Object.defineProperty(entry, "raw_line", { value: line, enumerable: false });
+        entries.push(entry);
       }
       // A line we cannot parse is never a line we drop: malformed lines are
       // skipped here but survive the rewrite merge byte-identical.
@@ -987,25 +1003,46 @@ async function runWorker(): Promise<void> {
 // Replay the pending queue oldest-first through the same drafting core.
 // Outcomes per line: episode written => drop; transcript gone => drop with a
 // human-visible degraded (unrecoverable, but never silent); draft failed =>
-// keep and ratchet attempts; attempts >= CAP => stop the drain and fail loud
-// for a human decision (lines processed so far are still merged to disk).
+// keep and ratchet attempts unless the unified stuck predicate says to
+// dead-letter it so one poison pill cannot stop the drain.
 async function runDrain(): Promise<void> {
   const corr = correlation("sleep-drain");
   slog("drain", "start");
   acquireDrainLock(corr);
-  let capHit: PendingSleep | null = null;
   let drained = 0;
   let dropped = 0;
+  let deadLettered = 0;
   let remaining = 0;
   let fatal: Error | null = null;
   try {
     const entries = readPendingQueue();
     if (entries.length > 0) {
       const processed = new Map<string, PendingSleep | null>();
+      const deadLetter = (entry: PendingSleep, attempts: number, lastError: string): void => {
+        mkdirSync(dirname(PENDING_DEAD_QUEUE), { recursive: true });
+        appendFileSync(PENDING_DEAD_QUEUE, `${entry.raw_line ?? JSON.stringify(entry)}\n`);
+        degraded({
+          process: "sleep", phase: "drain-deadletter", correlation_id: corr, session_id: entry.session_id,
+          summary: "dead-lettering a stuck pending sleep entry after a failed drain pass",
+          context: {
+            transcript_path: entry.transcript_path,
+            attempts,
+            queued_at: entry.queued_at,
+            last_error: lastError,
+            dead_letter: PENDING_DEAD_QUEUE,
+          },
+          cause: lastError || "repeated draft failures",
+          next_action: "inspect the dead-letter archive; the queue entry was removed so later sessions can drain",
+        });
+        processed.set(pendingKey(entry), null);
+        deadLettered += 1;
+        dropped += 1;
+        slog("drain", "dead-lettered: stuck entry", { session_id: entry.session_id, attempts, queued_at: entry.queued_at });
+      };
       for (const entry of entries) {
         if (entry.attempts >= PENDING_ATTEMPTS_CAP) {
-          capHit = entry; // leave queued; fail() fires after the merge + unlock
-          break;
+          deadLetter(entry, entry.attempts, entry.last_error || "repeated draft failures");
+          continue;
         }
         const key = pendingKey(entry);
         if (!existsSync(entry.transcript_path)) {
@@ -1040,8 +1077,13 @@ async function runDrain(): Promise<void> {
           } else {
             const lastError =
               result.status === "draft-failed" ? result.lastError : "transcript yielded no user/assistant text";
-            processed.set(key, { ...entry, attempts: entry.attempts + DRAFT_ATTEMPTS, last_error: lastError });
-            slog("drain", "kept: draft failed again", { session_id: entry.session_id, attempts: entry.attempts + DRAFT_ATTEMPTS });
+            const updated = { ...entry, attempts: entry.attempts + DRAFT_ATTEMPTS, last_error: lastError };
+            if (isPendingEntryStuck(updated)) {
+              deadLetter(entry, updated.attempts, lastError);
+            } else {
+              processed.set(key, updated);
+              slog("drain", "kept: draft failed again", { session_id: entry.session_id, attempts: updated.attempts });
+            }
           }
         } catch (e) {
           // One poisonous line must not block the rest of the queue.
@@ -1052,7 +1094,12 @@ async function runDrain(): Promise<void> {
             cause: (e as Error).message,
             next_action: "inspect logs/sleep.log; the line stays queued and ratchets toward the attempts cap",
           });
-          processed.set(key, { ...entry, attempts: entry.attempts + DRAFT_ATTEMPTS, last_error: (e as Error).message });
+          const updated = { ...entry, attempts: entry.attempts + DRAFT_ATTEMPTS, last_error: (e as Error).message };
+          if (isPendingEntryStuck(updated)) {
+            deadLetter(entry, updated.attempts, updated.last_error);
+          } else {
+            processed.set(key, updated);
+          }
         }
       }
       remaining = rewritePendingQueue(processed);
@@ -1076,20 +1123,10 @@ async function runDrain(): Promise<void> {
       code: 1,
     });
   }
-  if (capHit) {
-    fail({
-      process: "sleep", phase: "drain", correlation_id: corr, session_id: capHit.session_id,
-      summary: `queued episode hit the ${PENDING_ATTEMPTS_CAP}-attempt cap; human decision required`,
-      context: { transcript_path: capHit.transcript_path, attempts: capHit.attempts, queued_at: capHit.queued_at, drained, dropped },
-      cause: capHit.last_error || "repeated draft failures",
-      next_action: "inspect logs/pending-sleep.jsonl: fix the LLM and re-run `bun src/sleep.ts --drain`, or delete the line to abandon the episode",
-      code: 1,
-    });
-  }
   ok({
     process: "sleep", phase: "drain", correlation_id: corr,
-    summary: `drain complete: ${drained} drained, ${dropped} dropped, ${remaining} remaining`,
-    context: { drained, remaining, dropped },
+    summary: `drain complete: ${drained} drained, ${dropped} dropped (${deadLettered} dead-lettered), ${remaining} remaining`,
+    context: { drained, remaining, dropped, dead_lettered: deadLettered },
   });
   slog("drain", "done", { drained, dropped, remaining });
 }

@@ -1,0 +1,18 @@
+AGNT pending-sleep-code DONE
+
+Implemented the pending-sleep self-heal in the assigned partition:
+- `src/sleep.ts` owns the exported stuck thresholds and predicate.
+- `src/doctor.ts` imports that single definition.
+- Stuck failing entries are dead-lettered as raw JSONL lines, loudly, and the drain continues.
+- Non-stuck failures remain queued with ratcheted attempts.
+- `src/sleep.test.ts` uses real temporary files and proves stale eviction, fresh retention, attempt ratcheting, raw archive preservation, and the degraded event.
+
+Evidence:
+- `bun test src/sleep.test.ts`: 9 pass, 0 fail
+- `bun test src/janitor.test.ts`: 18 pass, 0 fail
+- `bun build src/sleep.ts`: OK
+- `bun build --target=bun src/doctor.ts`: OK
+- `git diff --check`: OK
+- Threshold literals are no longer duplicated between `src/sleep.ts` and `src/doctor.ts`.
+
+Verification caveat: exact `bun build src/doctor.ts` fails on the pre-existing browser-target incompatibility in `src/migrate.ts` (`child_process`); no out-of-partition files were changed.

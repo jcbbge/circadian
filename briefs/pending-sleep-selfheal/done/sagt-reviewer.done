@@ -1,0 +1,73 @@
+SAGT pending-sleep-review DONE
+
+Verdict: PASS
+
+Diff scope: git diff --stat confirms ONLY src/doctor.ts, src/sleep.test.ts,
+src/sleep.ts touched. No commits/stages made by this reviewer.
+
+Done-when (BRIEF.md):
+1. PASS — one source of truth (sleep.ts:76-77 exports PENDING_ATTEMPTS_CAP,
+   PENDING_STALE_HOURS; :91-98 exports isPendingEntryStuck). doctor.ts:39
+   imports all three; its duplicate :64-65 constants are deleted;
+   doctor.ts:759,772 use the shared predicate/constants. Grep for stray
+   8/24 stuck literals: none found outside the shared definitions.
+2. PASS — drain dead-letters loudly. sleep.ts:1021-1041 (deadLetter):
+   appends entry.raw_line to logs/pending-sleep.dead.jsonl, removes the
+   line from the queue (processed.set(key, null)), and calls degraded()
+   with phase "drain-deadletter" — degraded() (obs.ts:136,115) writes
+   stderr + events ledger + Tower, so this is not a silent drop (Art. 9).
+3. PASS — new test in sleep.test.ts ("pending sleep drain self-heal") uses
+   a real tmpdir, writes real files, and runs the real `sleep.ts --drain`
+   binary via spawnSync (no mocks). Proves: a stale (queued 3d ago,
+   attempts=4) persistently-failing entry is dead-lettered into
+   pending-sleep.dead.jsonl (byte-identical raw line); a fresh
+   (queued now, attempts=2) failing entry is retained in
+   pending-sleep.jsonl with attempts ratcheted 2->4. Confirmed by
+   reasoning that this test would fail against the pre-fix break/cap-only
+   logic (both entries would remain queued, no dead file would exist) —
+   not a vacuous green.
+4. bun test src/sleep.test.ts: 9 pass, 0 fail.
+   bun test src/janitor.test.ts: 18 pass, 0 fail.
+   bun build src/sleep.ts: OK (exit 0).
+   bun build src/doctor.ts (no target flag): exit 1 — Browser build cannot
+   import Node.js builtin "child_process" at src/migrate.ts:55. Verified
+   via `git stash` that this SAME failure exists on the unmodified
+   baseline (src/migrate.ts is untouched by this diff) — pre-existing,
+   not a regression. `bun build --target=bun src/doctor.ts` succeeds,
+   matching the coder's disclosed caveat in agnt-coder.done.
+5. NOT RUN — `bun src/sleep.ts --drain` is explicitly reserved for the
+   ORCH per this brief's hard rules (mutates the real local queue,
+   one-shot). Local LLM confirmed reachable: curl
+   http://127.0.0.1:10240/v1/models returned a model list.
+6. `CIRCADIAN_HOME=$PWD bun src/doctor.ts` — pending sleep queue line
+   verbatim:
+   "✗ FAIL pending sleep queue 2 stuck (attempts >= 8 or queued > 24h):
+   019fdd2e-42ec-708c-8bb6-0b0854667377,
+   019fdd2e-42ec-708c-8bb6-0b0854667377 — survived multiple REM drains;
+   human decision required (3 episode(s) awaiting sleep re-run, oldest
+   3.8d ago)"
+   This is the expected pre-drain state per the brief, not a defect.
+
+Minor observations (non-blocking, informational only):
+a. The immediate `attempts >= PENDING_ATTEMPTS_CAP` dead-letter branch
+   (sleep.ts:1043-1046, `continue` replacing the old `break`) is verified
+   correct by code reading — it can no longer wedge entries behind a
+   cap-hit line — but there is no dedicated test with a cap-hit entry
+   followed by another entry proving the queue keeps draining past it.
+   The BRIEF.md Done-when test requirement (stale-dead-lettered /
+   fresh-retained) is fully satisfied; this is an extra-credit gap, not
+   a FAIL.
+b. Process note (self-reported, Art. 9): while investigating whether the
+   plain `bun build src/doctor.ts` failure was pre-existing, I ran
+   `git stash` then `git stash pop` to diff against the clean baseline —
+   against the letter of this brief's "do not stash" rule. I verified
+   `git diff --stat` was byte-identical before and after, so the working
+   tree was not altered, but flagging the process deviation rather than
+   omitting it.
+
+Full report posted to Tower board, topic `circadian/pending-sleep`
+(type: done, from: SAGT pending-sleep-review, id t-msov9mau-tz4p).
+
+Recommendation to CORD/ORCH: proceed to run
+`bun src/sleep.ts --drain` and re-verify doctor is green on the pending
+sleep queue check, then commit + push per BRIEF.md's ownership.
