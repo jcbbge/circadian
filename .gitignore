@@ -12,6 +12,10 @@ logs/*.jsonl
 logs/.population-vitals.json
 logs/.status-snap-*.json
 logs/fleet/
+# backups/archives of mind state may contain private memory — never publish
+logs/*.bak
+logs/*scoreboard*
+logs/*.mind-backup*
 
 # pi's per-project runtime state (session state, not source)
 .pi/
