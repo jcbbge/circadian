@@ -44,6 +44,47 @@ function extractLastSleep(nowMd: string): string | null {
   return match ? match[1].trim() : null;
 }
 
+/** Fleet workers (ORCH/AGNT/SAGT, and CORD when stamped) must not get the
+ * verbatim greeting-instruction — it contaminates CLAIM/DONE / exact-output
+ * briefs (fleet-smoke failure 2026-08-11). Memory substrate still injects;
+ * only the "speak greeting first" mandate is omitted. Operator/concierge
+ * panes keep the full greeting ritual. */
+function isFleetWorkerPane(): { skip: boolean; reason: string } {
+  if (process.env.CIRCADIAN_SKIP_GREETING === "1") {
+    return { skip: true, reason: "CIRCADIAN_SKIP_GREETING=1" };
+  }
+  const envRole = process.env.HERDR_ROLE || "";
+  if (/^(1-CORD|2-ORCH|3-AGNT|4-SAGT)\b/.test(envRole)) {
+    return { skip: true, reason: `HERDR_ROLE=${envRole}` };
+  }
+  const paneId = process.env.HERDR_PANE_ID;
+  if (!paneId || process.env.HERDR_ENV !== "1") {
+    return { skip: false, reason: "not-herdr-pane" };
+  }
+  try {
+    const out = Bun.spawnSync(["herdr", "pane", "get", paneId], {
+      stdout: "pipe",
+      stderr: "pipe",
+      env: process.env,
+    });
+    if (out.exitCode !== 0) return { skip: false, reason: "pane-get-failed" };
+    const raw = new TextDecoder().decode(out.stdout);
+    const j = JSON.parse(raw);
+    const pane = j?.result?.pane ?? j?.pane ?? j;
+    const role = String(pane?.tokens?.role || "");
+    const name = String(pane?.name || pane?.display_agent || pane?.label || "");
+    if (/^(1-CORD|2-ORCH|3-AGNT|4-SAGT)\b/.test(role)) {
+      return { skip: true, reason: `token.role=${role}` };
+    }
+    if (/^(cord|orch|agnt|sagt)[-_]/i.test(name) || /^(CORD|ORCH|AGNT|SAGT)\b/.test(name)) {
+      return { skip: true, reason: `name=${name}` };
+    }
+  } catch {
+    return { skip: false, reason: "detect-threw" };
+  }
+  return { skip: false, reason: "operator-or-unstamped" };
+}
+
 function buildPayload(files: {
   self: string;
   user: string;
@@ -53,8 +94,9 @@ function buildPayload(files: {
   constitution?: string;
   constitutionJosh?: string;
   killSwitch?: boolean;
+  skipGreeting?: boolean;
 }): string {
-  const { self, user, now, greeting, evidence, constitution, constitutionJosh, killSwitch } = files;
+  const { self, user, now, greeting, evidence, constitution, constitutionJosh, killSwitch, skipGreeting } = files;
 
   const lastSleepRaw = extractLastSleep(now);
   const lastSleepDate = lastSleepRaw ? new Date(lastSleepRaw) : null;
@@ -126,11 +168,20 @@ function buildPayload(files: {
         // surfaced anything relevant to this session's cwd/continuation. Empty
         // string → the block is absent and wake behaves exactly as before.
         ...(evidence ? [evidence, ""] : []),
-        "<mind:greeting-instruction>",
-        "Open your FIRST reply by speaking the greeting below verbatim — the mind resuming mid-thought, oriented to the work, never to the memory system itself (Law 8).",
-        "",
-        greetingBlock,
-        "</mind:greeting-instruction>",
+        // Fleet workers: memory yes, verbatim-greeting mandate no (2026-08-11).
+        ...(skipGreeting
+          ? [
+              "<mind:fleet-worker>",
+              "Fleet worker pane — execute the brief/prompt. Do NOT speak a wake greeting. Post fleet mail to the Tower board; idle after DONE is correct (status ≠ mail).",
+              "</mind:fleet-worker>",
+            ]
+          : [
+              "<mind:greeting-instruction>",
+              "Open your FIRST reply by speaking the greeting below verbatim — the mind resuming mid-thought, oriented to the work, never to the memory system itself (Law 8).",
+              "",
+              greetingBlock,
+              "</mind:greeting-instruction>",
+            ]),
       ].join("\n");
 
   const tokens = Math.ceil(body.length / 4);
@@ -273,6 +324,17 @@ async function runHook(): Promise<void> {
     });
   }
 
+  const fleet = isFleetWorkerPane();
+  if (fleet.skip) {
+    ok({
+      process: "wake",
+      phase: "skip-greeting",
+      correlation_id: corr,
+      summary: `fleet worker — omitting greeting-instruction (${fleet.reason})`,
+      context: { reason: fleet.reason, pane_id: process.env.HERDR_PANE_ID || null },
+    });
+  }
+
   const payload = buildPayload({
     self: files["SELF.md"],
     user: files["USER.md"],
@@ -282,6 +344,7 @@ async function runHook(): Promise<void> {
     constitution: files["CONSTITUTION.md"],
     constitutionJosh: files["CONSTITUTION-JOSH.md"],
     killSwitch,
+    skipGreeting: fleet.skip,
   });
 
   const payloadTokens = Math.ceil(payload.length / 4);
