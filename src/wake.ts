@@ -19,6 +19,14 @@ import { ok, degraded, emit, correlation } from "./obs.ts";
 import { isFirstWakeToday, renderDailyReading, loadScoreboardFile, appendDailyReadingEntry } from "./scorecard.ts";
 import { loadIndex, retrieveForWake } from "./relindex.ts";
 import { computeVerdictStreak } from "./status.ts";
+import {
+  CAP_TOKENS,
+  STALE_MS,
+  extractLastSleep,
+  classifyFleetTier,
+  buildPayload,
+  type FleetTier,
+} from "./wake-payload.ts";
 
 // Path resolution (single-source, distributable): CIRCADIAN_HOME overrides;
 // otherwise ~/circadian. The mind data lives at $CIRCADIAN_HOME/mind. This is
@@ -26,8 +34,6 @@ import { computeVerdictStreak } from "./status.ts";
 // same code runs as the author's install and as any user's scaffolded copy.
 const CIRCADIAN_HOME = process.env.CIRCADIAN_HOME || join(homedir(), "circadian");
 const MIND = join(CIRCADIAN_HOME, "mind");
-const CAP_TOKENS = 15000;
-const STALE_MS = 48 * 60 * 60 * 1000;
 
 async function readStdin(): Promise<void> {
   // WAKE has no use for stdin content (file reads only, per Law 7) but must
@@ -39,27 +45,27 @@ async function readStdin(): Promise<void> {
   }
 }
 
-function extractLastSleep(nowMd: string): string | null {
-  const match = nowMd.match(/##\s*Last sleep\s*\n+\s*([^\n]+)/);
-  return match ? match[1].trim() : null;
-}
-
 /** Fleet workers (ORCH/AGNT/SAGT, and CORD when stamped) must not get the
  * verbatim greeting-instruction — it contaminates CLAIM/DONE / exact-output
  * briefs (fleet-smoke failure 2026-08-11). Memory substrate still injects;
  * only the "speak greeting first" mandate is omitted. Operator/concierge
- * panes keep the full greeting ritual. */
-function isFleetWorkerPane(): { skip: boolean; reason: string } {
+ * panes keep the full greeting ritual. `tier` is the detected fleet tier (or
+ * null) so buildPayload can slim the injection for the executor tiers. */
+function isFleetWorkerPane(): { skip: boolean; reason: string; tier: FleetTier | null } {
   if (process.env.CIRCADIAN_SKIP_GREETING === "1") {
-    return { skip: true, reason: "CIRCADIAN_SKIP_GREETING=1" };
+    // Greeting suppression requested without an identifiable tier — skip the
+    // greeting but keep the full payload (we cannot know it is an executor).
+    const envTier = classifyFleetTier(process.env.HERDR_ROLE || "");
+    return { skip: true, reason: "CIRCADIAN_SKIP_GREETING=1", tier: envTier };
   }
   const envRole = process.env.HERDR_ROLE || "";
-  if (/^(1-CORD|2-ORCH|3-AGNT|4-SAGT)\b/.test(envRole)) {
-    return { skip: true, reason: `HERDR_ROLE=${envRole}` };
+  const envTier = classifyFleetTier(envRole);
+  if (envTier) {
+    return { skip: true, reason: `HERDR_ROLE=${envRole}`, tier: envTier };
   }
   const paneId = process.env.HERDR_PANE_ID;
   if (!paneId || process.env.HERDR_ENV !== "1") {
-    return { skip: false, reason: "not-herdr-pane" };
+    return { skip: false, reason: "not-herdr-pane", tier: null };
   }
   try {
     const out = Bun.spawnSync(["herdr", "pane", "get", paneId], {
@@ -67,130 +73,24 @@ function isFleetWorkerPane(): { skip: boolean; reason: string } {
       stderr: "pipe",
       env: process.env,
     });
-    if (out.exitCode !== 0) return { skip: false, reason: "pane-get-failed" };
+    if (out.exitCode !== 0) return { skip: false, reason: "pane-get-failed", tier: null };
     const raw = new TextDecoder().decode(out.stdout);
     const j = JSON.parse(raw);
     const pane = j?.result?.pane ?? j?.pane ?? j;
     const role = String(pane?.tokens?.role || "");
     const name = String(pane?.name || pane?.display_agent || pane?.label || "");
-    if (/^(1-CORD|2-ORCH|3-AGNT|4-SAGT)\b/.test(role)) {
-      return { skip: true, reason: `token.role=${role}` };
+    const roleTier = classifyFleetTier(role);
+    if (roleTier) {
+      return { skip: true, reason: `token.role=${role}`, tier: roleTier };
     }
-    if (/^(cord|orch|agnt|sagt)[-_]/i.test(name) || /^(CORD|ORCH|AGNT|SAGT)\b/.test(name)) {
-      return { skip: true, reason: `name=${name}` };
+    const nameTier = classifyFleetTier(name);
+    if (nameTier) {
+      return { skip: true, reason: `name=${name}`, tier: nameTier };
     }
   } catch {
-    return { skip: false, reason: "detect-threw" };
+    return { skip: false, reason: "detect-threw", tier: null };
   }
-  return { skip: false, reason: "operator-or-unstamped" };
-}
-
-function buildPayload(files: {
-  self: string;
-  user: string;
-  now: string;
-  greeting: string;
-  evidence?: string;
-  constitution?: string;
-  constitutionJosh?: string;
-  killSwitch?: boolean;
-  skipGreeting?: boolean;
-}): string {
-  const { self, user, now, greeting, evidence, constitution, constitutionJosh, killSwitch, skipGreeting } = files;
-
-  const lastSleepRaw = extractLastSleep(now);
-  const lastSleepDate = lastSleepRaw ? new Date(lastSleepRaw) : null;
-  const isValidDate = lastSleepDate instanceof Date && !isNaN(lastSleepDate.getTime());
-  // An unparseable/missing "Last sleep" timestamp is treated as stale — never
-  // silently assume freshness when the record is broken.
-  const isStale = isValidDate ? Date.now() - lastSleepDate!.getTime() > STALE_MS : true;
-
-  let greetingBlock = greeting.trim();
-  if (isStale) {
-    const staleLine = isValidDate
-      ? `STALENESS WARNING: last sleep was ${lastSleepRaw} — more than 48h ago. Treat NOW.md as potentially outdated.`
-      : `STALENESS WARNING: no parseable "Last sleep" timestamp in NOW.md — treating as stale.`;
-    greetingBlock = `${staleLine}\n${greetingBlock}`;
-  }
-
-  // THE CONSTITUTION LAYER (2026-08-09): injected FIRST, verbatim, above
-  // memory. The constitution is never rendered, never re-derived, never
-  // decayed — experience has no write access to it (see the poisoning
-  // post-mortem: nine days of fleet drills rewrote the rendered SELF into
-  // obedience doctrine; the constitution is the layer that cannot be).
-  const constitutionBlocks = [
-    ...(constitution
-      ? ["<mind:constitution>", constitution.trim(), "</mind:constitution>", ""]
-      : []),
-  ];
-  const constitutionJoshBlocks = [
-    ...(constitutionJosh
-      ? ["<mind:constitution-josh>", constitutionJosh.trim(), "</mind:constitution-josh>", ""]
-      : []),
-  ];
-
-  // KILL-SWITCH FAIL-SAFE: when the greeting-fitness kill switch has fired
-  // (R7), the memory organs are the failing instrument — SELF/USER/greeting
-  // are withheld this wake so a degraded worldview cannot speak with the
-  // mind's authority. The constitution and NOW still inject (Law 7: wake
-  // always delivers; the constitution is not derived from the failing
-  // organ). The decommission decision stays human.
-  const body = killSwitch
-    ? [
-        "[Circadian] WAKE — memory substrate injection from the mind repo (see mind/MIND-SPEC.md).",
-        "",
-        "KILL SWITCH ACTIVE: greeting fitness failed (R7). SELF/USER/greeting are withheld this wake — constitution and NOW only. The decommission decision is human; do not speak the memory's voice until it is made.",
-        "",
-        ...constitutionBlocks,
-        ...constitutionJoshBlocks,
-        "<mind:now>",
-        now.trim(),
-        "</mind:now>",
-      ].join("\n")
-    : [
-        "[Circadian] WAKE — memory substrate injection from the mind repo (see mind/MIND-SPEC.md).",
-        "",
-        ...constitutionBlocks,
-        "<mind:self>",
-        self.trim(),
-        "</mind:self>",
-        "",
-        ...constitutionJoshBlocks,
-        "<mind:user>",
-        user.trim(),
-        "</mind:user>",
-        "",
-        "<mind:now>",
-        now.trim(),
-        "</mind:now>",
-        "",
-        // b07: the session-anchored evidence slice, when the relational index
-        // surfaced anything relevant to this session's cwd/continuation. Empty
-        // string → the block is absent and wake behaves exactly as before.
-        ...(evidence ? [evidence, ""] : []),
-        // Fleet workers: memory yes, verbatim-greeting mandate no (2026-08-11).
-        ...(skipGreeting
-          ? [
-              "<mind:fleet-worker>",
-              "Fleet worker pane — execute the brief/prompt. Do NOT speak a wake greeting. Post fleet mail to the Tower board; idle after DONE is correct (status ≠ mail).",
-              "</mind:fleet-worker>",
-            ]
-          : [
-              "<mind:greeting-instruction>",
-              "Open your FIRST reply by speaking the greeting below verbatim — the mind resuming mid-thought, oriented to the work, never to the memory system itself (Law 8).",
-              "",
-              greetingBlock,
-              "</mind:greeting-instruction>",
-            ]),
-      ].join("\n");
-
-  const tokens = Math.ceil(body.length / 4);
-  if (tokens > CAP_TOKENS) {
-    // Law 4: never truncate silently — announce loudly and still emit the
-    // full payload.
-    return `OVER-CAP: payload ${tokens} tokens > ${CAP_TOKENS} — compost required\n${body}`;
-  }
-  return body;
+  return { skip: false, reason: "operator-or-unstamped", tier: null };
 }
 
 async function runHook(): Promise<void> {
@@ -325,13 +225,19 @@ async function runHook(): Promise<void> {
   }
 
   const fleet = isFleetWorkerPane();
+  // Executor tiers (3-AGNT/4-SAGT) get the slim payload: constitution(s) +
+  // DOCTRINE-only SELF slice + NOW + brief-relevant evidence, USER dropped
+  // (wake-slim, 2026-08-11). Orchestrator tiers (1-CORD/2-ORCH) and operator
+  // panes keep the full worldview. Kill-switch fail-safe takes precedence
+  // (SELF/USER already withheld there), so slim is a no-op under kill switch.
+  const slim = fleet.tier === "AGNT" || fleet.tier === "SAGT";
   if (fleet.skip) {
     ok({
       process: "wake",
       phase: "skip-greeting",
       correlation_id: corr,
-      summary: `fleet worker — omitting greeting-instruction (${fleet.reason})`,
-      context: { reason: fleet.reason, pane_id: process.env.HERDR_PANE_ID || null },
+      summary: `fleet worker — omitting greeting-instruction (${fleet.reason})${slim ? "; slim payload (executor tier)" : ""}`,
+      context: { reason: fleet.reason, tier: fleet.tier, slim, pane_id: process.env.HERDR_PANE_ID || null },
     });
   }
 
@@ -345,6 +251,7 @@ async function runHook(): Promise<void> {
     constitutionJosh: files["CONSTITUTION-JOSH.md"],
     killSwitch,
     skipGreeting: fleet.skip,
+    slim,
   });
 
   const payloadTokens = Math.ceil(payload.length / 4);

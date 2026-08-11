@@ -7,8 +7,36 @@
 import { describe, test, expect } from "bun:test";
 import * as fs from "fs";
 import * as path from "path";
+import { buildPayload, sliceSelf, classifyFleetTier } from "./wake-payload.ts";
 
 const WAKE_SRC = fs.readFileSync(path.join(import.meta.dir, "wake.ts"), "utf8");
+
+// Fresh "Last sleep" so the staleness warning never fires and only the
+// slim/operator differences drive the assertions below.
+const FRESH_NOW = `## Arc\n\nfleet launch in flight\n\n## Last sleep\n\n${new Date().toISOString()}\n`;
+const SELF_FIXTURE = [
+  "## Doctrine",
+  "",
+  "**Motion is the metric.** — doctrine atom one.",
+  "**Evidence before assertion.** — doctrine atom two.",
+  "",
+  "## Motifs",
+  "",
+  "**The diamond.** — motif atom.",
+  "",
+  "## How we work",
+  "",
+  "**Show, never describe.** — working atom.",
+].join("\n");
+const COMMON = {
+  self: SELF_FIXTURE,
+  user: "# JRG\n\nOperational preferences that a worker does not need.",
+  now: FRESH_NOW,
+  greeting: "Good morning. Back on the fleet work.",
+  evidence: "<mind:session-evidence>\nrelevant unit\n</mind:session-evidence>",
+  constitution: "# The Constitution\n\n1. I am one entity wearing many engines.",
+  constitutionJosh: "# Josh's Constitution\n\n1. I am a barefoot developer.",
+};
 
 describe("wake.ts REM catch-up spawn target", () => {
   test("spawns rem-popmem.ts, not rem.ts", () => {
@@ -28,5 +56,96 @@ describe("wake.ts REM catch-up spawn target", () => {
   test("still fires --if-due (catch-up semantics unchanged by the repoint)", () => {
     const spawnCallMatch = WAKE_SRC.match(/const child = spawn\(bun, \[[^\]]+\]/)!;
     expect(spawnCallMatch[0]).toMatch(/--if-due/);
+  });
+});
+
+describe("classifyFleetTier (wake-slim)", () => {
+  test("stamped roles map to their tier", () => {
+    expect(classifyFleetTier("3-AGNT")).toBe("AGNT");
+    expect(classifyFleetTier("4-SAGT")).toBe("SAGT");
+    expect(classifyFleetTier("2-ORCH")).toBe("ORCH");
+    expect(classifyFleetTier("1-CORD")).toBe("CORD");
+  });
+  test("named panes map to their tier", () => {
+    expect(classifyFleetTier("agnt-b4-wake-slim")).toBe("AGNT");
+    expect(classifyFleetTier("SAGT_verify")).toBe("SAGT");
+  });
+  test("operator / unstamped names are not a tier", () => {
+    expect(classifyFleetTier("")).toBeNull();
+    expect(classifyFleetTier("operator")).toBeNull();
+    expect(classifyFleetTier("agent-smith")).toBeNull();
+  });
+});
+
+describe("sliceSelf (wake-slim)", () => {
+  test("keeps the Doctrine section, drops Motifs and How-we-work", () => {
+    const sliced = sliceSelf(SELF_FIXTURE);
+    expect(sliced).toContain("## Doctrine");
+    expect(sliced).toContain("Motion is the metric");
+    expect(sliced).not.toContain("## Motifs");
+    expect(sliced).not.toContain("## How we work");
+    expect(sliced.length).toBeLessThan(SELF_FIXTURE.length);
+  });
+  test("fails open: returns SELF unchanged when it has fewer than two headings", () => {
+    const oneHeading = "## Doctrine\n\nonly one section here.";
+    expect(sliceSelf(oneHeading)).toBe(oneHeading.trim());
+  });
+});
+
+describe("buildPayload slim path (3-AGNT/4-SAGT)", () => {
+  const operator = buildPayload({ ...COMMON, skipGreeting: false, slim: false });
+  const slim = buildPayload({ ...COMMON, skipGreeting: true, slim: true });
+
+  test("slim omits the USER block; operator keeps it", () => {
+    expect(operator).toContain("<mind:user>");
+    expect(slim).not.toContain("<mind:user>");
+  });
+
+  test("slim carries only the Doctrine SELF slice, not the full worldview", () => {
+    expect(slim).toContain("<mind:self>");
+    expect(slim).toContain("Motion is the metric");
+    expect(slim).not.toContain("## Motifs");
+    expect(slim).not.toContain("## How we work");
+    // Operator keeps the whole SELF.
+    expect(operator).toContain("## Motifs");
+    expect(operator).toContain("## How we work");
+  });
+
+  test("slim still injects constitution(s), NOW, and brief-relevant evidence", () => {
+    expect(slim).toContain("<mind:constitution>");
+    expect(slim).toContain("<mind:constitution-josh>");
+    expect(slim).toContain("<mind:now>");
+    expect(slim).toContain("<mind:session-evidence>");
+  });
+
+  test("slim uses the fleet-worker note, never the verbatim greeting mandate", () => {
+    expect(slim).toContain("<mind:fleet-worker>");
+    expect(slim).not.toContain("<mind:greeting-instruction>");
+  });
+
+  test("slim payload is materially smaller than the full operator payload", () => {
+    expect(slim.length).toBeLessThan(operator.length);
+  });
+});
+
+describe("buildPayload operator path unchanged (regression guard)", () => {
+  test("operator payload contains SELF, USER, NOW, evidence, greeting-instruction", () => {
+    const operator = buildPayload({ ...COMMON, skipGreeting: false, slim: false });
+    expect(operator).toContain("<mind:self>");
+    expect(operator).toContain("<mind:user>");
+    expect(operator).toContain("<mind:now>");
+    expect(operator).toContain("<mind:session-evidence>");
+    expect(operator).toContain("<mind:greeting-instruction>");
+    expect(operator).toContain("Good morning");
+  });
+
+  test("a fleet worker without a tier keeps the full worldview (skip greeting only)", () => {
+    // e.g. CIRCADIAN_SKIP_GREETING=1 with no identifiable tier: greeting is
+    // suppressed but SELF/USER are NOT slimmed.
+    const fleetFull = buildPayload({ ...COMMON, skipGreeting: true, slim: false });
+    expect(fleetFull).toContain("<mind:user>");
+    expect(fleetFull).toContain("## Motifs");
+    expect(fleetFull).toContain("<mind:fleet-worker>");
+    expect(fleetFull).not.toContain("<mind:greeting-instruction>");
   });
 });
