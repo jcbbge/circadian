@@ -45,27 +45,23 @@ async function readStdin(): Promise<void> {
   }
 }
 
-/** Fleet workers (ORCH/AGNT/SAGT, and CORD when stamped) must not get the
- * verbatim greeting-instruction — it contaminates CLAIM/DONE / exact-output
- * briefs (fleet-smoke failure 2026-08-11). Memory substrate still injects;
- * only the "speak greeting first" mandate is omitted. Operator/concierge
- * panes keep the full greeting ritual. `tier` is the detected fleet tier (or
- * null) so buildPayload can slim the injection for the executor tiers. */
-function isFleetWorkerPane(): { skip: boolean; reason: string; tier: FleetTier | null } {
-  if (process.env.CIRCADIAN_SKIP_GREETING === "1") {
-    // Greeting suppression requested without an identifiable tier — skip the
-    // greeting but keep the full payload (we cannot know it is an executor).
-    const envTier = classifyFleetTier(process.env.HERDR_ROLE || "");
-    return { skip: true, reason: "CIRCADIAN_SKIP_GREETING=1", tier: envTier };
-  }
+/** Detect this pane's fleet tier (or null for operator/unstamped panes).
+ * The tier is a DATA fact about the pane and has exactly one consumer: how
+ * MUCH memory the pane needs (buildPayload's `slim` — executor tiers get the
+ * DOCTRINE-only slice, wake-slim 2026-08-11). It decides no behavior. Wake
+ * injects memory; the greeting ritual belongs to the role that greets and
+ * lives in the concierge profile (session-lifecycle law 1: adapters inject
+ * data, never behavior) — which is why there is no longer a greeting mandate
+ * here to suppress per role. */
+function detectFleetTier(): { tier: FleetTier | null; reason: string } {
   const envRole = process.env.HERDR_ROLE || "";
   const envTier = classifyFleetTier(envRole);
   if (envTier) {
-    return { skip: true, reason: `HERDR_ROLE=${envRole}`, tier: envTier };
+    return { tier: envTier, reason: `HERDR_ROLE=${envRole}` };
   }
   const paneId = process.env.HERDR_PANE_ID;
   if (!paneId || process.env.HERDR_ENV !== "1") {
-    return { skip: false, reason: "not-herdr-pane", tier: null };
+    return { tier: null, reason: "not-herdr-pane" };
   }
   try {
     const out = Bun.spawnSync(["herdr", "pane", "get", paneId], {
@@ -73,7 +69,7 @@ function isFleetWorkerPane(): { skip: boolean; reason: string; tier: FleetTier |
       stderr: "pipe",
       env: process.env,
     });
-    if (out.exitCode !== 0) return { skip: false, reason: "pane-get-failed", tier: null };
+    if (out.exitCode !== 0) return { tier: null, reason: "pane-get-failed" };
     const raw = new TextDecoder().decode(out.stdout);
     const j = JSON.parse(raw);
     const pane = j?.result?.pane ?? j?.pane ?? j;
@@ -81,16 +77,16 @@ function isFleetWorkerPane(): { skip: boolean; reason: string; tier: FleetTier |
     const name = String(pane?.name || pane?.display_agent || pane?.label || "");
     const roleTier = classifyFleetTier(role);
     if (roleTier) {
-      return { skip: true, reason: `token.role=${role}`, tier: roleTier };
+      return { tier: roleTier, reason: `token.role=${role}` };
     }
     const nameTier = classifyFleetTier(name);
     if (nameTier) {
-      return { skip: true, reason: `name=${name}`, tier: nameTier };
+      return { tier: nameTier, reason: `name=${name}` };
     }
   } catch {
-    return { skip: false, reason: "detect-threw", tier: null };
+    return { tier: null, reason: "detect-threw" };
   }
-  return { skip: false, reason: "operator-or-unstamped", tier: null };
+  return { tier: null, reason: "operator-or-unstamped" };
 }
 
 async function runHook(): Promise<void> {
@@ -98,9 +94,8 @@ async function runHook(): Promise<void> {
   await readStdin();
 
   // Claude sessions spawned BY the metabolism itself (sleep/REM drafting set
-  // CIRCADIAN_INTERNAL=1) must not receive the injection: the greeting
-  // instruction would contaminate their strict-format outputs, and they are
-  // not wakes.
+  // CIRCADIAN_INTERNAL=1) must not receive the injection: the mind payload
+  // would contaminate their strict-format outputs, and they are not wakes.
   if (process.env.CIRCADIAN_INTERNAL === "1") process.exit(0);
 
   // Read each mind file independently — a missing file is a context-bound
@@ -224,19 +219,19 @@ async function runHook(): Promise<void> {
     });
   }
 
-  const fleet = isFleetWorkerPane();
+  const fleet = detectFleetTier();
   // Executor tiers (3-AGNT/4-SAGT) get the slim payload: constitution(s) +
   // DOCTRINE-only SELF slice + NOW + brief-relevant evidence, USER dropped
   // (wake-slim, 2026-08-11). Orchestrator tiers (1-CORD/2-ORCH) and operator
   // panes keep the full worldview. Kill-switch fail-safe takes precedence
   // (SELF/USER already withheld there), so slim is a no-op under kill switch.
   const slim = fleet.tier === "AGNT" || fleet.tier === "SAGT";
-  if (fleet.skip) {
+  if (fleet.tier) {
     ok({
       process: "wake",
-      phase: "skip-greeting",
+      phase: "fleet-tier",
       correlation_id: corr,
-      summary: `fleet worker — omitting greeting-instruction (${fleet.reason})${slim ? "; slim payload (executor tier)" : ""}`,
+      summary: `fleet pane detected: ${fleet.tier} (${fleet.reason})${slim ? " — slim payload (executor tier)" : ""}`,
       context: { reason: fleet.reason, tier: fleet.tier, slim, pane_id: process.env.HERDR_PANE_ID || null },
     });
   }
@@ -250,7 +245,6 @@ async function runHook(): Promise<void> {
     constitution: files["CONSTITUTION.md"],
     constitutionJosh: files["CONSTITUTION-JOSH.md"],
     killSwitch,
-    skipGreeting: fleet.skip,
     slim,
   });
 

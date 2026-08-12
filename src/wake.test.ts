@@ -93,8 +93,8 @@ describe("sliceSelf (wake-slim)", () => {
 });
 
 describe("buildPayload slim path (3-AGNT/4-SAGT)", () => {
-  const operator = buildPayload({ ...COMMON, skipGreeting: false, slim: false });
-  const slim = buildPayload({ ...COMMON, skipGreeting: true, slim: true });
+  const operator = buildPayload({ ...COMMON, slim: false });
+  const slim = buildPayload({ ...COMMON, slim: true });
 
   test("slim omits the USER block; operator keeps it", () => {
     expect(operator).toContain("<mind:user>");
@@ -118,8 +118,8 @@ describe("buildPayload slim path (3-AGNT/4-SAGT)", () => {
     expect(slim).toContain("<mind:session-evidence>");
   });
 
-  test("slim uses the fleet-worker note, never the verbatim greeting mandate", () => {
-    expect(slim).toContain("<mind:fleet-worker>");
+  test("slim carries the greeting as data, never a greeting mandate", () => {
+    expect(slim).toContain("<mind:greeting>");
     expect(slim).not.toContain("<mind:greeting-instruction>");
   });
 
@@ -129,23 +129,40 @@ describe("buildPayload slim path (3-AGNT/4-SAGT)", () => {
 });
 
 describe("buildPayload operator path unchanged (regression guard)", () => {
-  test("operator payload contains SELF, USER, NOW, evidence, greeting-instruction", () => {
-    const operator = buildPayload({ ...COMMON, skipGreeting: false, slim: false });
+  test("operator payload contains SELF, USER, NOW, evidence, greeting", () => {
+    const operator = buildPayload({ ...COMMON, slim: false });
     expect(operator).toContain("<mind:self>");
     expect(operator).toContain("<mind:user>");
     expect(operator).toContain("<mind:now>");
     expect(operator).toContain("<mind:session-evidence>");
-    expect(operator).toContain("<mind:greeting-instruction>");
+    expect(operator).toContain("<mind:greeting>");
     expect(operator).toContain("Good morning");
   });
 
-  test("a fleet worker without a tier keeps the full worldview (skip greeting only)", () => {
-    // e.g. CIRCADIAN_SKIP_GREETING=1 with no identifiable tier: greeting is
-    // suppressed but SELF/USER are NOT slimmed.
-    const fleetFull = buildPayload({ ...COMMON, skipGreeting: true, slim: false });
-    expect(fleetFull).toContain("<mind:user>");
-    expect(fleetFull).toContain("## Motifs");
-    expect(fleetFull).toContain("<mind:fleet-worker>");
-    expect(fleetFull).not.toContain("<mind:greeting-instruction>");
+  // Replaces "a fleet worker without a tier keeps the full worldview (skip
+  // greeting only)" — that test guarded per-role greeting suppression, a
+  // concept deleted with the mandate itself (session-lifecycle law 1: adapters
+  // inject data, never behavior). What is worth guarding now is the law: NO
+  // payload shape may carry a behavioral instruction, so there is nothing left
+  // to suppress per role.
+  test("no payload shape carries a behavioral mandate", () => {
+    for (const opts of [
+      { slim: false },
+      { slim: true },
+      { slim: false, killSwitch: true },
+      { slim: true, killSwitch: true },
+    ]) {
+      const payload = buildPayload({ ...COMMON, ...opts });
+      const shape = JSON.stringify(opts);
+      expect(payload, shape).not.toContain("<mind:greeting-instruction>");
+      expect(payload, shape).not.toContain("<mind:fleet-worker>");
+      expect(payload, shape).not.toContain("Open your FIRST reply");
+      expect(payload, shape).not.toContain("Do NOT speak a wake greeting");
+    }
+  });
+
+  test("wake.ts keeps no greeting-suppression machinery", () => {
+    expect(WAKE_SRC).not.toContain("CIRCADIAN_SKIP_GREETING");
+    expect(WAKE_SRC).not.toContain("skipGreeting");
   });
 });

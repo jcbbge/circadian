@@ -59,10 +59,9 @@ export function buildPayload(files: {
   constitution?: string;
   constitutionJosh?: string;
   killSwitch?: boolean;
-  skipGreeting?: boolean;
   slim?: boolean;
 }): string {
-  const { self, user, now, greeting, evidence, constitution, constitutionJosh, killSwitch, skipGreeting, slim } = files;
+  const { self, user, now, greeting, evidence, constitution, constitutionJosh, killSwitch, slim } = files;
 
   const lastSleepRaw = extractLastSleep(now);
   const lastSleepDate = lastSleepRaw ? new Date(lastSleepRaw) : null;
@@ -141,20 +140,14 @@ export function buildPayload(files: {
         // surfaced anything relevant to this session's cwd/continuation. Empty
         // string → the block is absent and wake behaves exactly as before.
         ...(evidence ? [evidence, ""] : []),
-        // Fleet workers: memory yes, verbatim-greeting mandate no (2026-08-11).
-        ...(skipGreeting
-          ? [
-              "<mind:fleet-worker>",
-              "Fleet worker pane — execute the brief/prompt. Do NOT speak a wake greeting. Post fleet mail to the Tower board; idle after DONE is correct (status ≠ mail).",
-              "</mind:fleet-worker>",
-            ]
-          : [
-              "<mind:greeting-instruction>",
-              "Open your FIRST reply by speaking the greeting below verbatim — the mind resuming mid-thought, oriented to the work, never to the memory system itself (Law 8).",
-              "",
-              greetingBlock,
-              "</mind:greeting-instruction>",
-            ]),
+        // The greeting is DATA — the mind's own resuming-mid-thought line as
+        // REM rendered it, plus any staleness warning. It carries NO
+        // instruction to speak it: whether a session opens by speaking the
+        // greeting is role behavior, and it lives in the concierge profile
+        // (session-lifecycle law 1 — adapters inject data, never behavior; a
+        // mandate here needed per-role suppression, which is how we knew it
+        // was in the wrong layer). An empty greeting emits no block.
+        ...(greetingBlock ? ["<mind:greeting>", greetingBlock, "</mind:greeting>"] : []),
       ].join("\n");
 
   const tokens = Math.ceil(body.length / 4);
