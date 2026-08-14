@@ -29,8 +29,8 @@ import { homedir } from "node:os";
 import { dirname, join } from "node:path";
 import { complete } from "./llm.ts";
 import { ok, idle, degraded, fail, correlation } from "./obs.ts";
-import { isDroneOpening, firstUserTurnFromText } from "./provenance.ts";
-import { normalizeTurnText, isFleetPacketOpening } from "./transcript-format.ts";
+import { isDroneOpening, isFleetPacketOpening, firstUserTurnFromText } from "./provenance.ts";
+import { normalizeTurnText } from "./transcript-format.ts";
 
 // --dry-run: draft exactly as the live worker does (same transcript, same
 // prompt, same LLM, same parse), then print the episode + NOW.md to stdout

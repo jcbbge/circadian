@@ -38,7 +38,10 @@ function floodRevision(): string {
   // no longer has it, so probe each rev's tree newest-first).
   for (const r of revs) {
     try {
-      execFileSync("git", ["cat-file", "-e", `${r}:episodes/2026-07-24-bidirectional-sync-test.md`], { cwd: MIND });
+      // stdio ignored: a miss here is the EXPECTED outcome for the deletion
+      // commit (its tree no longer holds the file), and git's "fatal: path …
+      // does not exist" on stderr made a passing suite read as a broken one.
+      execFileSync("git", ["cat-file", "-e", `${r}:episodes/2026-07-24-bidirectional-sync-test.md`], { cwd: MIND, stdio: "ignore" });
       return r;
     } catch { /* deleted in this rev; keep walking */ }
   }

@@ -79,6 +79,55 @@ export interface ReplayEpisode {
   source: "live" | "git";
 }
 
+/**
+ * Batched blob reader — ONE `git cat-file --batch` process for N object specs
+ * instead of N `git show` spawns.
+ *
+ * WHY (measured 2026-08-14): episode recovery used to spawn one `git show` per
+ * episode. The mind composts twice daily, so the episode universe only grows —
+ * at the time this was fixed, an enumeration pinned to HEAD covered 318 live +
+ * 326 shed = 644 episodes, i.e. 644 process spawns, 4.0s of pure fork/exec.
+ * Paired with a second pinned enumeration in the same test that crossed bun's
+ * 5s default and turned red. That is not machine-speed flake: it is an O(N)
+ * subprocess cost with N on a monotonic upward ramp, so it would have gone red
+ * on every machine eventually. Batching makes it one spawn regardless of N.
+ *
+ * Returns spec -> content for every spec git resolved. Missing or unreachable
+ * specs are simply ABSENT from the map — never fabricated, matching the
+ * silently-skip contract the per-file try/catch had. stderr is discarded
+ * because a missing shed-parent is an expected, handled outcome, not an error
+ * worth printing.
+ */
+function gitReadBlobs(mindDir: string, specs: string[]): Map<string, string> {
+  const out = new Map<string, string>();
+  if (specs.length === 0) return out;
+  let buf: Buffer;
+  try {
+    buf = execFileSync("git", ["cat-file", "--batch"], {
+      cwd: mindDir,
+      input: specs.join("\n") + "\n",
+      maxBuffer: 1024 * 1024 * 1024,
+      stdio: ["pipe", "pipe", "ignore"],
+    }) as unknown as Buffer;
+  } catch {
+    return out;
+  }
+  // Response per spec: "<oid> <type> <size>\n<contents>\n", or "<spec> missing\n".
+  let pos = 0;
+  for (const spec of specs) {
+    const nl = buf.indexOf(0x0a, pos);
+    if (nl === -1) break;
+    const header = buf.toString("utf8", pos, nl);
+    pos = nl + 1;
+    if (header.endsWith(" missing") || header.endsWith(" ambiguous")) continue;
+    const size = Number.parseInt(header.slice(header.lastIndexOf(" ") + 1), 10);
+    if (!Number.isFinite(size) || size < 0) break; // unparseable stream — stop, never guess
+    out.set(spec, buf.toString("utf8", pos, pos + size));
+    pos += size + 1; // contents, then the trailing LF
+  }
+  return out;
+}
+
 function gitDeletedEpisodes(mindDir: string): Map<string, string> {
   const map = new Map<string, string>();
   let out = "";
@@ -121,17 +170,29 @@ export function collectAllEpisodes(mindDir: string = REAL_MIND): ReplayEpisode[]
     episodes.push({ filename: f, content: fs.readFileSync(path.join(mindDir, "episodes", f), "utf8"), source: "live" });
     seen.add(f);
   }
-  for (const [f, commit] of gitDeletedEpisodes(mindDir)) {
-    if (seen.has(f)) continue;
-    try {
-      const content = execFileSync("git", ["show", `${commit}^:episodes/${f}`], { cwd: mindDir, encoding: "utf8" });
-      episodes.push({ filename: f, content, source: "git" });
-    } catch {
-      /* unreachable parent — skip, never fabricate */
-    }
-  }
+  collectShed(mindDir, gitDeletedEpisodes(mindDir), seen, episodes);
   episodes.sort((a, b) => a.filename.localeCompare(b.filename));
   return episodes;
+}
+
+/** Shared shed-episode recovery for both collectors: read every not-yet-seen
+ * shed episode from the parent of its final deletion commit, in ONE batched
+ * git call. Unreachable parents are skipped, never fabricated. */
+function collectShed(
+  mindDir: string,
+  shedMap: Map<string, string>,
+  seen: Set<string>,
+  episodes: ReplayEpisode[]
+): void {
+  const shed = [...shedMap].filter(([f]) => !seen.has(f));
+  const specs = shed.map(([f, commit]) => `${commit}^:episodes/${f}`);
+  const blobs = gitReadBlobs(mindDir, specs);
+  for (let i = 0; i < shed.length; i++) {
+    const content = blobs.get(specs[i]);
+    if (content === undefined) continue; // unreachable parent — skip, never fabricate
+    episodes.push({ filename: shed[i][0], content, source: "git" });
+    seen.add(shed[i][0]);
+  }
 }
 
 /** Same shed-episode recovery as gitDeletedEpisodes, but the commit walk is
@@ -167,8 +228,8 @@ function gitDeletedEpisodesAt(mindDir: string, rev: string): Map<string, string>
 /** collectAllEpisodes, pinned to a mind git revision instead of the live
  * working tree — deterministic and byte-stable regardless of how many times
  * REM composts between calls (the mind moves twice daily; a gauntlet corpus
- * must not). "live" here means "present in the tree at `rev`", read via
- * `git show <rev>:episodes/<f>` rather than fs.readFileSync, so two calls
+ * must not). "live" here means "present in the tree at `rev`", read out of
+ * the object store (gitReadBlobs) rather than fs.readFileSync, so two calls
  * against the same rev are byte-identical even if the real working tree has
  * since changed. Existing collectAllEpisodes (working-tree + HEAD-history)
  * behavior is untouched. */
@@ -186,20 +247,15 @@ export function collectAllEpisodesAt(rev: string, mindDir: string = REAL_MIND): 
   } catch {
     liveFiles = [];
   }
-  for (const f of liveFiles) {
-    const content = execFileSync("git", ["show", `${rev}:episodes/${f}`], { cwd: mindDir, encoding: "utf8" });
-    episodes.push({ filename: f, content, source: "live" });
-    seen.add(f);
+  const liveSpecs = liveFiles.map((f) => `${rev}:episodes/${f}`);
+  const liveBlobs = gitReadBlobs(mindDir, liveSpecs);
+  for (let i = 0; i < liveFiles.length; i++) {
+    const content = liveBlobs.get(liveSpecs[i]);
+    if (content === undefined) continue; // ls-tree listed it but git could not read it — skip
+    episodes.push({ filename: liveFiles[i], content, source: "live" });
+    seen.add(liveFiles[i]);
   }
-  for (const [f, commit] of gitDeletedEpisodesAt(mindDir, rev)) {
-    if (seen.has(f)) continue;
-    try {
-      const content = execFileSync("git", ["show", `${commit}^:episodes/${f}`], { cwd: mindDir, encoding: "utf8" });
-      episodes.push({ filename: f, content, source: "git" });
-    } catch {
-      /* unreachable parent — skip, never fabricate */
-    }
-  }
+  collectShed(mindDir, gitDeletedEpisodesAt(mindDir, rev), seen, episodes);
   episodes.sort((a, b) => a.filename.localeCompare(b.filename));
   return episodes;
 }

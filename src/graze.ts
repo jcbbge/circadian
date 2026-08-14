@@ -42,8 +42,8 @@ import { homedir } from "node:os";
 import { dirname, join } from "node:path";
 import { complete } from "./llm.ts";
 import { ok, idle, degraded, fail, correlation } from "./obs.ts";
-import { isDroneOpening, firstUserTurnFromTranscript } from "./provenance.ts";
-import { normalizeTurnText, isFleetPacketOpening } from "./transcript-format.ts";
+import { isDroneOpening, isFleetPacketOpening, firstUserTurnFromTranscript } from "./provenance.ts";
+import { normalizeTurnText } from "./transcript-format.ts";
 
 // --dry-run: digest the delta exactly as the worker does, then print the
 // bullets to stdout instead of appending them to mind/meals/ (and without
@@ -95,6 +95,10 @@ interface MealState {
   lastCheckpointTs: number;
   byteOffset: number;
   checkpoints: number;
+  /** TELEMETRY-ONLY bookkeeping for the hook's repeating "nothing to do"
+   * skips, keyed by phase (see noteHookSkip). Never consulted by any
+   * checkpoint decision — remove it and grazing behaves identically. */
+  skipNotices?: Record<string, { lastTs: number; suppressed: number }>;
 }
 function statePath(sessionId: string): string {
   return join(MEALS_DIR, `.${sessionId}.state.json`);
@@ -109,6 +113,77 @@ function loadState(sessionId: string): MealState {
 function saveState(sessionId: string, st: MealState): void {
   mkdirSync(MEALS_DIR, { recursive: true });
   writeFileSync(statePath(sessionId), JSON.stringify(st));
+}
+
+// ---------- hook-skip notice cadence (obs volume) ----------
+//
+// The graze hook fires on every PostToolUse / UserPromptSubmit — many times a
+// minute, per live session — and its two "nothing to do yet" exits used to
+// write one obs event EACH TIME. Measured 2026-08-14 on
+// logs/circadian.events.jsonl (112,366 events): graze/throttle/idle was 77,614
+// of them (69.1%) and the graze/guard/idle "delta below minimum" skip another
+// 14,366 (12.8%) — 82% of the entire ledger was one process saying "not yet".
+// On 2026-08-13 alone that was 25,239 throttle events across 192 distinct
+// sessions, and the cursor preToolUse wiring roughly doubles the tick rate.
+//
+// MIND-SPEC law: motion is the metric — so the skips must not go dark. But the
+// events ledger is TELEMETRY, not mind state, so the cadence is ours to set.
+// Each skip phase therefore reports at most once per session per notice window,
+// carrying suppressed_count: the motion is still counted, it is just summarized
+// instead of transcribed. The FIRST skip of a session always reports (lastTs 0
+// is unconditionally stale), so a session's graze liveness still reaches the
+// ledger immediately — doctor.ts's checkProcess("graze", …) reads the age of
+// the LAST graze event against a 48h window, and one notice per session per
+// hour keeps it two orders of magnitude inside that.
+const SKIP_NOTICE_MS = Number(process.env.CIRCADIAN_GRAZE_NOTICE_MS || 60 * 60 * 1000); // 1h
+
+/**
+ * Emit one hook-skip event at most once per session per SKIP_NOTICE_MS,
+ * folding the skips in between into suppressed_count.
+ *
+ * The state write re-reads from disk first and touches ONLY skipNotices: the
+ * detached worker owns byteOffset/checkpoints, and a hook tick must never
+ * write back a stale copy of the fields it does not own.
+ */
+function noteHookSkip(
+  sessionId: string,
+  st: MealState,
+  now: number,
+  phase: "throttle" | "guard",
+  summary: string,
+  context: Record<string, unknown>
+): void {
+  const prev = st.skipNotices?.[phase] ?? { lastTs: 0, suppressed: 0 };
+  const suppressed = prev.suppressed + 1;
+  const quiet = now - prev.lastTs < SKIP_NOTICE_MS;
+
+  const persist = (notice: { lastTs: number; suppressed: number }) => {
+    try {
+      const cur = loadState(sessionId);
+      saveState(sessionId, { ...cur, skipNotices: { ...(cur.skipNotices ?? {}), [phase]: notice } });
+    } catch {
+      /* notice bookkeeping is telemetry — it must never break the hook */
+    }
+  };
+
+  if (quiet) {
+    glog("hook", `skip suppressed (${phase})`, { sessionId, suppressed });
+    persist({ lastTs: prev.lastTs, suppressed });
+    return;
+  }
+
+  idle({
+    process: "graze", phase,
+    summary: suppressed > 1 ? `${summary} (${suppressed} skips since the last notice)` : summary,
+    context: {
+      session_id: sessionId,
+      ...context,
+      suppressed_count: suppressed,
+      notice_interval_ms: SKIP_NOTICE_MS,
+      since_last_notice_ms: prev.lastTs ? now - prev.lastTs : null,
+    },
+  });
+  persist({ lastTs: now, suppressed: 0 });
 }
 
 // ---------- hook mode: must be FAST. throttle, maybe spawn, exit. ----------
@@ -129,14 +204,9 @@ async function runHook(): Promise<void> {
   const st = loadState(sessionId);
   const now = Date.now();
   if (now - st.lastCheckpointTs < GRAZE_INTERVAL_MS) {
-    idle({
-      process: "graze", phase: "throttle",
-      summary: "checkpoint interval not yet elapsed; waiting",
-      context: {
-        session_id: sessionId,
-        elapsed_ms: now - st.lastCheckpointTs,
-        interval_ms: GRAZE_INTERVAL_MS,
-      },
+    noteHookSkip(sessionId, st, now, "throttle", "checkpoint interval not yet elapsed; waiting", {
+      elapsed_ms: now - st.lastCheckpointTs,
+      interval_ms: GRAZE_INTERVAL_MS,
     });
     process.exit(0);
   }
@@ -153,20 +223,20 @@ async function runHook(): Promise<void> {
     process.exit(0);
   }
   if (size - st.byteOffset < MIN_DELTA_BYTES) {
-    idle({
-      process: "graze", phase: "guard",
-      summary: "delta below minimum size; not enough new content to checkpoint",
-      context: {
-        session_id: sessionId,
-        delta_bytes: size - st.byteOffset,
-        min_bytes: MIN_DELTA_BYTES,
-      },
+    // Same repeating-skip class as the throttle above: once the interval has
+    // elapsed, EVERY tick lands here until the delta grows past the floor.
+    noteHookSkip(sessionId, st, now, "guard", "delta below minimum size; not enough new content to checkpoint", {
+      delta_bytes: size - st.byteOffset,
+      min_bytes: MIN_DELTA_BYTES,
     });
     process.exit(0);
   }
 
-  // Claim the slot BEFORE spawning (prevents double-fire from concurrent hooks).
-  saveState(sessionId, { ...st, lastCheckpointTs: now });
+  // Claim the slot BEFORE spawning (prevents double-fire from concurrent
+  // hooks). Re-read first: a concurrent tick may have advanced skipNotices,
+  // and the worker may have advanced byteOffset, since `st` was loaded — the
+  // claim writes back the freshest copy plus its own field.
+  saveState(sessionId, { ...loadState(sessionId), lastCheckpointTs: now });
 
   try {
     const worker = spawn(BUN_BIN, ["run", import.meta.path, "--worker"], {
