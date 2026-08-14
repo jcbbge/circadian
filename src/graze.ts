@@ -43,6 +43,12 @@ import { dirname, join } from "node:path";
 import { complete } from "./llm.ts";
 import { ok, idle, degraded, fail, correlation } from "./obs.ts";
 import { isDroneOpening, firstUserTurnFromTranscript } from "./provenance.ts";
+import { normalizeTurnText, isFleetPacketOpening } from "./transcript-format.ts";
+
+// --dry-run: digest the delta exactly as the worker does, then print the
+// bullets to stdout instead of appending them to mind/meals/ (and without
+// advancing the checkpoint offset). See sleep.ts for the same flag.
+const DRY_RUN = process.argv.includes("--dry-run");
 
 const CIRCADIAN_HOME = process.env.CIRCADIAN_HOME || join(homedir(), "circadian");
 const MIND = join(CIRCADIAN_HOME, "mind");
@@ -206,11 +212,15 @@ function extractDeltaText(transcriptPath: string, fromByte: number): { text: str
     if (role !== "user" && role !== "assistant") continue;
     const content = entry?.message?.content ?? entry?.content;
     const blocks = Array.isArray(content) ? content : [{ type: "text", text: String(content ?? "") }];
-    const text = blocks
-      .filter((b: any) => b?.type === "text" && typeof b.text === "string")
-      .map((b: any) => b.text)
-      .join("\n")
-      .trim();
+    // Harness envelopes off before the slice reaches the model (cursor wraps
+    // user turns in <timestamp>/<user_query>); no-op elsewhere.
+    const text = normalizeTurnText(
+      blocks
+        .filter((b: any) => b?.type === "text" && typeof b.text === "string")
+        .map((b: any) => b.text)
+        .join("\n")
+        .trim()
+    );
     if (text) turns.push(`${role === "user" ? "User" : "Assistant"}: ${text}`);
   }
   let text = turns.join("\n\n");
@@ -250,7 +260,13 @@ async function runWorker(): Promise<void> {
     // checkpoints must never become meals — SLEEP folds meals into episodes,
     // and 134 drone episodes rewrote SELF into obedience doctrine. The gate
     // reads the transcript's opening user turn. See src/provenance.ts.
-    if (isDroneOpening(firstUserTurnFromTranscript(transcriptPath))) {
+    // normalizeTurnText is applied to the opening turn BEFORE the gate reads
+    // it: the drone patterns are anchored (/^you are …/, /^say ok/), and
+    // cursor's <timestamp>/<user_query> envelope would push the brief off the
+    // anchor so every cursor fleet drone sails through. Cursor is where the
+    // fleet runs, so the guard has to see the same string CC's guard sees.
+    const openingTurn = normalizeTurnText(firstUserTurnFromTranscript(transcriptPath));
+    if (isDroneOpening(openingTurn) || isFleetPacketOpening(openingTurn, transcriptPath)) {
       glog("worker", "skip: fleet-drone session — worker-brief opening, no checkpoint", { sessionId });
       idle({
         process: "graze", phase: "provenance", correlation_id: corr, session_id: sessionId,
@@ -297,9 +313,21 @@ async function runWorker(): Promise<void> {
       return;
     }
 
-    mkdirSync(MEALS_DIR, { recursive: true });
     const mealPath = join(MEALS_DIR, `${sessionId}.md`);
     const stamp = new Date().toISOString();
+    // Dry run: the digest happened for real, only the append and the offset
+    // advance are withheld, so the same slice can be re-run verbatim.
+    if (DRY_RUN) {
+      process.stdout.write(
+        `=== DRY RUN — nothing appended to ${mealPath} ===\n` +
+          `session: ${sessionId}\ntranscript: ${transcriptPath}\n` +
+          `delta_chars: ${text.length}  from_byte: ${st.byteOffset}  to_byte: ${newOffset}\n\n` +
+          `## checkpoint ${n} — ${stamp}\n\n${bullets}\n`
+      );
+      glog("worker", "DRY RUN: checkpoint digested, nothing written", { sessionId, n });
+      return;
+    }
+    mkdirSync(MEALS_DIR, { recursive: true });
     appendFileSync(mealPath, `\n## checkpoint ${n} — ${stamp}\n\n${bullets}\n`);
     saveState(sessionId, { lastCheckpointTs: Date.now(), byteOffset: newOffset, checkpoints: n });
     glog("worker", "checkpoint digested", { sessionId, n, delta_chars: text.length, meal: mealPath });
@@ -325,7 +353,7 @@ async function runWorker(): Promise<void> {
   }
 }
 
-if (process.argv.includes("--worker")) {
+if (process.argv.includes("--worker") || DRY_RUN) {
   await runWorker();
   process.exit(0);
 } else {

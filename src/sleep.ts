@@ -24,12 +24,19 @@
 // entries are dead-lettered loudly so one poison pill cannot block the queue.
 
 import { spawn } from "node:child_process";
-import { appendFileSync, existsSync, mkdirSync, readFileSync, renameSync, statSync, unlinkSync, writeFileSync } from "node:fs";
+import { appendFileSync, existsSync, mkdirSync, readdirSync, readFileSync, renameSync, statSync, unlinkSync, writeFileSync } from "node:fs";
 import { homedir } from "node:os";
 import { dirname, join } from "node:path";
 import { complete } from "./llm.ts";
 import { ok, idle, degraded, fail, correlation } from "./obs.ts";
 import { isDroneOpening, firstUserTurnFromText } from "./provenance.ts";
+import { normalizeTurnText, isFleetPacketOpening } from "./transcript-format.ts";
+
+// --dry-run: draft exactly as the live worker does (same transcript, same
+// prompt, same LLM, same parse), then print the episode + NOW.md to stdout
+// instead of writing them into mind/. The inspection path for a new harness:
+// nothing reaches the mind repo until the output has been read by a human.
+const DRY_RUN = process.argv.includes("--dry-run");
 
 // ---------- observability ----------
 // SLEEP used to fail silently (every early return / swallowed catch left no
@@ -251,6 +258,54 @@ function parseEvent(text: string): Record<string, any> {
 
 // ---------- hook mode ----------
 
+// Burst-dedupe claim store: one tiny file per session id, created O_EXCL.
+// Files older than a day are pruned opportunistically, so the directory
+// tracks live sessions rather than growing forever.
+const SLEEP_CLAIM_DIR = join(CIRCADIAN_HOME, "logs", "sleep-claims");
+const SLEEP_CLAIM_WINDOW_MS = 60_000;
+const SLEEP_CLAIM_TTL_MS = 24 * 3_600_000;
+
+/** True when this process may proceed to spawn a worker for the session.
+ * False ONLY when an identical claim was staked inside the burst window.
+ * Every failure mode here returns true: a broken guard must never be the
+ * reason a session leaves no letter. */
+function claimSleepSession(sessionId: unknown): boolean {
+  if (typeof sessionId !== "string" || !sessionId) return true; // nothing to key on
+  try {
+    mkdirSync(SLEEP_CLAIM_DIR, { recursive: true });
+    const claim = join(SLEEP_CLAIM_DIR, sessionId.replace(/[^A-Za-z0-9._-]/g, "_"));
+    try {
+      writeFileSync(claim, new Date().toISOString(), { flag: "wx" });
+      pruneSleepClaims();
+      return true;
+    } catch (e) {
+      if ((e as NodeJS.ErrnoException).code !== "EEXIST") return true;
+      const ageMs = Date.now() - statSync(claim).mtimeMs;
+      if (ageMs < SLEEP_CLAIM_WINDOW_MS) return false; // the burst twin
+      writeFileSync(claim, new Date().toISOString()); // a genuinely later end
+      return true;
+    }
+  } catch {
+    return true;
+  }
+}
+
+function pruneSleepClaims(): void {
+  try {
+    const now = Date.now();
+    for (const name of readdirSync(SLEEP_CLAIM_DIR)) {
+      const p = join(SLEEP_CLAIM_DIR, name);
+      try {
+        if (now - statSync(p).mtimeMs > SLEEP_CLAIM_TTL_MS) unlinkSync(p);
+      } catch {
+        /* raced another hook — fine */
+      }
+    }
+  } catch {
+    /* pruning is housekeeping, never a gate */
+  }
+}
+
 async function runHook(): Promise<void> {
   const raw = await readStdinText();
   const evt = parseEvent(raw);
@@ -282,6 +337,23 @@ async function runHook(): Promise<void> {
   const tsize = statSync(transcriptPath).size;
   if (tsize < MIN_TRANSCRIPT_BYTES) {
     slog("hook", "bail: transcript too small", { bytes: tsize, min: MIN_TRANSCRIPT_BYTES });
+    process.exit(0);
+  }
+
+  // BURST DEDUPE. One session end must produce ONE episode. Cursor fires its
+  // sessionEnd hook TWICE for every session — measured 2026-08-14 on live
+  // cursor-agent runs, the pair 7ms apart with byte-identical payloads — and
+  // sleep.log shows the same burst shape on the Claude Code path (9 re-fires
+  // inside 5ms..158ms across its history). Unguarded, each burst spawns two
+  // workers that draft two episodes and race each other's NOW.md rewrite.
+  // The window is deliberately 60s: it swallows the burst and nothing else —
+  // every re-fire in the log that is a genuinely separate session end sits
+  // 80s or further out, and those still sleep normally.
+  if (!claimSleepSession(evt?.session_id)) {
+    slog("hook", "bail: duplicate session-end burst — this session is already claimed", {
+      session_id: evt?.session_id ?? null,
+      window_ms: SLEEP_CLAIM_WINDOW_MS,
+    });
     process.exit(0);
   }
 
@@ -456,11 +528,15 @@ function extractTranscriptText(transcriptPath: string, capChars: number): string
 
     const content = entry?.message?.content ?? entry?.content;
     const blocks = Array.isArray(content) ? content : [{ type: "text", text: String(content ?? "") }];
-    const text = blocks
-      .filter((b: any) => b?.type === "text" && typeof b.text === "string")
-      .map((b: any) => b.text)
-      .join("\n")
-      .trim();
+    // normalizeTurnText strips harness envelopes (cursor's
+    // <timestamp>/<user_query> wrapper) — a no-op for Claude Code and pi.
+    const text = normalizeTurnText(
+      blocks
+        .filter((b: any) => b?.type === "text" && typeof b.text === "string")
+        .map((b: any) => b.text)
+        .join("\n")
+        .trim()
+    );
     if (text) turns.push(`${role === "user" ? "User" : "Assistant"}: ${text}`);
   }
 
@@ -857,7 +933,7 @@ async function draftSessionEpisode(opts: {
   // an orchestrator says to a worker are not the user's words. Drone
   // sessions leave no letter. See src/provenance.ts.
   const firstTurn = firstUserTurnFromText(transcriptText);
-  if (isDroneOpening(firstTurn)) {
+  if (isDroneOpening(firstTurn) || isFleetPacketOpening(firstTurn, transcriptPath)) {
     slog(mode, "skip: fleet-drone session — worker-brief opening, no episode", { sessionId });
     ok({
       process: "sleep", phase: "provenance", correlation_id: corr, session_id: sessionId,
@@ -903,7 +979,10 @@ async function draftSessionEpisode(opts: {
     // Queue BEFORE reporting, so the degraded event can truthfully say the
     // episode is preserved. enqueuePendingSleep fail()s loudly on a write
     // error — this event never goes out without its queue line behind it.
-    if (opts.queueOnFailure) {
+    // A dry run never touches disk — not even the durability queue. (Caught
+    // live: the first cursor dry run failed its draft and left a real
+    // DRYRUN- line in logs/pending-sleep.jsonl for REM to replay.)
+    if (opts.queueOnFailure && !DRY_RUN) {
       enqueuePendingSleep(
         {
           ts: new Date().toISOString(),
@@ -935,6 +1014,22 @@ async function draftSessionEpisode(opts: {
 
   const episodeContent = buildEpisodeContent(date, sessionId, draft.arc, draft.episodeBody);
   const nowContent = buildNowContent(draft.nowRaw, preservedSerendipity, lastSleepIso);
+
+  // Dry run stops here, one step short of the mind repo: everything above is
+  // the real path (extraction, redaction, guards, prompt, LLM, parse, caps),
+  // and the artifacts go to stdout instead of episodes/ + NOW.md. No episode
+  // file, no NOW rewrite, no scoreboard line, no meal deletion.
+  if (DRY_RUN) {
+    process.stdout.write(
+      `=== DRY RUN — nothing written to ${MIND} ===\n` +
+        `session: ${sessionId}\ntranscript: ${transcriptPath}\n` +
+        `transcript_chars: ${transcriptText.length}  meal_checkpoints: ${mealCheckpoints}\n` +
+        `would write: ${join(EPISODES_DIR, `${date}-${slugify(draft.arc)}.md`)}\n\n` +
+        `--- EPISODE ---\n${episodeContent}\n--- NOW.md ---\n${nowContent}\n`
+    );
+    slog(mode, "DRY RUN: episode drafted, nothing written", { arc: draft.arc });
+    return { status: "written" };
+  }
 
   const epPath = writeEpisodeFile(date, draft.arc, episodeContent);
   writeNowFile(nowContent);
@@ -1135,7 +1230,7 @@ async function runDrain(): Promise<void> {
 // tested against real transcripts) — a bare import must never fall into
 // hook mode and hang on stdin.
 if (import.meta.main) {
-  if (process.argv.includes("--worker")) {
+  if (process.argv.includes("--worker") || DRY_RUN) {
     await runWorker();
     process.exit(0);
   } else if (process.argv.includes("--drain")) {
