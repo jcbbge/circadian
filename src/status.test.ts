@@ -174,11 +174,12 @@ describe("computeVerdictStreak", () => {
     expect(computeVerdictStreak(events)).toEqual({ kind: "bad", count: 2, killSwitch: false });
   });
 
-  test("200 quiet historical windows + the first-ever rem event (greeting-sourced) => its span retroactively covers all of them ok", () => {
-    // The first-ever rem event's span has no predecessor, so per spec it
-    // covers back to the dawn of the record — every prior window reads ok,
-    // not "silent" (the whole point of the granularity fix: a measurement
-    // gap that predates judgment is not evidence of failure).
+  test("200 quiet historical windows + 2 greeting-sourced rem events => 2 credited JUDGMENTS, not 202 windows", () => {
+    // THE unit test for the granularity: how many wake windows a judgment's
+    // span happens to cover is irrelevant to the streak. Two REM runs judged
+    // two greetings; that is a count of 2 however many panes woke up in
+    // between (audit 2026-08-14 §P0-1 — the fanout is what turned one quiet
+    // fleet day into "bad×905" against a threshold of 7).
     const baseMs = Date.parse("2026-01-01T00:00:00.000Z");
     const manyWakes: ScoreEvent[] = [];
     for (let i = 0; i < 203; i++) {
@@ -187,33 +188,76 @@ describe("computeVerdictStreak", () => {
     const lastWakeMs = baseMs + 202 * 86_400_000;
     const events: ScoreEvent[] = [
       ...manyWakes,
-      rem(new Date(lastWakeMs - 36 * 3_600_000).toISOString(), ["NOW.LiveTensions[1]"]), // window [200,201) — first rem ever
-      rem(new Date(lastWakeMs - 12 * 3_600_000).toISOString(), ["NOW.Arc[0]"]), // window [201,202)
+      rem(new Date(lastWakeMs - 36 * 3_600_000).toISOString(), ["NOW.LiveTensions[1]"]), // first rem ever
+      rem(new Date(lastWakeMs - 12 * 3_600_000).toISOString(), ["NOW.Arc[0]"]),
     ];
     const streak = computeVerdictStreak(events);
     expect(streak.kind).toBe("ok");
-    expect(streak.count).toBe(202); // every one of the 202 closed windows
+    expect(streak.count).toBe(2);
     expect(streak.killSwitch).toBe(false);
   });
 
-  test("a judged span with propagation credits every window inside it, not just the one containing the rem's own ts", () => {
-    // 5 wakes => 4 windows; a single rem event, landing in the last window,
-    // whose span (no predecessor) covers all 4.
+  test("one judgment is ONE unit however many wake windows its span covers", () => {
+    // 5 wakes => 4 windows; a single rem event whose span covers all 4.
     const events = [
       wake(W[0]), wake(W[1]), wake(W[2]), wake(W[3]), wake(W[4]),
-      rem("2026-07-04T12:00:00.000Z", ["NOW.Arc[1]"]), // window [W3,W4), span covers [W0,W1)..[W3,W4)
+      rem("2026-07-04T12:00:00.000Z", ["NOW.Arc[1]"]),
     ];
-    expect(computeVerdictStreak(events)).toEqual({ kind: "ok", count: 4, killSwitch: false });
+    expect(computeVerdictStreak(events)).toEqual({ kind: "ok", count: 1, killSwitch: false });
   });
 
-  test("a judged span with NO greeting-sourced propagation scores every window inside it zero-credit (not unscored)", () => {
+  test("a judgment with NO greeting-sourced propagation is ONE zero-credit unit, not one per window", () => {
     const events = [
       wake(W[0]), wake(W[1]), wake(W[2]), wake(W[3]),
-      rem("2026-07-03T12:00:00.000Z", ["SELF.Doctrine[2]"]), // window [W2,W3), span covers [W0,W1) and [W1,W2) too
+      rem("2026-07-03T12:00:00.000Z", ["SELF.Doctrine[2]"]), // it looked, and found no greeting motion
     ];
-    // All 3 windows are SCORED (judged by this span) but zero-credit: bad,
-    // unweighted (no explicit bad), count = 3.
-    expect(computeVerdictStreak(events)).toEqual({ kind: "bad", count: 3, killSwitch: false });
+    expect(computeVerdictStreak(events)).toEqual({ kind: "bad", count: 1, killSwitch: false });
+  });
+
+  test("a rem event with propagated:[] is NOT a judgment — absence of observation never scores", () => {
+    // The live defect: rem-popmem writes `propagated: []` when the judgment
+    // phase was skipped, and when its LLM call failed or was truncated. Those
+    // rows must not extend a bad streak. Ten of them in a row cannot arm a
+    // trigger that requires seven observed failures.
+    const wakes: ScoreEvent[] = [];
+    const rems: ScoreEvent[] = [];
+    const baseMs = Date.parse("2026-04-01T00:00:00.000Z");
+    for (let i = 0; i < 11; i++) wakes.push(wake(new Date(baseMs + i * 86_400_000).toISOString()));
+    for (let i = 0; i < 10; i++) rems.push(rem(new Date(baseMs + i * 86_400_000 + 3_600_000).toISOString(), []));
+    expect(computeVerdictStreak([...wakes, ...rems])).toEqual({ kind: "none", count: 0, killSwitch: false });
+  });
+
+  test("`judged: true` with an empty propagated array IS an observed zero and does score", () => {
+    // The forward path: once rem-popmem stamps provenance, an honest
+    // "I looked and found nothing" counts against the streak exactly as R7
+    // intends — 7 of them arm the kill switch.
+    const wakes: ScoreEvent[] = [];
+    const rems: ScoreEvent[] = [];
+    const baseMs = Date.parse("2026-05-01T00:00:00.000Z");
+    for (let i = 0; i < 8; i++) wakes.push(wake(new Date(baseMs + i * 86_400_000).toISOString()));
+    for (let i = 0; i < 7; i++) {
+      rems.push({ ...rem(new Date(baseMs + i * 86_400_000 + 3_600_000).toISOString(), []), judged: true });
+    }
+    expect(computeVerdictStreak([...wakes, ...rems])).toEqual({ kind: "bad", count: 7, killSwitch: true });
+  });
+
+  test("`judged: false` overrides a non-empty propagated array — written provenance wins", () => {
+    const events: ScoreEvent[] = [
+      wake(W[0]), wake(W[1]),
+      { ...rem("2026-07-01T12:00:00.000Z", ["NOW.Arc[0]"]), judged: false },
+    ];
+    expect(computeVerdictStreak(events)).toEqual({ kind: "none", count: 0, killSwitch: false });
+  });
+
+  test("a human --greet-bad after the last judgment still scores, as its own unit", () => {
+    // A verdict no judgment can claim must never be dropped: the human is an
+    // observer even when the machine did not run.
+    const events: ScoreEvent[] = [
+      wake(W[0]), wake(W[1]), wake(W[2]), wake(W[3]),
+      rem("2026-07-01T12:00:00.000Z", ["NOW.Arc[0]"]), // judged + credited, window [W0,W1)
+      explicitBad("2026-07-03T12:00:00.000Z"), // window [W2,W3), newer than every judgment
+    ];
+    expect(computeVerdictStreak(events)).toEqual({ kind: "bad", count: 2, killSwitch: false });
   });
 
   test("many unjudged trailing windows (newer than the last rem event) are unscored — no bad streak growth from them", () => {
@@ -254,7 +298,32 @@ describe("computeVerdictStreak", () => {
     ];
     const streak = computeVerdictStreak(events);
     expect(streak.kind).toBe("ok");
-    expect(streak.count).toBe(4); // the 4 old judged-ok windows only
+    expect(streak.count).toBe(2); // the 2 credited judgments; the tail is silent, not bad
+    expect(streak.killSwitch).toBe(false);
+  });
+
+  test("the live 2026-08-14 scoreboard shape reads ok, not bad×905", () => {
+    // Regression pinned to the real ledger that armed the kill switch: 943
+    // fleet wakes, 8 rem events of which 4 carry no propagation at all
+    // (skipped/failed/truncated judgments) and 2 of the remaining 4 are
+    // greeting-sourced, plus 2 implicit ok verdicts attributed by basis.
+    const baseMs = Date.parse("2026-08-11T15:00:00.000Z");
+    const wakes: ScoreEvent[] = [];
+    for (let i = 0; i < 943; i++) wakes.push(wake(new Date(baseMs + i * 300_000).toISOString()));
+    const remTs = [0, 1, 2, 3, 4, 5].map((i) => new Date(baseMs + (i + 1) * 40 * 300_000).toISOString());
+    const events: ScoreEvent[] = [
+      ...wakes,
+      rem(remTs[0], ["SELF.Doctrine[1]"]), // judged, no greeting motion
+      rem(remTs[1], ["NOW.Arc[1]"]), // judged + greeting-sourced
+      rem(remTs[2], []), // never judged
+      rem(remTs[3], []), // never judged
+      rem(remTs[4], ["NOW.FlightPlan[1]"]), // judged + greeting-sourced
+      rem(remTs[5], []), // never judged
+      implicitOk(new Date(baseMs + 900 * 300_000).toISOString(), remTs[1]),
+      implicitOk(new Date(baseMs + 940 * 300_000).toISOString(), remTs[4]),
+    ];
+    const streak = computeVerdictStreak(events);
+    expect(streak.kind).toBe("ok");
     expect(streak.killSwitch).toBe(false);
   });
 });

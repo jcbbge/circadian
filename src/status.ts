@@ -91,6 +91,35 @@ export interface ScoreEvent {
    * pre-switchover v1 rem events. */
   stacked?: number;
   bumped?: number;
+  /** rem events only. Did the propagation JUDGMENT actually run and return a
+   * well-formed answer this cycle? `propagated: []` alone cannot answer that:
+   * rem-popmem.ts writes an empty array in three different situations, and
+   * only one of them is an observation —
+   *   1. the propagation phase was SKIPPED (nothing new absorbed this cycle),
+   *   2. the LLM call failed or returned a malformed/truncated answer
+   *      ("treated as empty"),
+   *   3. the judge ran and honestly found nothing propagated.
+   * Only (3) is evidence of a dead greeting. This flag records which one it
+   * was, so `remIsJudgment` stops reading silence as failure. Absent on every
+   * rem event written before 2026-08-14 — see remIsJudgment's fallback. */
+  judged?: boolean;
+}
+
+/**
+ * Does this rem event constitute an OBSERVATION of greeting fitness?
+ *
+ * Written form is authoritative when present. For the historical rows that
+ * predate the `judged` field the only conservative reading of `propagated: []`
+ * is "we cannot tell whether the judge ran" — and absence of evidence is not
+ * evidence of absence, so those rows do NOT observe anything. The cost of
+ * that choice is bounded and one-directional: an honest observed-zero from
+ * before 2026-08-14 fails to count against the streak. The cost of the
+ * opposite choice is not bounded — it is what read 905 unobserved greeting
+ * windows as sustained failure and armed the decommission trigger.
+ */
+export function remIsJudgment(e: ScoreEvent): boolean {
+  if (typeof e.judged === "boolean") return e.judged;
+  return (e.propagated?.length ?? 0) > 0;
 }
 
 function loadScoreboard(): ScoreEvent[] {
@@ -110,57 +139,68 @@ function loadScoreboard(): ScoreEvent[] {
 
 export interface VerdictStreak {
   kind: "ok" | "bad" | "none";
-  /** "ok": consecutive recent OK windows. "bad": weighted consecutive
-   * zero-ok windows (an explicit bad counts double). */
+  /** Consecutive recent JUDGMENTS, newest-first: "ok" = credited ones,
+   * "bad" = weighted zero-credit ones (an explicit bad counts double).
+   * The unit is a judgment, not a wake window — see computeVerdictStreak. */
   count: number;
   killSwitch: boolean;
 }
 
 /**
- * R7 fitness streak (docs/POPULATION-MEMORY.md §7 R7 — replaces the old
- * "last 7 verdicts all bad" rule). A wake event opens a greeting window that
- * closes at the next wake; only CLOSED windows are scored — the window since
- * the last wake hasn't had its chance to earn a verdict yet, so scoring it
- * would inflate a bad streak mid-session.
+ * R7 fitness streak (docs/POPULATION-MEMORY.md §7 R7). MIND-SPEC's kill
+ * switch reads: "7 consecutive greetings with zero propagation and no
+ * explicit ok". Two words in that sentence carry the whole design, and both
+ * were being violated by the previous implementation (audit 2026-08-14
+ * §P0-1, live reading `bad×905` off a scoreboard holding exactly 2 verdict
+ * rows, both `ok`):
  *
- * Granularity fix (popmem WS-D, live defect: the streak kept growing all day
- * because propagation is only judged at REM-time — twice daily — while this
- * function scored EVERY closed wake-to-wake window, and the many worker-pane
- * windows between REM runs are STRUCTURALLY zero-propagation). The fix scores
- * at the data's real granularity: a rem event's judgment covers ALL windows
- * SINCE THE PREVIOUS REM EVENT — that is literally the span it judged, not
- * just the one window its own ts happens to fall in. A window is therefore
- * either:
- *   - SCORED, because some rem event's span covers it (`prevRemTs < window.end
- *     && remTs >= window.start`, where `prevRemTs` is the ts of the
- *     immediately preceding rem event by ledger order, or -Infinity for the
- *     very first rem event ever — its judgment retroactively covers the dark
- *     ages before verdict tracking existed) OR an explicit/implicit verdict
- *     attributes to it directly; OR
- *   - UNSCORED, when neither applies — this is exactly the trailing windows
- *     newer than the last rem event (they haven't had their judgment yet,
- *     same as the always-excluded open window). Unscored windows are removed
- *     from the walk entirely: they neither extend nor break a streak.
+ *   "greetings" — REM writes exactly ONE greeting per run and judges it once,
+ *   at the next REM. So the unit of this streak is a JUDGMENT, never a wake
+ *   window. The old code marked every wake-to-wake window inside a judged
+ *   span as its own independently-scored window; with a fleet running, that
+ *   is ~940 windows per day rather than 2, so ONE zero-propagation REM day
+ *   read as hundreds of consecutive failures and armed a trigger calibrated
+ *   for seven. Judgments are the data's real granularity — this is what the
+ *   WS-D comment already claimed ("that is literally the span it judged")
+ *   without the arithmetic ever following.
  *
- * A SCORED window credits ok via EITHER route:
- *   1. Verdict attribution: an explicit (--greet-ok) or implicit (R7
- *      propagation) ok verdict is attributable to it. An explicit verdict
- *      (ok or bad) attributes by its OWN ts falling inside the window; an
- *      implicit verdict attributes by its `basis` (the ts of the rem event
- *      it is based on) falling inside the window.
- *   2. Raw propagation: the rem span covering this window belongs to a rem
- *      event whose `propagated` addresses include a greeting-sourced prefix
- *      (GREETING_PROPAGATION_PREFIXES). A span covering the window from a rem
- *      event with NO greeting-sourced propagation is scored, but zero-credit
- *      (bad) — the window WAS judged, and found nothing.
+ *   "zero propagation" — this describes an OBSERVATION that found nothing,
+ *   not the absence of an observation. `propagated: []` on a rem event does
+ *   not distinguish the two (see ScoreEvent.judged / remIsJudgment): a run
+ *   that never called the judge, and a run whose judge call was truncated or
+ *   failed, both write `[]`. Four of the five most recent live rem events are
+ *   exactly those cases. A rem event that is not a judgment is NOT a scoring
+ *   unit at all — it neither extends nor breaks a streak. The kill switch
+ *   guards against sustained OBSERVED failure; silence is not a verdict, and
+ *   a mind is not decommissioned on evidence nobody gathered.
  *
- * Precedence: an explicit bad in a window OVERRIDES that window's
- * propagation credit — a human saying "bad" outranks ambient motion — but
- * does NOT override an explicit/implicit ok verdict landing in the same
- * window. Explicit bad counts DOUBLE against the weighted bad streak
- * regardless of any propagation in its window. The kill switch fires at a
- * weighted streak >= KILL_SWITCH_STREAK consecutive zero-credit SCORED
- * windows, walked newest-first.
+ * The units, newest-last:
+ *   - One per judging rem event (remIsJudgment), spanning from the previous
+ *     judgment to its own ts, provided that span covers at least one CLOSED
+ *     wake window. Wake windows still bound attribution — the open window
+ *     since the last wake is excluded, exactly as before, because it has not
+ *     had its chance to earn a verdict yet.
+ *   - One per wake window carrying a verdict that no judgment unit claims
+ *     (e.g. a human `--greet-bad` after the last REM run). A human verdict is
+ *     itself an observation and must always score, judgment or no judgment.
+ *
+ * A unit is CREDITED via either route:
+ *   1. Verdict attribution — an explicit (`--greet-ok`) or implicit (R7
+ *      propagation, appended by SLEEP) ok verdict attributed to it. Explicit
+ *      verdicts attribute by their own ts, implicit ones by their `basis`
+ *      (the ts of the rem event they are based on); the attribution lands on
+ *      the newest judgment at or before that ts, which is the judgment that
+ *      wrote the greeting being judged.
+ *   2. Raw propagation — the judging rem event's `propagated` addresses
+ *      include a greeting-sourced prefix (GREETING_PROPAGATION_PREFIXES). A
+ *      judgment that ran and found no greeting-sourced motion is scored and
+ *      zero-credit: it looked, and found nothing.
+ *
+ * Precedence (unchanged): an explicit bad OVERRIDES its unit's propagation
+ * credit — a human saying "bad" outranks ambient motion — but does NOT
+ * override an ok verdict attributed to the same unit. An explicit bad counts
+ * DOUBLE against the weighted streak. The kill switch fires at a weighted
+ * streak >= KILL_SWITCH_STREAK consecutive zero-credit units, newest-first.
  */
 export function computeVerdictStreak(events: ScoreEvent[]): VerdictStreak {
   const wakeTimes = events
@@ -178,26 +218,22 @@ export function computeVerdictStreak(events: ScoreEvent[]): VerdictStreak {
     return null;
   }
 
-  const hasOk = windows.map(() => false);
-  const hasExplicitBad = windows.map(() => false);
-
-  for (const e of events) {
-    if (e.type !== "verdict" || !e.greeting_verdict) continue;
-    if (e.greeting_verdict === "ok") {
-      const attributionTs = e.source === "propagation" && e.basis ? e.basis : e.ts;
-      const idx = windowIndexFor(attributionTs);
-      if (idx !== null) hasOk[idx] = true;
-    } else {
-      const idx = windowIndexFor(e.ts);
-      if (idx !== null) hasExplicitBad[idx] = true;
-    }
+  interface Unit {
+    /** sort key: the judgment's ts, or the window start for a verdict-only unit */
+    sortTs: string;
+    okVerdict: boolean;
+    explicitBad: boolean;
+    propagation: boolean;
   }
+  const units = new Map<string, Unit>();
+  const newUnit = (sortTs: string): Unit => ({ sortTs, okVerdict: false, explicitBad: false, propagation: false });
 
-  // Span-based rem coverage: sort rem events by ts, pair each with the ts of
-  // the immediately preceding one (null = the very first ever, whose span
-  // therefore covers back to the dawn of the record — see doc comment).
-  const remSpans = events
-    .filter((e) => e.type === "rem")
+  // --- judgment units. Sorted by ts and paired with the previous judgment's
+  // ts (null = the first ever, whose span reaches back to the dawn of the
+  // record). A judgment that covers no closed window is not a unit: it has
+  // nothing to say about any greeting that has finished its life.
+  const judgments = events
+    .filter((e) => e.type === "rem" && remIsJudgment(e))
     .map((e) => ({
       ts: e.ts,
       greetingSourced: (e.propagated ?? []).some((addr) =>
@@ -207,41 +243,54 @@ export function computeVerdictStreak(events: ScoreEvent[]): VerdictStreak {
     .sort((a, b) => (a.ts < b.ts ? -1 : a.ts > b.ts ? 1 : 0))
     .map((r, i, arr) => ({ ...r, prevTs: i === 0 ? null : arr[i - 1].ts }));
 
-  const hasAnyJudgment = windows.map(() => false);
-  const hasGreetingJudgment = windows.map(() => false);
-  windows.forEach((w, i) => {
-    for (const span of remSpans) {
-      const prevOk = span.prevTs === null || span.prevTs < w.end;
-      if (!prevOk || span.ts < w.start) continue;
-      hasAnyJudgment[i] = true;
-      if (span.greetingSourced) hasGreetingJudgment[i] = true;
+  const judgmentKeys: string[] = [];
+  for (const j of judgments) {
+    const covers = windows.some((w) => (j.prevTs === null || j.prevTs < w.end) && j.ts >= w.start);
+    if (!covers) continue;
+    const u = newUnit(j.ts);
+    u.propagation = j.greetingSourced;
+    units.set(j.ts, u);
+    judgmentKeys.push(j.ts);
+  }
+
+  // --- verdict attribution. A verdict outside every closed window (the open
+  // window, or before the first wake) is not scored yet, same as before.
+  for (const e of events) {
+    if (e.type !== "verdict" || !e.greeting_verdict) continue;
+    const isOk = e.greeting_verdict === "ok";
+    const attributionTs = isOk && e.source === "propagation" && e.basis ? e.basis : e.ts;
+    const widx = windowIndexFor(attributionTs);
+    if (widx === null) continue;
+
+    // The newest judgment at or before this verdict is the one that wrote the
+    // greeting it judges. With none, the verdict stands as its own unit.
+    let key: string | null = null;
+    for (const k of judgmentKeys) if (k <= attributionTs) key = k;
+    if (key === null) {
+      key = `window:${widx}`;
+      if (!units.has(key)) units.set(key, newUnit(windows[widx].start));
     }
-  });
+    const u = units.get(key)!;
+    if (isOk) u.okVerdict = true;
+    else u.explicitBad = true;
+  }
 
-  // Explicit bad overrides propagation credit for its own window, but not a
-  // verdict-attributed ok in that same window (see doc comment precedence).
-  const credited = windows.map((_, i) => (hasExplicitBad[i] ? hasOk[i] : hasOk[i] || hasGreetingJudgment[i]));
-  const scored = windows.map((_, i) => hasOk[i] || hasExplicitBad[i] || hasAnyJudgment[i]);
+  const ordered = [...units.values()].sort((a, b) => (a.sortTs < b.sortTs ? -1 : a.sortTs > b.sortTs ? 1 : 0));
+  if (ordered.length === 0) return { kind: "none", count: 0, killSwitch: false };
 
-  const scoredIdx = windows.map((_, i) => i).filter((i) => scored[i]);
-  if (scoredIdx.length === 0) return { kind: "none", count: 0, killSwitch: false };
+  // Explicit bad overrides propagation credit for its own unit, but not an
+  // ok verdict attributed to that same unit (see doc comment precedence).
+  const credited = (u: Unit) => (u.explicitBad ? u.okVerdict : u.okVerdict || u.propagation);
 
-  const newest = scoredIdx[scoredIdx.length - 1];
-  if (credited[newest]) {
+  if (credited(ordered[ordered.length - 1])) {
     let count = 0;
-    let k = scoredIdx.length - 1;
-    while (k >= 0 && credited[scoredIdx[k]]) {
-      count++;
-      k--;
-    }
+    for (let k = ordered.length - 1; k >= 0 && credited(ordered[k]); k--) count++;
     return { kind: "ok", count, killSwitch: false };
   }
 
   let weighted = 0;
-  let k = scoredIdx.length - 1;
-  while (k >= 0 && !credited[scoredIdx[k]]) {
-    weighted += hasExplicitBad[scoredIdx[k]] ? 2 : 1;
-    k--;
+  for (let k = ordered.length - 1; k >= 0 && !credited(ordered[k]); k--) {
+    weighted += ordered[k].explicitBad ? 2 : 1;
   }
   return { kind: "bad", count: weighted, killSwitch: weighted >= KILL_SWITCH_STREAK };
 }
@@ -340,6 +389,7 @@ function collectVitals(scoreboard: ScoreEvent[]) {
         composted: r.composted?.length ?? 0,
         stacked: r.stacked,
         bumped: r.bumped,
+        judged: r.judged,
       })),
     },
     worldview_tokens: tokensOf(selfMd),
@@ -378,12 +428,12 @@ function renderStatus(vitals: ReturnType<typeof collectVitals>) {
   }
 
   if (vitals.verdicts.streak.kind !== "none") {
-    console.log(`\nverdict streak: ${vitals.verdicts.streak.kind}×${vitals.verdicts.streak.count} (closed greeting windows, newest-first)`);
+    console.log(`\nverdict streak: ${vitals.verdicts.streak.kind}×${vitals.verdicts.streak.count} (greeting judgments, newest-first)`);
   }
 
   if (vitals.verdicts.kill_switch) {
     console.log(
-      `\n!!! KILL SWITCH: ${KILL_SWITCH_STREAK}+ consecutive greeting windows with zero ok verdict (R7). Per docs/POPULATION-MEMORY.md §7 R7 this is the decommission trigger. The decision to actually decommission is human, not automated.`
+      `\n!!! KILL SWITCH: ${KILL_SWITCH_STREAK}+ consecutive greeting judgments with zero ok verdict (R7). Per docs/POPULATION-MEMORY.md §7 R7 this is the decommission trigger. The decision to actually decommission is human, not automated.`
     );
   }
 
@@ -394,7 +444,10 @@ function renderStatus(vitals: ReturnType<typeof collectVitals>) {
     console.log("  (no rem events yet)");
   } else {
     for (const r of recentRem) {
-      console.log(`  ${r.ts}: worldview ${r.worldview_tokens} tokens, propagated ${r.propagated}, composted ${r.composted}`);
+      // `judged` separates "the judge ran and found nothing" from "the judge
+      // never ran" — the distinction the streak now depends on (remIsJudgment).
+      const judged = r.judged === undefined ? "judged?" : r.judged ? "judged" : "NOT JUDGED";
+      console.log(`  ${r.ts}: worldview ${r.worldview_tokens} tokens, propagated ${r.propagated} (${judged}), composted ${r.composted}`);
     }
   }
 }

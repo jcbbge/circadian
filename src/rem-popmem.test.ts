@@ -23,6 +23,8 @@ import {
   parsePropagationResponse,
   parseGreetingResponse,
   greetingHasAnchor,
+  greetingLineIsSpeakable,
+  propagationMaxTokens,
   GREETING_MAX_LINES,
   buildCommitMessage,
   assertRenderInvariant,
@@ -261,6 +263,23 @@ describe("enumeratePropagationAddresses", () => {
 // ---------------------------------------------------------------------
 // structural validation of LLM call (a): propagation judgment
 // ---------------------------------------------------------------------
+describe("propagationMaxTokens", () => {
+  // The judge's answer is bounded by its input: at most one address per item.
+  // The live flatline was a 69-item run against a flat 500-token budget, so
+  // the budget must clear the worst case with room, at every size.
+  test("scales with the item count and clears the worst-case artifact", () => {
+    for (const items of [1, 20, 69, 200]) {
+      const budget = propagationMaxTokens(items);
+      // worst case: every address returned, ~24 chars each => ~6 tokens, plus
+      // JSON punctuation. A 2x margin over that is the bar.
+      expect(budget).toBeGreaterThanOrEqual(items * 12);
+      expect(budget).toBeGreaterThanOrEqual(500);
+    }
+    // the live shape that broke: 69 items must budget well past 500
+    expect(propagationMaxTokens(69)).toBeGreaterThan(500);
+  });
+});
+
 describe("parsePropagationResponse", () => {
   const valid = ["SELF.Doctrine[1]", "NOW.Arc[1]"];
 
@@ -350,6 +369,69 @@ describe("parseGreetingResponse", () => {
     const r = parseGreetingResponse("Finish RELEASE.md so the release can ship.", nowMd);
     expect(r.malformed).toBe(false);
     expect(r.lines).toEqual(["Finish RELEASE.md so the release can ship."]);
+  });
+
+  // Law 3 in the machine. These are the ACTUAL committed greetings from mind
+  // commits 0b27f81 / 91a4cbf / a9fd62e: every one passed the anchor gate (a
+  // path IS an anchor) and none of them can be said out loud. That is the
+  // collapse the anchor gate created by only ever testing one direction.
+  test("with NOW.md: a bare list of paths is rejected — anchors are not speech", () => {
+    const nowMd = "## Arc\nThe consumer resilience evidence pass is next.\n";
+    const raw = [
+      "`CONSUMER-MATRIX.md` in `briefs/tower/w2-consumer-resilience-evidence/`",
+      "`tower/w2-consumer-resilience`",
+      "`workers/consumer-audit.done`",
+    ].join("\n");
+    expect(parseGreetingResponse(raw, nowMd).malformed).toBe(true);
+  });
+
+  test("with NOW.md: a bare backticked command list is rejected", () => {
+    const nowMd = "## Flight plan\nPush the branch and watch the rem wave log.\n";
+    const raw = "`git push origin/main`\n`tail -f logs/last-rem-wave.log`";
+    expect(parseGreetingResponse(raw, nowMd).malformed).toBe(true);
+  });
+
+  test("with NOW.md: ONE unspeakable line poisons an otherwise good draft", () => {
+    const nowMd = "## Arc\nThe write gate is live; the herdr contract is next.\n";
+    const raw = "Pick the write gate back up — the herdr contract is the next move.\n`workers/consumer-audit.done`";
+    expect(parseGreetingResponse(raw, nowMd).malformed).toBe(true);
+  });
+
+  test("with NOW.md: a sentence CONTAINING a path passes both gates", () => {
+    const nowMd = "## Arc\nThe write gate is live; the herdr contract is next.\n";
+    const raw = "Pick up the write gate in `src/gate.ts` — the herdr contract is next.";
+    expect(parseGreetingResponse(raw, nowMd).malformed).toBe(false);
+  });
+
+  test("no NOW.md supplied: the speakability gate is skipped too (structural shape only)", () => {
+    expect(parseGreetingResponse("`workers/consumer-audit.done`").malformed).toBe(false);
+  });
+});
+
+describe("greetingLineIsSpeakable", () => {
+  test("bare addresses are not speech", () => {
+    for (const line of [
+      "`tower/w2-consumer-resilience`",
+      "`workers/consumer-audit.done`",
+      "`CONSUMER-MATRIX.md` in `briefs/tower/w2-consumer-resilience-evidence/`",
+      "`git push origin/main`",
+      "`spine-spawn fleet-smoke`",
+      "push origin/main",
+    ]) {
+      expect(greetingLineIsSpeakable(line)).toBe(false);
+    }
+  });
+
+  test("sentences that happen to carry an address are speech", () => {
+    for (const line of [
+      "verify live status flow with hairline mark on exchange end",
+      "Execute one real `cursor-fleet make` end-to-end in two worktrees",
+      "`/tmp/lever-6-orch.done` exists — verify its content matches the proof transcript.",
+      "`circadian` skips greetings for fleet workers",
+      "Finish RELEASE.md so the release can ship.",
+    ]) {
+      expect(greetingLineIsSpeakable(line)).toBe(true);
+    }
   });
 });
 

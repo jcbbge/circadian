@@ -411,7 +411,20 @@ export function parsePropagationResponse(raw: string, validAddresses: string[]):
 }
 
 const PROPAGATION_TIMEOUT_MS = 90 * 1000;
-const PROPAGATION_MAX_TOKENS = 500;
+
+/** Response budget for the propagation judgment. The artifact is BOUNDED by
+ * the input: at most one address string per enumerated item, each rendering
+ * as `  "SELF.HowWeWork[13]",\n` — about 10 tokens. The old flat 500 was
+ * under that ceiling for a live population (69 items needed ~430-500) and the
+ * judge routinely returns nearly every address, so the array was being cut
+ * off mid-string; `parsePropagationResponse` then (correctly) called the
+ * fragment malformed and the cycle recorded `propagated: []`. That is the
+ * whole propagation flatline of 2026-08-12..14 — a budget bug wearing a
+ * judgment's clothes (audit 2026-08-14 §P0-1). Sizing from the actual item
+ * count removes the ceiling instead of moving it. */
+export function propagationMaxTokens(itemCount: number): number {
+  return Math.max(500, itemCount * 12 + 64);
+}
 
 function buildPropagationPrompt(items: AddressedItem[], newEpisodes: EpisodeFile[]): string {
   const itemLines = items.map((it) => `${it.address}: ${it.text}`).join("\n");
@@ -458,7 +471,41 @@ export function parseGreetingResponse(raw: string, nowMd?: string): GreetingResu
   if (nowMd !== undefined && !greetingHasAnchor(capped, nowMd)) {
     return { lines: capped, malformed: true };
   }
+  // Speakability gate (MIND-SPEC Law 3: "Every wake opens with a greeting
+  // composed from memory, placed in the user's face. If it isn't good enough
+  // to say out loud, it isn't earning its keep."). The anchor gate above
+  // catches the abstraction failure; this one catches its mirror image, which
+  // is what the generator ACTUALLY collapsed into once the anchor gate went
+  // in — a bare list of addresses that satisfies "name a concrete anchor"
+  // while saying nothing. Eight consecutive REM runs shipped greetings like
+  //     `CONSUMER-MATRIX.md` in `briefs/tower/w2-consumer-resilience-evidence/`
+  //     `tower/w2-consumer-resilience`
+  //     `workers/consumer-audit.done`
+  // (mind commit 0b27f81; the same shape back through 91a4cbf). Nobody can
+  // say that out loud, so nothing it points at can propagate, so no ok
+  // verdict is ever earned — the R7 collapse with the anchor test passing.
+  // Same safe branch as an anchorless draft: malformed, greeting.md untouched.
+  if (nowMd !== undefined && !capped.every(greetingLineIsSpeakable)) {
+    return { lines: capped, malformed: true };
+  }
   return { lines: capped, malformed: false };
+}
+
+/** Minimum spoken words a greeting line must carry OUTSIDE its anchors. Low
+ * on purpose: "Verify the write gate under real load" clears it four times
+ * over, while a bare path or a lone backticked command clears nothing. */
+export const GREETING_MIN_SPOKEN_WORDS = 3;
+
+/** True iff this line is a sentence that happens to contain an anchor, rather
+ * than an anchor pretending to be a sentence. Strip the code spans and the
+ * path-shaped tokens — the address material — and what is left must still be
+ * language. */
+export function greetingLineIsSpeakable(line: string): boolean {
+  const residue = line
+    .replace(/`[^`]*`/g, " ")
+    .replace(/[A-Za-z0-9_-]+\/[A-Za-z0-9_./-]+/g, " ")
+    .replace(/[A-Za-z0-9_-]+\.[a-z]{1,6}\b/g, " ");
+  return (residue.match(/[A-Za-z][A-Za-z0-9'’-]*/g) ?? []).length >= GREETING_MIN_SPOKEN_WORDS;
 }
 
 // Common words that carry no anchoring specificity -- their presence in a
@@ -558,18 +605,27 @@ export function buildGreetingPrompt(nowMd: string): string {
   return (
     `You are drafting the first thing a mind reads on waking. Its ONLY job is to ` +
     `orient to the CURRENT WORK: point at the next concrete, addressable thing to do.\n\n` +
-    `HARD REQUIREMENT: name at least one concrete anchor -- a file path, a command, ` +
-    `or a specific task/subject drawn from the current work below, reusing its exact ` +
-    `nouns. NEVER a mood, a slogan, or an abstraction. ("Motion is the only truth", ` +
-    `"the board holds the pulse -- stay in the flow", "slice engaged, motion driving" ` +
-    `are all FAILURES: they name nothing you can act on.)\n\n` +
+    `HARD REQUIREMENT 1 -- SAY IT OUT LOUD: every line must be a SENTENCE a person ` +
+    `could speak, with a verb. NEVER a bare file path, a bare command, or a list of ` +
+    `names. ("` + "`tower/w2-consumer-resilience`" + `", "` + "`workers/audit.done`" + `", ` +
+    `"push origin/main" are all FAILURES: they are addresses, not speech. ` +
+    `"Pick up the write gate in \`src/gate.ts\` -- the herdr contract is next" is ` +
+    `the shape: a sentence that CONTAINS an address.)\n\n` +
+    `HARD REQUIREMENT 2 -- NAME SOMETHING REAL: each sentence must name at least one ` +
+    `concrete anchor -- a file path, a command, or a specific task/subject drawn from ` +
+    `the current work below, reusing its exact nouns. NEVER a mood, a slogan, or an ` +
+    `abstraction. ("Motion is the only truth", "the board holds the pulse -- stay in ` +
+    `the flow", "slice engaged, motion driving" are all FAILURES: they name nothing ` +
+    `you can act on.)\n\n` +
+    `Both requirements at once. An address with no sentence around it fails as surely ` +
+    `as a sentence with no address in it.\n\n` +
     `Do NOT mention the memory system, the mind, atoms, beliefs, or greetings ` +
     `themselves -- that is a category error: the greeting is for the work, not about ` +
     `its own remembering.\n\n` +
     `The current work (draw your anchor from here):\n${anchorMenu}\n\n` +
     `Full NOW.md for context:\n${nowMd}\n\n` +
-    `Respond with ONLY the greeting: at most ${GREETING_MAX_LINES} short lines, one ` +
-    `per line, no preamble, no markdown headers.`
+    `Respond with ONLY the greeting: at most ${GREETING_MAX_LINES} short sentences, ` +
+    `one per line, no preamble, no markdown headers, no bullet points.`
   );
 }
 
@@ -1013,6 +1069,13 @@ async function main() {
   // 2. PROPAGATION JUDGMENT (skipped when nothing new was stacked)
   // -------------------------------------------------------------------
   let propagatedAddresses: string[] = [];
+  // Did the judge actually run and answer this cycle? Recorded onto the
+  // scoreboard rem event as `judged` (status.ts remIsJudgment). It stays
+  // false when the phase is skipped for want of new episodes, when there is
+  // nothing addressable to judge against, and when the call fails or comes
+  // back malformed — because in every one of those cases nothing was
+  // observed, and R7 must not read an unobserved cycle as a dead greeting.
+  let propagationJudged = false;
   if (newEpisodes.length > 0 && !dryRun) {
     const atomsForPropagation = readAtoms(BELIEFS_DIR);
     const atomsById = new Map(atomsForPropagation.map((a) => [a.id, a]));
@@ -1027,33 +1090,39 @@ async function main() {
         context: {},
       });
     } else {
+      const maxTokens = propagationMaxTokens(items.length);
       try {
         const prompt = buildPropagationPrompt(items, newEpisodes);
-        const raw = await complete(prompt, { timeoutMs: PROPAGATION_TIMEOUT_MS, maxTokens: PROPAGATION_MAX_TOKENS, temperature: 0 });
+        const raw = await complete(prompt, { timeoutMs: PROPAGATION_TIMEOUT_MS, maxTokens, temperature: 0 });
         const judgment = parsePropagationResponse(raw, items.map((it) => it.address));
         propagatedAddresses = judgment.propagated;
         if (judgment.malformed) {
           degraded({
             process: "rem", phase: "propagation", correlation_id: corr,
+            // The raw completion travels IN the event. The old next_action
+            // told a reader to "inspect the raw completion under this
+            // correlation id" and then never recorded one, so three malformed
+            // runs (2026-08-12..14) left nothing to diagnose them with.
             summary: "propagation judgment completion was malformed; treated as empty (no retry)",
-            context: { items: items.length },
+            context: { items: items.length, max_tokens: maxTokens, raw_head: raw.slice(0, 200), raw_tail: raw.slice(-120), raw_length: raw.length },
             cause: "LLM response did not parse as a JSON array",
-            next_action: "inspect the raw completion under this correlation id in logs/circadian.events.jsonl",
+            next_action: "read raw_head/raw_tail in this event's context; a tail cut off mid-string means the response budget is still short of items x 12",
           });
         } else {
+          propagationJudged = true;
           ok({
             process: "rem", phase: "propagation", correlation_id: corr,
             summary: `propagation judgment: ${propagatedAddresses.length}/${items.length} item(s) propagated${judgment.unrecognizedCount ? `, ${judgment.unrecognizedCount} unrecognized address(es) dropped` : ""}`,
-            context: { items: items.length, propagated: propagatedAddresses.length, unrecognized: judgment.unrecognizedCount },
+            context: { items: items.length, propagated: propagatedAddresses.length, unrecognized: judgment.unrecognizedCount, max_tokens: maxTokens },
           });
         }
       } catch (err) {
         degraded({
           process: "rem", phase: "propagation", correlation_id: corr,
           summary: "propagation judgment LLM call failed; treated as empty",
-          context: { items: items.length },
+          context: { items: items.length, max_tokens: maxTokens },
           cause: (err as Error).message,
-          next_action: "check the local LLM at CIRCADIAN_LLM_BASE_URL; this cycle records zero propagation, not a fatal error",
+          next_action: "check the local LLM at CIRCADIAN_LLM_BASE_URL; this cycle records zero propagation AND judged:false, so R7 reads it as an unobserved cycle rather than a failed greeting",
         });
       }
     }
@@ -1236,6 +1305,10 @@ async function main() {
     type: "rem",
     worldview_tokens: tokensOf(newSelfMd),
     propagated: propagatedAddresses,
+    // Provenance for `propagated` (status.ts ScoreEvent.judged): true only
+    // when the judge ran and returned a well-formed answer, so an empty
+    // array can be read as "looked, found nothing" rather than "never looked".
+    judged: propagationJudged,
     composted: [],
     self_changed: selfChanged,
     stacked: aggCounts.new,

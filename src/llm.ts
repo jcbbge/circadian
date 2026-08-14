@@ -162,6 +162,9 @@ async function generate(base: string, prompt: string, opts: CompleteOptions): Pr
         max_tokens: opts.maxTokens,
         temperature: opts.temperature ?? 0.3,
         stream: true,
+        // The final chunk carries `usage` — the only honest truncation signal
+        // this server gives (see the ceiling check below).
+        stream_options: { include_usage: true },
       }),
       signal: controller.signal,
     });
@@ -174,6 +177,7 @@ async function generate(base: string, prompt: string, opts: CompleteOptions): Pr
 
     let acc = "";
     let finish: string | null = null;
+    let completionTokens: number | null = null;
     let buf = "";
     const decoder = new TextDecoder();
     const reader = res.body.getReader();
@@ -198,6 +202,8 @@ async function generate(base: string, prompt: string, opts: CompleteOptions): Pr
           if (typeof delta === "string") acc += delta;
           const fr = chunk?.choices?.[0]?.finish_reason;
           if (fr) finish = fr;
+          const ct = chunk?.usage?.completion_tokens;
+          if (typeof ct === "number") completionTokens = ct;
         } catch {
           // tolerate keep-alive/comment lines and partial JSON
         }
@@ -205,11 +211,21 @@ async function generate(base: string, prompt: string, opts: CompleteOptions): Pr
     }
 
     if (!acc.trim()) throw new Error("local LLM returned empty content");
-    if (finish === "length") {
-      // Output hit max_tokens — almost certainly a truncated artifact. Fail
-      // loud rather than hand a half-written block to the parser. Never
-      // retried (see nonRetryable): retrying burns a full timeout for the
-      // same truncated result.
+    // TRUNCATION. finish_reason is the OpenAI-contract signal, but this
+    // machine's local server LIES: probed 2026-08-14 against
+    // http://127.0.0.1:10240/v1, a generation cut off mid-word by max_tokens
+    // still reports finish_reason "stop" (max_tokens 10/30/64 all returned
+    // "stop" on a hard cut). The usage block requested above is the honest
+    // number, and on a cut the server's own count lands exactly one under the
+    // ceiling (10 -> 9, 30 -> 29, 64 -> 63), so the ceiling test is
+    // `>= maxTokens - 1`. A false positive here costs one loud "raise the
+    // budget"; a false negative hands the parser a half-written block, which
+    // is precisely how the REM propagation judgment silently flatlined for
+    // three runs (2026-08-12..14) and drove the R7 kill switch to 905
+    // (audit 2026-08-14 §P0-1). Never retried (see nonRetryable): retrying
+    // burns a full timeout for the same truncated result.
+    const hitCeiling = completionTokens !== null && completionTokens >= opts.maxTokens - 1;
+    if (finish === "length" || hitCeiling) {
       throw new Error(`local LLM output truncated at max_tokens (${opts.maxTokens}); raise the budget`);
     }
 
