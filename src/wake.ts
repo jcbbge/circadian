@@ -19,6 +19,8 @@ import { ok, degraded, emit, correlation } from "./obs.ts";
 import { isFirstWakeToday, renderDailyReading, loadScoreboardFile, appendDailyReadingEntry } from "./scorecard.ts";
 import { loadIndex, retrieveForWake } from "./relindex.ts";
 import { computeVerdictStreak } from "./status.ts";
+import { renderPortfolioFromMind } from "./project-status.ts";
+import { loadScoreboardFile } from "./scorecard.ts";
 import {
   CAP_TOKENS,
   STALE_MS,
@@ -226,6 +228,46 @@ async function runHook(): Promise<void> {
   // panes keep the full worldview. Kill-switch fail-safe takes precedence
   // (SELF/USER already withheld there), so slim is a no-op under kill switch.
   const slim = fleet.tier === "AGNT" || fleet.tier === "SAGT";
+
+  // Portfolio report — operator/orchestrator only; workers follow a brief.
+  let portfolio = "";
+  if (!slim && !killSwitch) {
+    try {
+      const loadedForPortfolio = loadIndex(MIND);
+      const scoreboard = loadScoreboardFile(join(MIND, "scoreboard.jsonl"));
+      const slice = renderPortfolioFromMind({
+        circadianHome: CIRCADIAN_HOME,
+        index: loadedForPortfolio?.index ?? null,
+        scoreboard,
+      });
+      portfolio = slice.block;
+      if (slice.reason === "rendered") {
+        ok({
+          process: "wake",
+          phase: "portfolio",
+          correlation_id: corr,
+          summary: `portfolio injected: yesterday=${slice.yesterday.length} last7=${slice.last7.length} forward=${slice.forward.length}`,
+          context: {
+            yesterday: slice.yesterday.slice(0, 5).map((i) => i.summary),
+            last7: slice.last7.slice(0, 8).map((i) => i.summary),
+            forward: slice.forward.slice(0, 5),
+            portfolio_tokens: Math.ceil(slice.block.length / 4),
+          },
+        });
+      }
+    } catch (e) {
+      degraded({
+        process: "wake",
+        phase: "portfolio",
+        correlation_id: corr,
+        summary: "portfolio slice threw; wake proceeds without it",
+        context: {},
+        cause: (e as Error).message,
+        next_action: "inspect project-status.ts; reproduce with `bun src/project-status.ts` if a CLI is added",
+      });
+      portfolio = "";
+    }
+  }
   if (fleet.tier) {
     ok({
       process: "wake",
@@ -242,6 +284,7 @@ async function runHook(): Promise<void> {
     now: files["NOW.md"],
     greeting: files["greeting.md"],
     evidence,
+    portfolio,
     constitution: files["CONSTITUTION.md"],
     constitutionJosh: files["CONSTITUTION-JOSH.md"],
     killSwitch,

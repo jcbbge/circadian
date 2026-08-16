@@ -118,6 +118,12 @@ describe("buildPayload slim path (3-AGNT/4-SAGT)", () => {
     expect(slim).toContain("<mind:session-evidence>");
   });
 
+  test("slim omits the portfolio block (operator-only framing)", () => {
+    const withPortfolio = buildPayload({ ...COMMON, slim: false, portfolio: "<mind:portfolio>\nHouse in flight\n</mind:portfolio>" });
+    expect(withPortfolio).toContain("<mind:portfolio>");
+    expect(slim).not.toContain("<mind:portfolio>");
+  });
+
   test("slim carries the greeting as data, never a greeting mandate", () => {
     expect(slim).toContain("<mind:greeting>");
     expect(slim).not.toContain("<mind:greeting-instruction>");

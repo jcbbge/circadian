@@ -56,12 +56,13 @@ export function buildPayload(files: {
   now: string;
   greeting: string;
   evidence?: string;
+  portfolio?: string;
   constitution?: string;
   constitutionJosh?: string;
   killSwitch?: boolean;
   slim?: boolean;
 }): string {
-  const { self, user, now, greeting, evidence, constitution, constitutionJosh, killSwitch, slim } = files;
+  const { self, user, now, greeting, evidence, portfolio, constitution, constitutionJosh, killSwitch, slim } = files;
 
   const lastSleepRaw = extractLastSleep(now);
   const lastSleepDate = lastSleepRaw ? new Date(lastSleepRaw) : null;
@@ -140,6 +141,9 @@ export function buildPayload(files: {
         // surfaced anything relevant to this session's cwd/continuation. Empty
         // string → the block is absent and wake behaves exactly as before.
         ...(evidence ? [evidence, ""] : []),
+        // project-status (2026-08-16): portfolio-first framing for operator
+        // tiers — project state, not commit recency. Empty → absent.
+        ...(portfolio ? [portfolio, ""] : []),
         // The greeting is DATA — the mind's own resuming-mid-thought line as
         // REM rendered it, plus any staleness warning. It carries NO
         // instruction to speak it: whether a session opens by speaking the
