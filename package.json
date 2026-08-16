@@ -1,0 +1,36 @@
+{
+  "name": "circadian",
+  "version": "0.1.0",
+  "description": "A file-based memory substrate for AI coding agents — plain markdown in git, metabolism in small processes.",
+  "license": "MIT",
+  "type": "module",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/jcbbge/circadian.git"
+  },
+  "engines": {
+    "bun": ">=1.0"
+  },
+  "files": [
+    "src",
+    "templates",
+    "install.sh",
+    "docs",
+    "README.md",
+    "LICENSE"
+  ],
+  "bin": {
+    "circadian-wake": "./src/wake.ts",
+    "circadian-sleep": "./src/sleep.ts",
+    "circadian-rem": "./src/rem-popmem.ts",
+    "circadian-graze": "./src/graze.ts",
+    "circadian-status": "./src/status.ts",
+    "circadian-doctor": "./src/doctor.ts"
+  },
+  "scripts": {
+    "install": "bash ./install.sh",
+    "test": "bun test",
+    "status": "bun src/status.ts",
+    "doctor": "bun src/doctor.ts"
+  }
+}

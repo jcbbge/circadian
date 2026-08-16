@@ -106,7 +106,7 @@ if [ "$(uname)" = "Darwin" ]; then
     <key>ProgramArguments</key>
     <array>
         <string>$BUN_BIN</string>
-        <string>$CIRCADIAN_HOME/src/rem.ts</string>
+        <string>$CIRCADIAN_HOME/src/rem-popmem.ts</string>
     </array>
     <key>StartCalendarInterval</key>
     <array>
@@ -166,7 +166,7 @@ EOF
     <key>ProgramArguments</key>
     <array>
         <string>$BUN_BIN</string>
-        <string>$CIRCADIAN_HOME/src/rem.ts</string>
+        <string>$CIRCADIAN_HOME/src/rem-popmem.ts</string>
         <string>--if-due</string>
     </array>
     <key>RunAtLoad</key>
@@ -192,7 +192,7 @@ EOF
     echo "circadian: catch-up agent installed (runs --if-due at every login/restart)."
   fi
 else
-  echo "circadian: non-macOS — skipping launchd. Schedule 'CIRCADIAN_HOME=$CIRCADIAN_HOME $BUN_BIN $CIRCADIAN_HOME/src/rem.ts' via cron/systemd at 09:00 and 21:00, and 'rem.ts --if-due' at login/wake."
+  echo "circadian: non-macOS — skipping launchd. Schedule 'CIRCADIAN_HOME=$CIRCADIAN_HOME $BUN_BIN $CIRCADIAN_HOME/src/rem-popmem.ts' via cron/systemd at 09:00 and 21:00, and 'rem-popmem.ts --if-due' at login/wake."
 fi
 
 # ---- 5. Claude Code hook wiring (auto-merged, idempotent) ------------------
