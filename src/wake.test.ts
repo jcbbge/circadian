@@ -145,6 +145,11 @@ describe("buildPayload operator path unchanged (regression guard)", () => {
     expect(operator).toContain("Good morning");
   });
 
+  test("empty greeting omits the mind:greeting block", () => {
+    const payload = buildPayload({ ...COMMON, greeting: "", slim: false });
+    expect(payload).not.toContain("<mind:greeting>");
+  });
+
   // Replaces "a fleet worker without a tier keeps the full worldview (skip
   // greeting only)" — that test guarded per-role greeting suppression, a
   // concept deleted with the mandate itself (session-lifecycle law 1: adapters

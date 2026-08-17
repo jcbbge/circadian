@@ -523,7 +523,35 @@ const GREETING_STOPWORDS = new Set([
 // A path/filename (dotted extension or a slash) or a backtick-quoted command:
 // unambiguous concrete anchors independent of NOW.md's vocabulary.
 const GREETING_PATH_RE = /[A-Za-z0-9_-]+\/[A-Za-z0-9_./-]+|[A-Za-z0-9_-]+\.[a-z]{1,6}\b/;
-const GREETING_COMMAND_RE = /`[^`]+`/;
+const CIRCADIAN_REPO_ROOT = path.join(import.meta.dir, "..");
+
+/** Candidate paths for a path-shaped greeting token; directories do not count. */
+function greetingPathResolveCandidates(token: string): string[] {
+  if (path.isAbsolute(token)) return [token];
+  if (token.startsWith("~/")) return [path.join(homedir(), token.slice(2))];
+  return [path.join(CIRCADIAN_REPO_ROOT, token), path.join(MIND_DIR, token)];
+}
+
+function greetingPathTokenExists(token: string): boolean {
+  const normalized = token.replace(/[.,;:!?)]+$/, "");
+  for (const candidate of greetingPathResolveCandidates(normalized)) {
+    try {
+      if (fs.statSync(candidate).isFile()) return true;
+    } catch {
+      // absent or unreadable — try next candidate
+    }
+  }
+  return false;
+}
+
+/** True when a backtick span names a runnable command, not a path dressed as one. */
+function greetingHasCommandAnchor(text: string): boolean {
+  for (const m of text.matchAll(/`([^`]+)`/g)) {
+    if (GREETING_PATH_RE.test(m[1]!)) continue;
+    return true;
+  }
+  return false;
+}
 
 /** Distinctive lowercased content tokens from a string (>= 4 chars,
  * non-stopword). The unit of concrete meaning a greeting can reuse. */
@@ -563,7 +591,7 @@ function extractAnchorVocab(nowMd: string): AnchorVocab {
 }
 
 /** True iff the greeting names at least one concrete, addressable anchor:
- *   1. a file path (`src/rem-popmem.ts`) or `backtick` command;
+ *   1. a file path that exists on disk (`src/rem-popmem.ts`) or `backtick` command;
  *   2. a proper noun (Capitalized, >= 4 chars) it shares with NOW.md's body
  *      ("RELEASE.md", "Circadian") -- the brief's "proper noun from NOW.md";
  *   3. a distinctive bigram it shares with NOW.md ("constitution builder").
@@ -574,8 +602,11 @@ function extractAnchorVocab(nowMd: string): AnchorVocab {
  * these and is rejected. */
 export function greetingHasAnchor(lines: string[], nowMd: string): boolean {
   const text = lines.join(" ");
-  if (GREETING_PATH_RE.test(text)) return true;
-  if (GREETING_COMMAND_RE.test(text)) return true;
+  const pathRe = new RegExp(GREETING_PATH_RE.source, "g");
+  for (const token of text.match(pathRe) ?? []) {
+    if (greetingPathTokenExists(token)) return true;
+  }
+  if (greetingHasCommandAnchor(text)) return true;
   const vocab = extractAnchorVocab(nowMd);
   if (vocab.tokens.size === 0) return false; // nothing concrete exists to name
 

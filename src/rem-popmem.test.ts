@@ -486,6 +486,10 @@ describe("greetingHasAnchor", () => {
     expect(greetingHasAnchor(["Start in src/rem-popmem.ts."], "")).toBe(true);
   });
 
+  test("nonexistent relative path is not an anchor against empty NOW.md", () => {
+    expect(greetingHasAnchor(["Start in src/this-file-does-not-exist.ts."], "")).toBe(false);
+  });
+
   test("empty NOW.md and no path/command: nothing concrete to name, rejected", () => {
     expect(greetingHasAnchor(["Motion is the metric."], "")).toBe(false);
   });
