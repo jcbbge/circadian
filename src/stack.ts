@@ -747,6 +747,12 @@ export interface StackCounts {
 export interface StackEpisodeResult {
   skipped: boolean;
   counts?: StackCounts;
+  /** set when this episode could not be processed; the pass MUST continue */
+  failed?: boolean;
+  /** the phase that failed: "read-episode" | "parse-episode" | "extract-llm" */
+  failurePhase?: string;
+  /** human-readable cause, surfaced to the operator */
+  failureCause?: string;
 }
 
 export async function stackEpisode(ctx: StackEpisodeContext): Promise<StackEpisodeResult> {
@@ -755,15 +761,17 @@ export async function stackEpisode(ctx: StackEpisodeContext): Promise<StackEpiso
   try {
     episodeContent = fs.readFileSync(episodePath, "utf8");
   } catch {
-    fail({
+    const cause = `${episodePath} does not exist or is unreadable`;
+    degraded({
       process: "stack",
       phase: "read-episode",
       correlation_id: ctx.correlationId,
       summary: `episode file unreadable: ${ctx.filename}`,
       context: { filename: ctx.filename, path: episodePath },
-      cause: `${episodePath} does not exist or is unreadable`,
+      cause,
       next_action: "verify the gauntlet/CLI invocation seeded this episode into mind/episodes/ before calling stack.ts",
     });
+    return { skipped: true, failed: true, failurePhase: "read-episode", failureCause: cause };
   }
 
   // Idempotence layer (b): the episode-level short-circuit ("suspenders" —
@@ -782,15 +790,17 @@ export async function stackEpisode(ctx: StackEpisodeContext): Promise<StackEpiso
 
   const episodeDate = frontmatterDate(episodeContent);
   if (!episodeDate) {
-    fail({
+    const cause = `expected a "---\\ndate: YYYY-MM-DD" frontmatter block, found none in ${ctx.filename}`;
+    degraded({
       process: "stack",
       phase: "parse-episode",
       correlation_id: ctx.correlationId,
       summary: `no frontmatter date found in ${ctx.filename}`,
       context: { filename: ctx.filename },
-      cause: `expected a "---\\ndate: YYYY-MM-DD" frontmatter block, found none in ${ctx.filename}`,
+      cause,
       next_action: `inspect ${episodePath} — episode format requires date/session/arc frontmatter`,
     });
+    return { skipped: true, failed: true, failurePhase: "parse-episode", failureCause: cause };
   }
 
   const extractPrompt = buildExtractPrompt(episodeContent);
@@ -802,15 +812,17 @@ export async function stackEpisode(ctx: StackEpisodeContext): Promise<StackEpiso
       temperature: EXTRACT_TEMPERATURE,
     });
   } catch (err) {
-    fail({
+    const cause = err instanceof Error ? err.message : String(err);
+    degraded({
       process: "stack",
       phase: "extract-llm",
       correlation_id: ctx.correlationId,
       summary: `EXTRACT call failed for ${ctx.filename}`,
       context: { filename: ctx.filename },
-      cause: err instanceof Error ? err.message : String(err),
+      cause,
       next_action: "check the local LLM service health (see ~/dotfiles/launchagents/LOCALLLM.md) and retry",
     });
+    return { skipped: true, failed: true, failurePhase: "extract-llm", failureCause: cause };
   }
   logIO(ctx.ioLogPath, { kind: "extract", episode: ctx.filename, prompt: extractPrompt, completion: rawExtract });
 
@@ -982,8 +994,22 @@ async function main() {
   const ledgerPath = path.join(mindDir, "beliefs.jsonl");
   const ioLogPath = path.join(sandboxHome, "logs", "stacker-io.jsonl");
 
+  const failures: string[] = [];
   for (const filename of filenames) {
-    await stackEpisode({ mindDir, beliefsDir, ledgerPath, ioLogPath, filename, correlationId: corr });
+    const result = await stackEpisode({ mindDir, beliefsDir, ledgerPath, ioLogPath, filename, correlationId: corr });
+    if (result.failed) failures.push(filename);
+  }
+
+  if (failures.length > 0) {
+    degraded({
+      process: "stack",
+      phase: "corpus",
+      correlation_id: corr,
+      summary: `${failures.length} of ${filenames.length} episode(s) skipped-and-reported in this corpus`,
+      context: { filenames, failures },
+      cause: `episode(s) failed: ${failures.join(", ")}`,
+      next_action: "inspect the per-episode degraded events above for cause and next_action",
+    });
   }
 }
 
