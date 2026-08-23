@@ -8,6 +8,7 @@ import { describe, test, expect, afterEach } from "bun:test";
 import * as fs from "fs";
 import * as path from "path";
 import { tmpdir } from "os";
+import { spawnSync } from "node:child_process";
 import { writeAtom, appendLedger, type Atom } from "./atoms.ts";
 import {
   REM_SLOT_HOURS,
@@ -804,5 +805,214 @@ describe("planDistillation / DISTILL phase", () => {
     expect(subject).toContain("sank 0 · 27 below floor");
     expect(subject).toContain("potentiated 19");
     expect(subject).toContain("distilled 15");
+  });
+});
+
+// ===========================================================================
+// WAVE 1 (rem-storm hardening, Task A) -- RED until agnt-rem-slot-guard
+// implements: the slot guard, the whole-entry-path singleton lock, and the
+// consecutive-failure budget. See briefs/rem-storm/TMK-A-rem-slot-guard.md
+// and briefs/rem-storm/criteria-A.md (test <-> done-when mapping).
+//
+// These are real subprocess tests against a real temp CIRCADIAN_HOME (house
+// pattern, src/sleep.test.ts:136-138) -- no mocking of rem-popmem.ts's CLI,
+// no mocking of the LLM. CIRCADIAN_LLM_BASE_URL is pointed at a closed local
+// port (never 127.0.0.1:10240) so a real fetch is attempted and fails fast
+// via connection refusal -- this is network-level test isolation, not a
+// mock, and it is what makes "zero live-LLM calls in this wave" possible
+// even though GREETING runs on every cycle regardless of episode count.
+// Episode-level failures are injected through real content (a missing
+// frontmatter date -- stack.ts's own parse-episode phase, no LLM reached)
+// and through the real "already-stacked" ledger idempotence check (also no
+// LLM reached) -- never through a stub of stackEpisode itself.
+// ===========================================================================
+describe("wave-2 hardening: slot guard, singleton lock, failure budget", () => {
+  const REM_SCRIPT = path.join(import.meta.dir, "rem-popmem.ts");
+  const PROJECT_ROOT = path.join(import.meta.dir, "..");
+  // Never 10240: a closed port makes `complete()` fail fast (connection
+  // refused) instead of reaching the shared local LLM. RETRIES=1 skips the
+  // 2s/10s backoff so a degrade-and-continue call costs ~0ms, not ~12s.
+  const DEAD_LLM_ENV = { CIRCADIAN_LLM_BASE_URL: "http://127.0.0.1:19999/v1", CIRCADIAN_LLM_RETRIES: "1" };
+
+  function runRem(home: string, args: string[]) {
+    return spawnSync(process.execPath, [REM_SCRIPT, ...args], {
+      cwd: PROJECT_ROOT,
+      env: { ...process.env, CIRCADIAN_HOME: home, ...DEAD_LLM_ENV },
+      encoding: "utf8",
+    });
+  }
+
+  function readJsonl(p: string): any[] {
+    if (!fs.existsSync(p)) return [];
+    return fs
+      .readFileSync(p, "utf8")
+      .trim()
+      .split("\n")
+      .filter(Boolean)
+      .map((l) => JSON.parse(l));
+  }
+
+  /** A real temp CIRCADIAN_HOME: git-init'd mind/ (mind commit needs a real
+   * repo -- git add fails hard on a missing pathspec, so every file the
+   * commit step's `git add` list names is pre-seeded as a real, empty
+   * placeholder; a genuinely fresh mind/ hitting that pre-existing gap is
+   * not this unit's bug to fix or hide from), one real atom (so REM does
+   * not idle out at the empty-population gate before reaching anything this
+   * suite cares about), and no episodes yet (each test seeds its own). */
+  function makeCliHome(): string {
+    const home = tmpDir();
+    const mindDir = path.join(home, "mind");
+    fs.mkdirSync(path.join(mindDir, "beliefs"), { recursive: true });
+    fs.mkdirSync(path.join(mindDir, "episodes"), { recursive: true });
+    fs.mkdirSync(path.join(home, "logs"), { recursive: true });
+    spawnSync("git", ["init"], { cwd: mindDir });
+    spawnSync("git", ["config", "user.email", "test@example.com"], { cwd: mindDir });
+    spawnSync("git", ["config", "user.name", "Test"], { cwd: mindDir });
+    fs.writeFileSync(path.join(mindDir, "SELF.md"), "");
+    fs.writeFileSync(path.join(mindDir, "render-manifest.json"), "[]\n");
+    fs.writeFileSync(path.join(mindDir, "digested.jsonl"), "");
+    fs.writeFileSync(path.join(mindDir, "scoreboard.jsonl"), "");
+    fs.writeFileSync(path.join(mindDir, "greeting.md"), "");
+    fs.writeFileSync(path.join(mindDir, "NOW.md"), "");
+    writeAtom(path.join(mindDir, "beliefs"), {
+      kind: "doctrine",
+      claim: "fixture population so REM does not idle on an empty mind.",
+      why: "keeps the harness past the population-check gate",
+      quotes: [{ text: "fixture population so REM does not idle on an empty mind.", source: "fixture.md" }],
+      eps: ["2026-07-16"],
+    });
+    return home;
+  }
+
+  describe("single-flight lock — whole entry path (work item 2)", () => {
+    test("a live --if-due lock also blocks a concurrent MANUAL (non---if-due) run", () => {
+      const home = makeCliHome();
+      const lockPath = path.join(home, "logs", ".rem-popmem.ifdue.lock");
+      // Simulate an in-flight pass: a live pid (our own test process, which
+      // is certainly alive) holding the lock -- fact 12's fixture-over-real-
+      // concurrency spirit, applied to a lock file instead of a scoreboard.
+      fs.writeFileSync(lockPath, JSON.stringify({ pid: process.pid, ts: Date.now() }));
+
+      runRem(home, []); // MANUAL: no --if-due
+
+      // TODAY: the lock check lives entirely inside `if (ifDue)` (rem-popmem.ts
+      // ~1015-1036), so a manual run never looks at it and proceeds straight
+      // through. This is work item 2's gap: "extend the single-flight lock to
+      // the WHOLE entry path, not just --if-due."
+      const events = readJsonl(path.join(home, "logs", "circadian.events.jsonl"));
+      expect(events).toContainEqual(
+        expect.objectContaining({
+          phase: "schedule-guard",
+          context: expect.objectContaining({ lock_path: lockPath }),
+        })
+      );
+    });
+  });
+
+  describe("consecutive-failure budget & slot-burn (work items 1 and 3)", () => {
+    test("a failed pass burns its slot: isDue must not re-offer within the same slot after a failure", () => {
+      const home = makeCliHome();
+      const mindDir = path.join(home, "mind");
+      // Deterministic parse-episode failure (stack.ts frontmatterDate finds
+      // no "---\ndate: YYYY-MM-DD\n---" block) -- fails before extract-llm,
+      // so this reaches zero LLM calls even without the dead-port env.
+      fs.writeFileSync(
+        path.join(mindDir, "episodes", "2026-08-01-poison.md"),
+        "no frontmatter at all -- deterministic parse-episode failure\n"
+      );
+
+      const before = new Date();
+      runRem(home, ["--if-due"]);
+
+      const remEvents = readJsonl(path.join(mindDir, "scoreboard.jsonl")).filter((e) => e && e.type === "rem");
+
+      // TODAY: stack.ts's per-episode fail() calls process.exit before MIND
+      // COMMIT (the only place a scoreboard `rem` event is written) is ever
+      // reached, so a failed run leaves ZERO trace on the scoreboard -- the
+      // next session's isDue() reads "never ran" and re-fires immediately
+      // (fact 1's thundering herd, fact 4's mechanism). Work item 1 requires
+      // a failed run to record its attempt against the slot regardless.
+      expect(remEvents.length).toBeGreaterThan(0);
+      expect(isDue(remEvents, new Date(before.getTime() + 1_000))).toBe(false);
+    });
+
+    test("three consecutive failed passes across three slots stop the fourth from starting; a clean manual run clears the stuck state", () => {
+      const home = makeCliHome();
+      const mindDir = path.join(home, "mind");
+      const eventsPath = path.join(home, "logs", "circadian.events.jsonl");
+      const BLOCKER = "poison-fixture.md";
+      // Three distinct REM_SLOT_HOURS ([9, 21]) slots, CORD's amendment:
+      // "drive it with scoreboard / stop-state fixtures, not a real 36-hour
+      // wait. Test the state machine, not the calendar."
+      const failedSlots = ["2026-08-20T09:05:00.000Z", "2026-08-20T21:05:00.000Z", "2026-08-21T09:05:00.000Z"];
+      fs.writeFileSync(
+        path.join(mindDir, "scoreboard.jsonl"),
+        failedSlots.map((ts) => JSON.stringify({ ts, type: "rem", failed: true, failure_episode: BLOCKER })).join("\n") + "\n"
+      );
+      // episodes/ stays EMPTY on purpose: this test is about the entry gate,
+      // not absorb, so even if the budget guard does not fire (today) and the
+      // pass runs its whole course, nothing here can reach a real LLM.
+
+      runRem(home, ["--if-due"]);
+
+      // TODAY: nothing counts consecutive failed passes across slots, so the
+      // fourth --if-due call proceeds straight past the (nonexistent) budget
+      // check to "nothing to absorb" instead of refusing to start.
+      const eventsAfterFourth = readJsonl(eventsPath);
+      expect(eventsAfterFourth).toContainEqual(
+        expect.objectContaining({
+          outcome: "degraded",
+          context: expect.objectContaining({ failure_episode: BLOCKER }),
+        })
+      );
+      expect(readJsonl(path.join(mindDir, "digested.jsonl"))).toHaveLength(0);
+
+      // Clearing surface (ORCH ruling): "a durable stop-state file, cleared
+      // by a successful manual (non---if-due) run." No TTL, no auto-reset.
+      const eventsCountAfterFourth = eventsAfterFourth.length;
+      const manual = runRem(home, []);
+      expect(manual.status).toBe(0);
+
+      runRem(home, ["--if-due"]);
+      const newEvents = readJsonl(eventsPath).slice(eventsCountAfterFourth);
+      expect(
+        newEvents.some((e) => e.outcome === "degraded" && e.context && e.context.failure_episode === BLOCKER)
+      ).toBe(false);
+    });
+  });
+
+  describe("episode-level failure no longer wedges the pass (work items 4 and 5)", () => {
+    test("one malformed episode is held aside; the remaining episodes still process and successes are recorded digested", () => {
+      const home = makeCliHome();
+      const mindDir = path.join(home, "mind");
+      const episodesDir = path.join(mindDir, "episodes");
+      const ledgerPath = path.join(mindDir, "beliefs.jsonl");
+
+      const GOOD_BEFORE = "2026-08-01-a-good.md";
+      const BAD = "2026-08-02-b-bad.md";
+      const GOOD_AFTER = "2026-08-03-c-good.md";
+
+      // Both "good" episodes take the real, LLM-free "already-stacked"
+      // idempotence path (stack.ts:772, checked against the ledger) -- proof
+      // that they "still process" never depends on a live LLM call.
+      fs.writeFileSync(path.join(episodesDir, GOOD_BEFORE), "---\ndate: 2026-08-01\n---\nalready-stacked fixture\n");
+      fs.writeFileSync(path.join(episodesDir, BAD), "no frontmatter at all -- deterministic parse-episode failure\n");
+      fs.writeFileSync(path.join(episodesDir, GOOD_AFTER), "---\ndate: 2026-08-03\n---\nalready-stacked fixture\n");
+      appendLedger(ledgerPath, { ev: "stack", ep: GOOD_BEFORE, ts: "2026-07-16T00:00:00.000Z" });
+      appendLedger(ledgerPath, { ev: "stack", ep: GOOD_AFTER, ts: "2026-07-16T00:00:00.000Z" });
+
+      const run = runRem(home, ["--if-due"]);
+
+      // TODAY: BAD's parse-episode fail() kills the whole process (stack.ts's
+      // fail() is `: never`, obs.ts:125 calls process.exit) before GOOD_AFTER
+      // (alphabetically after BAD) is ever attempted, and before
+      // recordDigested (called once, only after the loop, rem-popmem.ts:1072)
+      // ever runs -- so even GOOD_BEFORE's already-computed digest entry is
+      // lost. This is fact 4's multiplier, reproduced with zero LLM calls.
+      expect(run.status).toBe(0);
+      const digestedFilenames = readJsonl(path.join(mindDir, "digested.jsonl")).map((e) => e.filename);
+      expect(digestedFilenames).toContain(GOOD_BEFORE);
+      expect(digestedFilenames).toContain(GOOD_AFTER);
+    });
   });
 });

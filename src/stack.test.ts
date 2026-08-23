@@ -6,7 +6,9 @@
 import { describe, test, expect } from "bun:test";
 import * as fs from "fs";
 import * as path from "path";
-import { homedir } from "os";
+import { homedir, tmpdir } from "os";
+import { spawnSync } from "node:child_process";
+import type { CircadianEvent } from "./obs.ts";
 import {
   MAX_CANDIDATES,
   BAND_LOW,
@@ -671,4 +673,162 @@ describe("classifyExposure — other real flashes and standards (W2)", () => {
       expect(classifyExposure(readEpisode(f))).toBe("standard");
     }
   });
+});
+
+// ---------------------------------------------------------------------
+// poison quarantine — one un-extractable episode can never block the pass
+// (rem-storm-hardening, Task B). RED in this wave: stackEpisode's three
+// per-episode exits (read-episode, parse-episode, extract-llm) still call
+// obs.fail(), which calls process.exit() and kills the whole corpus loop —
+// see src/obs.ts:125 and src/stack.ts:758/785/805. These tests drive the
+// real CLI in a subprocess (house pattern, src/sleep.test.ts:136-138) so a
+// process.exit() on the failing path only kills the child, never this test
+// runner. Never call stackEpisode() in-process for a failing path.
+// ---------------------------------------------------------------------
+
+const STACK_TS = path.join(import.meta.dir, "stack.ts");
+const REPO_ROOT = path.join(import.meta.dir, "..");
+
+function runStackCli(home: string, filenames: string[]) {
+  return spawnSync(process.execPath, [STACK_TS, home, ...filenames], {
+    cwd: REPO_ROOT,
+    env: { ...process.env, CIRCADIAN_HOME: home },
+    encoding: "utf8",
+    timeout: 120_000,
+  });
+}
+
+function readCircadianEvents(home: string): CircadianEvent[] {
+  const p = path.join(home, "logs", "circadian.events.jsonl");
+  if (!fs.existsSync(p)) return [];
+  return fs
+    .readFileSync(p, "utf8")
+    .trim()
+    .split("\n")
+    .filter(Boolean)
+    .map((line) => JSON.parse(line) as CircadianEvent);
+}
+
+function readStackerIo(home: string): Array<{ kind: string; episode?: string }> {
+  const p = path.join(home, "logs", "stacker-io.jsonl");
+  if (!fs.existsSync(p)) return [];
+  return fs
+    .readFileSync(p, "utf8")
+    .trim()
+    .split("\n")
+    .filter(Boolean)
+    .map((line) => JSON.parse(line));
+}
+
+describe("poison quarantine — corpus containment (no live LLM; both deterministic per-episode exits)", () => {
+  test("a read-episode failure (missing file) does not block a later episode in the same corpus", () => {
+    const home = fs.mkdtempSync(path.join(tmpdir(), "circadian-stack-poison-"));
+    try {
+      const run = runStackCli(home, ["ghost-one.md", "ghost-two.md"]);
+      const events = readCircadianEvents(home);
+      const first = events.filter((e) => e.phase === "read-episode" && e.context?.filename === "ghost-one.md");
+      const second = events.filter((e) => e.phase === "read-episode" && e.context?.filename === "ghost-two.md");
+
+      expect(first.length).toBeGreaterThan(0);
+      // The invariant under test: one un-extractable episode can never block
+      // the pipeline. Today fail() exits the whole process on the FIRST
+      // failure, so ghost-two.md is never even attempted — this is the red
+      // assertion.
+      expect(second.length).toBeGreaterThan(0);
+      // Per the interface contract (fact 6), a per-episode failure must
+      // surface via degraded(), never failed() — fail() is banned on this path.
+      expect(first.every((e) => e.outcome === "degraded")).toBe(true);
+      expect(second.every((e) => e.outcome === "degraded")).toBe(true);
+      expect(run.status).toBe(0);
+    } finally {
+      fs.rmSync(home, { recursive: true, force: true });
+    }
+  });
+
+  test("a parse-episode failure (no frontmatter date) does not block a later episode in the same corpus", () => {
+    const home = fs.mkdtempSync(path.join(tmpdir(), "circadian-stack-poison-"));
+    const episodesDir = path.join(home, "mind", "episodes");
+    fs.mkdirSync(episodesDir, { recursive: true });
+    fs.writeFileSync(path.join(episodesDir, "no-date-a.md"), "no frontmatter here at all, just prose.\n");
+    fs.writeFileSync(path.join(episodesDir, "no-date-b.md"), "also no frontmatter here, also just prose.\n");
+    try {
+      const run = runStackCli(home, ["no-date-a.md", "no-date-b.md"]);
+      const events = readCircadianEvents(home);
+      const first = events.filter((e) => e.phase === "parse-episode" && e.context?.filename === "no-date-a.md");
+      const second = events.filter((e) => e.phase === "parse-episode" && e.context?.filename === "no-date-b.md");
+
+      expect(first.length).toBeGreaterThan(0);
+      // Red today: no-date-b.md is never attempted because fail() already
+      // killed the process on no-date-a.md.
+      expect(second.length).toBeGreaterThan(0);
+      expect(first.every((e) => e.outcome === "degraded")).toBe(true);
+      expect(second.every((e) => e.outcome === "degraded")).toBe(true);
+      expect(run.status).toBe(0);
+    } finally {
+      fs.rmSync(home, { recursive: true, force: true });
+    }
+  });
+
+  test("the usage exit (no sandboxHome/filenames) is untouched — still a hard exit, not per-episode", () => {
+    const home = fs.mkdtempSync(path.join(tmpdir(), "circadian-stack-poison-"));
+    try {
+      const run = runStackCli(home, []);
+      expect(run.status).not.toBe(0);
+    } finally {
+      fs.rmSync(home, { recursive: true, force: true });
+    }
+  });
+});
+
+describe("poison quarantine — the actual poison episode (LIVE-LLM gated, fact 11)", () => {
+  // Wave 1 preamble: zero live-LLM calls in this wave regardless of the task
+  // section's grant — this test is written now and skipped by default so it
+  // never fires until CIRCADIAN_LIVE_LLM=1 is set explicitly (wave 2 or an
+  // operator-run diagnosis pass).
+  const LIVE = process.env.CIRCADIAN_LIVE_LLM === "1";
+  const POISON_SRC = path.join(MIND, "quarantine", "2026-08-21-freeze-stale-design-pause.md");
+
+  const GOOD_EPISODE = (n: number) =>
+    `---\ndate: 2026-08-23\n---\n\n` +
+    `"User: synthetic fixture message ${n}, deliberately simple, single verbatim quote, no complexity."\n` +
+    `"Assistant: synthetic fixture reply ${n}, acknowledging the message above."\n\n` +
+    `user-observed: nothing notable, this is a synthetic test fixture (${n}).\n` +
+    `what-changed: nothing, this is a synthetic test fixture (${n}).\n`;
+
+  test.skipIf(!LIVE)(
+    "the actual poison file is skipped-and-reported while sibling episodes still process (bun src/stack.ts <tmpHome> good1 poison good2)",
+    () => {
+      expect(fs.existsSync(POISON_SRC)).toBe(true); // fact 11 — untracked, exists in exactly one place
+
+      const home = fs.mkdtempSync(path.join(tmpdir(), "circadian-stack-poison-live-"));
+      const episodesDir = path.join(home, "mind", "episodes");
+      fs.mkdirSync(episodesDir, { recursive: true });
+      fs.writeFileSync(path.join(episodesDir, "good1.md"), GOOD_EPISODE(1));
+      fs.writeFileSync(path.join(episodesDir, "good2.md"), GOOD_EPISODE(2));
+      // read-copy only (Constraints: never write the poison content back into
+      // a real mind/episodes/ dir — this is a throwaway temp CIRCADIAN_HOME).
+      fs.copyFileSync(POISON_SRC, path.join(episodesDir, "poison.md"));
+
+      try {
+        const run = runStackCli(home, ["good1.md", "poison.md", "good2.md"]);
+
+        // Exit code 0 with a reported skip is the correct outcome (done-when).
+        expect(run.status).toBe(0);
+
+        // good2 was actually processed: it reached the real EXTRACT call.
+        const io = readStackerIo(home);
+        expect(io.some((e) => e.kind === "extract" && e.episode === "good2.md")).toBe(true);
+
+        // the poison episode was reported, not silently dropped, and did not
+        // abort the process (must be degraded, never failed, per fact 6).
+        const events = readCircadianEvents(home);
+        const poisonEvents = events.filter((e) => e.context?.filename === "poison.md");
+        expect(poisonEvents.length).toBeGreaterThan(0);
+        expect(poisonEvents.every((e) => e.outcome !== "failed")).toBe(true);
+        expect(poisonEvents.some((e) => typeof e.cause === "string" && e.cause.length > 0)).toBe(true);
+      } finally {
+        fs.rmSync(home, { recursive: true, force: true });
+      }
+    }
+  );
 });
