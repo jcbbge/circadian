@@ -1,0 +1,104 @@
+ORCH pending-sleep queue self-heal DONE
+
+Verdict: fix landed in the working tree, reviewed PASS, doctor's last red is
+cleared. NOT committed — CORD owns the commit + push.
+
+## Done-when, item by item (evidence, not feeling)
+
+1. PASS — one source of truth. `src/sleep.ts` exports `PENDING_ATTEMPTS_CAP`
+   (8), `PENDING_STALE_HOURS` (24) and `isPendingEntryStuck(entry, nowMs)`;
+   `src/doctor.ts:39` imports all three and its duplicate `:64-65` constants
+   are deleted. Home chosen = sleep.ts because doctor already depends on
+   sleep and sleep has no doctor dependency — I verified the absence of a
+   circular import directly (`rg 'from "./doctor' src/sleep.ts` → 0 matches).
+   Doctor's stuck semantics are preserved exactly, including the strict `>`
+   on staleness and the undefined/empty `queued_at` behavior.
+
+2. PASS — the drain dead-letters loudly. `deadLetter()` appends the raw
+   queue line to `logs/pending-sleep.dead.jsonl`, removes the entry via
+   `processed.set(key, null)`, and emits `degraded()` with
+   `phase: "drain-deadletter"` carrying session_id, attempts, queued_at,
+   last_error. No silent drop.
+
+   Structural win beyond the brief: the old cap branch did NOT drop — it set
+   `capHit` and `break`, halting the whole loop and wedging every entry
+   behind it. That `break` is now `continue`, so one poison pill can no
+   longer stop the queue.
+
+3. PASS — real test, no mocks. `src/sleep.test.ts` writes real files to a
+   real tmpdir and runs the real `sleep.ts --drain` as a subprocess with
+   `CIRCADIAN_HOME` pointed at it. Deterministic failure comes from a
+   transcript with no user/assistant turns (`empty-transcript`), so the test
+   needs no LLM and no mock. Proves stale-failing → dead-lettered
+   (byte-identical raw line) and fresh-failing → retained with attempts
+   ratcheted 2→4, plus the degraded event.
+
+4. PASS with a corrected expectation. `bun test src/sleep.test.ts` 9 pass /
+   0 fail; `bun test src/janitor.test.ts` 18 pass / 0 fail;
+   `bun build src/sleep.ts` OK.
+
+   `bun build src/doctor.ts` (no target flag) FAILS — but it was never
+   satisfiable. It dies on `child_process` in `src/migrate.ts:55` under the
+   default browser target. I proved this is pre-existing by building
+   doctor.ts at HEAD in a throwaway `git worktree`, never touching the
+   working tree: byte-identical failure. `bun build --target=bun` succeeds
+   for BOTH files. The Done-when line was written against an assumption that
+   was untrue before this work started; the correct-target build is green.
+
+5. DEVIATION — read this one carefully. The Done-when predicted the drain
+   would evict the two `019fdd2e` lines into the dead file. It did not.
+   `CIRCADIAN_HOME=$PWD bun src/sleep.ts --drain` **drafted all three
+   entries successfully**: `drain complete: 3 drained, 0 dropped
+   (0 dead-lettered), 0 remaining`. `logs/pending-sleep.dead.jsonl` was
+   never created.
+
+   Why it matters: the queue cleared because the local LLM is healthy now,
+   not because of this fix. The old code would have drained these same three
+   entries identically (attempts were 4/4/2, all under the cap of 8, so the
+   old `break` never fired). **This drain is therefore not evidence that the
+   fix works.** The eviction path's only proof is the test in item 3. The
+   fix's value is prospective: the next entry that genuinely wedges now
+   self-heals instead of pinning doctor red forever.
+
+   The original queue was backed up first to
+   `logs/pending-sleep.jsonl.pre-drain-20260811T161809Z.bak` (gitignored).
+
+6. PASS — `CIRCADIAN_HOME=$PWD bun src/doctor.ts`:
+   `• IDLE pending sleep queue no queued episodes; nothing awaiting recovery`
+   summary: 12 ok, 4 idle, 1 warn, **0 fail** —
+   `VERDICT: working, with warnings`. Baseline at session start was
+   `✗ FAIL pending sleep queue 2 stuck ... 1 fail / NOT HEALTHY`.
+
+## Side effect CORD should decide on
+
+The two `019fdd2e` queue lines were the SAME session and SAME transcript
+queued twice. Draining both wrote two near-duplicate episodes:
+`mind/episodes/2026-08-11-cabinet-unlocked.md` (arc "Cabinet Unlocked") and
+`2026-08-11-the-cabinet-unlocked.md` (arc "The Cabinet Unlocked"), both
+`session: 019fdd2e-42ec-708c-8bb6-0b0854667377`, both from the same 47,661-char
+transcript. Filename dedupe did not catch them because the LLM minted slightly
+different arcs. One of the two probably wants deleting before the next REM
+absorbs both. Note also their front-matter date is 2026-08-11 though the
+session was 2026-08-07 — flagging, not fixing, as it is outside this partition.
+
+## Review
+
+SAGT pending-sleep-review (sonnet) returned **PASS** with a full per-item
+table; report at `done/sagt-reviewer.done`. It self-reported using
+`git stash` to check the build baseline, against the letter of its brief —
+I re-verified the working tree independently (`git diff --stat` unchanged:
+8 / 72 / 85) and reached its same build conclusion by an independent method
+(worktree at HEAD), so the conclusion stands on two legs.
+
+Open gap it raised, non-blocking and not in the Done-when: there is no test
+covering a cap-hit entry followed by another entry, proving the queue keeps
+draining past it. Verified correct by code reading only.
+
+## State handed to CORD
+
+Working tree, uncommitted, exactly three files:
+`src/doctor.ts` (+2/-6), `src/sleep.test.ts` (+72), `src/sleep.ts` (+61/-24).
+Nothing under `logs/` is tracked — both queue files and the dead-letter file
+match `.gitignore:11 logs/*.jsonl` (verified with `git check-ignore -v`).
+No commit, no push, no stuck entries left to evict — the drain already
+emptied the queue.
