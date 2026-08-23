@@ -19,6 +19,9 @@
 //   CIRCADIAN_LLM_RETRY_BACKOFF_MS  (default: "2000,10000,30000" — delay before
 //                                   attempt 2, 3, 4...; the last value repeats
 //                                   if RETRIES exceeds the list length)
+//   CIRCADIAN_LLM_MAX_CONCURRENT    (default: 1 — cross-process concurrency
+//                                   cap against the shared local LLM; see the
+//                                   "concurrency cap" section below)
 //
 // Resilience (added after the 2026-07-23 outage, when the service returned
 // empty content for ~4.5h and every caller failed immediately, then a REM
@@ -32,6 +35,19 @@
 // — far better than the old 15-minute generation timeout, and well under
 // the 90s budget. (A refused connection fails in ~12s: backoff only.)
 //
+// rem-storm hardening (2026-08-23): a thundering herd cooked the operator's
+// laptop by treating "connection refused because our own load exhausted the
+// server's backlog/workers" identically to "the service is dead" — both were
+// worded "unreachable" and both were retried on the same fixed, unjittered
+// schedule, so every failed caller retried in lockstep. Two fixes below:
+// (1) DOWN (nothing listening, ECONNREFUSED) now stops immediately instead
+//     of retrying into the ground; BUSY (server alive but refusing/erroring
+//     under load) backs off with jitter so callers desynchronize; (2) a
+//     cross-process concurrency cap (see below) bounds how many circadian
+//     calls may be in flight against the shared endpoint at once, because an
+//     in-process semaphore cannot see the wake.ts and circadian-mind.ts
+//     fan-outs, which are separate processes.
+//
 // Model choice: this is a summarize-and-format job (read a transcript, emit
 // strict delimited markdown blocks) — it does NOT need a frontier model.
 // Circadian defaults to Qwen3-4B-Instruct: an INSTRUCT model (no <think>
@@ -42,6 +58,10 @@
 // Circadian must not drag that in. The /no_think prepend + <think> stripping
 // below are harmless belt-and-suspenders in case the model is ever
 // overridden to a reasoning one.
+
+import { mkdirSync, readFileSync, unlinkSync, writeFileSync } from "node:fs";
+import { homedir } from "node:os";
+import { join } from "node:path";
 
 const BASE_URL =
   process.env.CIRCADIAN_LLM_BASE_URL || process.env.LOCAL_LLM_BASE_URL || "http://127.0.0.1:10240/v1";
@@ -61,16 +81,175 @@ const BACKOFF_MS = (process.env.CIRCADIAN_LLM_RETRY_BACKOFF_MS || "2000,10000,30
   .map((s) => Number.parseInt(s.trim(), 10))
   .filter((n) => Number.isFinite(n) && n >= 0);
 if (BACKOFF_MS.length === 0) BACKOFF_MS.push(2000);
+// Herd-desync jitter applied to every backoff sleep: +/-40% of the
+// configured base delay. A fixed, unjittered backoff is a herd amplifier —
+// every caller that failed at the same moment retries at the same moment.
+const BACKOFF_JITTER_FACTOR = 0.4;
 // Preflight must fail fast: 5s probing /models beats burning a 15-minute
 // generation timeout against a dead service.
 const PREFLIGHT_TIMEOUT_MS = 5000;
+
+// ---------------------------------------------------------------------
+// cross-process concurrency cap (rem-storm hardening, work item 3)
+//
+// The endpoint at BASE_URL is shared with graphiti, colgrep and pickbrain,
+// which sit in an operator's interactive loop; circadian is a background
+// metabolism with no latency SLA. This cap exists to leave headroom on the
+// shared service, not to make circadian fast — CORD ruled N=1 for exactly
+// that reason (ORCH recommended 2 and was overruled).
+//
+// An in-process semaphore cannot see this: wake.ts's REM catch-up and
+// circadian-mind.ts's sleep workers are separate OS processes, so the cap
+// has to live on disk. One file per slot under CIRCADIAN_HOME/logs/llm-cap/,
+// created with the atomic O_EXCL flag used by the sleep-claims and
+// acquireIfDueLock patterns elsewhere in this codebase (src/sleep.ts,
+// src/rem-popmem.ts:127) — same shape, same reason: a live PID holds the
+// slot, a dead or stale one is reclaimed.
+// ---------------------------------------------------------------------
+const CIRCADIAN_HOME = process.env.CIRCADIAN_HOME || join(homedir(), "circadian");
+const CAP_DIR = join(CIRCADIAN_HOME, "logs", "llm-cap");
+// Escape hatch, deliberate, house style (mirrors CIRCADIAN_LLM_RETRIES
+// above). Raising this above 1 must be a one-line change justified by a
+// MEASUREMENT of REM pass duration against the shared endpoint's actual
+// headroom — never a guess that "more concurrency is faster."
+const MAX_CONCURRENT = Math.max(
+  1,
+  Number.parseInt(process.env.CIRCADIAN_LLM_MAX_CONCURRENT || "1", 10) || 1,
+);
+// A wedged background process (dead mid-hold) is worse than a deferred pass:
+// a deferred pass retries at the next REM slot, a wedged one holds a lock
+// forever. Same ceiling as acquireIfDueLock's maxAgeMs (src/rem-popmem.ts),
+// reused deliberately rather than inventing a second timeout.
+const CAP_SLOT_STALE_MS = 30 * 60 * 1000;
+// On saturation: wait, jittered, up to this ceiling, then classify the
+// deferral as busy-not-failure and hand control back to the caller. Chosen
+// for the same reason as CAP_SLOT_STALE_MS's reuse above: a caller that
+// waits forever for the cap is itself a wedge; one that gives up and is
+// retried at the next slot is not.
+const CAP_WAIT_CEILING_MS = 120_000;
+
+/** Thrown when the local concurrency cap could not be acquired within
+ * CAP_WAIT_CEILING_MS. This is NOT an endpoint failure — the endpoint may be
+ * perfectly healthy; circadian's own cap is what is saturated. Callers MUST
+ * treat this as a deferral (retry at the next natural opportunity), never as
+ * a processing failure: feeding it to a failure/dead-letter budget would
+ * rebuild the storm this cap exists to prevent, one layer up. */
+export class LlmSaturatedError extends Error {}
+
+interface CapSlot {
+  pid: number;
+  ts: number;
+}
+
+function readSlot(slotPath: string): CapSlot | null {
+  try {
+    const raw = JSON.parse(readFileSync(slotPath, "utf8"));
+    return { pid: Number(raw.pid) || 0, ts: Number(raw.ts) || 0 };
+  } catch {
+    return null;
+  }
+}
+
+function slotIsLive(slot: CapSlot): boolean {
+  if (slot.pid <= 0) return false;
+  if (Date.now() - slot.ts >= CAP_SLOT_STALE_MS) return false;
+  try {
+    process.kill(slot.pid, 0);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+/** Try once to claim any free slot (stale or never-held slots count as
+ * free). Returns a release function on success, or null if every slot is
+ * live-held by another process right now. */
+function tryAcquireCapSlot(): (() => void) | null {
+  try {
+    mkdirSync(CAP_DIR, { recursive: true });
+  } catch {
+    // FS trouble creating the cap dir must not be the reason a background
+    // metabolism call is refused outright; treat as "no free slot", the
+    // caller's poll loop will retry.
+    return null;
+  }
+  for (let i = 0; i < MAX_CONCURRENT; i++) {
+    const slotPath = join(CAP_DIR, `slot-${i}`);
+    try {
+      writeFileSync(slotPath, JSON.stringify({ pid: process.pid, ts: Date.now() }), { flag: "wx" });
+      return releaseFnFor(slotPath);
+    } catch (e) {
+      if ((e as NodeJS.ErrnoException).code !== "EEXIST") continue; // unexpected FS error -> try next slot
+      const existing = readSlot(slotPath);
+      if (existing && slotIsLive(existing)) continue; // genuinely held -> try next slot
+      try {
+        unlinkSync(slotPath); // stale or unparseable -> reclaim
+        writeFileSync(slotPath, JSON.stringify({ pid: process.pid, ts: Date.now() }), { flag: "wx" });
+        return releaseFnFor(slotPath);
+      } catch {
+        continue; // lost the reclaim race -> try next slot
+      }
+    }
+  }
+  return null;
+}
+
+function releaseFnFor(slotPath: string): () => void {
+  let released = false;
+  return () => {
+    if (released) return;
+    released = true;
+    try {
+      const slot = readSlot(slotPath);
+      if (slot && slot.pid === process.pid) unlinkSync(slotPath);
+    } catch {
+      // already gone / not ours — fine
+    }
+  };
+}
+
+/** Blocks (via jittered polling, never a busy-loop) until a concurrency
+ * slot is free or CAP_WAIT_CEILING_MS elapses. Held per-call and released
+ * immediately after — never across separate complete() calls, and never
+ * while sleeping between retry attempts (see attemptLoop): a process must
+ * not hold the cap while it thinks. */
+async function acquireCapSlot(): Promise<() => void> {
+  const deadline = Date.now() + CAP_WAIT_CEILING_MS;
+  for (;;) {
+    const release = tryAcquireCapSlot();
+    if (release) return release;
+    if (Date.now() >= deadline) {
+      throw new LlmSaturatedError(
+        `llm busy, deferred: all ${MAX_CONCURRENT} concurrency slot(s) against ${BASE_URL} held for >= ${CAP_WAIT_CEILING_MS}ms`,
+      );
+    }
+    const pollDelay = Math.min(deadline - Date.now(), jitteredDelay(500));
+    await sleep(Math.max(50, pollDelay));
+  }
+}
 
 /** Distinguishes preflight failures internally — the fallback trigger and
  * the required error message both key off this class. Callers still see a
  * plain Error with the documented message. */
 class PreflightError extends Error {}
+/** The endpoint is genuinely DOWN: nothing is listening (ECONNREFUSED). Stop
+ * — retrying into the ground against a dead service is exactly the failure
+ * mode this hardening removes. */
+class PreflightDownError extends PreflightError {}
+/** The endpoint is alive but refusing/erroring under load (backlog or
+ * worker exhaustion — including OUR OWN concurrent load, fact 10). Back off
+ * with jitter and retry; never word this "unreachable" — that wording is
+ * what made a self-inflicted storm look like a dead service. */
+class PreflightBusyError extends PreflightError {}
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
+
+/** +/-BACKOFF_JITTER_FACTOR spread around `baseMs`, so callers that failed
+ * at the same instant desynchronize instead of retrying in lockstep. */
+function jitteredDelay(baseMs: number): number {
+  const spread = baseMs * BACKOFF_JITTER_FACTOR;
+  return Math.max(0, Math.round(baseMs + (Math.random() * 2 - 1) * spread));
+}
 
 /** Errors where retrying burns another full generation timeout for the same
  * result: truncation is a budget bug (raise maxTokens), and a
@@ -84,8 +263,10 @@ function nonRetryable(message: string): boolean {
   );
 }
 
-/** Liveness probe: GET /models with a hard 5s ceiling. Throws PreflightError
- * naming the base URL on non-200 or any transport failure. */
+/** Liveness probe: GET /models with a hard 5s ceiling. Classifies failures
+ * as DOWN (nothing listening — ECONNREFUSED) or BUSY (server accepted the
+ * connection, or responded, but errored/reset/timed out — alive under
+ * load). Only DOWN causes attemptLoop to give up without retrying. */
 async function preflight(base: string): Promise<void> {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), PREFLIGHT_TIMEOUT_MS);
@@ -95,17 +276,28 @@ async function preflight(base: string): Promise<void> {
       signal: controller.signal,
     });
     if (res.status !== 200) {
-      throw new PreflightError(`LLM preflight failed: ${base} unreachable (HTTP ${res.status})`);
+      throw new PreflightBusyError(
+        `LLM busy: ${base} responded HTTP ${res.status} — alive but refusing/overloaded, not down`,
+      );
     }
   } catch (err) {
     if (err instanceof PreflightError) throw err;
-    const reason =
-      err instanceof Error
-        ? err.name === "AbortError" || err.name === "TimeoutError"
-          ? `timeout after ${PREFLIGHT_TIMEOUT_MS}ms`
-          : err.message
+    const code = err instanceof Error ? (err as NodeJS.ErrnoException).code : undefined;
+    const isTimeout = err instanceof Error && (err.name === "AbortError" || err.name === "TimeoutError");
+    // ConnectionRefused/ECONNREFUSED: the OS itself refused the SYN — nothing
+    // is listening, genuinely down (fact 10). Everything else (ECONNRESET
+    // from a connection accepted-then-reset, our own preflight timeout, any
+    // other transport error) means the process is alive enough to touch the
+    // socket, or is merely slow — busy, not down.
+    if (code === "ConnectionRefused" || code === "ECONNREFUSED") {
+      throw new PreflightDownError(`LLM down: ${base} refused the connection (${code}) — nothing is listening`);
+    }
+    const reason = isTimeout
+      ? `timeout after ${PREFLIGHT_TIMEOUT_MS}ms`
+      : err instanceof Error
+        ? `${code ?? err.name}: ${err.message}`
         : String(err);
-    throw new PreflightError(`LLM preflight failed: ${base} unreachable (${reason})`);
+    throw new PreflightBusyError(`LLM busy: ${base} refused/reset under load (${reason})`);
   } finally {
     clearTimeout(timer);
   }
@@ -237,23 +429,39 @@ async function generate(base: string, prompt: string, opts: CompleteOptions): Pr
   }
 }
 
-/** Run preflight+generate against `base` up to RETRIES times with bounded
- * backoff. Retryable failures (transport, abort/timeout, non-2xx, empty
- * content, preflight) log ONE stderr line per failed attempt — the events
- * ledger belongs to callers; llm.ts stays a library. Throws the last error
- * when attempts are exhausted. */
+/** Run preflight+generate against `base` up to RETRIES times with jittered,
+ * capped backoff. The concurrency-cap slot is acquired fresh for each
+ * attempt and released immediately after it (success or failure) — never
+ * held across the backoff sleep between attempts, and never across separate
+ * complete() calls: a process must not hold the cap while it thinks.
+ * Retryable failures (transport, abort/timeout, non-2xx, empty content,
+ * busy-preflight) log ONE stderr line per failed attempt — the events
+ * ledger belongs to callers; llm.ts stays a library. A DOWN classification
+ * or a cap saturation stops immediately, without spending a retry. Throws
+ * the last error when attempts are exhausted. */
 async function attemptLoop(base: string, prompt: string, opts: CompleteOptions): Promise<string> {
   let lastErr: Error | null = null;
   for (let attempt = 1; attempt <= RETRIES; attempt++) {
+    let release: (() => void) | null = null;
     try {
+      release = await acquireCapSlot();
       await preflight(base);
-      return await generate(base, prompt, opts);
+      const out = await generate(base, prompt, opts);
+      release();
+      return out;
     } catch (err) {
+      if (release) release();
       const e = err instanceof Error ? err : new Error(String(err));
+      // Cap saturation is a deferral, not a retryable endpoint failure —
+      // hand it straight back to the caller (see LlmSaturatedError).
+      if (e instanceof LlmSaturatedError) throw e;
+      // Down: stop, do not retry into the ground.
+      if (e instanceof PreflightDownError) throw e;
       if (!(e instanceof PreflightError) && nonRetryable(e.message)) throw e;
       lastErr = e;
       if (attempt < RETRIES) {
-        const delay = BACKOFF_MS[Math.min(attempt - 1, BACKOFF_MS.length - 1)];
+        const baseDelay = BACKOFF_MS[Math.min(attempt - 1, BACKOFF_MS.length - 1)];
+        const delay = jitteredDelay(baseDelay);
         process.stderr.write(
           `llm: attempt ${attempt} failed (${e.message.replace(/\s+/g, " ")}); retrying in ${delay}ms\n`,
         );
@@ -268,9 +476,11 @@ export async function complete(prompt: string, opts: CompleteOptions): Promise<s
   try {
     return await attemptLoop(BASE_URL, prompt, opts);
   } catch (primaryErr) {
-    // Fail over only when the primary is UNREACHABLE (preflight failure
-    // after its retries were exhausted) — generation failures against a live
-    // service are the model's problem, not the endpoint's.
+    // Fail over only when the primary is UNREACHABLE (a DOWN or BUSY
+    // preflight failure after its retries were exhausted) — generation
+    // failures against a live service are the model's problem, not the
+    // endpoint's, and cap saturation (LlmSaturatedError) is never a reason
+    // to fail over to a second endpoint that shares the same cap concern.
     if (!FALLBACK_BASE_URL || !(primaryErr instanceof PreflightError)) throw primaryErr;
     try {
       await preflight(FALLBACK_BASE_URL);
