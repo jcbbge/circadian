@@ -88,7 +88,7 @@ import {
   type LedgerEvent,
 } from "./atoms.ts";
 import { renderSelf, RENDER_FLOOR, type RenderManifestEntry } from "./render.ts";
-import { stackEpisode, type StackCounts } from "./stack.ts";
+import { stackEpisode, type StackCounts, type StackEpisodeResult } from "./stack.ts";
 import { DECAY_FACTOR, computePotentiateEvents, computeSankBelowFloor, type RemPropagationEvent } from "./decay.ts";
 import { detectSelfStutter } from "./immune.ts";
 import { adaptRenderedForStutterCheck, parseSelfSections } from "./migrate.ts";
@@ -214,6 +214,47 @@ export function isDue(events: ScoreboardRemTs[], now: Date): boolean {
   return lastMs < slot.getTime();
 }
 
+// Consecutive-failure budget (work items 1/3, CORD's ruling; precedent
+// PENDING_ATTEMPTS_CAP at src/sleep.ts:83): a failed pass still writes a
+// scoreboard "rem" event (burning its slot, same as a success -- isDue()
+// above already treats any "rem" event as "ran this slot", no change
+// needed there), so N consecutive failed events at the tail of the
+// scoreboard mean N consecutive failed SLOTS, not N consecutive calls.
+export const CONSECUTIVE_FAILURE_BUDGET = 3;
+
+interface FailableRemEvent {
+  type: string;
+  failed?: boolean;
+  failure_episode?: string;
+}
+
+/** How many trailing "rem" events (most-recent first) carry `failed: true`
+ * before hitting a non-failed one, or running out. A successful run (manual
+ * or --if-due) appends a non-failed "rem" event, which resets this to 0 --
+ * that IS the "clean manual run clears the stuck state" clearing surface;
+ * no separate stop-state file is needed since scoreboard.jsonl is already
+ * durable and append-only. */
+export function consecutiveFailedSlotStreak(events: FailableRemEvent[]): number {
+  let streak = 0;
+  for (let i = events.length - 1; i >= 0; i--) {
+    if (events[i].type !== "rem") continue;
+    if (!events[i].failed) break;
+    streak++;
+  }
+  return streak;
+}
+
+/** The `failure_episode` named by the most recent failed "rem" event, or
+ * null once the trailing streak has ended. */
+export function lastFailureEpisode(events: FailableRemEvent[]): string | null {
+  for (let i = events.length - 1; i >= 0; i--) {
+    if (events[i].type !== "rem") continue;
+    if (!events[i].failed) return null;
+    return events[i].failure_episode ?? null;
+  }
+  return null;
+}
+
 function readScoreboardEvents(p: string): any[] {
   const events: any[] = [];
   for (const line of readOrEmpty(p).split("\n")) {
@@ -244,7 +285,13 @@ export interface DigestedEntry {
   ts: string;
   hash: string;
   filename: string;
-  disposition: "absorbed" | "composted";
+  // "held-aside" (work items 4/5): an episode-level failure. Its hash still
+  // lands here so findNewEpisodes() never re-offers it on the next pass --
+  // this IS the durable dead-letter, not a separate file -- and the two
+  // failure fields let a human see which episode and why.
+  disposition: "absorbed" | "composted" | "held-aside";
+  failure_phase?: string;
+  failure_cause?: string;
 }
 
 export function hashEpisodeContent(content: string): string {
@@ -1011,21 +1058,43 @@ async function main() {
     return;
   }
 
+  // Single-flight guard for the WHOLE entry path (work item 2, fact 7), not
+  // just --if-due: a prior run hung on the LLM never writes a completion
+  // event, so the scoreboard still reads "due" and a concurrent MANUAL
+  // invocation could otherwise stack another process right alongside it
+  // (18 reaped 2026-08-06, originally --if-due-only). The lock releases on
+  // exit so a clean run frees it. --distill-only is deliberately excluded
+  // (module header: its whole point is to run independent of, and
+  // concurrently with, a full REM pass).
+  const releaseLock = acquireIfDueLock();
+  if (releaseLock === null) {
+    idle({
+      process: "rem", phase: "schedule-guard", correlation_id: corr,
+      summary: "another rem-popmem run is already in flight; bailing (single-flight lock held)",
+      context: { lock_path: IFDUE_LOCK_PATH },
+    });
+    return;
+  }
+
   if (ifDue) {
-    // Single-flight guard FIRST: a prior --if-due run hung on the LLM never
-    // writes a completion event, so the scoreboard still reads "due" and each
-    // new session stacks another process (18 reaped 2026-08-06). Bail if a live
-    // holder exists; the lock releases on exit so a clean run frees it.
-    const releaseLock = acquireIfDueLock();
-    if (releaseLock === null) {
-      idle({
+    const scoreboardCheck = readScoreboardEvents(SCOREBOARD_PATH);
+    // Consecutive-failure budget (work item 3, CORD's ruling, N=3). Checked
+    // BEFORE isDue(): a stuck run's failures can be slots old, so isDue()
+    // alone would see the current slot as freshly due and re-fire it. Only
+    // --if-due is gated -- a manual run is the clearing surface, and it
+    // clears the streak just by appending a non-failed "rem" event.
+    const failureStreak = consecutiveFailedSlotStreak(scoreboardCheck);
+    if (failureStreak >= CONSECUTIVE_FAILURE_BUDGET) {
+      const blocker = lastFailureEpisode(scoreboardCheck);
+      degraded({
         process: "rem", phase: "schedule-guard", correlation_id: corr,
-        summary: "--if-due: another rem-popmem --if-due run is already in flight; bailing (single-flight lock held)",
-        context: { lock_path: IFDUE_LOCK_PATH },
+        summary: `--if-due: ${failureStreak} consecutive failed pass(es) reached the budget (${CONSECUTIVE_FAILURE_BUDGET}); refusing to start until a manual run clears it`,
+        context: { failure_episode: blocker, consecutive_failures: failureStreak },
+        cause: `${blocker ?? "an episode"} has blocked the last ${failureStreak} REM pass(es)`,
+        next_action: `resolve or remove the blocking episode, then run rem-popmem.ts manually (no --if-due) to clear the stuck state`,
       });
       return;
     }
-    const scoreboardCheck = readScoreboardEvents(SCOREBOARD_PATH);
     if (!isDue(scoreboardCheck, new Date())) {
       idle({
         process: "rem", phase: "schedule-guard", correlation_id: corr,
@@ -1054,22 +1123,46 @@ async function main() {
   const aggCounts: StackCounts = {
     new: 0, superseded: 0, stacked: 0, bumped: 0, rejected: 0, droppedOverCap: 0, compareCalls: 0, compareInvalid: 0,
   };
-  const digestedEntries: DigestedEntry[] = [];
   let anyRejected = false;
+  // Episode-level failure contract (work items 4/5, fact 6): stack.ts
+  // reports a bad episode via StackEpisodeResult instead of killing the
+  // process. `failureEpisode` feeds the slot-burning scoreboard event
+  // below (work item 1) so the NEXT --if-due call can see this slot as
+  // both "ran" and "failed".
+  let anyEpisodeFailed = false;
+  let failureEpisode: string | undefined;
 
   for (const ep of newEpisodes) {
     if (dryRun) continue;
-    const result = await stackEpisode({
+    const result = (await stackEpisode({
       mindDir: MIND_DIR, beliefsDir: BELIEFS_DIR, ledgerPath: LEDGER_PATH, ioLogPath: IO_LOG_PATH,
       filename: ep.filename, correlationId: corr,
-    });
+    })) as StackEpisodeResult & { failed?: boolean; failurePhase?: string; failureCause?: string };
+    if (result.failed) {
+      // Hold aside, not absorbed: recordDigested here (not batched after
+      // the loop, fact 4's multiplier) means findNewEpisodes() never
+      // re-offers this hash on the next pass, and an episode-level failure
+      // no longer wedges the pass -- the remaining episodes still process.
+      anyEpisodeFailed = true;
+      failureEpisode = ep.filename;
+      degraded({
+        process: "rem", phase: "absorb", correlation_id: corr,
+        summary: `episode held aside: ${ep.filename} failed at ${result.failurePhase ?? "unknown phase"}`,
+        context: { filename: ep.filename, failure_phase: result.failurePhase, failure_cause: result.failureCause },
+        cause: result.failureCause ?? "stackEpisode reported a failure with no cause",
+        next_action: `inspect ${ep.filename} in ${EPISODES_DIR}; it is held aside and will not be retried automatically`,
+      });
+      recordDigested(DIGESTED_PATH, [
+        { ts: new Date().toISOString(), hash: ep.hash, filename: ep.filename, disposition: "held-aside", failure_phase: result.failurePhase, failure_cause: result.failureCause },
+      ]);
+      continue;
+    }
     if (result.counts) {
       for (const k of Object.keys(aggCounts) as (keyof StackCounts)[]) aggCounts[k] += result.counts[k];
       if (result.counts.rejected > 0 || result.counts.compareInvalid > 0) anyRejected = true;
     }
-    digestedEntries.push({ ts: new Date().toISOString(), hash: ep.hash, filename: ep.filename, disposition: "absorbed" });
+    recordDigested(DIGESTED_PATH, [{ ts: new Date().toISOString(), hash: ep.hash, filename: ep.filename, disposition: "absorbed" }]);
   }
-  if (!dryRun) recordDigested(DIGESTED_PATH, digestedEntries);
 
   if (newEpisodes.length === 0) {
     idle({
@@ -1345,6 +1438,10 @@ async function main() {
     stacked: aggCounts.new,
     bumped: aggCounts.stacked + aggCounts.bumped,
     distilled: distilledCount,
+    // Work item 1: a failed pass still burns its slot -- this event alone
+    // already satisfies isDue() above (it only checks for ANY "rem" event);
+    // `failed`/`failure_episode` are what work item 3's budget check reads.
+    ...(anyEpisodeFailed ? { failed: true, failure_episode: failureEpisode } : {}),
   });
 
   const vitals = {
