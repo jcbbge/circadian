@@ -108,19 +108,27 @@ That is **wrong** and I want the correction to survive:
 3. **`logs/sleep-claims/` holds 120 entries** (39 when I started, 120 at stand-down)
    — live runtime state from other sessions, not mine. I added it to `.gitignore` in
    `882f67c`; it was left untracked by `85ed43b`. Do not commit it.
-4. **THE NESTED `mind/` REPO IS DIRTY AND I LEFT IT THAT WAY ON PURPOSE.**
-   ` M CONSTITUTION.md NOW.md USER.md scoreboard.jsonl` plus **67 untracked
-   episodes**. That is the agent's living memory being written RIGHT NOW by ~10 other
-   live sessions. Committing it would mean staging another lane's in-flight writes —
-   the exact class of act that permanently destroyed a lane's uncommitted work on
-   2026-08-21. I did not force the tree clean and I do not think whoever resumes
-   should either.
-   **Insurance I did take:** tarball of all 67 untracked files at
-   `/private/tmp/claude-501/-Users-jrg-circadian/a45286fa-3a88-4de1-88c9-1ce015589178/scratchpad/mind-untracked-backup-2026-08-23.tgz`
-   (34 KB, 67 entries verified). **That path is a session scratchpad and WILL be
-   reaped.** If the mind repo still matters, copy it somewhere durable first.
-   `mind/` has NO REMOTE by design (privacy boundary, MIND-SPEC.md), so its own git
-   history is the only protection that exists.
+4. **THE NESTED `mind/` REPO — SUPERSEDED, read this and ignore what I first wrote.**
+   My original decision was to leave it dirty rather than stage another lane's
+   in-flight writes. **My ORCH committed it instead, under the stand-down order I
+   passed down, and it was the better call — I am recording the correction rather
+   than leaving a contradiction on disk.** Committing untracked files into a local
+   repo *records* them; it does not overwrite or delete anything, so it is the
+   opposite of the 2026-08-21 failure mode I was guarding against.
+   Landed by the ORCH: `f44c68b` (115 untracked episodes + metabolism writes),
+   `4ef2d78` (scoreboard append), `6b82b88` (writes that arrived mid-stand-down),
+   on top of my `1bca449` (the quarantine).
+   **`mind/` has NO REMOTE by design** (privacy boundary, MIND-SPEC.md) — `git -C
+   mind remote -v` is empty. So all of that history lives on ONE DISK and cannot be
+   pushed. That is the standing risk, and it is a house-level question, not
+   something this unit could fix.
+   **It will be dirty again the moment you look at it, by design:** `NOW.md` and
+   `scoreboard.jsonl` are rewritten on every wake, and new episodes land every few
+   minutes from other live sessions. Do not treat a dirty `mind/` as an unfinished
+   handoff.
+   The scratchpad tarball I made earlier is now redundant — the mind repo's own
+   history is the protection. Ignore it; that path gets reaped anyway.
+
 5. **My own registration name is wrong and it cost a round-trip.** My brief told me
    to report as `cord-circadian`; **no such registration exists.** My pane w8X:p2 is
    registered `orch-circadian-rem-storm` with role `1-CORD`. My first deposits went to
