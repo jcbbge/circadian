@@ -341,3 +341,67 @@ Stated plainly, not modestly:
 The honest counterweight: the isolation-model defect was mine, twice, and it came
 from asserting a fact from flag documentation instead of measuring it. That is the
 lesson with the highest cost-per-word in this note (see item 3).
+
+---
+
+## ADDENDUM (collected from the inbox at stand-down — sharper than the above)
+
+### U1, precisely: what worker B ruled out and what it did NOT
+
+B spent its single live grant across **two** invocations and was disciplined about
+the boundary. Recording its exact epistemic state, because this is what a resumer
+needs and it is more precise than my summary above:
+
+- **RULED OUT** — size / token limits (2,410 bytes, 12 lines; already excluded by
+  the brief).
+- **RULED OUT by B's live run** — *single-call deterministic EXTRACT failure.* The
+  episode extracted **successfully**, once, live, in isolation on an idle endpoint:
+  `stacked poison.md: 5 new (0 superseding), 0 stacked, 0 bumped, 0 rejected,
+  0 dropped-over-cap`.
+- **NOT RULED OUT** — (i) failure only under **concurrent / thundering-herd load**
+  (many simultaneous callers against `:10240`); (ii) a **nondeterministic or flaky
+  COMPARE-shape failure** that only shows across repeated calls; (iii) a failure
+  specific to the **full episode-corpus ordering** during the original incident.
+
+B did **not** request a second grant and did not run a third time. It also flagged
+its own blocker honestly rather than inventing a pass: the live-gated test returned
+`run.status === null` ("killed 1 dangling process") because of R1's missing
+per-test timeout — an inconclusive signal, reported as inconclusive.
+
+**So U1 stays [UNKNOWN], and hypothesis (i) is now the leading candidate rather
+than a guess I floated.** Any of the three would explain the incident. None is
+established. Do not write "the poison episode is fine" anywhere on my authority.
+
+### CORD's measurement in full — and the part that stings
+
+`lsof -nP -iTCP:10240 | grep ESTABLISHED` -> **16 connections**: 9 held by
+`mlx-omni-server` (PID 1054) and **9 held by circadian workers**, verified by pid —
+8x `bun run src/sleep.ts --worker` + 1x `bun run src/graze.ts --worker`, elapsed
+00:05 to 00:59, i.e. **one spawning roughly every 7 seconds, stacking.** CPU
+sampled every 15 s:
+
+| t | mlx CPU | load1 |
+|---|---|---|
+| +15s | 4.0% | 8.33 |
+| +30s | **52.7%** | 7.39 |
+| +45s | 52.4% | 7.08 |
+| +60s | **56.3%** | 6.37 |
+| +75s | 52.4% | 6.19 |
+| +90s | **0.1%** | 5.47 |
+
+**It DRAINED** — 56% to 0.1% in under 15 s once the burst finished. Bursty and
+self-limiting, not pinned. That is the difference containment made, and it is why
+CORD did not re-escalate and did not kill those workers: each held an in-flight
+episode draft, and killing them would have destroyed data to fix nothing.
+
+**The part worth carrying forward:** CORD noted that *a meaningful share of that
+fan-out was its own fleet* — my pane, three reaped test-makers, three
+implementers, and all their turns. Every session fires circadian's per-session
+hooks and every session-end spawns a `sleep.ts` worker. **The fleet investigating
+the storm was feeding the storm.** That is not an argument for a smaller fleet; it
+is the cleanest possible demonstration of *why the cap had to be cross-process*:
+**nine separate processes cannot be capped by a semaphore living inside one of
+them.** If you ever doubt Task C's design, re-read that sentence.
+
+Containment re-verified by CORD during that window: only `com.circadian.doctor`
+loaded, `mind/quarantine/2026-08-21-freeze-stale-design-pause.md` intact.
