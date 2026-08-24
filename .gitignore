@@ -28,3 +28,4 @@ logs/llm-cap/
 logs/invocations.jsonl
 logs/.statusline
 logs/.rem-popmem.ifdue.lock
+logs/pending-sleep.lock
