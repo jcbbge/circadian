@@ -12,6 +12,7 @@
 // events are telemetry, they never block the session.
 
 import { appendFileSync, readFileSync } from "node:fs";
+import { logInvocation } from "./invocation-ledger.ts";
 import { homedir } from "node:os";
 import { join } from "node:path";
 import { spawn } from "node:child_process";
@@ -430,6 +431,7 @@ async function runHook(): Promise<void> {
 
 // Law 7: wake must never block a session. Even an unexpected exception emits
 // a failed event (never silent) but still exits 0 so the session proceeds.
+logInvocation({ script: "wake" });
 runHook().catch((e) => {
   emit({
     process: "wake",

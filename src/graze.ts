@@ -30,6 +30,7 @@
  */
 
 import { spawn } from "node:child_process";
+import { logInvocation } from "./invocation-ledger.ts";
 import {
   appendFileSync,
   existsSync,
@@ -422,6 +423,11 @@ async function runWorker(): Promise<void> {
     });
   }
 }
+
+// INVOCATION LEDGER: log who started us BEFORE any throttle can exit early.
+// Hook mode returns in <10ms and previously left no trace of its caller, which
+// is why a ~1,400/hour fan-out had no identifiable source.
+logInvocation({ script: "graze" });
 
 if (process.argv.includes("--worker") || DRY_RUN) {
   await runWorker();

@@ -22,6 +22,7 @@
  */
 
 import * as fs from "fs";
+import { logInvocation } from "./invocation-ledger.ts";
 import * as path from "path";
 import { homedir } from "os";
 import { createHash } from "crypto";
@@ -736,4 +737,5 @@ function main() {
 // became importable (popmem WS-0 needs computeVerdictStreak reused by
 // scorecard.ts and status.test.ts) — a plain top-level `main()` would render
 // vitals and emit an obs event on import.
+if (import.meta.main) logInvocation({ script: "status" });
 if (import.meta.main) main();

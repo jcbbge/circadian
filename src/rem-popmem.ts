@@ -74,6 +74,7 @@
  */
 
 import * as fs from "fs";
+import { logInvocation } from "./invocation-ledger.ts";
 import * as path from "path";
 import { homedir } from "os";
 import { createHash } from "crypto";
@@ -1590,4 +1591,5 @@ function appendLedgerScoreboardRemEvent(scoreboardPath: string, event: Record<st
 
 // import.meta.main guard (mirror rem.ts/zoom.ts/replay.ts): this file is
 // imported directly by its own test suite.
+if (import.meta.main) logInvocation({ script: "rem-popmem" });
 if (import.meta.main) await main();

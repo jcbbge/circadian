@@ -24,6 +24,7 @@
 // entries are dead-lettered loudly so one poison pill cannot block the queue.
 
 import { spawn } from "node:child_process";
+import { logInvocation } from "./invocation-ledger.ts";
 import { appendFileSync, existsSync, mkdirSync, readdirSync, readFileSync, renameSync, statSync, unlinkSync, writeFileSync } from "node:fs";
 import { homedir } from "node:os";
 import { dirname, join } from "node:path";
@@ -1230,6 +1231,7 @@ async function runDrain(): Promise<void> {
 // tested against real transcripts) — a bare import must never fall into
 // hook mode and hang on stdin.
 if (import.meta.main) {
+  logInvocation({ script: "sleep" });
   if (process.argv.includes("--worker") || DRY_RUN) {
     await runWorker();
     process.exit(0);

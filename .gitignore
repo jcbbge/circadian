@@ -25,3 +25,4 @@ logs/*.mind-backup*
 node_modules/
 logs/sleep-claims/
 logs/llm-cap/
+logs/invocations.jsonl
