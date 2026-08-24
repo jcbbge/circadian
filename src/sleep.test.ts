@@ -105,31 +105,37 @@ describe("decideImplicitOk", () => {
 });
 
 describe("pending sleep drain self-heal", () => {
-  test("dead-letters stale failures and retains fresh failures with ratcheted attempts", () => {
+  test("dead-letters already-stuck at start without LLM; retains not-stuck failures with ratcheted attempts", () => {
     const home = mkdtempSync(join(tmpdir(), "circadian-pending-"));
     try {
       const logs = join(home, "logs");
-      const transcriptPath = join(home, "transcript.jsonl");
+      const staleTranscript = join(home, "stale-transcript.jsonl");
+      const freshTranscript = join(home, "fresh-transcript.jsonl");
       const now = Date.now();
       const stale = {
         ts: new Date(now).toISOString(),
         session_id: "session-stale-fixture",
-        transcript_path: transcriptPath,
+        transcript_path: staleTranscript,
         transcript_chars: 0,
         attempts: 4,
         last_error: "previous fixture failure",
         queued_at: new Date(now - 3 * 24 * 3_600_000).toISOString(),
       };
       const fresh = {
-        ...stale,
+        ts: new Date(now).toISOString(),
         session_id: "session-fresh-fixture",
+        transcript_path: freshTranscript,
+        transcript_chars: 0,
         attempts: 2,
+        last_error: "",
         queued_at: new Date(now).toISOString(),
       };
       const staleLine = JSON.stringify(stale);
       const freshLine = JSON.stringify(fresh);
 
-      writeFileSync(transcriptPath, '{"type":"system","text":"no conversation turns"}\n');
+      // Empty transcript: no user/assistant turns — empty-transcript path, no LLM.
+      writeFileSync(staleTranscript, '{"type":"system","text":"no conversation turns"}\n');
+      writeFileSync(freshTranscript, '{"type":"system","text":"no conversation turns"}\n');
       mkdirSync(logs, { recursive: true });
       writeFileSync(join(logs, "pending-sleep.jsonl"), `${staleLine}\n${freshLine}\n`);
 
@@ -145,6 +151,7 @@ describe("pending sleep drain self-heal", () => {
       expect(JSON.parse(remainingLines[0])).toMatchObject({
         session_id: fresh.session_id,
         attempts: 4,
+        last_error: "transcript yielded no user/assistant text",
       });
 
       const deadLines = readFileSync(join(logs, "pending-sleep.dead.jsonl"), "utf8").trim().split("\n");
@@ -160,12 +167,15 @@ describe("pending sleep drain self-heal", () => {
           phase: "drain-deadletter",
           session_id: stale.session_id,
           context: expect.objectContaining({
-            attempts: 6,
+            attempts: 4,
             queued_at: stale.queued_at,
-            last_error: "transcript yielded no user/assistant text",
+            last_error: "previous fixture failure",
+            at_drain_start: true,
           }),
         })
       );
+      // Stale was dead-lettered at start — no draft-failed / empty-transcript events for it.
+      expect(events.filter((e) => e.session_id === stale.session_id && e.phase === "extract-transcript")).toHaveLength(0);
     } finally {
       rmSync(home, { recursive: true, force: true });
     }

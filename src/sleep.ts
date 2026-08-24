@@ -1178,18 +1178,26 @@ async function runDrain(): Promise<void> {
     const entries = readPendingQueue();
     if (entries.length > 0) {
       const processed = new Map<string, PendingSleep | null>();
-      const deadLetter = (entry: PendingSleep, attempts: number, lastError: string): void => {
+      const deadLetter = (
+        entry: PendingSleep,
+        attempts: number,
+        lastError: string,
+        atStart = false,
+      ): void => {
         mkdirSync(dirname(PENDING_DEAD_QUEUE), { recursive: true });
         appendFileSync(PENDING_DEAD_QUEUE, `${entry.raw_line ?? JSON.stringify(entry)}\n`);
         degraded({
           process: "sleep", phase: "drain-deadletter", correlation_id: corr, session_id: entry.session_id,
-          summary: "dead-lettering a stuck pending sleep entry after a failed drain pass",
+          summary: atStart
+            ? "dead-lettering a stuck pending sleep entry at drain start (no LLM)"
+            : "dead-lettering a stuck pending sleep entry after a failed drain pass",
           context: {
             transcript_path: entry.transcript_path,
             attempts,
             queued_at: entry.queued_at,
             last_error: lastError,
             dead_letter: PENDING_DEAD_QUEUE,
+            at_drain_start: atStart,
           },
           cause: lastError || "repeated draft failures",
           next_action: "inspect the dead-letter archive; the queue entry was removed so later sessions can drain",
@@ -1197,12 +1205,23 @@ async function runDrain(): Promise<void> {
         processed.set(pendingKey(entry), null);
         deadLettered += 1;
         dropped += 1;
-        slog("drain", "dead-lettered: stuck entry", { session_id: entry.session_id, attempts, queued_at: entry.queued_at });
+        slog("drain", atStart ? "dead-lettered: already stuck at start" : "dead-lettered: stuck entry", {
+          session_id: entry.session_id, attempts, queued_at: entry.queued_at,
+        });
       };
+      // First pass: dead-letter every already-stuck line before any LLM work.
+      // Walk the whole queue — no DRAIN_MAX_ENTRIES cap here.
+      for (const entry of entries) {
+        if (isPendingEntryStuck(entry)) {
+          deadLetter(entry, entry.attempts, entry.last_error || "repeated draft failures", true);
+        }
+      }
       // Cheap dispositions (dead-letter, missing transcript) cost no LLM call,
       // so they do NOT consume the budget; only real drafts do.
       let draftsThisRun = 0;
       for (const entry of entries) {
+        const key = pendingKey(entry);
+        if (processed.has(key)) continue; // dead-lettered in the start pass
         if (draftsThisRun >= DRAIN_MAX_ENTRIES) {
           slog("drain", "batch cap reached; remaining entries stay queued for the next run", {
             cap: DRAIN_MAX_ENTRIES,
@@ -1210,11 +1229,6 @@ async function runDrain(): Promise<void> {
           });
           break;
         }
-        if (entry.attempts >= PENDING_ATTEMPTS_CAP) {
-          deadLetter(entry, entry.attempts, entry.last_error || "repeated draft failures");
-          continue;
-        }
-        const key = pendingKey(entry);
         if (!existsSync(entry.transcript_path)) {
           degraded({
             process: "sleep", phase: "drain-drop", correlation_id: corr, session_id: entry.session_id,
