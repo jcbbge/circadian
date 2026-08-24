@@ -82,6 +82,27 @@ const PENDING_DEAD_QUEUE = join(CIRCADIAN_HOME, "logs", "pending-sleep.dead.json
 const PENDING_LOCK = join(CIRCADIAN_HOME, "logs", "pending-sleep.lock");
 const DRAFT_ATTEMPTS = 2; // LLM tries per drafting round (live worker or one drain pass)
 // The stuck policy lives here because doctor imports sleep.ts and sleep has no doctor dependency.
+// BULK-DRAIN THROTTLE (added 2026-08-23). The drain loop had no batch limit
+// and no pacing: it ran every queued entry back to back, each one a full LLM
+// episode draft. With 133 entries queued that pinned mlx-omni-server at
+// 55-65% for the better part of an hour and made the operator's laptop
+// audible — the exact failure this whole hardening pass exists to prevent,
+// reintroduced by the cleanup tool.
+//
+// A drain is BULK BACKGROUND work. It must be a trickle, not a flood: bounded
+// entries per invocation, and a breath between each so interactive consumers
+// of the shared endpoint (graphiti, colgrep, pickbrain) always get a gap.
+// The queue drains across successive runs instead of one marathon; nothing is
+// lost, it just arrives politely.
+export const DRAIN_MAX_ENTRIES = Math.max(
+  1,
+  Number.parseInt(process.env.CIRCADIAN_DRAIN_MAX_ENTRIES || "10", 10) || 10,
+);
+export const DRAIN_PACE_MS = Math.max(
+  0,
+  Number.parseInt(process.env.CIRCADIAN_DRAIN_PACE_MS || "2000", 10) || 2000,
+);
+
 export const PENDING_ATTEMPTS_CAP = 8; // at/above this a human must decide — retrying is no longer obviously right
 export const PENDING_STALE_HOURS = 24; // queued longer than this = survived multiple REM drains
 const LOCK_STALE_MS = 15 * 60 * 1000; // a lock older than this belonged to a drain that died mid-run
@@ -1178,7 +1199,17 @@ async function runDrain(): Promise<void> {
         dropped += 1;
         slog("drain", "dead-lettered: stuck entry", { session_id: entry.session_id, attempts, queued_at: entry.queued_at });
       };
+      // Cheap dispositions (dead-letter, missing transcript) cost no LLM call,
+      // so they do NOT consume the budget; only real drafts do.
+      let draftsThisRun = 0;
       for (const entry of entries) {
+        if (draftsThisRun >= DRAIN_MAX_ENTRIES) {
+          slog("drain", "batch cap reached; remaining entries stay queued for the next run", {
+            cap: DRAIN_MAX_ENTRIES,
+            drafted: draftsThisRun,
+          });
+          break;
+        }
         if (entry.attempts >= PENDING_ATTEMPTS_CAP) {
           deadLetter(entry, entry.attempts, entry.last_error || "repeated draft failures");
           continue;
@@ -1197,6 +1228,12 @@ async function runDrain(): Promise<void> {
           dropped += 1;
           continue;
         }
+        // Pace BEFORE the draft, and only between drafts (not before the
+        // first): a gap the shared endpoint's interactive consumers can use.
+        if (draftsThisRun > 0 && DRAIN_PACE_MS > 0) {
+          await new Promise((r) => setTimeout(r, DRAIN_PACE_MS));
+        }
+        draftsThisRun += 1;
         try {
           const result = await draftSessionEpisode({
             transcriptPath: entry.transcript_path,
