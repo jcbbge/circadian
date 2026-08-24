@@ -102,6 +102,29 @@ import { ok, idle, degraded, fail, correlation } from "./obs.ts";
 // paths (per MIND-SPEC.md / rem.ts's CIRCADIAN_HOME contract)
 // ---------------------------------------------------------------------
 const CIRCADIAN_HOME = process.env.CIRCADIAN_HOME || path.join(homedir(), "circadian");
+// Same resolution order as sleep.ts / graze.ts / circadian-mind.ts.
+const BUN_BIN = process.env.CIRCADIAN_BUN_BIN || path.join(homedir(), ".bun/bin/bun");
+
+// ABSORB BATCH CAP + PACING (added 2026-08-23). The absorb loop was unbounded:
+// it ran EXTRACT for every undigested episode in one pass. That is fine at a
+// steady state of 2-3 new episodes per slot, and pathological after a backlog
+// — 66 undigested episodes held mlx-omni-server at ~70% for many minutes
+// straight, on a shared service, on the operator's laptop.
+//
+// Same principle as the drain in sleep.ts: no bulk phase may be unbounded.
+// Bounded episodes per pass plus a breath between them, so consolidation is a
+// trickle that catches up across slots instead of a spike that owns the
+// machine. Nothing is skipped permanently — undigested episodes are found
+// again next pass, and digested is now recorded incrementally so progress is
+// never lost.
+const ABSORB_MAX_EPISODES = Math.max(
+  1,
+  Number.parseInt(process.env.CIRCADIAN_ABSORB_MAX_EPISODES || "12", 10) || 12,
+);
+const ABSORB_PACE_MS = Math.max(
+  0,
+  Number.parseInt(process.env.CIRCADIAN_ABSORB_PACE_MS || "1500", 10) || 1500,
+);
 const MIND_DIR = path.join(CIRCADIAN_HOME, "mind");
 const BELIEFS_DIR = path.join(MIND_DIR, "beliefs");
 const LEDGER_PATH = path.join(MIND_DIR, "beliefs.jsonl");
@@ -1116,6 +1139,46 @@ async function main() {
   }
 
   // -------------------------------------------------------------------
+  // 0. DRAIN THE PENDING-SLEEP QUEUE (added 2026-08-23)
+  //
+  // src/sleep.ts's own header has claimed since it was written that
+  // "--drain (which REM also runs before digesting) replays that queue" —
+  // it was NOT true. Nothing invoked --drain: not launchd, not a hook, not
+  // REM. So a queue whose entire purpose is durability after an LLM outage
+  // had no drainer, and 133 sessions' episodes sat in it. The documented
+  // design was right; the wiring was simply absent.
+  //
+  // Runs BEFORE absorb deliberately, so episodes recovered here are picked up
+  // by findNewEpisodes() in this same pass rather than waiting for the next
+  // slot. Bounded and paced by DRAIN_MAX_ENTRIES / DRAIN_PACE_MS in sleep.ts,
+  // so this can never become the bulk-load spike it was.
+  //
+  // A drain failure must never block consolidation: the queue is a recovery
+  // path, and absorb has its own work to do regardless.
+  // -------------------------------------------------------------------
+  if (!dryRun) {
+    try {
+      const drain = spawnSync(BUN_BIN, ["run", path.join(CIRCADIAN_HOME, "src/sleep.ts"), "--drain"], {
+        encoding: "utf8",
+        env: { ...process.env, CIRCADIAN_HOME },
+      });
+      ok({
+        process: "rem", phase: "drain-pending", correlation_id: corr,
+        summary: "drained the pending-sleep queue before absorbing",
+        context: { status: drain.status },
+      });
+    } catch (e) {
+      degraded({
+        process: "rem", phase: "drain-pending", correlation_id: corr,
+        summary: "pending-sleep drain failed; absorbing anyway",
+        context: { error: (e as Error).message },
+        cause: (e as Error).message,
+        next_action: "run `bun src/sleep.ts --drain` by hand and inspect logs/sleep.log",
+      });
+    }
+  }
+
+  // -------------------------------------------------------------------
   // 1. ABSORB
   // -------------------------------------------------------------------
   const digestedHashes = loadDigestedHashes(DIGESTED_PATH);
@@ -1133,8 +1196,21 @@ async function main() {
   let anyEpisodeFailed = false;
   let failureEpisode: string | undefined;
 
+  let absorbed = 0;
   for (const ep of newEpisodes) {
     if (dryRun) continue;
+    if (absorbed >= ABSORB_MAX_EPISODES) {
+      idle({
+        process: "rem", phase: "absorb-batch-cap", correlation_id: corr,
+        summary: `absorb batch cap reached: ${absorbed} episode(s) this pass, ${newEpisodes.length - absorbed} deferred to the next slot`,
+        context: { cap: ABSORB_MAX_EPISODES, absorbed, deferred: newEpisodes.length - absorbed },
+      });
+      break;
+    }
+    if (absorbed > 0 && ABSORB_PACE_MS > 0) {
+      await new Promise((r) => setTimeout(r, ABSORB_PACE_MS));
+    }
+    absorbed += 1;
     const result = (await stackEpisode({
       mindDir: MIND_DIR, beliefsDir: BELIEFS_DIR, ledgerPath: LEDGER_PATH, ioLogPath: IO_LOG_PATH,
       filename: ep.filename, correlationId: corr,
