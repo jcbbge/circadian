@@ -390,7 +390,8 @@ function checkLLMPatchIntegrity(): void {
  * (the same transcript probe the per-process checks use) and verify each
  * ACTIVE harness's own registration surface:
  *
- *   Claude Code → ~/.claude/settings.json mentions wake.ts/sleep.ts/graze.ts.
+ *   Claude Code → ~/.claude/settings.json mentions wake.ts/sleep.ts and either
+ *                 graze.ts or circadian-graze-gate (gate execs graze.ts when due).
  *   pi          → ~/.pi/agent/extensions/circadian-mind.ts — a generated SHIM
  *                 whose whole body is one default re-export. Resolve the
  *                 re-export target FROM THE SHIM CONTENT (never hard-coded,
@@ -402,6 +403,24 @@ function checkLLMPatchIntegrity(): void {
  * a page; the per-process ledger checks own FAIL semantics. File presence is
  * the probe; whether pi has actually /reload-loaded the extension is out of
  * scope. Both harnesses can be live simultaneously — report per harness. */
+/** CC settings.json hook markers — graze counts if graze.ts OR circadian-graze-gate appears. */
+export function ccSettingsMissingHooks(settingsText: string): string[] {
+  const missing: string[] = [];
+  if (!settingsText.includes("wake.ts")) missing.push("wake.ts");
+  if (!settingsText.includes("sleep.ts")) missing.push("sleep.ts");
+  const grazePresent =
+    settingsText.includes("graze.ts") || settingsText.includes("circadian-graze-gate");
+  if (!grazePresent) missing.push("graze.ts");
+  return missing;
+}
+
+/** Read a settings file path and return missing CC hook markers. */
+export function ccSettingsMissingHooksFromPath(settingsPath: string): string[] {
+  const raw = readOrEmpty(settingsPath);
+  if (!raw) return ["wake.ts", "sleep.ts", "graze.ts"];
+  return ccSettingsMissingHooks(raw);
+}
+
 function checkHooks(): void {
   const ccActive = findRecentTranscripts([PROJECTS_DIR], SESSION_EXPECTED_HOURS).found;
   const piActive = findRecentTranscripts([PI_SESSIONS_DIR], SESSION_EXPECTED_HOURS).found;
@@ -419,12 +438,13 @@ function checkHooks(): void {
   let anyGap = false;
 
   if (ccActive) {
-    const raw = readOrEmpty(path.join(homedir(), ".claude", "settings.json"));
+    const settingsPath = path.join(homedir(), ".claude", "settings.json");
+    const raw = readOrEmpty(settingsPath);
     if (!raw) {
       anyGap = true;
       parts.push("CC: WARN — ~/.claude/settings.json not found");
     } else {
-      const missing = ["wake.ts", "sleep.ts", "graze.ts"].filter((p) => !raw.includes(p));
+      const missing = ccSettingsMissingHooks(raw);
       if (missing.length === 0) {
         parts.push("CC: ok (wake + sleep + graze in settings.json)");
       } else {
@@ -936,4 +956,4 @@ function main() {
   process.exit(anyFail ? 1 : 0);
 }
 
-main();
+if (import.meta.main) main();
