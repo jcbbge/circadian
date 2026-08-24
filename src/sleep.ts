@@ -208,7 +208,49 @@ function acquireDrainLock(corr: string): void {
   } catch {
     /* raced release — fall through to the retry */
   }
-  if (ageMs !== Infinity && ageMs <= LOCK_STALE_MS) {
+
+  // PID LIVENESS, not just age (added 2026-08-23). This lock used to break on
+  // age ALONE, so a drain killed mid-run wedged the whole queue for the full
+  // 15-minute stale window even though its holder was provably dead — 133
+  // entries sat undrainable behind a corpse. Every other lock in this codebase
+  // already checks liveness (acquireIfDueLock in rem-popmem.ts, the llm-cap
+  // slots in llm.ts); this one was the outlier. A dead holder is reclaimed
+  // IMMEDIATELY: waiting out a timer for a process that cannot release is
+  // pure downtime.
+  let reclaimedDeadHolder = false;
+  let holderAlive = false;
+  let holderPid = 0;
+  try {
+    holderPid = Number(JSON.parse(readFileSync(PENDING_LOCK, "utf8")).pid) || 0;
+    if (holderPid > 0) {
+      try {
+        process.kill(holderPid, 0);
+        holderAlive = true;
+      } catch {
+        holderAlive = false; // ESRCH: holder is gone
+      }
+    }
+  } catch {
+    // unparseable lock => treat as dead and reclaim; a lock we cannot read is
+    // a lock nobody can prove is held.
+    holderAlive = false;
+  }
+  if (!holderAlive) {
+    process.stderr.write(
+      `sleep --drain: reclaiming lock from dead holder pid ${holderPid} (age ${Math.round(ageMs / 1000)}s)\n`
+    );
+    try {
+      unlinkSync(PENDING_LOCK);
+    } catch {
+      /* raced another drainer — the retry below decides */
+    }
+    // Skip the age-based branch entirely: the lock is already gone and its
+    // reclaim is already reported. Setting ageMs = Infinity here would print a
+    // second, nonsense "age Infinitymin" line for the same event.
+    reclaimedDeadHolder = true;
+  }
+
+  if (!reclaimedDeadHolder && ageMs !== Infinity && ageMs <= LOCK_STALE_MS) {
     fail({
       process: "sleep", phase: "drain-lock", correlation_id: corr,
       summary: "another drain holds the pending-sleep lock; refusing a concurrent drain",
@@ -218,7 +260,7 @@ function acquireDrainLock(corr: string): void {
       code: 1,
     });
   }
-  if (ageMs > LOCK_STALE_MS) {
+  if (!reclaimedDeadHolder && ageMs > LOCK_STALE_MS) {
     process.stderr.write(
       `sleep --drain: breaking stale lock (age ${Math.round(ageMs / 60000)}min > ${LOCK_STALE_MS / 60000}min); the previous holder died mid-drain\n`
     );
