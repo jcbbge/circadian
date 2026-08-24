@@ -26,3 +26,5 @@ node_modules/
 logs/sleep-claims/
 logs/llm-cap/
 logs/invocations.jsonl
+logs/.statusline
+logs/.rem-popmem.ifdue.lock
