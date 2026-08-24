@@ -1,0 +1,45 @@
+#!/bin/sh
+# circadian-statusline — the statusline read path. ZERO forks, zero runtime.
+#
+# Why this exists (2026-08-23): settings.json `statusLine.command` ran
+# `bun src/status.ts --line`, and Claude Code re-renders the statusline
+# continuously, per pane. Measured: 204-230ms per render, 459 renders/hour
+# across 10 panes. ~65ms of that was bare bun boot; the rest was buildLine()
+# full-scanning logs/circadian.events.jsonl (unbounded) and reading +
+# SHA-256ing all 380+ files in mind/episodes/ — EVERY RENDER. Roughly 175,000
+# file reads an hour to recompute a string that only changes when circadian
+# actually runs.
+#
+# The fix is not a faster render, it is not rendering. The producers
+# (wake / graze checkpoint / sleep / rem) already run when the vitals change,
+# so THEY write the line via `status.ts --line --write-cache`. This path only
+# reads bytes.
+#
+# Implemented with shell BUILTINS ONLY — no cat, no stat, no date, no
+# subshell. Every one of those is a fork, and a fork is the thing we are here
+# to eliminate. `read` + `printf` are builtins in any POSIX sh.
+#
+# Freshness: bounded by the producers, not by a timer. wake.ts refreshes on
+# every session start, so a stale line cannot outlive a session. If the cache
+# is MISSING entirely (fresh install, or someone deleted logs/), we pay one
+# background rebuild and print nothing this render rather than blocking the
+# user for 200ms on a cold statusline.
+#
+# Contract: ALWAYS exit 0, never block. A statusline that errors or hangs is
+# worse than one that is a few seconds stale.
+
+CIRCADIAN_HOME="${CIRCADIAN_HOME:-$HOME/circadian}"
+CACHE="$CIRCADIAN_HOME/logs/.statusline"
+
+# stderr suppressed on the WHOLE construct: a missing $CACHE makes the
+# redirect itself fail, and `read ... 2>/dev/null` does not cover that.
+if { IFS= read -r line < "$CACHE"; } 2>/dev/null; then
+  printf '%s\n' "$line"
+  exit 0
+fi
+
+# Cold cache only: build it in the background, detached, never waited on.
+"${CIRCADIAN_BUN_BIN:-$HOME/.bun/bin/bun}" run \
+  "$CIRCADIAN_HOME/src/status.ts" --line --write-cache \
+  </dev/null >/dev/null 2>&1 &
+exit 0

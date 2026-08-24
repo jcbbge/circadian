@@ -18,7 +18,7 @@ import { describe, test, expect, afterEach } from "bun:test";
 import { spawn } from "node:child_process";
 import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
-import { join } from "node:path";
+import { dirname, join } from "node:path";
 import type { Server } from "node:net";
 import { createServer } from "node:net";
 
@@ -134,10 +134,26 @@ function runComplete(
   env: Record<string, string | undefined>,
 ): Promise<{ ok: boolean; message?: string; elapsedMs: number }> {
   return new Promise((resolve, reject) => {
-    const child = spawn(BUN_BIN, [scriptPath], { env: { ...process.env, ...env } });
+    // CIRCADIAN_HOME is forced to the caller's tmpdir (fixed 2026-08-23).
+    // Without it the child used the REAL ~/circadian/logs/llm-cap and had to
+    // win the single N=1 cross-process slot against whatever live sleep.ts /
+    // graze.ts workers the machine happened to be running — so these tests
+    // waited on production traffic, up to CAP_WAIT_CEILING_MS (120s), and
+    // failed nondeterministically depending on machine load. A test that
+    // contends with the live system is not measuring the code.
+    const child = spawn(BUN_BIN, [scriptPath], {
+      env: { CIRCADIAN_HOME: dirname(scriptPath), ...process.env, ...env },
+    });
     let stdout = "";
     let stderr = "";
-    const killTimer = setTimeout(() => child.kill("SIGKILL"), 15_000);
+    // 45s, not 15s (fixed 2026-08-23). The worst case here is deterministic,
+    // not a hang: CIRCADIAN_LLM_RETRIES=3 against a refusing endpoint pays
+    // PREFLIGHT_TIMEOUT_MS (5s) per attempt plus the configured backoffs,
+    // i.e. ~15.6s. A 15s killer therefore SIGKILLed the child microseconds
+    // before it could print its verdict, every single run — the child was
+    // never hanging, the budget was just wrong. Symptom was the misleading
+    // "run-complete.mjs produced no stdout".
+    const killTimer = setTimeout(() => child.kill("SIGKILL"), 45_000);
     child.stdout.on("data", (d) => (stdout += d.toString()));
     child.stderr.on("data", (d) => (stderr += d.toString()));
     child.on("close", () => {
@@ -196,7 +212,7 @@ describe("llm.ts — down vs busy classification (rem-storm Task C)", () => {
     } finally {
       server.close();
     }
-  });
+  }, 60_000);
 
   test("(b) a genuinely absent endpoint is classified down and does NOT retry to exhaustion", async () => {
     // Bind then close BEFORE the request fires: guarantees a port nothing is
@@ -228,7 +244,7 @@ describe("llm.ts — down vs busy classification (rem-storm Task C)", () => {
     // backoff sleep — let alone the full 600ms two-sleep exhaustion path —
     // ever ran.
     expect(result.elapsedMs).toBeLessThan(150);
-  });
+  }, 60_000);
 });
 
 describe("llm.ts — cross-process concurrency cap (rem-storm Task C, CORD-ruled N=1)", () => {
@@ -283,7 +299,7 @@ describe("llm.ts — cross-process concurrency cap (rem-storm Task C, CORD-ruled
     } finally {
       fake.stop();
     }
-  });
+  }, 60_000);
 
   test("(c-supplement) the cap's slot is held per-call and released immediately after, not across calls", async () => {
     // Two SEQUENTIAL complete() calls from the SAME process must not
@@ -324,7 +340,7 @@ describe("llm.ts — cross-process concurrency cap (rem-storm Task C, CORD-ruled
     } finally {
       fake.stop();
     }
-  });
+  }, 60_000);
 });
 
 function spawnOnce(

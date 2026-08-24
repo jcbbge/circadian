@@ -12,6 +12,7 @@
 // events are telemetry, they never block the session.
 
 import { appendFileSync, readFileSync } from "node:fs";
+import { refreshStatusline } from "./statusline-refresh.ts";
 import { logInvocation } from "./invocation-ledger.ts";
 import { homedir } from "node:os";
 import { join } from "node:path";
@@ -431,6 +432,10 @@ async function runHook(): Promise<void> {
 
 // Law 7: wake must never block a session. Even an unexpected exception emits
 // a failed event (never silent) but still exits 0 so the session proceeds.
+// Statusline freshness anchor: every session start rewrites the cached
+// vitals line, so bin/circadian-statusline never serves a line older than
+// the current session. Detached — never delays wake injection.
+refreshStatusline();
 logInvocation({ script: "wake" });
 runHook().catch((e) => {
   emit({

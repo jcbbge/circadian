@@ -1,0 +1,52 @@
+#!/bin/sh
+# circadian-graze-gate — the graze hook's cheap front door. NO RUNTIME BOOT
+# unless a checkpoint is actually due.
+#
+# Why this exists (2026-08-23): settings.json fired
+# `bun src/graze.ts` on PostToolUse (matcher `<none>`, i.e. EVERY tool call)
+# and on UserPromptSubmit. But GRAZE_INTERVAL_MS is 15 MINUTES, so the
+# overwhelming majority of those invocations booted a ~65ms bun runtime, read
+# one timestamp, decided "not yet", and exited. graze.ts's own source comment
+# measured the waste: 25,239 throttle events in a single day across 192
+# sessions. That comment fixed the LOG volume, not the SPAWNING.
+#
+# This gate reads the same timestamp graze.ts would read, in shell, and only
+# execs bun when the interval has genuinely elapsed. Same throttle semantics,
+# same state file, ~15 boots/hour instead of hundreds.
+#
+# graze.ts re-checks the interval itself, so this gate is purely subtractive:
+# if it is wrong, graze.ts still makes the real decision. It can only skip
+# work that graze.ts would also have skipped.
+#
+# Contract: ALWAYS exit 0. A hook that fails must never break a tool call.
+
+CIRCADIAN_HOME="${CIRCADIAN_HOME:-$HOME/circadian}"
+INTERVAL_MS="${CIRCADIAN_GRAZE_INTERVAL_MS:-900000}"   # 15 min, graze.ts default
+BUN="${CIRCADIAN_BUN_BIN:-$HOME/.bun/bin/bun}"
+
+# Claude Code pipes hook JSON on stdin and graze.ts needs it (session_id,
+# transcript_path). Capture it once so we can both inspect and forward it.
+payload=$(cat 2>/dev/null)
+
+# session_id without a JSON parser: first "session_id":"..." in the payload.
+sid=$(printf '%s' "$payload" \
+  | sed -n 's/.*"session_id"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p' \
+  | head -1)
+
+# No session id -> we cannot find the state file. Fall through to graze.ts and
+# let it decide; correctness beats the optimization.
+if [ -n "$sid" ]; then
+  state="$CIRCADIAN_HOME/mind/meals/.$sid.state.json"
+  if [ -f "$state" ]; then
+    last=$(sed -n 's/.*"lastCheckpointTs"[[:space:]]*:[[:space:]]*\([0-9]*\).*/\1/p' "$state" | head -1)
+    if [ -n "$last" ] && [ "$last" -gt 0 ] 2>/dev/null; then
+      now_ms=$(( $(date +%s) * 1000 ))
+      if [ "$((now_ms - last))" -lt "$INTERVAL_MS" ] 2>/dev/null; then
+        exit 0   # not due — the whole point: no bun boot
+      fi
+    fi
+  fi
+fi
+
+printf '%s' "$payload" | "$BUN" run "$CIRCADIAN_HOME/src/graze.ts" 2>/dev/null
+exit 0

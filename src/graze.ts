@@ -30,6 +30,7 @@
  */
 
 import { spawn } from "node:child_process";
+import { refreshStatusline } from "./statusline-refresh.ts";
 import { logInvocation } from "./invocation-ledger.ts";
 import {
   appendFileSync,
@@ -431,6 +432,9 @@ logInvocation({ script: "graze" });
 
 if (process.argv.includes("--worker") || DRY_RUN) {
   await runWorker();
+  // A checkpoint actually landed -> the graze count on the strip changed.
+  // Only the WORKER refreshes; the throttled hook path changed nothing.
+  refreshStatusline();
   process.exit(0);
 } else {
   await runHook();

@@ -24,6 +24,7 @@
 // entries are dead-lettered loudly so one poison pill cannot block the queue.
 
 import { spawn } from "node:child_process";
+import { refreshStatusline } from "./statusline-refresh.ts";
 import { logInvocation } from "./invocation-ledger.ts";
 import { appendFileSync, existsSync, mkdirSync, readdirSync, readFileSync, renameSync, statSync, unlinkSync, writeFileSync } from "node:fs";
 import { homedir } from "node:os";
@@ -1234,6 +1235,8 @@ if (import.meta.main) {
   logInvocation({ script: "sleep" });
   if (process.argv.includes("--worker") || DRY_RUN) {
     await runWorker();
+    // An episode was drafted -> the strip is stale. Detached refresh.
+    refreshStatusline();
     process.exit(0);
   } else if (process.argv.includes("--drain")) {
     await runDrain();

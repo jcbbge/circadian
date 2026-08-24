@@ -614,7 +614,15 @@ function sessionBaseline(sessionId: string, worldview: number): number {
   }
 }
 
-function renderLine(vitals: ReturnType<typeof collectVitals>, scoreboard: ScoreEvent[], sessionId: string | null) {
+/** Build the vitals strip as a string. Split out from renderLine (2026-08-23)
+ * so the SAME line can be written to the statusline cache instead of printed.
+ *
+ * This function is EXPENSIVE and that is the whole reason the cache exists: it
+ * full-scans logs/circadian.events.jsonl (unbounded growth) and, via
+ * remFreezeStatus(), reads and SHA-256s every file in mind/episodes/ (380+).
+ * Measured at ~230ms. It must run when circadian's state CHANGES, never once
+ * per statusline render. See bin/circadian-statusline. */
+function buildLine(vitals: ReturnType<typeof collectVitals>, scoreboard: ScoreEvent[], sessionId: string | null): string {
   const parts: string[] = [];
 
   const wakes = scoreboard.filter((e) => e.type === "wake");
@@ -671,7 +679,36 @@ function renderLine(vitals: ReturnType<typeof collectVitals>, scoreboard: ScoreE
 
   if (vitals.verdicts.kill_switch) parts.push("!!! KILL SWITCH");
 
-  console.log(`circadian · ${parts.join(" · ")}`);
+  return `circadian · ${parts.join(" · ")}`;
+}
+
+/** Print the strip (SessionStart hook + any direct `--line` call). */
+function renderLine(
+  vitals: ReturnType<typeof collectVitals>,
+  scoreboard: ScoreEvent[],
+  sessionId: string | null
+) {
+  console.log(buildLine(vitals, scoreboard, sessionId));
+}
+
+const STATUSLINE_CACHE = path.join(CIRCADIAN_HOME, "logs", ".statusline");
+
+/** Write the strip to the cache bin/circadian-statusline reads.
+ *
+ * Atomic: write a temp beside the target then rename, so a statusline render
+ * racing this never sees a half-written line. Never throws — a cache write
+ * failing must not take down the producer that called it. */
+export function writeStatuslineCache(): void {
+  try {
+    const scoreboard = loadScoreboard();
+    const line = buildLine(collectVitals(scoreboard), scoreboard, sessionIdFromStdin());
+    fs.mkdirSync(path.dirname(STATUSLINE_CACHE), { recursive: true });
+    const tmp = `${STATUSLINE_CACHE}.${process.pid}.tmp`;
+    fs.writeFileSync(tmp, line + "\n");
+    fs.renameSync(tmp, STATUSLINE_CACHE);
+  } catch {
+    /* the cache is a convenience, never a dependency */
+  }
 }
 
 function main() {
@@ -679,6 +716,13 @@ function main() {
   const corr = correlation("status");
 
   if (args.includes("--line")) {
+    // --write-cache: recompute into logs/.statusline instead of stdout. This is
+    // the ONLY path that should pay the ~230ms cost, and only when circadian's
+    // state actually changed. bin/circadian-statusline does the reading.
+    if (args.includes("--write-cache")) {
+      writeStatuslineCache();
+      return;
+    }
     const scoreboard = loadScoreboard();
     renderLine(collectVitals(scoreboard), scoreboard, sessionIdFromStdin());
     return;
