@@ -112,9 +112,17 @@ const CAP_DIR = join(CIRCADIAN_HOME, "logs", "llm-cap");
 // above). Raising this above 1 must be a one-line change justified by a
 // MEASUREMENT of REM pass duration against the shared endpoint's actual
 // headroom — never a guess that "more concurrency is faster."
+// 2, not 1 (revised 2026-08-23). N=1 was set when the statusline was booting
+// a runtime 459 times an hour and graze fired on every tool call; circadian
+// genuinely had to be throttled to one in-flight call to stop starving
+// graphiti/colgrep/pickbrain. Both of those sources are now gone
+// (bin/circadian-statusline, bin/circadian-graze-gate), so strict
+// serialization is over-correction: it made every background call queue
+// behind every other for no measured benefit. 2 keeps real headroom on the
+// shared endpoint while letting a sleep draft and a graze checkpoint overlap.
 const MAX_CONCURRENT = Math.max(
   1,
-  Number.parseInt(process.env.CIRCADIAN_LLM_MAX_CONCURRENT || "1", 10) || 1,
+  Number.parseInt(process.env.CIRCADIAN_LLM_MAX_CONCURRENT || "2", 10) || 2,
 );
 // A wedged background process (dead mid-hold) is worse than a deferred pass:
 // a deferred pass retries at the next REM slot, a wedged one holds a lock
@@ -126,7 +134,20 @@ const CAP_SLOT_STALE_MS = 30 * 60 * 1000;
 // for the same reason as CAP_SLOT_STALE_MS's reuse above: a caller that
 // waits forever for the cap is itself a wedge; one that gives up and is
 // retried at the next slot is not.
-const CAP_WAIT_CEILING_MS = 120_000;
+// 5s, NOT 120s (fixed 2026-08-23). A 120s ceiling meant one slow call could
+// stall every other circadian LLM call for two minutes, and every caller here
+// is BACKGROUND metabolism with a natural retry:
+//   - a graze checkpoint that defers re-checkpoints in <= 15 min
+//   - a sleep draft that defers goes to logs/pending-sleep.jsonl and drains
+//   - a REM pass that defers runs at the next slot
+// So queueing for 2 minutes buys nothing any of them needed and costs
+// everything behind it. 5s absorbs genuine brief contention (one call
+// finishing) and then gets out of the way. Deferral is cheap here BY DESIGN;
+// blocking is not.
+const CAP_WAIT_CEILING_MS = Math.max(
+  100,
+  Number.parseInt(process.env.CIRCADIAN_LLM_CAP_WAIT_MS || "5000", 10) || 5000,
+);
 
 /** Thrown when the local concurrency cap could not be acquired within
  * CAP_WAIT_CEILING_MS. This is NOT an endpoint failure — the endpoint may be
