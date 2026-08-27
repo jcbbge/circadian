@@ -404,6 +404,49 @@ describe("parseGreetingResponse", () => {
     expect(parseGreetingResponse(raw, nowMd).malformed).toBe(false);
   });
 
+  // mind.git 3b5f3a2: REM accepted invented skill-file paths via GREETING_PATH_RE
+  // short-circuit — no filesystem check. NOW.md at that commit does not name them.
+  const POISON_3B5F3A2_NOW_MD = [
+    "<!-- cap: 3k tokens (12k chars) -->",
+    "",
+    "## Arc",
+    "",
+    "The R7 kill switch has been cleared by resetting the poisoned scoreboard ledger and committing the clean slate. The fix is live and verified.",
+    "",
+    "## Flight plan",
+    "",
+    "Trigger a new wake to observe the first real `ok` verdict from the fixed generator, confirming the streak has begun to decay.",
+    "",
+    "## Live tensions",
+    "",
+    "- The next REM wave must run to generate the first real `ok` verdict and begin the streak decay.",
+    "- The mind repo's git history is the only undo trail — no remote, so backup integrity is critical.",
+    "",
+    "## Commitments",
+    "",
+    "- The fix is committed and pushed to origin/main.",
+    "- No further handoffs or delays on verified work — immediate integration and push are now default.",
+    "- Do not assume any state is \"done\" until it is in the remote and visible.",
+    "",
+    "## Serendipity",
+    "",
+    "",
+    "",
+    "## Last sleep",
+    "",
+    "2026-08-11T15:54:46.870Z",
+    "",
+  ].join("\n");
+  const POISON_3B5F3A2_GREETING = [
+    "Check the live validation pipeline for `skills/agent/skill-1.md` and `skills/agent/skill-2.md` to confirm both files now parse correctly.",
+    "Report the validation result to the user with the exact output from the pipeline.",
+    "Wait for explicit confirmation before taking any further action.",
+  ].join("\n");
+
+  test("with NOW.md: mind.git 3b5f3a2 poison greeting is malformed", () => {
+    expect(parseGreetingResponse(POISON_3B5F3A2_GREETING, POISON_3B5F3A2_NOW_MD).malformed).toBe(true);
+  });
+
   test("no NOW.md supplied: the speakability gate is skipped too (structural shape only)", () => {
     expect(parseGreetingResponse("`workers/consumer-audit.done`").malformed).toBe(false);
   });
@@ -489,6 +532,47 @@ describe("greetingHasAnchor", () => {
 
   test("nonexistent relative path is not an anchor against empty NOW.md", () => {
     expect(greetingHasAnchor(["Start in src/this-file-does-not-exist.ts."], "")).toBe(false);
+    expect(greetingHasAnchor(["Start in skills/agent/skill-1.md."], "")).toBe(false);
+  });
+
+  test("rejects mind.git 3b5f3a2 poison greeting — invented skill paths are not anchors", () => {
+    const lines = [
+      "Check the live validation pipeline for `skills/agent/skill-1.md` and `skills/agent/skill-2.md` to confirm both files now parse correctly.",
+      "Report the validation result to the user with the exact output from the pipeline.",
+      "Wait for explicit confirmation before taking any further action.",
+    ];
+    const nowMd = [
+      "<!-- cap: 3k tokens (12k chars) -->",
+      "",
+      "## Arc",
+      "",
+      "The R7 kill switch has been cleared by resetting the poisoned scoreboard ledger and committing the clean slate. The fix is live and verified.",
+      "",
+      "## Flight plan",
+      "",
+      "Trigger a new wake to observe the first real `ok` verdict from the fixed generator, confirming the streak has begun to decay.",
+      "",
+      "## Live tensions",
+      "",
+      "- The next REM wave must run to generate the first real `ok` verdict and begin the streak decay.",
+      "- The mind repo's git history is the only undo trail — no remote, so backup integrity is critical.",
+      "",
+      "## Commitments",
+      "",
+      "- The fix is committed and pushed to origin/main.",
+      "- No further handoffs or delays on verified work — immediate integration and push are now default.",
+      "- Do not assume any state is \"done\" until it is in the remote and visible.",
+      "",
+      "## Serendipity",
+      "",
+      "",
+      "",
+      "## Last sleep",
+      "",
+      "2026-08-11T15:54:46.870Z",
+      "",
+    ].join("\n");
+    expect(greetingHasAnchor(lines, nowMd)).toBe(false);
   });
 
   test("empty NOW.md and no path/command: nothing concrete to name, rejected", () => {
