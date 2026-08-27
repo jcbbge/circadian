@@ -49,48 +49,24 @@ async function readStdin(): Promise<void> {
   }
 }
 
-/** Detect this pane's fleet tier (or null for operator/unstamped panes).
- * The tier is a DATA fact about the pane and has exactly one consumer: how
- * MUCH memory the pane needs (buildPayload's `slim` — executor tiers get the
+/** Detect this session's tier (or null for operator/unstamped sessions).
+ * The tier is a DATA fact about the session and has exactly one consumer: how
+ * MUCH memory the session needs (buildPayload's `slim` — executor tiers get the
  * DOCTRINE-only slice, wake-slim 2026-08-11). It decides no behavior. Wake
  * injects memory; the greeting ritual belongs to the role that greets and
  * lives in the concierge profile (session-lifecycle law 1: adapters inject
  * data, never behavior) — which is why there is no longer a greeting mandate
- * here to suppress per role. */
+ * here to suppress per role.
+ *
+ * The tier source is a plain environment variable (CIRCADIAN_ROLE) that any
+ * harness may stamp. No external system is consulted: no binary, no socket. */
 function detectFleetTier(): { tier: FleetTier | null; reason: string } {
-  const envRole = process.env.HERDR_ROLE || "";
+  const envRole = process.env.CIRCADIAN_ROLE || "";
   const envTier = classifyFleetTier(envRole);
   if (envTier) {
-    return { tier: envTier, reason: `HERDR_ROLE=${envRole}` };
+    return { tier: envTier, reason: `CIRCADIAN_ROLE=${envRole}` };
   }
-  const paneId = process.env.HERDR_PANE_ID;
-  if (!paneId || process.env.HERDR_ENV !== "1") {
-    return { tier: null, reason: "not-herdr-pane" };
-  }
-  try {
-    const out = Bun.spawnSync(["herdr", "pane", "get", paneId], {
-      stdout: "pipe",
-      stderr: "pipe",
-      env: process.env,
-    });
-    if (out.exitCode !== 0) return { tier: null, reason: "pane-get-failed" };
-    const raw = new TextDecoder().decode(out.stdout);
-    const j = JSON.parse(raw);
-    const pane = j?.result?.pane ?? j?.pane ?? j;
-    const role = String(pane?.tokens?.role || "");
-    const name = String(pane?.name || pane?.display_agent || pane?.label || "");
-    const roleTier = classifyFleetTier(role);
-    if (roleTier) {
-      return { tier: roleTier, reason: `token.role=${role}` };
-    }
-    const nameTier = classifyFleetTier(name);
-    if (nameTier) {
-      return { tier: nameTier, reason: `name=${name}` };
-    }
-  } catch {
-    return { tier: null, reason: "detect-threw" };
-  }
-  return { tier: null, reason: "operator-or-unstamped" };
+  return { tier: null, reason: "unstamped-or-operator" };
 }
 
 async function runHook(): Promise<void> {
@@ -223,13 +199,13 @@ async function runHook(): Promise<void> {
     });
   }
 
-  const fleet = detectFleetTier();
+  const tier = detectFleetTier();
   // Executor tiers (3-AGNT/4-SAGT) get the slim payload: constitution(s) +
   // DOCTRINE-only SELF slice + NOW + brief-relevant evidence, USER dropped
   // (wake-slim, 2026-08-11). Orchestrator tiers (1-CORD/2-ORCH) and operator
-  // panes keep the full worldview. Kill-switch fail-safe takes precedence
+  // sessions keep the full worldview. Kill-switch fail-safe takes precedence
   // (SELF/USER already withheld there), so slim is a no-op under kill switch.
-  const slim = fleet.tier === "AGNT" || fleet.tier === "SAGT";
+  const slim = tier.tier === "AGNT" || tier.tier === "SAGT";
 
   // Portfolio report — operator/orchestrator only; workers follow a brief.
   let portfolio = "";
@@ -270,13 +246,13 @@ async function runHook(): Promise<void> {
       portfolio = "";
     }
   }
-  if (fleet.tier) {
+  if (tier.tier) {
     ok({
       process: "wake",
-      phase: "fleet-tier",
+      phase: "role-tier",
       correlation_id: corr,
-      summary: `fleet pane detected: ${fleet.tier} (${fleet.reason})${slim ? " — slim payload (executor tier)" : ""}`,
-      context: { reason: fleet.reason, tier: fleet.tier, slim, pane_id: process.env.HERDR_PANE_ID || null },
+      summary: `role tier detected: ${tier.tier} (${tier.reason})${slim ? " — slim payload (executor tier)" : ""}`,
+      context: { reason: tier.reason, tier: tier.tier, slim },
     });
   }
 

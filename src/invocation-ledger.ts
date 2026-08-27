@@ -115,7 +115,6 @@ export function logInvocation(entry: InvocationEntry): Ancestor[] {
       ppid_env: {
         // hook runners often identify themselves in the environment
         term_program: process.env.TERM_PROGRAM ?? null,
-        herdr_pane: process.env.HERDR_PANE_ID ?? null,
         claude_session: process.env.CLAUDE_SESSION_ID ?? null,
       },
       ...(entry.context ? { context: entry.context } : {}),
