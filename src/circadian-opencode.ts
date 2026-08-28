@@ -1,7 +1,8 @@
 // circadian-opencode.ts — opencode/slate lifecycle plugin.
 //
 // WAKE on session.created (stdout captured, injected via
-// experimental.chat.system.transform), GRAZE on tool.execute.after
+// experimental.chat.system.transform; any session that misses its start event
+// is caught up at first tool use), GRAZE on tool.execute.after
 // (circadian-graze-gate), SLEEP on session.idle and session.deleted
 // (transcript exported from the session API, sleep.ts --worker).
 
@@ -17,11 +18,13 @@ const BUN_BIN = process.env.CIRCADIAN_BUN_BIN || join(homedir(), ".bun/bin/bun")
 const GRAZE_GATE = join(CIRCADIAN_HOME, "bin/circadian-graze-gate");
 
 const wakeBySession = new Map<string, string>();
+const wakeInFlight = new Set<string>();
+const wakeDelivered = new Set<string>();
 
-function spawnWake(): Promise<string> {
+function spawnWake(sessionID?: string): Promise<string> {
   return new Promise((resolve) => {
     const child = spawn(BUN_BIN, ["run", join(CIRCADIAN_HOME, "src/wake.ts")], {
-      env: { ...process.env, CIRCADIAN_HOME, CIRCADIAN_BUN_BIN: BUN_BIN },
+      env: { ...process.env, CIRCADIAN_HOME, CIRCADIAN_BUN_BIN: BUN_BIN, ...(sessionID ? { CIRCADIAN_SESSION_ID: sessionID } : {}) },
       stdio: ["ignore", "pipe", "pipe"],
     });
     let stdout = "";
@@ -31,6 +34,25 @@ function spawnWake(): Promise<string> {
     child.on("close", () => resolve(stdout));
     child.on("error", () => resolve(""));
   });
+}
+
+/** Make sure this session has a wake payload staged for injection.
+ * Self-healing catch-up: a session that missed session.created (bridge booted
+ * after the session opened, or the start event never reached the plugin) still
+ * receives memory before its first tool use. Deduped so concurrent tool uses
+ * never spawn a second wake. If wake fails, the next tool use retries — wake
+ * only returns empty when the process itself cannot boot, and then the whole
+ * bridge is down anyway. */
+async function ensureWake(sessionID: string | undefined): Promise<void> {
+  if (!sessionID || wakeBySession.has(sessionID) || wakeInFlight.has(sessionID) || wakeDelivered.has(sessionID)) {
+    return;
+  }
+  wakeInFlight.add(sessionID);
+  const payload = await spawnWake(sessionID);
+  wakeInFlight.delete(sessionID);
+  if (payload) {
+    wakeBySession.set(sessionID, payload);
+  }
 }
 
 function spawnDetached(
@@ -55,7 +77,7 @@ function spawnGrazeGate(sessionID?: string): void {
     const child = spawn(GRAZE_GATE, [], {
       detached: true,
       stdio: ["pipe", "ignore", "ignore"],
-      env: { ...process.env, CIRCADIAN_HOME },
+      env: { ...process.env, CIRCADIAN_HOME, ...(sessionID ? { CIRCADIAN_SESSION_ID: sessionID } : {}) },
     });
     child.stdin?.write(payload);
     child.stdin?.end();
@@ -122,6 +144,7 @@ async function spawnSleep(client: PluginInput["client"], sessionID: string): Pro
       transcript_path: transcriptPath,
       session_id: sessionID,
     }),
+    CIRCADIAN_SESSION_ID: sessionID,
   });
 }
 
@@ -132,9 +155,7 @@ export default async function circadianOpencodePlugin(input: PluginInput): Promi
     event: async ({ event }) => {
       if (event.type === "session.created") {
         const sessionID = sessionIdFromEvent(event);
-        if (!sessionID) return;
-        const payload = await spawnWake();
-        if (payload) wakeBySession.set(sessionID, payload);
+        await ensureWake(sessionID);
         return;
       }
 
@@ -149,6 +170,7 @@ export default async function circadianOpencodePlugin(input: PluginInput): Promi
         if (sessionID) {
           await spawnSleep(client, sessionID);
           wakeBySession.delete(sessionID);
+          wakeDelivered.delete(sessionID);
         }
       }
     },
@@ -159,11 +181,14 @@ export default async function circadianOpencodePlugin(input: PluginInput): Promi
       const payload = wakeBySession.get(sessionID);
       if (!payload) return;
       wakeBySession.delete(sessionID);
+      wakeDelivered.add(sessionID);
       output.system = [...(output.system ?? []), payload];
     },
 
     "tool.execute.after": async (hookInput) => {
-      spawnGrazeGate(hookInput.sessionID);
+      const sessionID = hookInput.sessionID;
+      spawnGrazeGate(sessionID);
+      await ensureWake(sessionID);
     },
   };
 }

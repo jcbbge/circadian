@@ -124,7 +124,7 @@ async function runHook(): Promise<void> {
   let evidence = "";
   try {
     const loaded = loadIndex(MIND);
-    const source = process.env.CIRCADIAN_WAKE_SOURCE || process.env.CLAUDE_SESSION_SOURCE;
+    const source = process.env.CIRCADIAN_WAKE_SOURCE;
     // budget halved 2000 -> 1000 (2026-08-09 stitch audit): the worldview +
     // constitutions carry the identity load; evidence is a garnish, not a meal.
     const slice = retrieveForWake(loaded, process.cwd(), { source, k: 5, budgetTokens: 1000 });

@@ -67,10 +67,10 @@ export function ancestry(startPid: number = process.pid): Ancestor[] {
   return out;
 }
 
-/** The nearest ancestor that is not bun/node/sh — i.e. the actual invoker.
+/** The nearest ancestor that is not a runtime/interpreter — the actual invoker.
  *
  * This is the field that answers "who is doing this to me". A chain of
- * bun -> bun -> claude reads as "claude", which is the useful answer. */
+ * bun -> bun -> <harness-binary> reads as "<harness-binary>", the useful answer. */
 export function attributedTo(chain: Ancestor[]): string {
   const noise = /(^|\/)(bun|node|sh|zsh|bash|env|ps|login)$/;
   for (const a of chain.slice(1)) {
@@ -102,7 +102,7 @@ export function logInvocation(entry: InvocationEntry): Ancestor[] {
       ts: new Date().toISOString(),
       script: entry.script,
       mode: entry.mode ?? (process.argv.includes("--worker") ? "worker" : "hook"),
-      hook_event: entry.hook_event ?? process.env.CLAUDE_HOOK_EVENT ?? null,
+      hook_event: entry.hook_event ?? process.env.CIRCADIAN_HOOK_EVENT ?? null,
       session_id: entry.session_id ?? null,
       pid: process.pid,
       ppid: chain[0]?.ppid ?? null,
@@ -115,7 +115,7 @@ export function logInvocation(entry: InvocationEntry): Ancestor[] {
       ppid_env: {
         // hook runners often identify themselves in the environment
         term_program: process.env.TERM_PROGRAM ?? null,
-        claude_session: process.env.CLAUDE_SESSION_ID ?? null,
+        session: process.env.CIRCADIAN_SESSION_ID ?? null,
       },
       ...(entry.context ? { context: entry.context } : {}),
     };

@@ -51,11 +51,11 @@ function spawnScriptDetached(script: string): void {
   }
 }
 
-function spawnWakeCaptured(): Promise<string> {
+function spawnWakeCaptured(threadId?: string): Promise<string> {
   return new Promise((resolve) => {
     try {
       const child = spawn(BUN_BIN, ["run", join(CIRCADIAN_HOME, "src/wake.ts")], {
-        env: { ...process.env, CIRCADIAN_HOME, CIRCADIAN_BUN_BIN: BUN_BIN },
+        env: { ...process.env, CIRCADIAN_HOME, CIRCADIAN_BUN_BIN: BUN_BIN, ...(threadId ? { CIRCADIAN_SESSION_ID: threadId } : {}) },
         stdio: ["ignore", "pipe", "pipe"],
       });
       let stdout = "";
@@ -70,12 +70,12 @@ function spawnWakeCaptured(): Promise<string> {
   });
 }
 
-function spawnGrazeGateDetached(payload: string): void {
+function spawnGrazeGateDetached(payload: string, threadId?: string): void {
   try {
     const child = spawn(GRAZE_GATE, [], {
       detached: true,
       stdio: ["pipe", "ignore", "ignore"],
-      env: { ...process.env, CIRCADIAN_HOME },
+      env: { ...process.env, CIRCADIAN_HOME, ...(threadId ? { CIRCADIAN_SESSION_ID: threadId } : {}) },
     });
     child.stdin?.write(payload);
     child.stdin?.end();
@@ -95,7 +95,7 @@ export default function circadianAmpLifecycle(amp: AmpApi): void {
     const threadId = thread?.id;
     if (!threadId || injectedThreads.has(threadId)) return;
 
-    const content = await spawnWakeCaptured();
+    const content = await spawnWakeCaptured(threadId);
     if (!content) return;
 
     injectedThreads.add(threadId);
@@ -104,7 +104,8 @@ export default function circadianAmpLifecycle(amp: AmpApi): void {
 
   amp.on("tool.result", async (event) => {
     try {
-      spawnGrazeGateDetached(JSON.stringify(event ?? {}));
+      const threadId = ((event ?? {}) as { thread?: { id?: string } }).thread?.id;
+      spawnGrazeGateDetached(JSON.stringify(event ?? {}), threadId);
     } catch {
       // Swallow — graze must never throw into Amp.
     }

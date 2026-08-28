@@ -1,8 +1,8 @@
 #!/bin/sh
 # circadian-statusline — the statusline read path. ZERO forks, zero runtime.
 #
-# Why this exists (2026-08-23): settings.json `statusLine.command` ran
-# `bun src/status.ts --line`, and Claude Code re-renders the statusline
+# Why this exists (2026-08-23): the harness's statusline command ran
+# `bun src/status.ts --line`, and the harness re-renders the statusline
 # continuously, per pane. Measured: 204-230ms per render, 459 renders/hour
 # across 10 panes. ~65ms of that was bare bun boot; the rest was buildLine()
 # full-scanning logs/circadian.events.jsonl (unbounded) and reading +

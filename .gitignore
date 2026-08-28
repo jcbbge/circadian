@@ -12,6 +12,8 @@ logs/*.jsonl
 logs/.population-vitals.json
 logs/.status-snap-*.json
 logs/fleet/
+# exports from the session-lifecycle bridge, fed to sleep --worker
+logs/opencode-transcripts/
 # backups/archives of mind state may contain private memory — never publish
 logs/*.bak
 logs/*scoreboard*

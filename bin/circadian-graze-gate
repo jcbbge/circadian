@@ -2,9 +2,9 @@
 # circadian-graze-gate — the graze hook's cheap front door. NO RUNTIME BOOT
 # unless a checkpoint is actually due.
 #
-# Why this exists (2026-08-23): settings.json fired
-# `bun src/graze.ts` on PostToolUse (matcher `<none>`, i.e. EVERY tool call)
-# and on UserPromptSubmit. But GRAZE_INTERVAL_MS is 15 MINUTES, so the
+# Why this exists (2026-08-23): the harness hook config fired
+# `bun src/graze.ts` on every tool call (matcher `<none>`) and on every
+# prompt submit. But GRAZE_INTERVAL_MS is 15 MINUTES, so the
 # overwhelming majority of those invocations booted a ~65ms bun runtime, read
 # one timestamp, decided "not yet", and exited. graze.ts's own source comment
 # measured the waste: 25,239 throttle events in a single day across 192
@@ -24,7 +24,7 @@ CIRCADIAN_HOME="${CIRCADIAN_HOME:-$HOME/circadian}"
 INTERVAL_MS="${CIRCADIAN_GRAZE_INTERVAL_MS:-900000}"   # 15 min, graze.ts default
 BUN="${CIRCADIAN_BUN_BIN:-$HOME/.bun/bin/bun}"
 
-# Claude Code pipes hook JSON on stdin and graze.ts needs it (session_id,
+# The harness pipes hook JSON on stdin and graze.ts needs it (session_id,
 # transcript_path). Capture it once so we can both inspect and forward it.
 payload=$(cat 2>/dev/null)
 
