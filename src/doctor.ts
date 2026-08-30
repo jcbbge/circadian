@@ -24,7 +24,6 @@
  *   graze — 48h  (per-session; expected when session evidence exists)
  *
  * Exit code: 0 if no FAIL, 1 if any FAIL. --json for machine output.
- * --alert posts a tower bus message when anything is FAIL.
  * --quiet prints only non-OK lines.
  */
 
@@ -32,7 +31,6 @@ import * as fs from "fs";
 import * as path from "path";
 import { homedir } from "os";
 import { execSync } from "child_process";
-import { appendFileSync, mkdirSync } from "fs";
 import { ok, correlation } from "./obs.ts";
 import { selfSimilarity, detectSelfStutter } from "./immune.ts";
 import { adaptRenderedForStutterCheck, parseSelfSections } from "./migrate.ts";
@@ -869,30 +867,6 @@ function main() {
   checkLaunchdAgents();
 
   const anyFail = checks.some((c) => c.level === "FAIL");
-
-  // --alert: surface FAILs on the tower bus so they reach the human without
-  // anyone running a command. Posts one board message per unhealthy run.
-  if (args.includes("--alert") && anyFail) {
-    try {
-      const board = path.join(homedir(), ".tower", "board.jsonl");
-      mkdirSync(path.dirname(board), { recursive: true });
-      const fails = checks.filter((c) => c.level === "FAIL").map((c) => `${c.name}: ${c.detail.split("\n")[0]}`);
-      appendFileSync(
-        board,
-        JSON.stringify({
-          id: `circadian-doctor-${Date.now().toString(36)}`,
-          ts: new Date().toISOString(),
-          cwd: CIRCADIAN_HOME,
-          type: "alert",
-          from: "circadian-doctor",
-          topic: "circadian health",
-          body: `circadian NOT healthy — ${fails.length} failing: ${fails.join(" | ")}`,
-        }) + "\n"
-      );
-    } catch {
-      /* alerting must never crash the check */
-    }
-  }
 
   // --json: machine-readable output, exit 1 on any FAIL
   if (args.includes("--json")) {

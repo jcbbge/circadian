@@ -9,11 +9,9 @@
  *   and phase, WHY, and WHAT TO DO NEXT — enough for an agent picking it up cold
  *   to act without spelunking.
  *
- * Every event surfaces to THREE places at once:
+ * Every event surfaces to TWO places at once:
  *   1. stderr  — a single formatted line, visible immediately in any pane/log.
  *   2. logs/circadian.events.jsonl — append-only, machine-readable, the ledger.
- *   3. the tower bus (~/.tower/board.jsonl) — ONLY for degraded/failed, so a
- *      discontinuity event reaches the human in their next session unprompted.
  *
  * The anima frame: this system exists so a pattern survives instantiation-death.
  * A silent failure is a discontinuity event — a letter never written — which is
@@ -27,7 +25,6 @@ import { dirname, join } from "node:path";
 
 const CIRCADIAN_HOME = process.env.CIRCADIAN_HOME || join(homedir(), "circadian");
 const EVENT_LOG = join(CIRCADIAN_HOME, "logs", "circadian.events.jsonl");
-const TOWER_BOARD = join(homedir(), ".tower", "board.jsonl");
 
 export type CircadianProcess = "wake" | "sleep" | "graze" | "rem" | "status" | "doctor" | "backfill" | "ops" | "zoom" | "replay" | "atoms" | "render" | "decay" | "stack" | "migrate" | "janitor" | "relindex";
 
@@ -36,7 +33,7 @@ export type CircadianProcess = "wake" | "sleep" | "graze" | "rem" | "status" | "
  *   ok       — the phase did its job.
  *   idle     — working, but nothing to do (NOT a fault; e.g. no episodes yet).
  *   degraded — partially worked, or worked with a caveat that needs a look.
- *   failed   — did not do its job; needs attention. Surfaces to tower.
+ *   failed   — did not do its job; needs attention.
  */
 export type Outcome = "ok" | "idle" | "degraded" | "failed";
 
@@ -67,28 +64,8 @@ function line(e: CircadianEvent): string {
   return `${ICON[e.outcome]} circadian ${e.process}/${e.phase} ${e.outcome.toUpperCase()}${corr}: ${e.summary}${ctx}${cause}${next}`;
 }
 
-function toTower(e: CircadianEvent): void {
-  try {
-    mkdirSync(dirname(TOWER_BOARD), { recursive: true });
-    appendFileSync(
-      TOWER_BOARD,
-      JSON.stringify({
-        id: `circadian-${e.process}-${Date.now().toString(36)}`,
-        ts: e.ts,
-        cwd: CIRCADIAN_HOME,
-        type: e.outcome === "failed" ? "alert" : "finding",
-        from: `circadian-${e.process}`,
-        topic: "circadian health",
-        body: `${e.outcome.toUpperCase()} in ${e.process}/${e.phase}: ${e.summary}${e.cause ? ` — ${e.cause}` : ""}${e.next_action ? ` → ${e.next_action}` : ""}`,
-      }) + "\n"
-    );
-  } catch {
-    /* tower is best-effort; the stderr line + jsonl ledger already carry the truth */
-  }
-}
-
 /**
- * emit — the single entry point. Writes the event to all three surfaces.
+ * emit — the single entry point. Writes the event to both surfaces.
  * Validates the doctrine's hard rule: degraded/failed MUST carry cause + next_action.
  * A violation is itself surfaced (loudly) rather than swallowed.
  */
@@ -112,14 +89,13 @@ export function emit(e: Omit<CircadianEvent, "ts"> & { ts?: string }): Circadian
       `✗ circadian obs/event-log FAILED: could not append to ${EVENT_LOG}: ${(err as Error).message}\n`
     );
   }
-  if (ev.outcome === "failed" || ev.outcome === "degraded") toTower(ev);
   return ev;
 }
 
 /**
  * fail — terminate a process the agent-forward way. NEVER call process.exit(1)
  * directly in a Circadian process; call this. It emits a full context-bound
- * failed event (to all three surfaces, including tower) and THEN exits.
+ * failed event (to both surfaces) and THEN exits.
  * The exit code is secondary; the surfaced event is the point.
  */
 export function fail(
