@@ -542,6 +542,17 @@ export function parseGreetingResponse(raw: string, nowMd?: string): GreetingResu
   if (nowMd !== undefined && !greetingHasAnchor(capped, nowMd)) {
     return { lines: capped, malformed: true };
   }
+  // Checklist-gate: the generator collapsed into imperative checklist items
+  // that name anchors but are not greetings ("Check the `foo` row...",
+  // "Confirm no stale copies...", "Review whether..."). These pass the
+  // anchor and speakability gates because they contain paths and enough
+  // words, but they are tasks, not speech. A line that starts with an
+  // imperative verb and contains a backtick or slash path anchor is a
+  // checklist item, not a greeting.
+  const IMPERATIVE_CHECKLIST_RE = /^(Check|Confirm|Review|Verify|Inspect|Validate|Ensure)\b.*(?:`|\/[A-Za-z0-9_-]+)/;
+  if (nowMd !== undefined && capped.some((l) => IMPERATIVE_CHECKLIST_RE.test(l))) {
+    return { lines: capped, malformed: true };
+  }
   // Speakability gate (MIND-SPEC Law 3: "Every wake opens with a greeting
   // composed from memory, placed in the user's face. If it isn't good enough
   // to say out loud, it isn't earning its keep."). The anchor gate above
@@ -702,17 +713,20 @@ export function buildGreetingPrompt(nowMd: string): string {
   const nowItems = enumerateNowItems(nowMd);
   const anchorMenu =
     nowItems.length > 0
-      ? nowItems.map((it) => `- [${it.address}] ${it.text}`).join("\n")
+      ? nowItems.map((it, i) => `${i + 1}. ${it.text}`).join("\n")
       : "(NOW.md lists no concrete items -- take your anchor from a file, command, or task named in its text below.)";
   return (
     `You are drafting the first thing a mind reads on waking. Its ONLY job is to ` +
     `orient to the CURRENT WORK: point at the next concrete, addressable thing to do.\n\n` +
-    `HARD REQUIREMENT 1 -- SAY IT OUT LOUD: every line must be a SENTENCE a person ` +
-    `could speak, with a verb. NEVER a bare file path, a bare command, or a list of ` +
-    `names. ("` + "`tower/w2-consumer-resilience`" + `", "` + "`workers/audit.done`" + `", ` +
-    `"push origin/main" are all FAILURES: they are addresses, not speech. ` +
-    `"Pick up the write gate in \`src/gate.ts\` -- the herdr contract is next" is ` +
-    `the shape: a sentence that CONTAINS an address.)\n\n` +
+    `HARD REQUIREMENT 1 -- SPEAK, DO NOT INSTRUCT: every line must be a SENTENCE a ` +
+    `person could speak aloud, with a verb. NEVER a bare file path, a bare command, ` +
+    `or a list of names. NEVER an imperative checklist item like "Check...", ` +
+    `"Confirm...", "Review...", or "Verify..." -- those are tasks, not greetings. ` +
+    `("` + "`tower/w2-consumer-resilience`" + `", "` + "`workers/audit.done`" + `", ` +
+    `"push origin/main", "Check the registry for stale copies" are all FAILURES: ` +
+    `they are addresses or instructions, not speech. "Pick up the write gate in ` +
+    `\`src/gate.ts\` -- the herdr contract is next" is the shape: a natural sentence ` +
+    `that CONTAINS an address.)\n\n` +
     `HARD REQUIREMENT 2 -- NAME SOMETHING REAL: each sentence must name at least one ` +
     `concrete anchor -- a file path, a command, or a specific task/subject drawn from ` +
     `the current work below, reusing its exact nouns. NEVER a mood, a slogan, or an ` +
@@ -724,10 +738,12 @@ export function buildGreetingPrompt(nowMd: string): string {
     `Do NOT mention the memory system, the mind, atoms, beliefs, or greetings ` +
     `themselves -- that is a category error: the greeting is for the work, not about ` +
     `its own remembering.\n\n` +
-    `The current work (draw your anchor from here):\n${anchorMenu}\n\n` +
+    `The current work (draw your anchor from here -- numbered for reference only, ` +
+    `never copy the numbers or the format into your output):\n${anchorMenu}\n\n` +
     `Full NOW.md for context:\n${nowMd}\n\n` +
-    `Respond with ONLY the greeting: at most ${GREETING_MAX_LINES} short sentences, ` +
-    `one per line, no preamble, no markdown headers, no bullet points.`
+    `Respond with ONLY the greeting: at most ${GREETING_MAX_LINES} short natural ` +
+    `sentences, one per line, no preamble, no markdown headers, no bullet points, ` +
+    `no numbering, no imperative checklist format.`
   );
 }
 

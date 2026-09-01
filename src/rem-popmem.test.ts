@@ -404,6 +404,12 @@ describe("parseGreetingResponse", () => {
     expect(parseGreetingResponse(raw, nowMd).malformed).toBe(false);
   });
 
+  test("with NOW.md: an imperative checklist line that names an anchor is not a greeting", () => {
+    const nowMd = "## Arc\nThe registry row for the skill is next.\n";
+    const raw = "Check the `registry` row for stale copies of the skill.";
+    expect(parseGreetingResponse(raw, nowMd).malformed).toBe(true);
+  });
+
   // mind.git 3b5f3a2: REM accepted invented skill-file paths via GREETING_PATH_RE
   // short-circuit — no filesystem check. NOW.md at that commit does not name them.
   const POISON_3B5F3A2_NOW_MD = [
