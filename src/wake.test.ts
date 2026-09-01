@@ -7,7 +7,7 @@
 import { describe, test, expect } from "bun:test";
 import * as fs from "fs";
 import * as path from "path";
-import { buildPayload, sliceSelf, classifyFleetTier } from "./wake-payload.ts";
+import { buildPayload, sliceSelf, classifyFleetTier, plateUser } from "./wake-payload.ts";
 
 const WAKE_SRC = fs.readFileSync(path.join(import.meta.dir, "wake.ts"), "utf8");
 
@@ -175,5 +175,52 @@ describe("buildPayload operator path unchanged (regression guard)", () => {
   test("wake.ts keeps no greeting-suppression machinery", () => {
     expect(WAKE_SRC).not.toContain("CIRCADIAN_SKIP_GREETING");
     expect(WAKE_SRC).not.toContain("skipGreeting");
+  });
+});
+
+describe("plateUser / guest-book not plated", () => {
+  test("P1 diary is not plated", () => {
+    const preferences = "# JRG\n\nOperational preferences that a worker does not need.\n\n";
+    const fixture =
+      preferences +
+      "## Corrections (guest book)\n\n### 2026-08-24 — muster contract absolute\n\nRULE: Every interaction uses the muster kind enum only\n" +
+      "### 2026-08-31 — Muster is dead\n\nThe 2026-08-24 entry is historical.\n";
+    const payload = buildPayload({ ...COMMON, user: fixture, slim: false });
+    expect(payload).toContain("<mind:user>");
+    expect(payload).toContain("Operational preferences that a worker does not need.");
+    expect(payload).not.toContain("## Corrections");
+    expect(payload).not.toContain("### 2026-08-24");
+    expect(payload).not.toContain("muster kind enum");
+    expect(payload).not.toContain("Muster is dead");
+  });
+
+  test("P2 fail open: no Corrections heading keeps the overlay", () => {
+    const payload = buildPayload({ ...COMMON, slim: false });
+    expect(payload).toContain("Operational preferences that a worker does not need.");
+  });
+
+  test("P3 following section kept", () => {
+    const fixture =
+      "## Preferences and patterns\n\n- eggs\n\n## Corrections (guest book)\n\ndiary\n\n## Stack\n\nTypeScript\n";
+    const payload = buildPayload({ ...COMMON, user: fixture, slim: false });
+    expect(payload).toContain("## Preferences");
+    expect(payload).toContain("## Stack");
+    expect(payload).toContain("TypeScript");
+    expect(payload).not.toContain("## Corrections");
+    expect(payload).not.toContain("diary");
+  });
+
+  test("P4 slim and kill-switch still withhold USER", () => {
+    expect(buildPayload({ ...COMMON, slim: true })).not.toContain("<mind:user>");
+    expect(buildPayload({ ...COMMON, slim: false, killSwitch: true })).not.toContain("<mind:user>");
+    expect(buildPayload({ ...COMMON, slim: true, killSwitch: true })).not.toContain("<mind:user>");
+  });
+
+  test("P6 plateUser cuts Corrections; fail-open equals input", () => {
+    expect(plateUser("## Corrections (guest book)\n\nsecret\n")).not.toContain("secret");
+    expect(plateUser("## Corrections (guest book)\n\nsecret\n")).not.toContain("Corrections");
+    const overlay = "# JRG\n\nhi\n";
+    // No Corrections heading: return the string unchanged (fail open).
+    expect(plateUser(overlay)).toBe(overlay);
   });
 });

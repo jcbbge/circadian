@@ -50,6 +50,29 @@ export function sliceSelf(self: string): string {
   return trimmed.slice(headings[0], headings[1]).trim();
 }
 
+/** Cut USER at `/^##\s+Corrections\b/` through the next `/^##\s+/` or EOF.
+ *  Absent heading → return USER unchanged (fail open). Shape rule only —
+ *  no date parsing, no aliases (`## Guest book` is not this heading). */
+export function plateUser(user: string): string {
+  const correctionsRe = /^##\s+Corrections\b/m;
+  const match = correctionsRe.exec(user);
+  if (!match) return user;
+
+  const start = match.index;
+  const afterHeading = user.slice(start + match[0].length);
+  const nextHeading = /^##\s+/m.exec(afterHeading);
+  const end = nextHeading
+    ? start + match[0].length + nextHeading.index
+    : user.length;
+
+  const before = user.slice(0, start).replace(/\n+$/, "");
+  const after = user.slice(end).replace(/^\n+/, "");
+  const joined =
+    before.length === 0 ? after : after.length === 0 ? before : `${before}\n\n${after}`;
+  const trimmed = joined.trimEnd();
+  return user.endsWith("\n") ? `${trimmed}\n` : trimmed;
+}
+
 export function buildPayload(files: {
   self: string;
   user: string;
@@ -100,9 +123,10 @@ export function buildPayload(files: {
   // brief — it does not need Josh's day-to-day working preferences). Operator
   // tiers and operator panes keep the full worldview.
   const selfContent = slim ? sliceSelf(self) : self.trim();
+  // Corrections is a diary; wake plates the palate; leftover-in-file is not law.
   const userBlocks = slim
     ? []
-    : ["<mind:user>", user.trim(), "</mind:user>"];
+    : ["<mind:user>", plateUser(user).trim(), "</mind:user>"];
 
   // KILL-SWITCH FAIL-SAFE: when the greeting-fitness kill switch has fired
   // (R7), the memory organs are the failing instrument — SELF/USER/greeting
