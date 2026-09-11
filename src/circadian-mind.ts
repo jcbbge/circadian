@@ -42,6 +42,35 @@ function piContext(extra: Record<string, unknown> = {}): Record<string, unknown>
   return { harness: "pi", ...extra };
 }
 
+type NativeSessionFile =
+  | { kind: "persisted"; path: string; size: number }
+  | { kind: "ephemeral" }
+  | { kind: "degraded"; reason: string };
+
+/** Resolve only the session selected by Pi's native SessionManager. */
+function acquireNativeSessionFile(
+  sessionManager: { getSessionFile(): string | undefined; isPersisted(): boolean; getSessionId(): string },
+): NativeSessionFile {
+  const path = sessionManager.getSessionFile();
+  if (!sessionManager.isPersisted() && !path) return { kind: "ephemeral" };
+  if (!path) return { kind: "degraded", reason: "persisted session has no native session path" };
+
+  try {
+    const stat = statSync(path);
+    if (!stat.isFile()) return { kind: "degraded", reason: "native session path is not a regular file" };
+    const firstLine = readFileSync(path, "utf8").split("\n", 1)[0];
+    if (!firstLine) return { kind: "degraded", reason: "native session file is empty" };
+    const header = JSON.parse(firstLine) as { type?: unknown; id?: unknown };
+    if (header.type !== "session") return { kind: "degraded", reason: "native session header type is missing or invalid" };
+    if (header.id !== sessionManager.getSessionId()) {
+      return { kind: "degraded", reason: "native session header identity does not match the active session" };
+    }
+    return { kind: "persisted", path, size: stat.size };
+  } catch (error) {
+    return { kind: "degraded", reason: `native session file is unreadable or malformed: ${(error as Error).message}` };
+  }
+}
+
 export default function circadianMind(pi: ExtensionAPI) {
   // Module-level state for this extension instance.
   // On /reload, the extension is re-instantiated, so these reset.
@@ -249,7 +278,33 @@ export default function circadianMind(pi: ExtensionAPI) {
 
     const corr = correlation("sleep");
     const sessionId = ctx.sessionManager.getSessionId();
-    const transcriptPath = ctx.sessionManager.getSessionFile();
+    const acquired = acquireNativeSessionFile(ctx.sessionManager);
+
+    if (acquired.kind === "ephemeral") {
+      ok({
+        process: "sleep",
+        phase: "session-end",
+        correlation_id: corr,
+        summary: "ephemeral native session — nothing to sleep",
+        context: piContext({ session_id: sessionId, shutdown_reason: event.reason }),
+      });
+      return;
+    }
+
+    if (acquired.kind === "degraded") {
+      degraded({
+        process: "sleep",
+        phase: "session-end",
+        correlation_id: corr,
+        summary: "native session history unavailable; sleep skipped",
+        context: piContext({ session_id: sessionId, shutdown_reason: event.reason }),
+        cause: acquired.reason,
+        next_action: "verify the active Pi session path and native session file",
+      });
+      return;
+    }
+
+    const transcriptPath = acquired.path;
 
     if (!transcriptPath) {
       degraded({
