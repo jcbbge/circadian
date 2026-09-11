@@ -45,11 +45,17 @@ function piContext(extra: Record<string, unknown> = {}): Record<string, unknown>
 type NativeSessionFile =
   | { kind: "persisted"; path: string; size: number }
   | { kind: "ephemeral" }
+  | { kind: "empty" }
   | { kind: "degraded"; reason: string };
 
 /** Resolve only the session selected by Pi's native SessionManager. */
-function acquireNativeSessionFile(
-  sessionManager: { getSessionFile(): string | undefined; isPersisted(): boolean; getSessionId(): string },
+export function acquireNativeSessionFile(
+  sessionManager: {
+    getSessionFile(): string | undefined;
+    isPersisted(): boolean;
+    getSessionId(): string;
+    getEntries(): readonly { type: string }[];
+  },
 ): NativeSessionFile {
   const path = sessionManager.getSessionFile();
   if (!sessionManager.isPersisted() && !path) return { kind: "ephemeral" };
@@ -67,6 +73,13 @@ function acquireNativeSessionFile(
     }
     return { kind: "persisted", path, size: stat.size };
   } catch (error) {
+    // Pi delays creating its native file until the first assistant message.
+    // Only its in-memory entries can distinguish unused sessions from lost history.
+    if ((error as NodeJS.ErrnoException).code === "ENOENT" &&
+        sessionManager.getEntries().every((entry) =>
+          entry.type === "model_change" || entry.type === "thinking_level_change" || entry.type === "session_info")) {
+      return { kind: "empty" };
+    }
     return { kind: "degraded", reason: `native session file is unreadable or malformed: ${(error as Error).message}` };
   }
 }
@@ -280,12 +293,14 @@ export default function circadianMind(pi: ExtensionAPI) {
     const sessionId = ctx.sessionManager.getSessionId();
     const acquired = acquireNativeSessionFile(ctx.sessionManager);
 
-    if (acquired.kind === "ephemeral") {
+    if (acquired.kind === "ephemeral" || acquired.kind === "empty") {
       ok({
         process: "sleep",
         phase: "session-end",
         correlation_id: corr,
-        summary: "ephemeral native session — nothing to sleep",
+        summary: acquired.kind === "empty"
+          ? "native session contains no messages — nothing to sleep"
+          : "session persistence disabled — sleep skipped",
         context: piContext({ session_id: sessionId, shutdown_reason: event.reason }),
       });
       return;
@@ -306,45 +321,7 @@ export default function circadianMind(pi: ExtensionAPI) {
 
     const transcriptPath = acquired.path;
 
-    if (!transcriptPath) {
-      degraded({
-        process: "sleep",
-        phase: "session-end",
-        correlation_id: corr,
-        summary: "no transcript path available at session shutdown",
-        context: piContext({
-          session_id: sessionId,
-          shutdown_reason: event.reason,
-        }),
-        cause: "ctx.sessionManager.getSessionFile() returned null",
-        next_action: "verify the session was properly initialized with a file",
-      });
-      return;
-    }
-
-    if (!existsSync(transcriptPath)) {
-      // Pi writes the transcript lazily on the first session entry. No file
-      // at shutdown therefore means zero entries were ever written — an
-      // empty session (opened and quit before the first prompt) with nothing
-      // to metabolize. Absence ⇔ empty session, deterministically: had any
-      // entry been written, the file would exist. This is idle, not a
-      // failure — 2026-07-28: an 8-second open-and-quit session paged the
-      // doctor as DEGRADED over a non-event (sleep-ms3y2esz-4x7g).
-      ok({
-        process: "sleep",
-        phase: "session-end",
-        correlation_id: corr,
-        summary: "no transcript on disk — empty session, nothing to sleep",
-        context: piContext({
-          session_id: sessionId,
-          transcript_path: transcriptPath,
-          shutdown_reason: event.reason,
-        }),
-      });
-      return;
-    }
-
-    const tsize = statSync(transcriptPath).size;
+    const tsize = acquired.size;
     if (tsize < MIN_TRANSCRIPT_BYTES) {
       // Transcript too small — one-shot sessions leave tiny transcripts.
       // This is idle, not a failure.

@@ -391,15 +391,23 @@ async function runHook(): Promise<void> {
     process.exit(0);
   }
 
-  if (!transcriptPath) {
-    slog("hook", "bail: event carried no transcript_path", { keys: Object.keys(evt || {}) });
+  let tsize: number;
+  try {
+    if (!transcriptPath) throw new Error("session-end event carried no native transcript_path");
+    const stat = statSync(transcriptPath);
+    if (!stat.isFile()) throw new Error("native transcript_path is not a regular file");
+    tsize = stat.size;
+  } catch (error) {
+    degraded({
+      process: "sleep", phase: "session-end", correlation_id: correlation("sleep"),
+      session_id: evt?.session_id,
+      summary: "native session history unavailable; sleep skipped",
+      context: { transcript_path: transcriptPath ?? null },
+      cause: (error as Error).message,
+      next_action: "check the harness-owned session history and the session-end transcript_path",
+    });
     process.exit(0);
   }
-  if (!existsSync(transcriptPath)) {
-    slog("hook", "bail: transcript_path does not exist", { transcriptPath });
-    process.exit(0);
-  }
-  const tsize = statSync(transcriptPath).size;
   if (tsize < MIN_TRANSCRIPT_BYTES) {
     slog("hook", "bail: transcript too small", { bytes: tsize, min: MIN_TRANSCRIPT_BYTES });
     process.exit(0);
