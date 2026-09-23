@@ -24,6 +24,21 @@
 - Brief 09 — dense+lexical detector fusion (research agent rec D; land after 08, separately measurable)
 - Janitor scope extension — `logs/.status-snap-*.json` litter (30+ files)
 
+### Fringe wave (2026-09-23) — from the VPS comparison with `mem`; briefs 10–20 in `briefs/`
+Design language for all of these: one intelligence, many instantiations; the substrate closes the gap.
+- Brief 10 — reconstitution is a checkout (the ref is the handoff; wake is narration)
+- Brief 11 — stratigraphy: depth tiers alongside decay; `dig` reads below the floor
+- Brief 12 — belief interchange format (atom shape as protocol; reader for mem-shaped stores)
+- Brief 13 — stigmergic memory on worker branches (lanes; landing consolidates; conflicts escalate)
+- Brief 14 — decision-boundary split (COMPARE and every fixed choice on a decision-only transport)
+- Brief 15 — quorum write gate for concurrent instantiations
+- Brief 16 — contradiction graph (persist doubt)
+- Brief 17 — archaeology command (`when`, `bisect`)
+- Brief 18 — compare-and-swap publication (graft from mem; prerequisite for 13, 15)
+- Brief 19 — on-demand read surface over MCP (graft from mem)
+- Brief 20 — backfill from transcripts + hard `erase` (graft from mem)
+Suggested order: 18 → 14 → 10 → 12 → 19 → 11 → 17 → 16 → 13 → 15 → 20. Brief 09 stays reserved for dense+lexical fusion.
+
 ## BLOCKED
 
 - none
