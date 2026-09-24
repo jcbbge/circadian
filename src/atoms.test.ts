@@ -13,6 +13,8 @@ import {
   readLedger,
   appendLedger,
   foldWeights,
+  foldContradictions,
+  contradictionEdge,
   AtomShapeError,
   type Atom,
   type LedgerEvent,
@@ -240,6 +242,49 @@ describe("readLedger / appendLedger", () => {
 
   test("missing ledger file returns empty array, never throws", () => {
     expect(readLedger(path.join(tmpdir(), "no-such-ledger-" + Math.random().toString(36) + ".jsonl"))).toEqual([]);
+  });
+});
+
+describe("contradiction ledger fold", () => {
+  const a = "aaaaaaaaaaaa", b = "bbbbbbbbbbbb";
+  const key = contradictionEdge(a, b);
+  const birth: LedgerEvent[] = [
+    { ev: "stack", atom: a, ep: "one.md", ts: "t1" },
+    { ev: "stack", atom: b, ep: "two.md", ts: "t2" },
+    { ev: "contradiction", a: b, b: a, ts: "t3" },
+  ];
+
+  test("append/read, undirected edge identity and contradiction changes no weight", () => {
+    const p = path.join(tmpDir(), "beliefs.jsonl");
+    for (const event of birth) appendLedger(p, event);
+    const events = readLedger(p);
+    expect(events).toEqual(birth);
+    expect(contradictionEdge(b, a)).toBe(key);
+    expect([...foldContradictions(events).values()]).toEqual([{ edge: key, a, b }]);
+    expect(foldWeights(events)).toEqual(foldWeights(birth.slice(0, 2)));
+    expect(foldContradictions([...events, { ev: "contradiction", a, b, ts: "t4" }]).size).toBe(1);
+  });
+
+  test("resolution transfers weight once, closes edge, rejects wrong edge/winner and repeated resolution", () => {
+    const resolved: LedgerEvent[] = [...birth,
+      { ev: "resolve", edge: "missing", winner: a, ts: "t4" },
+      { ev: "resolve", edge: key, winner: "outsider", ts: "t5" },
+      { ev: "resolve", edge: key, winner: b, ts: "t6" },
+      { ev: "resolve", edge: key, winner: a, ts: "t7" },
+    ];
+    expect(foldContradictions(resolved).size).toBe(0);
+    expect(foldWeights(resolved).get(b)).toEqual({ weight: 2, status: "active" });
+    expect(foldWeights(resolved).get(a)).toEqual({ weight: 0, status: `superseded-by:${b}` });
+  });
+
+  test("supersede also closes incident tensions; malformed and self edges do nothing", () => {
+    const events: LedgerEvent[] = [...birth,
+      { ev: "contradiction", a, b: a, ts: "t4" },
+      { ev: "contradiction", a, ts: "t5" },
+      { ev: "supersede", winner: a, loser: b, ts: "t6" },
+    ];
+    expect(foldContradictions(events).size).toBe(0);
+    expect(foldWeights(events).get(a)?.weight).toBe(2);
   });
 });
 

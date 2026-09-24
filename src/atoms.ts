@@ -43,7 +43,7 @@ export interface Atom {
 }
 
 export interface LedgerEvent {
-  ev: "stack" | "decay" | "potentiate" | "supersede" | "renorm";
+  ev: "stack" | "decay" | "potentiate" | "supersede" | "renorm" | "contradiction" | "resolve";
   ts: string;
   atom?: string;
   ep?: string;
@@ -54,12 +54,27 @@ export interface LedgerEvent {
   factor?: number;
   winner?: string;
   loser?: string;
+  /** Contradiction endpoints; edge is the canonical, order-independent pair key. */
+  a?: string;
+  b?: string;
+  edge?: string;
   target?: number;
 }
 
 export interface AtomState {
   weight: number;
   status: "active" | string; // "superseded-by:<id>" when superseded
+}
+
+export interface ContradictionEdge {
+  edge: string;
+  a: string;
+  b: string;
+}
+
+/** Stable identity for an unordered pair; atom ids are fixed-length hex. */
+export function contradictionEdge(a: string, b: string): string {
+  return [a, b].sort().join(":");
 }
 
 export class AtomShapeError extends Error {
@@ -298,6 +313,9 @@ export function appendLedger(ledgerPath: string, ev: LedgerEvent): void {
  *   - `supersede{winner,loser}`: loser's current weight transfers to
  *     winner; loser's weight becomes 0 and its status becomes
  *     `superseded-by:<winner>`.
+ *   - `contradiction{a,b}`: opens an undecided edge; never changes weight.
+ *   - `resolve{edge,winner}`: closes an open edge and transfers the other
+ *     endpoint's weight to winner, exactly as supersede does.
  *   - `renorm{target}`: homeostatic ceiling (synaptic scaling). If the
  *     total weight of active atoms exceeds `target`, every active atom's
  *     weight scales by `target / total`. Never scales UP — a young sparse
@@ -307,8 +325,9 @@ export function appendLedger(ledgerPath: string, ev: LedgerEvent): void {
  *     A missing or non-positive `target` makes the event a no-op (the
  *     malformed-line tolerance, applied at fold level).
  * Events are processed strictly in array order — append order is truth. */
-export function foldWeights(events: LedgerEvent[]): Map<string, AtomState> {
+export function foldBeliefs(events: LedgerEvent[]): { states: Map<string, AtomState>; contradictions: Map<string, ContradictionEdge> } {
   const states = new Map<string, AtomState>();
+  const contradictions = new Map<string, ContradictionEdge>();
   const everStacked = new Set<string>();
 
   function ensure(id: string): AtomState {
@@ -318,6 +337,18 @@ export function foldWeights(events: LedgerEvent[]): Map<string, AtomState> {
       states.set(id, s);
     }
     return s;
+  }
+
+  function supersede(winnerId: string, loserId: string): void {
+    const winner = ensure(winnerId);
+    const loser = ensure(loserId);
+    winner.weight += loser.weight;
+    loser.weight = 0;
+    loser.status = `superseded-by:${winnerId}`;
+    // A decided disagreement is not an open tension.
+    for (const [key, edge] of contradictions) {
+      if (edge.a === loserId || edge.b === loserId) contradictions.delete(key);
+    }
   }
 
   for (const ev of events) {
@@ -342,12 +373,25 @@ export function foldWeights(events: LedgerEvent[]): Map<string, AtomState> {
         break;
       }
       case "supersede": {
-        if (!ev.winner || !ev.loser) break;
-        const winner = ensure(ev.winner);
-        const loser = ensure(ev.loser);
-        winner.weight += loser.weight;
-        loser.weight = 0;
-        loser.status = `superseded-by:${ev.winner}`;
+        if (!ev.winner || !ev.loser || ev.winner === ev.loser) break;
+        supersede(ev.winner, ev.loser);
+        break;
+      }
+      case "contradiction": {
+        if (typeof ev.a !== "string" || typeof ev.b !== "string" || !ev.a || !ev.b || ev.a === ev.b) break;
+        if (ensure(ev.a).status !== "active" || ensure(ev.b).status !== "active") break;
+        const edge = contradictionEdge(ev.a, ev.b);
+        const [a, b] = [ev.a, ev.b].sort();
+        contradictions.set(edge, { edge, a, b });
+        break;
+      }
+      case "resolve": {
+        if (typeof ev.edge !== "string" || typeof ev.winner !== "string") break;
+        const edge = contradictions.get(ev.edge);
+        if (!edge || (ev.winner !== edge.a && ev.winner !== edge.b)) break;
+        const loser = ev.winner === edge.a ? edge.b : edge.a;
+        if (ensure(ev.winner).status !== "active" || ensure(loser).status !== "active") break;
+        supersede(ev.winner, loser);
         break;
       }
       case "renorm": {
@@ -362,5 +406,13 @@ export function foldWeights(events: LedgerEvent[]): Map<string, AtomState> {
       }
     }
   }
-  return states;
+  return { states, contradictions };
+}
+
+export function foldWeights(events: LedgerEvent[]): Map<string, AtomState> {
+  return foldBeliefs(events).states;
+}
+
+export function foldContradictions(events: LedgerEvent[]): Map<string, ContradictionEdge> {
+  return foldBeliefs(events).contradictions;
 }
