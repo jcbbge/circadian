@@ -31,7 +31,7 @@ import { homedir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import { complete } from "./llm.ts";
 import { ok, idle, degraded, fail, correlation } from "./obs.ts";
-import { isDroneOpening, isFleetPacketOpening, firstUserTurnFromText } from "./provenance.ts";
+import { isDroneOpening, isFleetPacketOpening, firstUserTurnFromText, resolveEpisodeProvenance } from "./provenance.ts";
 import { normalizeTurnText } from "./transcript-format.ts";
 import { publish, recoverPublications } from "./publish.ts";
 import { createHash } from "node:crypto";
@@ -475,7 +475,7 @@ async function runHook(): Promise<void> {
   const workerEvent = {
     ...evt, transcript_path: transcriptPath, ...location, scope: resolveScope(MIND, cwd),
     lane: process.env.CIRCADIAN_LANE,
-    provenance: { harness: process.env.CIRCADIAN_HARNESS || evt?.harness || "unknown", model: process.env.CIRCADIAN_MODEL || evt?.model || "unknown", machine: process.env.CIRCADIAN_MACHINE || process.env.HOSTNAME || "unknown", session: evt?.session_id || "unknown" },
+    provenance: resolveEpisodeProvenance(transcriptPath, evt),
   };
   try {
     const selfPath = import.meta.path;
@@ -1225,7 +1225,7 @@ async function runWorker(): Promise<void> {
       mode: "worker",
       scope: evt?.scope || resolveScope(MIND, evt?.cwd || CIRCADIAN_HOME),
       lane: evt?.lane || process.env.CIRCADIAN_LANE,
-      provenance: evt?.provenance || { harness: process.env.CIRCADIAN_HARNESS || evt?.harness || "unknown", model: process.env.CIRCADIAN_MODEL || evt?.model || "unknown", machine: process.env.CIRCADIAN_MACHINE || process.env.HOSTNAME || "unknown", session: evt?.session_id || "unknown" },
+      provenance: evt?.provenance || resolveEpisodeProvenance(evt?.transcript_path, evt),
     });
   } catch (e) {
     // Queue first: an unexpected exception is just as recoverable as an absent model.
@@ -1344,7 +1344,7 @@ async function runDrain(): Promise<void> {
             mode: "drain",
             scope: entry.scope || "global",
             lane: entry.lane,
-            provenance: entry.provenance,
+            provenance: entry.provenance || resolveEpisodeProvenance(entry.transcript_path, { session_id: entry.session_id }),
           });
           if (result.status === "written") {
             processed.set(key, null);

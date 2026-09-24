@@ -15,7 +15,44 @@
 // post-mortem) never trigger the gate.
 
 import { readFileSync } from "node:fs";
+import { hostname } from "node:os";
 import { normalizeTurnText } from "./transcript-format.ts";
+
+/** Resolve session-end identity before detaching. Never rely on the worker's
+ * ambient cwd or on HOSTNAME (often an unexported shell variable). */
+export function resolveEpisodeProvenance(
+  transcriptPath: string | undefined,
+  event: { harness?: unknown; model?: unknown; session_id?: unknown } = {},
+  env: NodeJS.ProcessEnv = process.env,
+): Record<string, string> {
+  const value = (v: unknown): string | undefined =>
+    typeof v === "string" && v.trim() ? v.trim() : undefined;
+  const harness = value(env.CIRCADIAN_HARNESS) || value(event.harness) ||
+    (transcriptPath && /[\\/]\.claude[\\/]projects[\\/][^\\/]+[\\/][^\\/]+\.jsonl$/.test(transcriptPath) ? "claude-code" :
+      transcriptPath && /[\\/]\.pi[\\/]agent[\\/]sessions[\\/][^\\/]+[\\/][^\\/]+\.jsonl$/.test(transcriptPath) ? "pi" : "unknown");
+  let lastAssistantModel: string | undefined;
+  if (!value(env.CIRCADIAN_MODEL) && !value(event.model) && transcriptPath) {
+    try {
+      for (const line of readFileSync(transcriptPath, "utf8").split("\n")) {
+        if (!line) continue;
+        try {
+          const row = JSON.parse(line);
+          // Claude: {type:"assistant",message:{role:"assistant",model}};
+          // Pi: {type:"message",message:{role:"assistant",provider,model}}.
+          if (row?.message?.role === "assistant" || row?.type === "assistant") {
+            lastAssistantModel = value(row?.message?.model);
+          }
+        } catch { /* partial or malformed JSONL row */ }
+      }
+    } catch { /* missing/unreadable transcript: retain unknown */ }
+  }
+  return {
+    harness,
+    model: value(env.CIRCADIAN_MODEL) || value(event.model) || lastAssistantModel || "unknown",
+    machine: value(env.CIRCADIAN_MACHINE) || hostname() || "unknown",
+    session: value(event.session_id) || "unknown",
+  };
+}
 
 const DRONE_OPENINGS: RegExp[] = [
   // SELF-TALK.md rule 3: drills declare themselves. A session opening with

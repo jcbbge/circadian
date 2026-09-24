@@ -69,6 +69,32 @@ function skipEvents(phase: string): any[] {
   return ledger().filter((e) => e.process === "graze" && e.phase === phase);
 }
 
+test("lane-stamped worker brief becomes a lane-tagged meal; unstamped brief stays gated", () => {
+  const transcript = join(home, "worker.jsonl");
+  writeFileSync(transcript, [
+    { message: { role: "user", content: [{ type: "text", text: "You are a worker. Read and execute your brief. " + "Do the work. ".repeat(500) }] } },
+    { message: { role: "assistant", content: [{ type: "text", text: "Working on it." }] } },
+  ].map(x => JSON.stringify(x)).join("\n") + "\n");
+  const preload = join(home, "fetch.ts");
+  writeFileSync(preload, `globalThis.fetch = async (url) => new Response(String(url).endsWith('/models') ? '{}' : 'data: ' + JSON.stringify({choices:[{delta:{content:'- Work completed.'},finish_reason:'stop'}]}) + '\\n\\ndata: [DONE]\\n\\n', {status:200, headers:{'content-type':'text/event-stream'}});\n`);
+  const env = { ...process.env, CIRCADIAN_HOME: home,
+    CIRCADIAN_LLM_BASE_URL: "http://invalid.local/v1", CIRCADIAN_LLM_FALLBACK_BASE_URL: "", CIRCADIAN_LANE: "" };
+  const bare = spawnSync(BUN, ["--preload", preload, GRAZE, "--worker"], {
+    env: { ...env, CIRCADIAN_GRAZE_EVENT: JSON.stringify({ session_id: "unstamped", transcript_path: transcript }) }, encoding: "utf8",
+  });
+  expect(bare.status).toBe(0);
+  expect(ledger().some(e => e.phase === "provenance" && e.session_id === "unstamped")).toBe(true);
+  expect(existsSync(join(home, "mind", "meals", "unstamped.md"))).toBe(false);
+  const stamped = spawnSync(BUN, ["--preload", preload, GRAZE, "--worker"], {
+    env: { ...env, CIRCADIAN_GRAZE_EVENT: JSON.stringify({ session_id: "stamped", transcript_path: transcript, lane: "circ-27", scope: "global" }) }, encoding: "utf8",
+  });
+  expect(stamped.status).toBe(0);
+  const meal = join(home, "mind", "meals", "stamped.md");
+  expect(existsSync(meal)).toBe(true);
+  expect(readFileSync(meal, "utf8")).toContain("scope: global\nlane: circ-27\n");
+  expect(readFileSync(meal, "utf8")).toContain("- Work completed.");
+}, 30000);
+
 describe("graze hook — throttle skip notices", () => {
   test("ten ticks inside the interval produce ONE ledger event, not ten", () => {
     const t = transcriptOf(1024);

@@ -247,7 +247,7 @@ async function runHook(): Promise<void> {
       stdio: ["ignore", "ignore", "ignore"],
       env: {
         ...process.env,
-        CIRCADIAN_GRAZE_EVENT: JSON.stringify({ transcript_path: transcriptPath, session_id: sessionId, scope: resolveScope(MIND) }),
+        CIRCADIAN_GRAZE_EVENT: JSON.stringify({ transcript_path: transcriptPath, session_id: sessionId, scope: resolveScope(MIND), lane: process.env.CIRCADIAN_LANE }),
       },
     });
     worker.unref();
@@ -330,7 +330,7 @@ async function runWorker(): Promise<void> {
 
     // FLEET-DRONE GUARD (2026-08-09 poisoning post-mortem): worker and
     // orchestrator sessions open with a brief, not a conversation. Their
-    // checkpoints must never become meals — SLEEP folds meals into episodes,
+    // Unstamped checkpoints must never become meals — SLEEP folds meals into episodes,
     // and 134 drone episodes rewrote SELF into obedience doctrine. The gate
     // reads the transcript's opening user turn. See src/provenance.ts.
     // normalizeTurnText is applied to the opening turn BEFORE the gate reads
@@ -339,7 +339,8 @@ async function runWorker(): Promise<void> {
     // anchor so every cursor fleet drone sails through. Cursor is where the
     // fleet runs, so the guard has to see the same string CC's guard sees.
     const openingTurn = normalizeTurnText(firstUserTurnFromTranscript(transcriptPath));
-    if (isDroneOpening(openingTurn) || isFleetPacketOpening(openingTurn, transcriptPath)) {
+    const lane = evt.lane || process.env.CIRCADIAN_LANE;
+    if (!lane && (isDroneOpening(openingTurn) || isFleetPacketOpening(openingTurn, transcriptPath))) {
       glog("worker", "skip: fleet-drone session — worker-brief opening, no checkpoint", { sessionId });
       idle({
         process: "graze", phase: "provenance", correlation_id: corr, session_id: sessionId,
@@ -401,7 +402,7 @@ async function runWorker(): Promise<void> {
       return;
     }
     mkdirSync(MEALS_DIR, { recursive: true });
-    appendFileSync(mealPath, `${n === 1 ? `scope: ${evt.scope || resolveScope(MIND)}\n` : ""}\n## checkpoint ${n} — ${stamp}\n\n${bullets}\n`);
+    appendFileSync(mealPath, `${n === 1 ? `scope: ${evt.scope || resolveScope(MIND)}\n${lane ? `lane: ${lane}\n` : ""}` : ""}\n## checkpoint ${n} — ${stamp}\n\n${bullets}\n`);
     saveState(sessionId, { lastCheckpointTs: Date.now(), byteOffset: newOffset, checkpoints: n });
     glog("worker", "checkpoint digested", { sessionId, n, delta_chars: text.length, meal: mealPath });
     ok({
