@@ -2,15 +2,31 @@
 // stub payload against a real sandbox (repo doctrine: no mocks of the code
 // under test). Pinned to the same mind rev replay.test.ts uses, so the
 // corpus this test feeds through the harness is deterministic.
-import { describe, test, expect } from "bun:test";
+import { describe, test, expect, afterAll } from "bun:test";
 import * as fs from "fs";
 import * as path from "path";
-import { homedir } from "os";
+import { tmpdir } from "os";
 import { execFileSync } from "child_process";
-import { batchesOf, buildGauntletSandbox, runGauntlet } from "./gauntlet.ts";
-import { collectAllEpisodesAt } from "./replay.ts";
+// Import after setting a disposable program home: replay scaffolding and obs
+// resolve CIRCADIAN_HOME at module load time, independently of mindDir.
+const oldHome = process.env.CIRCADIAN_HOME;
+const oldBun = process.env.CIRCADIAN_BUN_BIN;
+const sandboxSource = fs.mkdtempSync(path.join(tmpdir(), "circadian-gauntlet-test-"));
+fs.cpSync(path.join(import.meta.dir, "..", "templates"), path.join(sandboxSource, "templates"), { recursive: true });
+process.env.CIRCADIAN_HOME = sandboxSource;
+process.env.CIRCADIAN_BUN_BIN = process.execPath;
+const { batchesOf, buildGauntletSandbox, runGauntlet } = await import("./gauntlet.ts");
+const { collectAllEpisodesAt } = await import("./replay.ts");
+afterAll(() => {
+  fs.rmSync(sandboxSource, { recursive: true, force: true });
+  if (oldHome === undefined) delete process.env.CIRCADIAN_HOME;
+  else process.env.CIRCADIAN_HOME = oldHome;
+  if (oldBun === undefined) delete process.env.CIRCADIAN_BUN_BIN;
+  else process.env.CIRCADIAN_BUN_BIN = oldBun;
+});
+import { repoRoot, missingMindRevision, evidenceName } from "./test-evidence.ts";
 
-const HOME = process.env.CIRCADIAN_HOME || path.join(homedir(), "circadian");
+const HOME = repoRoot;
 const MIND = path.join(HOME, "mind");
 const PINNED_MIND_REV = "6271e090226a9970b158399d621d69eac15c5a80";
 
@@ -22,7 +38,8 @@ describe("batchesOf", () => {
   });
 });
 
-describe("buildGauntletSandbox", () => {
+const missingPinned = missingMindRevision(PINNED_MIND_REV, "episodes/2026-07-24-bidirectional-sync-test.md");
+describe.skipIf(!!missingPinned)(evidenceName("buildGauntletSandbox", missingPinned), () => {
   test("ships mind/, templates/, and src/ into a safe sandbox dir", () => {
     const episodes = collectAllEpisodesAt(PINNED_MIND_REV, MIND).slice(0, 2);
     const { sandboxHome } = buildGauntletSandbox(episodes);
@@ -41,7 +58,7 @@ describe("buildGauntletSandbox", () => {
   });
 });
 
-describe("runGauntlet — full loop with the real stub payload (task 3)", () => {
+describe.skipIf(!!missingPinned)(evidenceName("runGauntlet — full loop with the real stub payload (task 3)", missingPinned), () => {
   test("batches the pinned 14-flood corpus, invokes the stub payload per batch, all exit 0", () => {
     const report = runGauntlet({ rev: PINNED_MIND_REV, mindDir: MIND, batchSize: 3, limit: 14 });
     try {
@@ -60,7 +77,7 @@ describe("runGauntlet — full loop with the real stub payload (task 3)", () => 
   });
 
   test("the stub payload's existence check is real, not a rubber stamp: a fabricated filename fails", () => {
-    const bunBin = process.env.CIRCADIAN_BUN_BIN || path.join(homedir(), ".bun/bin/bun");
+    const bunBin = process.execPath;
     const episodes = collectAllEpisodesAt(PINNED_MIND_REV, MIND).slice(0, 1);
     const { sandboxHome } = buildGauntletSandbox(episodes);
     try {

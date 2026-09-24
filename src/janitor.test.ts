@@ -10,7 +10,7 @@
 import { describe, test, expect, afterEach } from "bun:test";
 import * as fs from "fs";
 import * as path from "path";
-import { homedir, tmpdir } from "os";
+import { tmpdir } from "os";
 import { spawnSync } from "child_process";
 import {
   classifyMealFile,
@@ -20,7 +20,7 @@ import {
   type SweepCandidate,
 } from "./janitor.ts";
 
-const BUN_BIN = process.env.CIRCADIAN_BUN_BIN || path.join(homedir(), ".bun/bin/bun");
+const BUN_BIN = process.execPath;
 const JANITOR_SCRIPT = path.join(import.meta.dir, "janitor.ts");
 
 const NOW = 1_800_000_000_000; // fixed clock for the pure tests

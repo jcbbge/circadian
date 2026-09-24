@@ -8,8 +8,10 @@ import * as path from "path";
 import { homedir } from "os";
 import { execFileSync } from "child_process";
 import { clusterEpisodes, jaccard, significantTokens, LTP_THRESHOLD } from "./ltp.ts";
+import { mindDir, missingMindHistory, evidenceName } from "./test-evidence.ts";
 
-const MIND = path.join(process.env.CIRCADIAN_HOME || path.join(homedir(), "circadian"), "mind");
+const MIND = mindDir;
+const missingHistory = missingMindHistory("episodes/2026-07-24-bidirectional-sync-test.md");
 
 // The founding fixture — the real 2026-07-24 bench flood — was QUARANTINED
 // from the working tree the same day (bench provenance must not live in the
@@ -48,13 +50,13 @@ function floodRevision(): string {
   throw new Error("flood fixture not found anywhere in mind history — the archive contract broke");
 }
 
-const FLOOD_REV = floodRevision();
+const FLOOD_REV = missingHistory ? "" : floodRevision();
 
 function loadReal(prefixes: string[]): { filename: string; content: string }[] {
   return gitEpisodesAt(FLOOD_REV, (f) => prefixes.some((p) => f.includes(p)));
 }
 
-describe("clustering against the real 2026-07-24 backlog", () => {
+describe.skipIf(!!missingHistory)(evidenceName("clustering against the real 2026-07-24 backlog", missingHistory), () => {
   test("the bidirectional flood collapses substantially within the full wave", () => {
     // Cluster the WHOLE backlog exactly as selectMeal does in production —
     // clustering the flood in isolation would let boilerplate detection eat

@@ -1,6 +1,31 @@
 // circadian-amp.test.ts — agent.start inject: real wake.ts stdout, once per thread.id.
-import { describe, test, expect } from "bun:test";
-import circadianAmpLifecycle from "./circadian-amp.ts";
+import { describe, test, expect, afterAll } from "bun:test";
+import { mkdtempSync, mkdirSync, symlinkSync, writeFileSync, rmSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+
+const home = mkdtempSync(join(tmpdir(), "circadian-amp-test-"));
+mkdirSync(join(home, "mind"));
+symlinkSync(import.meta.dir, join(home, "src"), "dir");
+writeFileSync(join(home, "mind", "SELF.md"), "## Doctrine\n\n**Motion is the metric.**\n");
+writeFileSync(join(home, "mind", "NOW.md"), `## Last sleep\n\n${new Date().toISOString()}\n`);
+writeFileSync(join(home, "mind", "greeting.md"), "Back to the work.");
+const oldHome = process.env.HOME;
+const oldCircadianHome = process.env.CIRCADIAN_HOME;
+const oldBunBin = process.env.CIRCADIAN_BUN_BIN;
+process.env.HOME = home;
+process.env.CIRCADIAN_HOME = home;
+process.env.CIRCADIAN_BUN_BIN = process.execPath;
+const { default: circadianAmpLifecycle } = await import("./circadian-amp.ts");
+afterAll(() => {
+  rmSync(home, { recursive: true, force: true });
+  if (oldHome === undefined) delete process.env.HOME;
+  else process.env.HOME = oldHome;
+  if (oldCircadianHome === undefined) delete process.env.CIRCADIAN_HOME;
+  else process.env.CIRCADIAN_HOME = oldCircadianHome;
+  if (oldBunBin === undefined) delete process.env.CIRCADIAN_BUN_BIN;
+  else process.env.CIRCADIAN_BUN_BIN = oldBunBin;
+});
 
 type Handler = (event?: unknown) => unknown | Promise<unknown>;
 

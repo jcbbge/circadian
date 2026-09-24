@@ -7,8 +7,9 @@
 import { describe, test, expect, beforeAll } from "bun:test";
 import * as fs from "fs";
 import * as path from "path";
-import { homedir } from "os";
+import { tmpdir } from "os";
 import { execFileSync } from "child_process";
+import { missingMindFiles, evidenceName } from "./test-evidence.ts";
 import {
   buildIndex,
   deriveAnchors,
@@ -16,9 +17,28 @@ import {
   type IndexData,
 } from "./relindex.ts";
 
-const HOME = process.env.CIRCADIAN_HOME || path.join(homedir(), "circadian");
+const HOME = path.resolve(import.meta.dir, "..");
 const MIND = path.join(HOME, "mind");
+const missingMind = missingMindFiles("episodes", "beliefs", "SELF.md");
 const WAKE_SRC = fs.readFileSync(path.join(import.meta.dir, "wake.ts"), "utf8");
+
+function withWakeSandbox(check: (home: string) => void): void {
+  const home = fs.mkdtempSync(path.join(tmpdir(), "circadian-wake-index-"));
+  try {
+    fs.cpSync(MIND, path.join(home, "mind"), {
+      recursive: true,
+      filter: (source) => !source.split(path.sep).includes(".git"),
+    });
+    fs.symlinkSync(import.meta.dir, path.join(home, "src"), "dir");
+    execFileSync(process.execPath, [path.join(import.meta.dir, "relindex.ts"), "--reindex"], {
+      env: { ...process.env, HOME: home, CIRCADIAN_HOME: home },
+      stdio: "ignore",
+    });
+    check(home);
+  } finally {
+    fs.rmSync(home, { recursive: true, force: true });
+  }
+}
 
 // A real index over the real mind, built once for the suite (no network:
 // BM25-only, which is the wake read path anyway).
@@ -28,7 +48,7 @@ beforeAll(async () => {
 });
 
 describe("deriveAnchors — the cwd/continuation anchor chain (b07 §5)", () => {
-  test("a circadian cwd yields KNOWN entities (the anchor fires)", () => {
+  test.skipIf(!!missingMind)(evidenceName("a circadian cwd yields KNOWN entities (the anchor fires)", missingMind), () => {
     const a = deriveAnchors(realIndex, "/Users/jrg/circadian-wave/worktrees/b07");
     expect(a.chain).toContain("cwd");
     expect(a.knownEntities.length).toBeGreaterThan(0);
@@ -61,7 +81,7 @@ describe("deriveAnchors — the cwd/continuation anchor chain (b07 §5)", () => 
 });
 
 describe("retrieveForWake — the slice decision (pure, no network, no writes)", () => {
-  test("circadian cwd -> injects a provenance-pinned block inside budget", () => {
+  test.skipIf(!!missingMind)(evidenceName("circadian cwd -> injects a provenance-pinned block inside budget", missingMind), () => {
     const slice = retrieveForWake({ index: realIndex, vectors: null }, "/Users/jrg/circadian-wave/worktrees/b07", { budgetTokens: 2000 });
     expect(slice.reason).toBe("injected");
     expect(slice.units.length).toBeGreaterThan(0);
@@ -92,13 +112,13 @@ describe("retrieveForWake — the slice decision (pure, no network, no writes)",
     expect(slice.block).toBe("");
   });
 
-  test("a fresh index (age under 48h) is NOT treated as stale", () => {
+  test.skipIf(!!missingMind)(evidenceName("a fresh index (age under 48h) is NOT treated as stale", missingMind), () => {
     const fresh: IndexData = { ...realIndex, meta: { ...realIndex.meta, builtAt: new Date(Date.now() - 1000).toISOString() } };
     const slice = retrieveForWake({ index: fresh, vectors: null }, "/Users/jrg/circadian-wave/worktrees/b07", { nowMs: Date.now() });
     expect(slice.reason).toBe("injected");
   });
 
-  test("budget of ~0 tokens -> no-relevant-units (nothing fits), still no crash", () => {
+  test.skipIf(!!missingMind)(evidenceName("budget of ~0 tokens -> no-relevant-units (nothing fits), still no crash", missingMind), () => {
     const slice = retrieveForWake({ index: realIndex, vectors: null }, "/Users/jrg/circadian", { budgetTokens: 1 });
     expect(slice.reason).toBe("no-relevant-units");
     expect(slice.block).toBe("");
@@ -132,38 +152,36 @@ describe("wake.ts integration — source-text + live subprocess (no live import)
     expect(WAKE_SRC).toMatch(/session-evidence slice threw/);
   });
 
-  test("LIVE: wake from a circadian cwd emits the evidence block; from /tmp it does not", () => {
-    // Rebuild the index fresh so the live wake sees a non-stale index.
-    execFileSync(process.execPath, [path.join(import.meta.dir, "relindex.ts"), "--reindex"], {
-      env: { ...process.env, CIRCADIAN_HOME: HOME },
-      stdio: "ignore",
+  test.skipIf(!!missingMind)(evidenceName("LIVE: wake from a circadian cwd emits the evidence block; from /tmp it does not", missingMind), () => {
+    withWakeSandbox((home) => {
+      const runWake = (cwd: string) =>
+        execFileSync(process.execPath, [path.join(import.meta.dir, "wake.ts")], {
+          cwd,
+          env: { ...process.env, HOME: home, CIRCADIAN_HOME: home, CIRCADIAN_BUN_BIN: process.execPath },
+          input: "",
+          encoding: "utf8",
+          stdio: ["pipe", "pipe", "ignore"],
+        });
+      const fromCircadian = runWake(HOME);
+      expect(fromCircadian).toContain("<mind:session-evidence>");
+      const fromTmp = runWake(tmpdir());
+      expect(fromTmp).not.toContain("<mind:session-evidence>");
+      expect(fromCircadian).toContain("<mind:self>");
+      expect(fromTmp).toContain("<mind:self>");
     });
-    const runWake = (cwd: string) =>
-      execFileSync(process.execPath, [path.join(import.meta.dir, "wake.ts")], {
-        cwd,
-        env: { ...process.env, CIRCADIAN_HOME: HOME },
+  });
+
+  test.skipIf(!!missingMind)(evidenceName("LIVE: the payload stays under the 15k-token cap with evidence present", missingMind), () => {
+    withWakeSandbox((home) => {
+      const out = execFileSync(process.execPath, [path.join(import.meta.dir, "wake.ts")], {
+        cwd: HOME,
+        env: { ...process.env, HOME: home, CIRCADIAN_HOME: home, CIRCADIAN_BUN_BIN: process.execPath },
         input: "",
         encoding: "utf8",
         stdio: ["pipe", "pipe", "ignore"],
       });
-    const fromCircadian = runWake(path.join(import.meta.dir, ".."));
-    expect(fromCircadian).toContain("<mind:session-evidence>");
-    const fromTmp = runWake("/tmp");
-    expect(fromTmp).not.toContain("<mind:session-evidence>");
-    // both must still deliver the core injection (Law 7)
-    expect(fromCircadian).toContain("<mind:self>");
-    expect(fromTmp).toContain("<mind:self>");
-  });
-
-  test("LIVE: the payload stays under the 15k-token cap with evidence present", () => {
-    const out = execFileSync(process.execPath, [path.join(import.meta.dir, "wake.ts")], {
-      cwd: path.join(import.meta.dir, ".."),
-      env: { ...process.env, CIRCADIAN_HOME: HOME },
-      input: "",
-      encoding: "utf8",
-      stdio: ["pipe", "pipe", "ignore"],
+      expect(out).not.toContain("OVER-CAP:");
+      expect(Math.ceil(out.length / 4)).toBeLessThan(15000);
     });
-    expect(out).not.toContain("OVER-CAP:");
-    expect(Math.ceil(out.length / 4)).toBeLessThan(15000);
   });
 });

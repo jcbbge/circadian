@@ -3,15 +3,26 @@
 // session where jrg diagnosed the flatline (its transcript contains both the
 // injected wake payload and the assistant speaking the greeting), and the
 // actual mind repo's greeting history.
-import { describe, test, expect } from "bun:test";
+import { describe, test, expect, afterAll } from "bun:test";
 import * as fs from "fs";
 import * as path from "path";
-import { homedir } from "os";
+import { tmpdir } from "os";
+import { missingMindFiles, evidenceName, mindDir } from "./test-evidence.ts";
 import { execFileSync } from "child_process";
 import { redactMindEcho } from "./sleep.ts";
 
-const MIND = path.join(process.env.CIRCADIAN_HOME || path.join(homedir(), "circadian"), "mind");
-const PI_SESSIONS = path.join(homedir(), ".pi", "agent", "sessions", "--Users-jrg-circadian--");
+const MIND = mindDir;
+// Never inspect a developer's real Pi sessions. Evidence can be staged in this
+// disposable directory by a fixture harness; an empty directory means skip.
+const stagedSessions = process.env.CIRCADIAN_TEST_PI_SESSIONS_DIR;
+const ownedSessions = !stagedSessions;
+const PI_SESSIONS = stagedSessions
+  ? fs.realpathSync(stagedSessions)
+  : fs.mkdtempSync(path.join(tmpdir(), "circadian-pi-sessions-"));
+if (path.relative(fs.realpathSync(tmpdir()), PI_SESSIONS).startsWith("..")) {
+  throw new Error("CIRCADIAN_TEST_PI_SESSIONS_DIR must be a temp directory, never the real ~/.pi");
+}
+afterAll(() => { if (ownedSessions) fs.rmSync(PI_SESSIONS, { recursive: true, force: true }); });
 
 function realGreetings(): string[] {
   const texts = new Set<string>();
@@ -76,9 +87,27 @@ function pinnedFlatlineTranscript(): string {
   );
 }
 
-describe("echo redaction against the real flatline-diagnosis session", () => {
-  const transcript = extractTurns(pinnedFlatlineTranscript());
-  const greetings = realGreetings();
+const missingEchoMind = missingMindFiles("greeting.md", ".git");
+const missingEchoTranscript = `missing flatline-diagnosis Pi transcript (phrases: ${FIXTURE_PHRASES.join(", ")}) in temp sessions`;
+const echoEvidence = [
+  missingEchoMind,
+  fs.readdirSync(PI_SESSIONS).some((f) => {
+    if (!f.endsWith(".jsonl")) return false;
+    const text = fs.readFileSync(path.join(PI_SESSIONS, f), "utf8");
+    return FIXTURE_PHRASES.every((p) => text.includes(p));
+  }) ? "" : missingEchoTranscript,
+].filter(Boolean).join("; ");
+test("a transcript with no mind payload passes through untouched", () => {
+  // A clean transcript must survive regardless of whether the live evidence exists.
+  const clean = "User: does the venue guard still hold?\n\nAssistant: yes — verified against the live row.";
+  const { text, redactedLines } = redactMindEcho(clean, []);
+  expect(redactedLines).toBe(0);
+  expect(text).toBe(clean);
+});
+
+describe.skipIf(!!echoEvidence)(evidenceName("echo redaction against the real flatline-diagnosis session", echoEvidence), () => {
+  const transcript = echoEvidence ? "" : extractTurns(pinnedFlatlineTranscript());
+  const greetings = echoEvidence ? [] : realGreetings();
 
   test("fixture sanity: the real transcript actually contains the echo", () => {
     // The session opened with the assistant speaking the injected greeting.
@@ -121,16 +150,6 @@ describe("echo redaction against the real flatline-diagnosis session", () => {
     const { text } = redactMindEcho(transcript, greetings);
     // jrg's real turns from the diagnosis session must survive verbatim.
     expect(text).toContain("has this been working?");
-  });
-
-  test("a transcript with no mind payload passes through untouched", () => {
-    // The pass-through guarantee is about CLEAN transcripts. It cannot be
-    // asserted against a payload-bearing one, because cutting the payload is
-    // the correct behaviour there — that conflation is what let the hole hide.
-    const clean = "User: does the venue guard still hold?\n\nAssistant: yes — verified against the live row.";
-    const { text, redactedLines } = redactMindEcho(clean, []);
-    expect(redactedLines).toBe(0);
-    expect(text).toBe(clean);
   });
 
   test("structural cut works even with no greeting history", () => {

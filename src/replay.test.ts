@@ -5,11 +5,11 @@
 // rev and never assume a live census.
 import { describe, test, expect } from "bun:test";
 import * as path from "path";
-import { homedir } from "os";
+import { repoRoot, missingMindRevision, missingMindFiles, evidenceName } from "./test-evidence.ts";
 import { execFileSync } from "child_process";
 import { collectAllEpisodes, collectAllEpisodesAt } from "./replay.ts";
 
-const HOME = process.env.CIRCADIAN_HOME || path.join(homedir(), "circadian");
+const HOME = repoRoot;
 const MIND = path.join(HOME, "mind");
 
 // Pinned 2026-07-27 21:00 rem wave (same rev zoom.test.ts pins to — it postdates
@@ -43,7 +43,9 @@ export function collectFloodFixture(mindDir: string = MIND, rev: string = PINNED
   return collectAllEpisodesAt(rev, mindDir).filter((e) => e.filename.startsWith("2026-07-24-bidirectional-"));
 }
 
-describe("existing live-mode replay behavior is untouched", () => {
+const missingLive = missingMindFiles("episodes");
+const missingPinned = missingMindRevision(PINNED_MIND_REV, "episodes/2026-07-24-bidirectional-sync-test.md");
+describe.skipIf(!!missingLive)(evidenceName("existing live-mode replay behavior is untouched", missingLive), () => {
   test("collectAllEpisodes still reads the live working tree + HEAD-reachable history", () => {
     const live = collectAllEpisodes(MIND);
     expect(Array.isArray(live)).toBe(true);
@@ -55,7 +57,7 @@ describe("existing live-mode replay behavior is untouched", () => {
   });
 });
 
-describe("collectAllEpisodesAt — pinned enumeration (task 1)", () => {
+describe.skipIf(!!missingPinned)(evidenceName("collectAllEpisodesAt — pinned enumeration (task 1)", missingPinned), () => {
   test("enumerates an exact, byte-stable total at the pinned rev", () => {
     const first = collectAllEpisodesAt(PINNED_MIND_REV, MIND);
     const second = collectAllEpisodesAt(PINNED_MIND_REV, MIND);
@@ -85,7 +87,7 @@ describe("collectAllEpisodesAt — pinned enumeration (task 1)", () => {
   });
 });
 
-describe("14-flood fixture (task 2)", () => {
+describe.skipIf(!!missingPinned)(evidenceName("14-flood fixture (task 2)", missingPinned), () => {
   test("retrieves exactly the 14 named 2026-07-24-bidirectional-* episodes, each non-empty", () => {
     const flood = collectFloodFixture();
     expect(flood.length).toBe(14);

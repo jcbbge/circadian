@@ -5,8 +5,9 @@
 import { describe, test, expect, afterEach } from "bun:test";
 import * as fs from "fs";
 import * as path from "path";
-import { tmpdir, homedir } from "os";
+import { tmpdir } from "os";
 import { execFileSync } from "child_process";
+import { repoRoot, missingMindRevision, evidenceName } from "./test-evidence.ts";
 import { readAtoms, readLedger, foldWeights } from "./atoms.ts";
 import { renderSelf } from "./render.ts";
 import { quotesAreVerbatim } from "./stack.ts";
@@ -41,13 +42,14 @@ import {
   type ParsedDoc,
 } from "./migrate.ts";
 
-const HOME = process.env.CIRCADIAN_HOME || path.join(homedir(), "circadian");
+const HOME = repoRoot;
 const MIND = path.join(HOME, "mind");
 // Pinned per the brief (WS-E re-baseline at execution): the live mind HEAD at
 // brief-writing and at this worker's execution both landed on this rev — the
 // .rem-freeze keeps SELF.md byte-stable across the program (docs/POPULATION-MEMORY.md
 // §19). If a future rebase moves HEAD, this pin still resolves via git history.
 const PINNED_REV = "187bb80cf8319d758064b0d07a9b012fedcbb404";
+const missingPinned = missingMindRevision(PINNED_REV, "SELF.md");
 const SEED_TS = "2026-07-27T00:00:00.000Z";
 
 const dirs: string[] = [];
@@ -68,6 +70,7 @@ afterEach(() => {
 });
 
 function pinnedSelfMd(): string {
+  if (missingPinned) return "";
   return execFileSync("git", ["show", `${PINNED_REV}:SELF.md`], { cwd: MIND, encoding: "utf8" });
 }
 
@@ -75,7 +78,7 @@ function pinnedSelfMd(): string {
 // section parsing -> kind mapping
 // ---------------------------------------------------------------------
 
-describe("section parsing maps 1:1 to atom kinds", () => {
+describe.skipIf(!!missingPinned)(evidenceName("section parsing maps 1:1 to atom kinds", missingPinned), () => {
   const sections = parseSelfSections(pinnedSelfMd());
 
   test("all four v1 headings are found", () => {
@@ -112,12 +115,13 @@ describe("section parsing maps 1:1 to atom kinds", () => {
     }
   });
 
-  test("a missing heading returns an empty body, never throws (unlike mutate.ts's parseSelf)", () => {
-    expect(() => parseSelfSections("no headings here at all")).not.toThrow();
-    const s = parseSelfSections("no headings here at all");
-    expect(s.whoIAm).toBe("");
-    expect(parseDoctrineEntries(s.doctrine)).toEqual([]);
-  });
+});
+
+test("a missing heading returns an empty body, never throws (unlike mutate.ts's parseSelf)", () => {
+  expect(() => parseSelfSections("no headings here at all")).not.toThrow();
+  const s = parseSelfSections("no headings here at all");
+  expect(s.whoIAm).toBe("");
+  expect(parseDoctrineEntries(s.doctrine)).toEqual([]);
 });
 
 // ---------------------------------------------------------------------
@@ -210,7 +214,7 @@ describe("extractQuoteSpans", () => {
 // earliest-telling selection — real divergence fixture (Doctrine[1])
 // ---------------------------------------------------------------------
 
-describe("earliest-telling selection: Doctrine[1] real divergence", () => {
+describe.skipIf(!!missingPinned)(evidenceName("earliest-telling selection: Doctrine[1] real divergence", missingPinned), () => {
   const history = buildHistory(PINNED_REV, MIND);
 
   test("history walk reaches genesis and ends at the pinned rev", () => {
@@ -451,11 +455,11 @@ describe("normalizedClaimEdges + unionFindGroups", () => {
 // weight = copies (the brief's real fixture: the doctrine megacluster)
 // ---------------------------------------------------------------------
 
-describe("planMigration against the real pinned mind", () => {
+describe.skipIf(!!missingPinned)(evidenceName("planMigration against the real pinned mind", missingPinned), () => {
   const liveSelfMd = pinnedSelfMd();
-  const history = buildHistory(PINNED_REV, MIND);
-  const episodes = collectAllEpisodesAt(PINNED_REV, MIND);
-  const plan = planMigration(liveSelfMd, history, episodes);
+  const history = missingPinned ? [] : buildHistory(PINNED_REV, MIND);
+  const episodes = missingPinned ? [] : collectAllEpisodesAt(PINNED_REV, MIND);
+  const plan = missingPinned ? null! as ReturnType<typeof planMigration> : planMigration(liveSelfMd, history, episodes);
 
   test("every candidate kind maps to a valid AtomKind and claim stays <=280 chars", () => {
     expect(plan.candidates.length).toBeGreaterThan(0);
@@ -548,16 +552,16 @@ describe("planMigration against the real pinned mind", () => {
 // exceptions FIX 1's claim-line clustering surfaced
 // ---------------------------------------------------------------------
 
-describe("OPTION (a) + fix B: the staged genesis-archaeology episode resolves all 29 exceptions", () => {
-  const GENESIS_PATH = path.join(process.cwd(), "docs", "genesis-archaeology.episode.md");
+describe.skipIf(!!missingPinned)(evidenceName("OPTION (a) + fix B: the staged genesis-archaeology episode resolves all 29 exceptions", missingPinned), () => {
+  const GENESIS_PATH = path.join(HOME, "docs", "genesis-archaeology.episode.md");
   const genesisContent = fs.readFileSync(GENESIS_PATH, "utf8");
   const genesisEpisode: ReplayEpisode = { filename: "2026-07-28-genesis-archaeology.md", content: genesisContent, source: "live" };
 
   const liveSelfMd = pinnedSelfMd();
-  const history = buildHistory(PINNED_REV, MIND);
-  const episodes = collectAllEpisodesAt(PINNED_REV, MIND);
-  const planWithoutGenesis = planMigration(liveSelfMd, history, episodes);
-  const planWithGenesis = planMigration(liveSelfMd, history, episodes, genesisEpisode);
+  const history = missingPinned ? [] : buildHistory(PINNED_REV, MIND);
+  const episodes = missingPinned ? [] : collectAllEpisodesAt(PINNED_REV, MIND);
+  const planWithoutGenesis = missingPinned ? null! as ReturnType<typeof planMigration> : planMigration(liveSelfMd, history, episodes);
+  const planWithGenesis = missingPinned ? null! as ReturnType<typeof planMigration> : planMigration(liveSelfMd, history, episodes, genesisEpisode);
 
   test("every non-doctrine zero-eps exception from the no-genesis run is RESOLVED with the genesis episode", () => {
     const zeroEpsLabels = new Set(
@@ -669,7 +673,7 @@ describe("OPTION (a) + fix B: the staged genesis-archaeology episode resolves al
 // byte-identical beliefs/ + ledger + render
 // ---------------------------------------------------------------------
 
-describe("determinism (R8): identical rev+ts -> byte-identical sandbox output", () => {
+describe.skipIf(!!missingPinned)(evidenceName("determinism (R8): identical rev+ts -> byte-identical sandbox output", missingPinned), () => {
   test("two independent seedSandbox runs produce identical atom files, ledgers, and renders", () => {
     const liveSelfMd = pinnedSelfMd();
     const history = buildHistory(PINNED_REV, MIND);
@@ -710,7 +714,7 @@ describe("determinism (R8): identical rev+ts -> byte-identical sandbox output", 
 // smear-not-laundered proof: detectSelfStutter on the RENDERED output
 // ---------------------------------------------------------------------
 
-describe("adaptRenderedForStutterCheck: smear not laundered into the rendered population", () => {
+describe.skipIf(!!missingPinned)(evidenceName("adaptRenderedForStutterCheck: smear not laundered into the rendered population", missingPinned), () => {
   test("the real seeded+rendered popmem SELF.md reports zero clusters (the doctrine megacluster is already ONE atom, so nothing left to re-cluster)", () => {
     const liveSelfMd = pinnedSelfMd();
     const history = buildHistory(PINNED_REV, MIND);
@@ -731,7 +735,9 @@ describe("adaptRenderedForStutterCheck: smear not laundered into the rendered po
     expect(report.motifs.length).toBe(0);
   });
 
-  test("adapter is a faithful wrapper: a deliberately duplicated rendered claim IS still caught", () => {
+});
+
+test("adapter is a faithful wrapper: a deliberately duplicated rendered claim IS still caught", () => {
     const dupSelf = [
       "## Who I am across sessions",
       "",
@@ -755,5 +761,4 @@ describe("adaptRenderedForStutterCheck: smear not laundered into the rendered po
     const adapted = adaptRenderedForStutterCheck(dupSelf);
     const report = detectSelfStutter(adapted);
     expect(report.doctrine.length).toBe(1);
-  });
 });

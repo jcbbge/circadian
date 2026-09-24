@@ -6,13 +6,13 @@
 import { describe, test, expect, afterEach } from "bun:test";
 import * as fs from "fs";
 import * as path from "path";
-import { tmpdir, homedir } from "os";
+import { tmpdir } from "os";
 import { spawnSync } from "child_process";
 import { foldWeights, appendLedger, readLedger, type LedgerEvent, type Atom, type AtomState } from "./atoms.ts";
 import { RENDER_FLOOR } from "./render.ts";
 import { DECAY_FACTOR, TOTAL_WEIGHT_TARGET, findNewRemEvents, computePotentiateEvents, computeSankBelowFloor, type RemPropagationEvent } from "./decay.ts";
 
-const BUN_BIN = process.env.CIRCADIAN_BUN_BIN || path.join(homedir(), ".bun/bin/bun");
+const BUN_BIN = process.execPath;
 const DECAY_SCRIPT = path.join(import.meta.dir, "decay.ts");
 
 const dirs: string[] = [];

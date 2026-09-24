@@ -8,11 +8,12 @@
 // fixtures, same assertions, adapted call site only.
 import { describe, test, expect } from "bun:test";
 import * as path from "path";
-import { homedir } from "os";
 import { execFileSync } from "child_process";
 import { makeStampGuard, counterfeitQuotes, detectSelfStutter, selfSimilarity } from "./immune.ts";
+import { missingMindRevision, evidenceName } from "./test-evidence.ts";
 
-const MIND_DIR = path.join(process.env.CIRCADIAN_HOME || path.join(homedir(), "circadian"), "mind");
+const MIND_DIR = path.join(import.meta.dir, "..", "mind");
+const missingStutter = missingMindRevision("6271e090226a9970b158399d621d69eac15c5a80", "SELF.md");
 
 // ---------------------------------------------------------------------
 // makeStampGuard — origin-date stamping (moved from mutate.test.ts)
@@ -92,9 +93,9 @@ describe("counterfeitQuotes", () => {
 // ---------------------------------------------------------------------
 describe("detectSelfStutter", () => {
   const PINNED_REV = "6271e090226a9970b158399d621d69eac15c5a80";
-  const pinnedSelf = execFileSync("git", ["show", `${PINNED_REV}:SELF.md`], { cwd: MIND_DIR, encoding: "utf8" });
+  const pinnedSelf = missingStutter ? "" : execFileSync("git", ["show", `${PINNED_REV}:SELF.md`], { cwd: MIND_DIR, encoding: "utf8" });
 
-  test("the live-status doctrine trio (8/16/17) clusters as one belief", () => {
+  test.skipIf(!!missingStutter)(evidenceName("the live-status doctrine trio (8/16/17) clusters as one belief", missingStutter), () => {
     const report = detectSelfStutter(pinnedSelf);
     const family = report.doctrine.find((g) => g.some((d) => d.n === 8));
     expect(family).toBeDefined();
@@ -104,7 +105,7 @@ describe("detectSelfStutter", () => {
     expect(ns).toContain(17);
   });
 
-  test("the heartbeat / high-water motif clusters are found", () => {
+  test.skipIf(!!missingStutter)(evidenceName("the heartbeat / high-water motif clusters are found", missingStutter), () => {
     const report = detectSelfStutter(pinnedSelf);
     expect(report.motifs.length).toBeGreaterThanOrEqual(2);
     const flat = report.motifs.flat().join(" | ");

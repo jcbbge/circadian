@@ -4,7 +4,7 @@
 // here: normalization exists precisely because that stamp exists.
 import { describe, test, expect } from "bun:test";
 import * as path from "path";
-import { homedir } from "os";
+import { tmpdir } from "os";
 import * as fs from "fs";
 import { execFileSync } from "child_process";
 import {
@@ -19,8 +19,9 @@ import {
   nearestDates,
 } from "./zoom.ts";
 import { assertSandboxSafe, sectionTokens, seedNeedsShim, plantGenesisShim } from "./replay.ts";
+import { repoRoot, missingMindFiles, missingMindRevision, evidenceName } from "./test-evidence.ts";
 
-const HOME = process.env.CIRCADIAN_HOME || path.join(homedir(), "circadian");
+const HOME = repoRoot;
 const MIND = path.join(HOME, "mind");
 // Living-document fixtures are PINNED to a real mind revision (git history is
 // the archive, MIND-SPEC): the 2026-07-27 21:00 rem wave normalized the
@@ -28,6 +29,8 @@ const MIND = path.join(HOME, "mind");
 // out of the rolling window — the disease these tests document is only
 // guaranteed to exist in history, exactly where zoom recovers things from.
 const PINNED_MIND_REV = "6271e090226a9970b158399d621d69eac15c5a80";
+const missingPinned = missingMindRevision(PINNED_MIND_REV, "SELF.md", "compost.md");
+const missingLive = missingMindFiles("episodes", "SELF.md", ".git");
 const pinnedMindFile = (f: string) =>
   execFileSync("git", ["show", `${PINNED_MIND_REV}:${f}`], { cwd: MIND, encoding: "utf8" });
 
@@ -57,8 +60,8 @@ describe("query normalization", () => {
   });
 });
 
-describe("match resolution against the real mind", () => {
-  const records = collectEpisodes(MIND);
+describe.skipIf(!!missingLive)(evidenceName("match resolution against the real mind", missingLive), () => {
+  const records = missingLive ? [] : collectEpisodes(MIND);
 
   test("the universe is live ∪ git-deleted, deduped by filename", () => {
     const live = fs.readdirSync(path.join(MIND, "episodes")).filter((f) => f.endsWith(".md"));
@@ -122,7 +125,7 @@ describe("match resolution against the real mind", () => {
 });
 
 describe("provenance extraction", () => {
-  test("SELF.md citation lookup finds the malformed [ep:2026-07-6] stamp via normalization", () => {
+  test.skipIf(!!missingPinned)(evidenceName("SELF.md citation lookup finds the malformed [ep:2026-07-6] stamp via normalization", missingPinned), () => {
     const selfMd = pinnedMindFile("SELF.md"); // the malformed stamp as it really shipped
     expect(selfMd).toContain("[ep:2026-07-6]");
     const lines = selfLinesForDate(selfMd, "2026-07-06");
@@ -130,7 +133,7 @@ describe("provenance extraction", () => {
     expect(lines.some((l) => l.includes("[ep:2026-07-6]"))).toBe(true);
   });
 
-  test("compost.md entries are matched by filename in the fixed Composted: form", () => {
+  test.skipIf(!!missingPinned)(evidenceName("compost.md entries are matched by filename in the fixed Composted: form", missingPinned), () => {
     const compostMd = pinnedMindFile("compost.md"); // rolling window — history holds the entry
     const entries = compostEntriesFor(compostMd, "2026-07-26-spine-ring-confirmed.md");
     expect(entries.length).toBeGreaterThan(0);
@@ -147,16 +150,21 @@ describe("provenance extraction", () => {
 
 describe("replay sandbox safety (HARD SAFETY assertion)", () => {
   test("rejects any path inside the real circadian home, including mind/", () => {
-    expect(() => assertSandboxSafe(path.join(HOME, "mind"))).toThrow(/HARD SAFETY/);
-    expect(() => assertSandboxSafe(path.join(HOME, "mind", "episodes"))).toThrow(/HARD SAFETY/);
-    expect(() => assertSandboxSafe(HOME)).toThrow(/HARD SAFETY/);
-    expect(() => assertSandboxSafe(path.join(HOME, "logs"))).toThrow(/HARD SAFETY/);
+    expect(() => assertSandboxSafe(path.join(HOME, "mind"), HOME)).toThrow(/HARD SAFETY/);
+    expect(() => assertSandboxSafe(path.join(HOME, "mind", "episodes"), HOME)).toThrow(/HARD SAFETY/);
+    expect(() => assertSandboxSafe(HOME, HOME)).toThrow(/HARD SAFETY/);
+    expect(() => assertSandboxSafe(path.join(HOME, "logs"), HOME)).toThrow(/HARD SAFETY/);
     // sneaky relative traversal that still resolves inside
-    expect(() => assertSandboxSafe(path.join(HOME, "mind", "..", "mind"))).toThrow(/HARD SAFETY/);
+    expect(() => assertSandboxSafe(path.join(HOME, "mind", "..", "mind"), HOME)).toThrow(/HARD SAFETY/);
   });
 
   test("accepts a genuinely external temp path", () => {
-    expect(() => assertSandboxSafe("/tmp/circadian-replay-abc123")).not.toThrow();
+    const external = fs.mkdtempSync(path.join(tmpdir(), "circadian-replay-safe-"));
+    try {
+      expect(() => assertSandboxSafe(external, HOME)).not.toThrow();
+    } finally {
+      fs.rmSync(external, { recursive: true, force: true });
+    }
   });
 });
 
@@ -173,7 +181,7 @@ describe("replay genesis bootstrap shim", () => {
     }
   });
 
-  test("a v1-shaped worldview (numbered Doctrine) never needs the shim", () => {
+  test.skipIf(!!missingPinned)(evidenceName("a v1-shaped worldview (numbered Doctrine) never needs the shim", missingPinned), () => {
     // PINNED, not live — this file's established pattern (see PINNED_MIND_REV
     // above). Root cause (popmem, not a pre-existing flake): the WS-F
     // switchover rewrote the live SELF.md into render.ts's atom-rendered
@@ -196,7 +204,7 @@ describe("replay genesis bootstrap shim", () => {
 });
 
 describe("replay section accounting", () => {
-  test("sectionTokens splits the MIND-SPEC sections of the real SELF.md — identity ceded to CONSTITUTION.md (2026-08-09)", () => {
+  test.skipIf(!!missingLive)(evidenceName("sectionTokens splits the MIND-SPEC sections of the real SELF.md — identity ceded to CONSTITUTION.md (2026-08-09)", missingLive), () => {
     const selfMd = fs.readFileSync(path.join(MIND, "SELF.md"), "utf8");
     const sections = sectionTokens(selfMd);
     expect(Object.keys(sections)).toEqual(["Who I am across sessions", "Doctrine", "Motifs", "How we work"]);

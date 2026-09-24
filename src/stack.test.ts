@@ -6,7 +6,7 @@
 import { describe, test, expect } from "bun:test";
 import * as fs from "fs";
 import * as path from "path";
-import { homedir, tmpdir } from "os";
+import { tmpdir } from "os";
 import { spawnSync } from "node:child_process";
 import type { CircadianEvent } from "./obs.ts";
 import {
@@ -37,14 +37,24 @@ import {
 import { atomId, foldWeights, type LedgerEvent } from "./atoms.ts";
 import { significantTokens, jaccard } from "./ltp.ts";
 import { collectAllEpisodesAt } from "./replay.ts";
+import { repoRoot, missingMindRevision, evidenceName } from "./test-evidence.ts";
 
-const HOME = process.env.CIRCADIAN_HOME || path.join(homedir(), "circadian");
+const HOME = repoRoot;
 const MIND = path.join(HOME, "mind");
 const PINNED_MIND_REV = "6271e090226a9970b158399d621d69eac15c5a80";
 
-const FLOOD = collectAllEpisodesAt(PINNED_MIND_REV, MIND).filter((e) =>
+const missingFlood = missingMindRevision(PINNED_MIND_REV, "episodes/2026-07-24-bidirectional-sync-test.md");
+const FLOOD = missingFlood ? [] : collectAllEpisodesAt(PINNED_MIND_REV, MIND).filter((e) =>
   e.filename.startsWith("2026-07-24-bidirectional-")
 );
+
+test("normalization tolerates curly quotes/dashes/whitespace but not content changes", () => {
+  const hay = 'He said "the cliff is complexity — accretion" to the room.';
+  expect(quotesAreVerbatim(['the cliff is complexity — accretion'], hay)).toBe(true);
+  expect(quotesAreVerbatim(["the cliff is complexity - accretion"], hay)).toBe(true); // ascii dash normalizes
+  expect(quotesAreVerbatim(['the   cliff  is  complexity — accretion'], hay)).toBe(true); // whitespace runs
+  expect(quotesAreVerbatim(["the cliff is simplicity accretion"], hay)).toBe(false); // real content change
+});
 
 // ---------------------------------------------------------------------
 // tuned knobs (popmem WS-C2, §10 fallback: widen deterministic band /
@@ -65,7 +75,7 @@ describe("WS-C2 tuned knobs", () => {
 // ---------------------------------------------------------------------
 // counterfeit-quote assert (R3) — real episode content, pinned rev
 // ---------------------------------------------------------------------
-describe("counterfeit-quote assert — real episode fixtures", () => {
+describe.skipIf(!!missingFlood)(evidenceName("counterfeit-quote assert — real episode fixtures", missingFlood), () => {
   test("14-flood fixture is present at the pinned rev (sanity)", () => {
     expect(FLOOD.length).toBe(14);
   });
@@ -84,14 +94,6 @@ describe("counterfeit-quote assert — real episode fixtures", () => {
     const real = body.slice(0, 80);
     expect(real.trim().length).toBeGreaterThan(20);
     expect(quotesAreVerbatim([real], episode.content)).toBe(true);
-  });
-
-  test("normalization tolerates curly quotes/dashes/whitespace but not content changes", () => {
-    const hay = 'He said "the cliff is complexity — accretion" to the room.';
-    expect(quotesAreVerbatim(['the cliff is complexity — accretion'], hay)).toBe(true);
-    expect(quotesAreVerbatim(["the cliff is complexity - accretion"], hay)).toBe(true); // ascii dash normalizes
-    expect(quotesAreVerbatim(['the   cliff  is  complexity — accretion'], hay)).toBe(true); // whitespace runs
-    expect(quotesAreVerbatim(["the cliff is simplicity accretion"], hay)).toBe(false); // real content change
   });
 
   test("processExtractCompletion rejects a candidate whose quote is counterfeit, keeps one with a real quote", () => {
@@ -463,7 +465,7 @@ describe("routeCandidate — COMPARE_TOP_K multi-atom band consult", () => {
 // frontmatter date extraction
 // ---------------------------------------------------------------------
 describe("frontmatterDate", () => {
-  test("extracts date from real episode frontmatter (pinned rev)", () => {
+  test.skipIf(!!missingFlood)(evidenceName("extracts date from real episode frontmatter (pinned rev)", missingFlood), () => {
     const episode = FLOOD[0];
     expect(frontmatterDate(episode.content)).toMatch(/^2026-07-24$/);
   });
@@ -503,6 +505,7 @@ describe("prompt builders", () => {
  * evidence lives forever. Same episodes, same ids, preserved location — the
  * pin is now actually content-stable, as the original comment intended. */
 const PRE_PURGE_REV = "7c4dc18";
+const missingPrePurge = missingMindRevision(PRE_PURGE_REV, "episodes/2026-07-28-genesis-archaeology.md");
 function readEpisode(filename: string): { name: string; body: string } {
   const r = Bun.spawnSync(["git", "-C", MIND, "show", `${PRE_PURGE_REV}:episodes/${filename}`]);
   if (r.exitCode !== 0) {
@@ -528,7 +531,7 @@ describe("exposure metering knobs (W2)", () => {
   });
 });
 
-describe("classifyExposure — real episodes, PINNED (W2)", () => {
+describe.skipIf(!!missingPrePurge)(evidenceName("classifyExposure — real episodes, PINNED (W2)", missingPrePurge), () => {
   test("the ACK episode (passive-telemetry-sink) classifies FLASH", () => {
     const ep = ACK_EPISODE();
     expect(classifyExposure(ep)).toBe("flash");
@@ -575,7 +578,7 @@ describe("classifyExposure — real episodes, PINNED (W2)", () => {
   });
 });
 
-describe("parseExposureTranscript — real episodes (W2)", () => {
+describe.skipIf(!!missingPrePurge)(evidenceName("parseExposureTranscript — real episodes (W2)", missingPrePurge), () => {
   test("ACK episode: 1 labeled pair, first user turn is the role brief", () => {
     const t = parseExposureTranscript(stripFrontmatter(ACK_EPISODE().body));
     expect(t.pairs).toBe(1);
@@ -635,7 +638,7 @@ describe("grain — flash stack events deposit fractionally in fold (W2)", () =>
   });
 });
 
-describe("classifyExposure — other real flashes and standards (W2)", () => {
+describe.skipIf(!!missingPrePurge)(evidenceName("classifyExposure — other real flashes and standards (W2)", missingPrePurge), () => {
   test("the whole ack/verdict/ok/pong/cairn family classifies flash", () => {
     const flashes = [
       "2026-08-03-ok-acknowledgment.md",
@@ -795,8 +798,9 @@ describe("poison quarantine — the actual poison episode (LIVE-LLM gated, fact 
     `user-observed: nothing notable, this is a synthetic test fixture (${n}).\n` +
     `what-changed: nothing, this is a synthetic test fixture (${n}).\n`;
 
-  test.skipIf(!LIVE)(
-    "the actual poison file is skipped-and-reported while sibling episodes still process (bun src/stack.ts <tmpHome> good1 poison good2)",
+  test.skipIf(!LIVE || !fs.existsSync(POISON_SRC))(
+    evidenceName("the actual poison file is skipped-and-reported while sibling episodes still process (bun src/stack.ts <tmpHome> good1 poison good2)",
+      !LIVE ? "missing CIRCADIAN_LIVE_LLM=1 opt-in" : `missing mind/quarantine/${path.basename(POISON_SRC)}`),
     () => {
       expect(fs.existsSync(POISON_SRC)).toBe(true); // fact 11 — untracked, exists in exactly one place
 

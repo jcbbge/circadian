@@ -8,7 +8,7 @@
 import { describe, test, expect } from "bun:test";
 import * as fs from "fs";
 import * as path from "path";
-import { homedir } from "os";
+import { missingMindFiles, evidenceName } from "./test-evidence.ts";
 import {
   tokenize,
   extractEntities,
@@ -33,8 +33,9 @@ import {
   type IndexData,
 } from "./relindex.ts";
 
-const HOME = process.env.CIRCADIAN_HOME || path.join(homedir(), "circadian");
+const HOME = path.resolve(import.meta.dir, "..");
 const MIND = path.join(HOME, "mind");
+const missingMind = missingMindFiles("episodes", "beliefs");
 
 // A small, hand-built corpus with KNOWN entities and co-occurrence — the
 // deterministic fixture for the pure graph/scoring functions (mirrors the
@@ -344,7 +345,7 @@ describe("excerpt + renderEvidenceBlock — provenance-pinned rendering", () => 
 // -----------------------------------------------------------------------
 // REAL MIND — build, smoke retrievals, determinism, incremental = full
 // -----------------------------------------------------------------------
-describe("buildIndex over the REAL mind on disk", () => {
+describe.skipIf(!!missingMind)(evidenceName("buildIndex over the REAL mind on disk", missingMind), () => {
   test("builds a non-trivial index in well under a second", async () => {
     const { index } = await buildIndex(MIND);
     expect(index.meta.unitCount).toBeGreaterThan(50); // ~55 episodes + ~104 beliefs
@@ -383,7 +384,7 @@ describe("buildIndex over the REAL mind on disk", () => {
   });
 });
 
-describe("updateIndex — incremental, and equal to a full rebuild", () => {
+describe.skipIf(!!missingMind)(evidenceName("updateIndex — incremental, and equal to a full rebuild", missingMind), () => {
   test("no changes -> reuses every cached unit, same graph as full build", async () => {
     const full = (await buildIndex(MIND)).index;
     const { index: updated, changed, deleted } = updateIndex(MIND, full);

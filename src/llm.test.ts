@@ -142,7 +142,7 @@ function runComplete(
     // failed nondeterministically depending on machine load. A test that
     // contends with the live system is not measuring the code.
     const child = spawn(BUN_BIN, [scriptPath], {
-      env: { CIRCADIAN_HOME: dirname(scriptPath), ...process.env, ...env },
+      env: { ...process.env, ...env, CIRCADIAN_HOME: dirname(scriptPath) },
     });
     let stdout = "";
     let stderr = "";

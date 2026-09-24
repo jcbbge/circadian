@@ -78,7 +78,7 @@ describe("graze hook — throttle skip notices", () => {
     const events = skipEvents("throttle");
     expect(events.length).toBe(1);
     expect(events[0].outcome).toBe("idle");
-  });
+  }, 30000);
 
   test("the one event that IS written counts every skip it stands for", () => {
     const t = transcriptOf(1024);

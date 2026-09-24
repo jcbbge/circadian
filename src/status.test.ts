@@ -6,11 +6,11 @@
 import { describe, test, expect, afterEach } from "bun:test";
 import * as fs from "fs";
 import * as path from "path";
-import { tmpdir, homedir } from "os";
+import { tmpdir } from "os";
 import { spawnSync } from "child_process";
 import { computeVerdictStreak, populationVitalsSegment, type ScoreEvent, type PopulationVitalsSnapshot } from "./status.ts";
 
-const BUN_BIN = process.env.CIRCADIAN_BUN_BIN || path.join(homedir(), ".bun/bin/bun");
+const BUN_BIN = process.execPath;
 const STATUS_SCRIPT = path.join(import.meta.dir, "status.ts");
 
 const dirs: string[] = [];
