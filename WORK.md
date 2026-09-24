@@ -32,7 +32,7 @@ Design language for all of these: one intelligence, many instantiations; the sub
 - Brief 13 — stigmergic memory on worker branches (lanes; landing consolidates; conflicts escalate)
 - [x] Brief 14 — decision-boundary split (COMPARE and every fixed choice on a decision-only transport); code landed at a7eafb2; acceptance measurement pending — needs the recorded pair set from a real mind and a configured decision endpoint
 - Brief 15 — quorum write gate for concurrent instantiations
-- Brief 16 — contradiction graph (persist doubt)
+- [x] Brief 16 — contradiction graph (persist doubt) — `0cc99326236dbca2e1637e0163ad8a60b83baf42`
 - [x] Brief 17 — archaeology command (`when`, `bisect`) — `03df36c`
 - [x] Brief 18 — compare-and-swap publication (graft from mem; prerequisite for 13, 15) — `1b610cb850c24f82a6eca81f226f9cecc56dd77d`
 - [x] Brief 19 — on-demand read surface over MCP (graft from mem) — `940cbd3`
