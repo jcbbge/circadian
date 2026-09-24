@@ -27,7 +27,7 @@
 ### Fringe wave (2026-09-23) — from the VPS comparison with `mem`; briefs 10–20 in `briefs/`
 Design language for all of these: one intelligence, many instantiations; the substrate closes the gap.
 - [x] Brief 10 — reconstitution is a checkout (the ref is the handoff; wake is narration) — `0e658654d785e26f35eb84bde8fae26266d772dc`
-- Brief 11 — stratigraphy: depth tiers alongside decay; `dig` reads below the floor
+- [x] Brief 11 — stratigraphy: depth tiers alongside decay; `dig` reads below the floor — `ca2b1e1fd00d7af39f32bd7f225f22ceac2f744d`
 - [x] Brief 12 — belief interchange format (atom shape as protocol; reader for mem-shaped stores) — `94041ae578ce6ae4e11057e455ac050f5b0a8d18`
 - Brief 13 — stigmergic memory on worker branches (lanes; landing consolidates; conflicts escalate)
 - [x] Brief 14 — decision-boundary split (COMPARE and every fixed choice on a decision-only transport); code landed at a7eafb2; acceptance measurement pending — needs the recorded pair set from a real mind and a configured decision endpoint
