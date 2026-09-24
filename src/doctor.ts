@@ -27,7 +27,7 @@
  * --quiet prints only non-OK lines.
  */
 
-import "./env.ts";
+import { llmApiKey } from "./env.ts";
 import * as fs from "fs";
 import * as path from "path";
 import { homedir } from "os";
@@ -46,7 +46,7 @@ const EPISODES_DIR = path.join(MIND_DIR, "episodes");
 const PENDING_SLEEP_QUEUE = path.join(LOG_DIR, "pending-sleep.jsonl");
 const LLM_BASE_URL =
   process.env.CIRCADIAN_LLM_BASE_URL || process.env.LOCAL_LLM_BASE_URL || "http://127.0.0.1:10240/v1";
-const LLM_API_KEY = process.env.CIRCADIAN_LLM_API_KEY || process.env.LOCAL_LLM_API_KEY || "local";
+const LLM_API_KEY = llmApiKey();
 // The mlx-omni-server markup patch (2026-07-23) lives in site-packages — one
 // package upgrade away from silently regressing to the episode-killing crash.
 const LLM_LOGGER_FILE =
@@ -343,7 +343,7 @@ export async function probeLLMService(base: string, key: string): Promise<Check>
       return { name: "LLM service", level: "OK", detail: `reachable at ${base}` };
     }
     if (res.status === 401 || res.status === 403) {
-      return { name: "LLM service", level: "WARN", detail: `authentication failed at ${base} (HTTP ${res.status}) — check CIRCADIAN_LLM_API_KEY` };
+      return { name: "LLM service", level: "WARN", detail: `authentication failed at ${base} (HTTP ${res.status}) — check CIRCADIAN_LLM_API_KEY or MODAL_PROXY_TOKEN_ID/MODAL_PROXY_TOKEN_SECRET` };
     }
     return { name: "LLM service", level: "WARN", detail: `HTTP ${res.status} at ${base} — rem/sleep drafting will fail; failed sleep drafts await recovery in logs/pending-sleep.jsonl (pending sleep queue)` };
   } catch {

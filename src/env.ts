@@ -27,3 +27,11 @@ try {
 } catch (err) {
   if ((err as NodeJS.ErrnoException).code !== "ENOENT") throw err;
 }
+
+/** The bearer key for the model endpoint. CIRCADIAN_LLM_API_KEY wins; otherwise a proxy token pair
+ * (MODAL_PROXY_TOKEN_ID + MODAL_PROXY_TOKEN_SECRET) is joined as "<id>.<secret>"; then the legacy local key. */
+export function llmApiKey(env: NodeJS.ProcessEnv = process.env): string {
+  if (env.CIRCADIAN_LLM_API_KEY) return env.CIRCADIAN_LLM_API_KEY;
+  if (env.MODAL_PROXY_TOKEN_ID && env.MODAL_PROXY_TOKEN_SECRET) return `${env.MODAL_PROXY_TOKEN_ID}.${env.MODAL_PROXY_TOKEN_SECRET}`;
+  return env.LOCAL_LLM_API_KEY || "local";
+}

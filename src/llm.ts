@@ -60,7 +60,7 @@
 // below are harmless belt-and-suspenders in case the model is ever
 // overridden to a reasoning one.
 
-import "./env.ts";
+import { llmApiKey } from "./env.ts";
 import { ok } from "./obs.ts";
 import { mkdirSync, readFileSync, unlinkSync, writeFileSync } from "node:fs";
 import { homedir } from "node:os";
@@ -73,7 +73,7 @@ const BASE_URL =
 // Head-to-head on the replay bench: counterfeit quotes 3→1, malformed grammar
 // lines 1→0 vs the 4B. The dense-32B ban above still stands; this is not that.
 const MODEL = process.env.CIRCADIAN_LLM_MODEL || "mlx-community/Qwen3-30B-A3B-Instruct-2507-4bit";
-const API_KEY = process.env.CIRCADIAN_LLM_API_KEY || process.env.LOCAL_LLM_API_KEY || "local";
+const API_KEY = llmApiKey();
 const NO_THINK_PREFIX = process.env.CIRCADIAN_LLM_NO_THINK_PREFIX !== "0";
 const EXTRA_BODY: Record<string, unknown> = (() => {
   const raw = process.env.CIRCADIAN_LLM_EXTRA_BODY;
