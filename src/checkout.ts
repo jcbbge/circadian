@@ -39,9 +39,11 @@ export function checkout(repo: string, ref = "HEAD"): CheckoutResult {
       if (!line.trim()) continue;
       let ev: LedgerEvent;
       try { ev = JSON.parse(line); } catch { throw new Error(`ledger line ${i + 1} is not JSON`); }
-      if (!ev || typeof ev !== "object" || !["stack", "decay", "potentiate", "supersede", "renorm"].includes(ev.ev) ||
+      if (!ev || typeof ev !== "object" || !["stack", "decay", "potentiate", "supersede", "renorm", "contradiction", "resolve"].includes(ev.ev) ||
           ((ev.ev === "stack" || ev.ev === "potentiate") && (typeof ev.atom !== "string" || !atoms.some((a) => a.id === ev.atom))) ||
           (ev.ev === "supersede" && (typeof ev.winner !== "string" || typeof ev.loser !== "string" || ev.winner === ev.loser || !atoms.some((a) => a.id === ev.winner) || !atoms.some((a) => a.id === ev.loser))) ||
+          (ev.ev === "contradiction" && (typeof ev.a !== "string" || typeof ev.b !== "string" || ev.a === ev.b || !atoms.some((a) => a.id === ev.a) || !atoms.some((a) => a.id === ev.b))) ||
+          (ev.ev === "resolve" && (typeof ev.edge !== "string" || typeof ev.winner !== "string" || !atoms.some((a) => a.id === ev.winner) || !ev.edge.split(":").every((id: string) => atoms.some((a) => a.id === id)))) ||
           (ev.ev === "decay" && ev.factor !== undefined && (typeof ev.factor !== "number" || !Number.isFinite(ev.factor) || ev.factor < 0)) ||
           (ev.ev === "stack" && ev.grain !== undefined && (typeof ev.grain !== "number" || !Number.isFinite(ev.grain) || ev.grain < 0)) ||
           (ev.ev === "renorm" && (typeof ev.target !== "number" || !Number.isFinite(ev.target) || ev.target <= 0))) {

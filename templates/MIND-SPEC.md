@@ -81,6 +81,8 @@ One JSON object per line; malformed lines skipped, never fatal. Events:
 - `{"ev":"resolve","edge":<key>,"winner":<id>,"ts":…}` — closes an open
   edge; transfers the other endpoint's weight to the winner as a supersede.
 
+Worker mind lanes are local `fm/<id>` branches; landing unions ledger lines by content hash and timestamp, converts divergent supersedes into a contradiction between their winners, and re-renders SELF.md. Unlanded lanes remain available for explicit review (never silently dropped).
+
 **Weight is never stored — it is fold(ledger), deterministic.** Defaults (knobs):
 birth 1, bump +1, decay ×0.95/night, RENDER_FLOOR 0.5. A never-bumped singleton
 renders ~13 nights, then defocuses; its file stays (defocus, never delete); one

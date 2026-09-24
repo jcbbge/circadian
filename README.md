@@ -52,6 +52,7 @@ never touches project source.
   installed by `install.sh`; a catch-up job runs `rem --if-due` at login and
   restart so a slot missed while the laptop was closed still runs).
 - **Anytime** → `status` (vitals), `doctor` (health check), `circadian when <id|claim-substring>` (birth, bumps, supersedes), and `circadian bisect <claim>` (first episode mention). Run `bun src/archaeology.ts when|bisect ...` from the program checkout without the package bin.
+- **Worker lanes** → `circadian lane open <id>` makes local mind branch `fm/<id>` in `mind-lanes/<id>` (sibling of `mind/`). Point the worker's `CIRCADIAN_HOME` at a sandbox home with `mind/` symlinked to that worktree (or commit directly in it), then `circadian lane conflicts [id]` and `circadian lane land <id>` from the main mind root. Landing requires clean committed worktrees; it merges immutable atoms, unions ledger events by hash and timestamp, re-renders SELF, and surfaces divergent supersessions as contradictions. Unlanded branches are preserved. Each command accepts `--mind <repo>` for a non-default mind path.
 
 Non-macOS? `install.sh` prints the equivalent cron/systemd schedule and the
 `--if-due` catch-up command.

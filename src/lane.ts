@@ -5,9 +5,9 @@ import * as path from "node:path";
 import { homedir } from "node:os";
 import { execFileSync } from "node:child_process";
 import { createHash } from "node:crypto";
-import { readAtoms, readLedger, foldBeliefs } from "./atoms.ts";
+import { readAtoms, readLedger, foldBeliefs, type LedgerEvent } from "./atoms.ts";
 import { renderSelf } from "./render.ts";
-import { correlation, fail, ok } from "./obs.ts";
+import { correlation, fail, ok, idle } from "./obs.ts";
 
 function git(repo: string, ...args: string[]): string {
   return execFileSync("git", ["-C", repo, ...args], { encoding: "utf8", stdio: ["pipe", "pipe", "pipe"] }).trim();
@@ -30,6 +30,34 @@ export function unionLedger(...inputs: string[]): string {
     return at < bt ? -1 : at > bt ? 1 : hash(a).localeCompare(hash(b));
   }).join("\n") + (unique.size ? "\n" : "");
 }
+export interface LaneConflict { loser: string; a: string; b: string; ts: string }
+/** Compare only events newly introduced on each side of the fork. */
+export function divergentSupersedes(base: string, main: string, lane: string): LaneConflict[] {
+  const common = new Set(lines(base).map(hash));
+  const added = (s: string) => lines(s).filter(l => !common.has(hash(l))).map(event)
+    .filter((e): e is LedgerEvent => !!e && e.ev === "supersede" && !!e.loser && !!e.winner);
+  const result = new Map<string, LaneConflict>();
+  for (const a of added(main)) for (const b of added(lane)) {
+    if (a.loser !== b.loser || a.winner === b.winner) continue;
+    const [x, y] = [a.winner!, b.winner!].sort();
+    result.set(`${a.loser}:${x}:${y}`, { loser: a.loser!, a: x, b: y, ts: [a.ts, b.ts].sort().at(-1)! });
+  }
+  return [...result.values()].sort((x, y) => x.loser.localeCompare(y.loser) || x.a.localeCompare(y.a) || x.b.localeCompare(y.b));
+}
+/** Neither supersession can stand: keep both winners active, record the open tension. */
+export function consolidate(base: string, main: string, lane: string): { ledger: string; conflicts: LaneConflict[] } {
+  const conflicts = divergentSupersedes(base, main, lane);
+  const removed = new Set(conflicts.flatMap(c => [`${c.loser}:${c.a}`, `${c.loser}:${c.b}`]));
+  const inherited = new Set(lines(base).map(hash));
+  const combined = unionLedger(main, lane);
+  const kept = lines(combined).filter(line => {
+    const e = event(line);
+    return inherited.has(hash(line)) || !(e?.ev === "supersede" && removed.has(`${e.loser}:${e.winner}`));
+  });
+  const contradictions = conflicts.map(c => JSON.stringify({ ev: "contradiction", a: c.a, b: c.b, ts: c.ts }));
+  return { ledger: unionLedger([...kept, ...contradictions].join("\n")), conflicts };
+}
+
 function clean(repo: string): void {
   // Publication metadata is local to the worktree, not part of the mind ref.
   const dirty = git(repo, "status", "--porcelain", "--untracked-files=all").split("\n")
@@ -71,14 +99,25 @@ export function openLane(mindPath: string, id: string): string {
   return dest;
 }
 
-export function landLane(mindPath: string, id: string): { ledger: string } {
+export function laneConflicts(mindPath: string, id: string): LaneConflict[] {
+  const mind = root(mindPath), ref = branch(id);
+  git(mind, "rev-parse", "--verify", ref);
+  if (Bun.spawnSync(["git", "-C", mind, "merge-base", "--is-ancestor", ref, "main"]).exitCode === 0) return [];
+  const base = git(mind, "merge-base", "main", ref);
+  return divergentSupersedes(blob(mind, base), blob(mind, "main"), blob(mind, ref));
+}
+
+export function landLane(mindPath: string, id: string): { conflicts: LaneConflict[]; ledger: string } {
   const mind = root(mindPath), ref = branch(id);
   requireMain(mind);
   const dest = lanePath(mind, id);
   if (!fs.existsSync(dest)) throw new Error(`lane worktree missing: ${dest}`);
   clean(dest);
+  if (Bun.spawnSync(["git", "-C", mind, "merge-base", "--is-ancestor", ref, "main"]).exitCode === 0)
+    throw new Error(`lane ${ref} has already landed`);
   const mainTip = git(mind, "rev-parse", "main");
-  const result = { ledger: unionLedger(blob(mind, "main"), blob(mind, ref)) };
+  const base = git(mind, "merge-base", "main", ref);
+  const result = consolidate(blob(mind, base), blob(mind, "main"), blob(mind, ref));
   // Git handles every other path with its normal 3-way rules. Never hide an
   // atom conflict or a conflict in authored memory behind an automatic choice.
   const driver = `${JSON.stringify(process.execPath)} ${JSON.stringify(import.meta.filename)} merge-driver %O %A %B`;
@@ -100,7 +139,7 @@ export function landLane(mindPath: string, id: string): { ledger: string } {
     git(mind, "add", "--", "beliefs.jsonl", "SELF.md", "render-manifest.json");
     if (git(mind, "diff", "--name-only", "--diff-filter=U")) throw new Error("unresolved merge conflicts");
     if (git(mind, "rev-parse", "main") !== mainTip) throw new Error("main advanced during landing; retry against the new tip");
-    git(mind, "commit", "-m", `lane: land ${ref}`);
+    git(mind, "commit", "-m", `lane: land ${ref} (${result.conflicts.length} contradictions)`);
     return result;
   } catch (e) {
     try { git(mind, "merge", "--abort"); } catch { /* no merge began */ }
@@ -110,7 +149,8 @@ export function landLane(mindPath: string, id: string): { ledger: string } {
 
 /** Git's three-file merge driver: paths are temporary files, not live mind data. */
 function mergeDriver(_base: string, ours: string, theirs: string): void {
-  // Land re-unions the branch refs before committing, even on a clean merge.
+  // Conflict conversion needs branch context, so the driver only unions here;
+  // landLane does the final consolidation from the branch refs before commit.
   fs.writeFileSync(ours, unionLedger(fs.readFileSync(ours, "utf8"), fs.readFileSync(theirs, "utf8")));
 }
 export function laneMain(args: string[]): void {
@@ -121,16 +161,22 @@ export function laneMain(args: string[]): void {
   const positional = opt < 0 ? tail : tail.filter((_, i) => i !== opt && i !== opt + 1);
   const id = positional[0];
   try {
-    if (!mind || (opt >= 0 && !tail[opt + 1]) || positional.length !== 1) throw new Error("usage: circadian lane open|land <id> [--mind <mind repo>]");
+    if (!mind || (opt >= 0 && !tail[opt + 1]) || positional.length > 1 || (command !== "conflicts" && !id)) throw new Error("usage: circadian lane open|land <id> | conflicts [id] [--mind <mind repo>]");
     let summary: string;
     if (command === "open") summary = `opened ${branch(id)} at ${openLane(mind, id)}`;
     else if (command === "land") {
       const r = landLane(mind, id);
-      summary = `landed ${branch(id)}: ${lines(r.ledger).length} ledger event(s)`;
-    } else throw new Error("usage: circadian lane open|land <id> [--mind <mind repo>]");
+      summary = `landed ${branch(id)}: ${r.conflicts.length} contradiction(s)`;
+    } else if (command === "conflicts") {
+      const ids = id ? [id] : git(root(mind), "branch", "--list", "fm/*", "--format=%(refname:short)")
+        .split("\n").filter(Boolean).map(ref => ref.slice(3));
+      const conflicts = ids.flatMap(laneId => laneConflicts(mind, laneId).map(c => `${branch(laneId)} ${c.loser}: ${c.a} <> ${c.b}`));
+      summary = conflicts.length ? conflicts.join("\n") : "no divergent supersedes";
+    } else throw new Error("usage: circadian lane open|land <id> | conflicts [id] [--mind <mind repo>]");
     console.log(summary);
     const context = { mind, id, command };
-    ok({ process: "lane", phase: command, correlation_id: corr, summary, context });
+    if (command === "conflicts" && summary === "no divergent supersedes") idle({ process: "lane", phase: command, correlation_id: corr, summary, context });
+    else ok({ process: "lane", phase: command, correlation_id: corr, summary, context });
   } catch (e) {
     fail({ process: "lane", phase: command || "usage", correlation_id: corr, summary: "lane operation failed", context: { mind, id, command }, cause: (e as Error).message, next_action: "inspect the mind branch, worktree and merge state; commit or stash local changes before retrying" });
   }
