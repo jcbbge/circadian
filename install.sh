@@ -210,8 +210,8 @@ mkdir -p "$(dirname "$SETTINGS")"
 [ -f "$SETTINGS" ] || echo '{}' > "$SETTINGS"
 cp "$SETTINGS" "$SETTINGS.bak-$(date +%s)"
 
-"$BUN_BIN" - "$SETTINGS" "$WAKE_CMD" "$SLEEP_CMD" "$GRAZE_CMD" <<'JS'
-const [file, wakeCmd, sleepCmd, grazeCmd] = Bun.argv.slice(2);
+"$BUN_BIN" - "$SETTINGS" "$WAKE_CMD" "$SLEEP_CMD" "$GRAZE_CMD" "$BUN_BIN" "$CIRCADIAN_HOME" <<'JS'
+const [file, wakeCmd, sleepCmd, grazeCmd, bunBin, home] = Bun.argv.slice(2);
 const s = JSON.parse(await Bun.file(file).text() || "{}");
 s.hooks ??= {};
 const has = (evt, needle) =>
@@ -223,16 +223,19 @@ const ensure = (evt, cmd, needle, timeout) => {
 // SLEEP must live on SessionEnd only — strip any legacy copy on Stop.
 if (Array.isArray(s.hooks.Stop)) {
   for (const g of s.hooks.Stop) if (Array.isArray(g.hooks))
-    g.hooks = g.hooks.filter(h => !(h.command || "").includes("circadian/src/sleep.ts"));
+    g.hooks = g.hooks.filter(h => !(h.command || "").includes("/src/sleep.ts"));
   s.hooks.Stop = s.hooks.Stop.filter(g => (g.hooks || []).length);
   if (!s.hooks.Stop.length) delete s.hooks.Stop;
 }
-ensure("SessionStart", wakeCmd, "circadian/src/wake.ts", 10);
-ensure("SessionEnd", sleepCmd, "circadian/src/sleep.ts", 15);
-ensure("PostToolUse", grazeCmd, "circadian/src/graze.ts", 10);
-ensure("UserPromptSubmit", grazeCmd, "circadian/src/graze.ts", 10);
+ensure("SessionStart", wakeCmd, "/src/wake.ts", 10);
+ensure("SessionEnd", sleepCmd, "/src/sleep.ts", 15);
+ensure("PostToolUse", grazeCmd, "/src/graze.ts", 10);
+ensure("UserPromptSubmit", grazeCmd, "/src/graze.ts", 10);
+// Preserve every other MCP server and an operator-customized circadian entry.
+s.mcpServers ??= {};
+s.mcpServers.circadian ??= { command: bunBin, args: [home + "/src/serve.ts"], env: { CIRCADIAN_HOME: home } };
 await Bun.write(file, JSON.stringify(s, null, 2) + "\n");
-console.log("circadian: hooks wired — SessionStart->wake, SessionEnd->sleep, PostToolUse+UserPromptSubmit->graze");
+console.log("circadian: hooks and MCP wired — SessionStart->wake, SessionEnd->sleep, PostToolUse+UserPromptSubmit->graze");
 JS
 
 # ---- 6. Pi.dev extension wiring (idempotent) ------------------------------

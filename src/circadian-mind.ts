@@ -30,6 +30,7 @@ import { existsSync, statSync, readFileSync, mkdirSync, writeFileSync } from "no
 import { homedir } from "node:os";
 import { join } from "node:path";
 import { ok, degraded, correlation } from "./obs.ts";
+import { callTool } from "./serve.ts";
 
 const CIRCADIAN_HOME = process.env.CIRCADIAN_HOME || join(homedir(), "circadian");
 const BUN_BIN = process.env.CIRCADIAN_BUN_BIN || join(homedir(), ".bun/bin/bun");
@@ -87,6 +88,31 @@ export function acquireNativeSessionFile(
 export default function circadianMind(pi: ExtensionAPI) {
   // Module-level state for this extension instance.
   // On /reload, the extension is re-instantiated, so these reset.
+  // Pi has no built-in MCP client: expose the same five server operations as
+  // native Pi tools through this already-installed extension (no second daemon).
+  const registerMindTool = (name: string, description: string, properties: Record<string, unknown>, required: string[]) => {
+    pi.registerTool({
+      name, label: name, description,
+      parameters: { type: "object", properties, required, additionalProperties: false } as any,
+      async execute(_id, params) {
+        try {
+          const value = await callTool(CIRCADIAN_HOME, name, params);
+          const event = { process: "ops" as const, phase: `pi-${name}`, summary: `${name} completed`, context: piContext({ results: Array.isArray(value) ? value.length : 1 }) };
+          ok(event);
+          return { content: [{ type: "text", text: JSON.stringify(value) }], details: {} };
+        } catch (error) {
+          degraded({ process: "ops", phase: `pi-${name}`, summary: `${name} failed`, context: piContext(), cause: (error as Error).message, next_action: "check tool arguments and mind index, then retry" });
+          throw error;
+        }
+      },
+    });
+  };
+  registerMindTool("memory_search", "Search provenance-pinned memories; depth includes older strata", { query: { type: "string" }, k: { type: "integer" }, depth: { type: "integer" } }, ["query"]);
+  registerMindTool("memory_read", "Read a memory by id or episode stamp", { id: { type: "string" } }, ["id"]);
+  registerMindTool("memory_history", "Trace episodes and their citations across git history", { query: { type: "string" } }, ["query"]);
+  registerMindTool("memory_status", "Read circadian mind vitals", {}, []);
+  registerMindTool("memory_request_change", "Suggest a change for stacker review; never edits an atom", { change: { type: "string" }, source: { type: "string" } }, ["change"]);
+
   let wakePayload: string | null = null;
   let wakeInjected = false;
 
