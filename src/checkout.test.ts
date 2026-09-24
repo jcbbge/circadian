@@ -69,6 +69,22 @@ describe("checkout of a mind ref", () => {
     expect(p.stderr).toContain("ledger line 1 cannot fold");
     expect(readdirSync(root)).not.toContain("no-output");
   });
+  test("contradiction/resolve events reject nonexistent endpoints and invalid edges", () => {
+    const { root, repo, id } = fixture();
+    const append = (event: object) => {
+      writeFileSync(join(repo, "beliefs.jsonl"), JSON.stringify({ ev: "stack", atom: id, ts: "t" }) + "\n" + JSON.stringify(event) + "\n");
+      git(repo, "add", "-A"); git(repo, "commit", "-qm", "event");
+    };
+    for (const event of [
+      { ev: "contradiction", a: id, b: "missing", ts: "t2" },
+      { ev: "resolve", edge: `${id}:missing`, winner: id, ts: "t2" },
+    ]) {
+      append(event);
+      const p = run(repo, root);
+      expect(p.status).toBe(2);
+      expect(p.stderr).toContain("ledger line 2 cannot fold");
+    }
+  });
   test("unknown ref fails closed with exit 2", () => {
     const { root, repo } = fixture();
     expect(run(repo, root, "--ref", "not-a-ref").status).toBe(2);
