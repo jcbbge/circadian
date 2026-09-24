@@ -3,7 +3,7 @@ import * as fs from "node:fs";
 import * as path from "node:path";
 import { tmpdir } from "node:os";
 import { execFileSync } from "node:child_process";
-import { resolveScope, readScopes, scopedView, scopeNowPath, tagEpisode, HERE_TOKENS, ELSEWHERE_TOKENS } from "./scopes.ts";
+import { resolveScope, sessionLocation, readScopes, scopedView, scopeNowPath, tagEpisode, HERE_TOKENS, ELSEWHERE_TOKENS } from "./scopes.ts";
 import { buildPayload } from "./wake-payload.ts";
 import { renderPortfolioFromMind } from "./project-status.ts";
 
@@ -41,6 +41,9 @@ test("Accept when: an episode written from ~/concierge/work/t3-labor-fee carries
   fs.mkdirSync(workSubdir);
   expect(resolveScope(mind, mainSubdir, "")).toBe("arc");
   expect(resolveScope(mind, workSubdir, "")).toBe("arc");
+  expect(sessionLocation(workSubdir)).toEqual({ cwd: workSubdir, git_toplevel: work, project_path: main });
+  expect(sessionLocation(mainSubdir)).toEqual({ cwd: mainSubdir, git_toplevel: main, project_path: main });
+  expect(sessionLocation(dir)).toEqual({ cwd: dir, git_toplevel: null, project_path: dir });
   const episode = tagEpisode("---\ndate: 2026-09-24\narc: labor fee\n---\n", resolveScope(mind, work, ""));
   expect(episode).toContain("scope: arc\n");
   expect(resolveScope(mind, dir, "")).toBe("global");

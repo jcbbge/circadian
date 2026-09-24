@@ -28,14 +28,14 @@ import { refreshStatusline } from "./statusline-refresh.ts";
 import { logInvocation } from "./invocation-ledger.ts";
 import { appendFileSync, existsSync, mkdirSync, readdirSync, readFileSync, renameSync, statSync, unlinkSync, writeFileSync } from "node:fs";
 import { homedir } from "node:os";
-import { dirname, join } from "node:path";
+import { dirname, join, resolve } from "node:path";
 import { complete } from "./llm.ts";
 import { ok, idle, degraded, fail, correlation } from "./obs.ts";
 import { isDroneOpening, isFleetPacketOpening, firstUserTurnFromText } from "./provenance.ts";
 import { normalizeTurnText } from "./transcript-format.ts";
 import { publish, recoverPublications } from "./publish.ts";
 import { createHash } from "node:crypto";
-import { resolveScope, tagEpisode, scopeNowPath } from "./scopes.ts";
+import { resolveScope, sessionLocation, tagEpisode, scopeNowPath } from "./scopes.ts";
 
 // --dry-run: draft exactly as the live worker does (same transcript, same
 // prompt, same LLM, same parse), then print the episode + NOW.md to stdout
@@ -413,7 +413,10 @@ function pruneSleepClaims(): void {
 async function runHook(): Promise<void> {
   const raw = await readStdinText();
   const evt = parseEvent(raw);
-  const transcriptPath = evt?.transcript_path;
+  // Resolve relative paths and checkout identity before teardown can remove cwd.
+  const cwd = process.cwd();
+  const transcriptPath = typeof evt?.transcript_path === "string" && evt.transcript_path
+    ? resolve(cwd, evt.transcript_path) : undefined;
   slog("hook", "fired", {
     stdin_bytes: raw.length,
     transcript_path: transcriptPath ?? null,
@@ -468,6 +471,12 @@ async function runHook(): Promise<void> {
     process.exit(0);
   }
 
+  const location = sessionLocation(cwd);
+  const workerEvent = {
+    ...evt, transcript_path: transcriptPath, ...location, scope: resolveScope(MIND, cwd),
+    lane: process.env.CIRCADIAN_LANE,
+    provenance: { harness: process.env.CIRCADIAN_HARNESS || evt?.harness || "unknown", model: process.env.CIRCADIAN_MODEL || evt?.model || "unknown", machine: process.env.CIRCADIAN_MACHINE || process.env.HOSTNAME || "unknown", session: evt?.session_id || "unknown" },
+  };
   try {
     const selfPath = import.meta.path;
     // Pass the event via env, NOT piped stdin: the hook exits immediately
@@ -476,15 +485,22 @@ async function runHook(): Promise<void> {
     // stdin to the worker every time, so transcript_path arrived as null and
     // the worker aborted silently. Env survives detach+exit deterministically.
     const worker = spawn(BUN_BIN, [selfPath, "--worker"], {
+      cwd: CIRCADIAN_HOME,
       detached: true,
       stdio: ["ignore", "ignore", "ignore"],
-      env: { ...process.env, CIRCADIAN_SLEEP_EVENT: JSON.stringify({ ...evt, scope: resolveScope(MIND), cwd: process.cwd(), lane: process.env.CIRCADIAN_LANE, provenance: { harness: process.env.CIRCADIAN_HARNESS || evt?.harness || "unknown", model: process.env.CIRCADIAN_MODEL || evt?.model || "unknown", machine: process.env.CIRCADIAN_MACHINE || process.env.HOSTNAME || "unknown", session: evt?.session_id || "unknown" } }) },
+      env: { ...process.env, CIRCADIAN_SLEEP_EVENT: JSON.stringify(workerEvent) },
+    });
+    // ENOENT from spawn is emitted asynchronously, not thrown by spawn().
+    await new Promise<void>((resolve, reject) => {
+      worker.once("spawn", resolve);
+      worker.once("error", reject);
     });
     worker.unref();
     slog("hook", "spawned worker", { transcript_bytes: tsize, pid: worker.pid });
   } catch (e) {
     // never let a spawn failure block SessionEnd — but do record it
     slog("hook", "spawn FAILED", { error: (e as Error).message });
+    enqueuePendingSleep(pendingHandle(workerEvent, (e as Error).message), correlation("sleep"));
   }
 
   process.exit(0);
@@ -961,7 +977,7 @@ async function draftSessionEpisode(opts: {
   provenance?: Record<string, string>;
 }): Promise<DraftResult> {
   const { transcriptPath, sessionId, corr, mode } = opts;
-  const scope = opts.scope || resolveScope(MIND);
+  const scope = opts.scope || resolveScope(MIND, CIRCADIAN_HOME);
   if (!DRY_RUN && existsSync(join(MIND, ".git"))) recoverPublications(MIND);
 
   // PROVENANCE GUARD (2026-07-24 contamination post-mortem): bench/eval
@@ -1185,14 +1201,21 @@ async function draftSessionEpisode(opts: {
   return { status: "written" };
 }
 
+function pendingHandle(evt: Record<string, any>, reason: string): PendingSleep {
+  return {
+    ts: new Date().toISOString(), session_id: evt?.session_id ?? "unknown",
+    transcript_path: evt.transcript_path, transcript_chars: 0, attempts: 0,
+    last_error: reason, queued_at: new Date().toISOString(),
+    scope: evt.scope, lane: evt.lane, provenance: evt.provenance,
+  };
+}
+
 async function runWorker(): Promise<void> {
   const corr = correlation("sleep");
+  // Preserve the handle even if extraction or event parsing throws.
+  const evt = parseEvent(process.env.CIRCADIAN_SLEEP_EVENT || (await readStdinText()));
   slog("worker", "start");
   try {
-    // Event arrives via env (see runHook spawn). Fall back to stdin for any
-    // caller that still pipes it (e.g. manual `bun run sleep.ts --worker`).
-    const evtRaw = process.env.CIRCADIAN_SLEEP_EVENT || (await readStdinText());
-    const evt = parseEvent(evtRaw);
     await draftSessionEpisode({
       transcriptPath: evt?.transcript_path,
       sessionId: evt?.session_id ?? "unknown",
@@ -1200,19 +1223,22 @@ async function runWorker(): Promise<void> {
       queueOnFailure: true,
       queueAttempts: DRAFT_ATTEMPTS,
       mode: "worker",
-      scope: evt?.scope || resolveScope(MIND, evt?.cwd || process.cwd()),
+      scope: evt?.scope || resolveScope(MIND, evt?.cwd || CIRCADIAN_HOME),
       lane: evt?.lane || process.env.CIRCADIAN_LANE,
       provenance: evt?.provenance || { harness: process.env.CIRCADIAN_HARNESS || evt?.harness || "unknown", model: process.env.CIRCADIAN_MODEL || evt?.model || "unknown", machine: process.env.CIRCADIAN_MACHINE || process.env.HOSTNAME || "unknown", session: evt?.session_id || "unknown" },
     });
   } catch (e) {
-    // best-effort detached worker — but record the failure everywhere, never hide it.
+    // Queue first: an unexpected exception is just as recoverable as an absent model.
+    if (!DRY_RUN && typeof evt?.transcript_path === "string" && evt.transcript_path) {
+      enqueuePendingSleep(pendingHandle(evt, (e as Error).message), corr);
+    }
     slog("worker", "EXCEPTION", { error: (e as Error).message });
     fail({
       process: "sleep", phase: "worker", correlation_id: corr,
-      summary: "sleep worker threw; session may leave no episode",
+      summary: "sleep worker threw; transcript queued for retry",
       context: { error_line: (e as Error).stack?.split("\n")[1]?.trim() },
       cause: (e as Error).message,
-      next_action: "inspect logs/sleep.log and logs/circadian.events.jsonl; the transcript is intact, sleep can be re-run manually with CIRCADIAN_SLEEP_EVENT",
+      next_action: "inspect logs/sleep.log and drain logs/pending-sleep.jsonl once the error is fixed",
       code: 1,
     });
   }
@@ -1390,7 +1416,7 @@ async function runDrain(): Promise<void> {
 // tested against real transcripts) — a bare import must never fall into
 // hook mode and hang on stdin.
 if (import.meta.main) {
-  logInvocation({ script: "sleep" });
+  logInvocation({ script: "sleep", ...(process.argv.includes("--worker") || DRY_RUN ? { cwd: CIRCADIAN_HOME } : {}) });
   if (process.argv.includes("--worker") || DRY_RUN) {
     await runWorker();
     // An episode was drafted -> the strip is stale. Detached refresh.

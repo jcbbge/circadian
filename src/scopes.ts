@@ -20,6 +20,19 @@ export function readScopes(mind: string): ScopeEntry[] {
   } catch { return []; }
 }
 
+/** Capture the checkout identity while the session directory still exists. */
+export function sessionLocation(cwd: string): { cwd: string; git_toplevel: string | null; project_path: string } {
+  const git = (args: string[]) => execFileSync("git", args, { cwd, encoding: "utf8", stdio: ["ignore", "pipe", "ignore"] }).trim();
+  try {
+    const git_toplevel = git(["rev-parse", "--show-toplevel"]);
+    const common = git(["rev-parse", "--path-format=absolute", "--git-common-dir"]);
+    const project = path.basename(common) === ".git" ? path.dirname(common) : git_toplevel;
+    return { cwd, git_toplevel, project_path: fs.realpathSync(project) };
+  } catch {
+    return { cwd, git_toplevel: null, project_path: cwd };
+  }
+}
+
 export function resolveScope(mind: string, cwd = process.cwd(), override = process.env.CIRCADIAN_SCOPE): string {
   if (override && /^[a-z0-9][a-z0-9_-]*$/.test(override)) return override;
   let root = path.resolve(cwd);

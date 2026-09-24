@@ -6,6 +6,7 @@ import * as fs from "fs";
 import * as path from "path";
 import { tmpdir } from "os";
 import { ccSettingsMissingHooks, ccSettingsMissingHooksFromPath } from "./doctor.ts";
+import { renderSelf } from "./render.ts";
 
 const dirs: string[] = [];
 
@@ -30,7 +31,7 @@ afterEach(() => {
 
 // Entire doctor runs against a disposable HOME/mind and stub executables;
 // neither the real user timer nor ~/circadian is ever probed.
-function linuxDoctor(ageHours: number, options: { timer?: string; logger?: string; grazeFailure?: boolean; recentCommit?: boolean } = {}) {
+function linuxDoctor(ageHours: number, options: { timer?: string; logger?: string; grazeFailure?: boolean; recentCommit?: boolean; self?: string } = {}) {
   const root = fs.mkdtempSync(path.join(tmpdir(), "doctor-linux-"));
   try {
     const home = path.join(root, "home");
@@ -57,7 +58,7 @@ function linuxDoctor(ageHours: number, options: { timer?: string; logger?: strin
       fs.writeFileSync(logger, options.logger);
     }
     spawnSync("git", ["init", "-q", mind], { env });
-    fs.writeFileSync(path.join(mind, "SELF.md"), "# Self\n");
+    fs.writeFileSync(path.join(mind, "SELF.md"), options.self ?? "# Self\n");
     const commit = spawnSync("git", ["-C", mind, "add", "."], { env });
     expect(commit.status).toBe(0);
     expect(spawnSync("git", ["-C", mind, "commit", "-qm", "founding"], { env }).status).toBe(0);
@@ -82,6 +83,15 @@ function linuxDoctor(ageHours: number, options: { timer?: string; logger?: strin
 }
 
 if (process.platform === "linux") describe("doctor on a fresh Linux mind", () => {
+  test("rendered empty sections are not redundant, but repeated claims still fail", () => {
+    const scaffold = renderSelf([], new Map()).md;
+    const clean = linuxDoctor(0.1, { self: scaffold });
+    expect(clean.report.checks.find(c => c.name === "worldview redundancy")?.level).toBe("OK");
+    expect(clean.report.checks.find(c => c.name === "semantic stutter")?.level).toBe("OK");
+    const claim = "**A genuinely repeated claim about keeping each session's evidence intact.** — observed in the fixture";
+    const repeated = linuxDoctor(0.1, { self: scaffold.replace("(empty — no atoms above the render floor yet)", [claim, claim, claim].join("\n")) });
+    expect(repeated.report.checks.find(c => c.name === "worldview redundancy")?.level).toBe("FAIL");
+  });
   test("idle graze throttle and young silent sleep are not faults; checks enabled timer and skips absent macOS patch; endpoint warning names queue", () => {
     const { status, report } = linuxDoctor(0.1);
     const check = (name: string) => report.checks.find(c => c.name === name)!;

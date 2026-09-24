@@ -75,8 +75,13 @@ export function selfSimilarity(text: string): {
   totalChars: number;
   worstOffender: { text: string; copies: number } | null;
 } {
-  const totalChars = text.length;
-  const units = text
+  // Render-floor placeholders are UI scaffolding, not beliefs. Exclude them
+  // from both the numerator and the measured document size.
+  const content = text.split("\n")
+    .filter((line) => line.trim() !== "(empty — no atoms above the render floor yet)")
+    .join("\n");
+  const totalChars = content.length;
+  const units = content
     .split("\n")
     .map((l) => l.trim())
     .filter((l) => l.length >= 40 && !l.startsWith("#"));

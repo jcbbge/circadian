@@ -28,9 +28,10 @@ import type { ExtensionAPI } from "@earendil-works/pi-coding-agent";
 import { spawn } from "node:child_process";
 import { existsSync, statSync, readFileSync, mkdirSync, writeFileSync } from "node:fs";
 import { homedir } from "node:os";
-import { join } from "node:path";
+import { join, resolve } from "node:path";
 import { ok, degraded, correlation } from "./obs.ts";
 import { callTool } from "./serve.ts";
+import { resolveScope, sessionLocation } from "./scopes.ts";
 
 const CIRCADIAN_HOME = process.env.CIRCADIAN_HOME || join(homedir(), "circadian");
 const BUN_BIN = process.env.CIRCADIAN_BUN_BIN || join(homedir(), ".bun/bin/bun");
@@ -345,7 +346,10 @@ export default function circadianMind(pi: ExtensionAPI) {
       return;
     }
 
-    const transcriptPath = acquired.path;
+    const cwd = process.cwd();
+    const transcriptPath = resolve(cwd, acquired.path);
+    const location = sessionLocation(cwd);
+    const scope = resolveScope(join(CIRCADIAN_HOME, "mind"), cwd);
 
     const tsize = acquired.size;
     if (tsize < MIN_TRANSCRIPT_BYTES) {
@@ -370,11 +374,13 @@ export default function circadianMind(pi: ExtensionAPI) {
       const sleepEvent = JSON.stringify({
         transcript_path: transcriptPath,
         session_id: sessionId,
+        ...location, scope,
       });
       const worker = spawn(
         BUN_BIN,
         ["run", join(CIRCADIAN_HOME, "src/sleep.ts"), "--worker"],
         {
+          cwd: CIRCADIAN_HOME,
           detached: true,
           stdio: ["ignore", "ignore", "ignore"],
           env: { ...process.env, CIRCADIAN_HOME, CIRCADIAN_BUN_BIN: BUN_BIN, CIRCADIAN_SLEEP_EVENT: sleepEvent },

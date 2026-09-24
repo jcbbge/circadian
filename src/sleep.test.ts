@@ -104,6 +104,57 @@ describe("decideImplicitOk", () => {
   });
 });
 
+describe("session-end after worktree teardown", () => {
+  for (const exception of [false, true]) {
+    test(exception ? "unexpected worker error queues the transcript" : "absent model queues the transcript", async () => {
+      const root = mkdtempSync(join(tmpdir(), "circadian-teardown-"));
+      try {
+        const home = join(root, "install");
+        const mind = join(home, "mind");
+        const project = join(root, "project");
+        const worktree = join(root, "worker");
+        const transcript = join(root, "session.jsonl");
+        mkdirSync(mind, { recursive: true });
+        mkdirSync(project);
+        const git = (...args: string[]) => {
+          const r = spawnSync("git", args, { encoding: "utf8" });
+          expect(r.status).toBe(0);
+        };
+        git("init", "-q", project);
+        writeFileSync(join(project, "file"), "fixture");
+        git("-C", project, "-c", "user.name=Test", "-c", "user.email=test@example.invalid", "add", "file");
+        git("-C", project, "-c", "user.name=Test", "-c", "user.email=test@example.invalid", "commit", "-qm", "fixture");
+        git("-C", project, "worktree", "add", "-qb", "worker", worktree);
+        writeFileSync(join(mind, "scopes.tsv"), `fixture\t${project}\tactive\n`);
+        writeFileSync(transcript, [
+          JSON.stringify({ role: "user", content: "Please investigate this fixture carefully." }),
+          JSON.stringify({ role: "assistant", content: "I investigated the fixture carefully." }),
+        ].join("\n") + "\n");
+        if (exception) mkdirSync(join(mind, "SELF.md")); // readFileSync throws EISDIR before drafting
+        const session_id = `teardown-${exception ? "exception" : "offline"}`;
+        const env = { ...process.env, CIRCADIAN_HOME: home, CIRCADIAN_BUN_BIN: process.execPath,
+          CIRCADIAN_LLM_BASE_URL: "http://127.0.0.1:1/v1", CIRCADIAN_LLM_FALLBACK_BASE_URL: "" };
+        delete env.CIRCADIAN_SCOPE;
+        delete env.CIRCADIAN_LANE;
+        const run = spawnSync(process.execPath, [join(import.meta.dir, "sleep.ts")], {
+          cwd: worktree, input: JSON.stringify({ session_id, transcript_path: "../session.jsonl" }),
+          env, encoding: "utf8",
+        });
+        expect(run.status).toBe(0);
+        rmSync(worktree, { recursive: true, force: true });
+        const queue = join(home, "logs", "pending-sleep.jsonl");
+        let entry: any;
+        for (let i = 0; i < 100; i++) {
+          try { entry = JSON.parse(readFileSync(queue, "utf8").trim()); break; } catch { await Bun.sleep(100); }
+        }
+        expect(entry).toMatchObject({ session_id, transcript_path: transcript, scope: "fixture", attempts: 0 });
+        expect(entry.last_error).toMatch(exception ? /EISDIR/ : /LLM down:/);
+        expect(readFileSync(join(home, "logs", "sleep.log"), "utf8")).toContain(exception ? "EXCEPTION" : "no valid draft");
+      } finally { rmSync(root, { recursive: true, force: true }); }
+    });
+  }
+});
+
 describe("pending sleep drain self-heal", () => {
   test("dead-letters already-stuck at start without LLM; retains not-stuck failures with ratcheted attempts", () => {
     const home = mkdtempSync(join(tmpdir(), "circadian-pending-"));

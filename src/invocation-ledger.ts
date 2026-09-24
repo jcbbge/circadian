@@ -88,6 +88,8 @@ export interface InvocationEntry {
   /** hook event name if the caller knows it (PostToolUse, SessionEnd, ...) */
   hook_event?: string;
   session_id?: string;
+  /** Explicit cwd for detached workers whose original checkout can disappear. */
+  cwd?: string;
   /** anything the caller wants pinned to this invocation */
   context?: Record<string, unknown>;
 }
@@ -111,7 +113,7 @@ export function logInvocation(entry: InvocationEntry): Ancestor[] {
       // the full receipt, so nobody has to trust attributed_to
       chain: chain.map((a) => `${a.pid}:${a.comm}`),
       argv: process.argv.slice(1),
-      cwd: process.cwd(),
+      cwd: entry.cwd ?? process.cwd(),
       ppid_env: {
         // hook runners often identify themselves in the environment
         term_program: process.env.TERM_PROGRAM ?? null,
