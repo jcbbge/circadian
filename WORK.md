@@ -31,7 +31,7 @@ Design language for all of these: one intelligence, many instantiations; the sub
 - [x] Brief 12 — belief interchange format (atom shape as protocol; reader for mem-shaped stores) — `94041ae578ce6ae4e11057e455ac050f5b0a8d18`
 - [x] Brief 13 — stigmergic memory on worker branches (lanes; landing consolidates; conflicts escalate) — `8bd1b29041370c06641b4d53b01444777843819d`
 - [x] Brief 14 — decision-boundary split (COMPARE and every fixed choice on a decision-only transport); code landed at a7eafb2; acceptance measurement pending — needs the recorded pair set from a real mind and a configured decision endpoint
-- Brief 15 — quorum write gate for concurrent instantiations
+- [x] Brief 15 — quorum write gate for concurrent instantiations — `e1152198732ffeff8e4a3cb46208c0056aa236ba`
 - [x] Brief 16 — contradiction graph (persist doubt) — `0cc99326236dbca2e1637e0163ad8a60b83baf42`
 - [x] Brief 17 — archaeology command (`when`, `bisect`) — `03df36c`
 - [x] Brief 18 — compare-and-swap publication (graft from mem; prerequisite for 13, 15) — `1b610cb850c24f82a6eca81f226f9cecc56dd77d`
