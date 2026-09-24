@@ -12,9 +12,10 @@ test("installer merges MCP registration and Pi extension without clobbering exis
     fs.mkdirSync(bin);
     fs.cpSync(path.join(import.meta.dir, "..", "templates"), path.join(install, "templates"), { recursive: true });
     fs.writeFileSync(path.join(bin, "curl"), "#!/bin/sh\nexit 1\n", { mode: 0o755 });
+    fs.writeFileSync(path.join(bin, "systemctl"), "#!/bin/sh\nexit 0\n", { mode: 0o755 });
     fs.writeFileSync(path.join(home, ".claude", "settings.json"), JSON.stringify({ mcpServers: { existing: { command: "other" } }, hooks: { Custom: [{ hooks: [{ type: "command", command: "keep" }] }] } }));
     fs.writeFileSync(path.join(home, ".claude.json"), JSON.stringify({ mcpServers: { existing: { command: "other" } } }));
-    const env = { ...process.env, HOME: home, CIRCADIAN_HOME: install, CIRCADIAN_BUN_BIN: process.execPath, CIRCADIAN_USER_NAME: "Tester", GIT_AUTHOR_NAME: "Test", GIT_COMMITTER_NAME: "Test", GIT_AUTHOR_EMAIL: "test@example.invalid", GIT_COMMITTER_EMAIL: "test@example.invalid", PATH: `${bin}:${process.env.PATH}` };
+    const env = { ...process.env, HOME: home, XDG_CONFIG_HOME: path.join(root, "config"), XDG_DATA_HOME: path.join(root, "data"), XDG_CACHE_HOME: path.join(root, "cache"), CIRCADIAN_HOME: install, CIRCADIAN_BUN_BIN: process.execPath, CIRCADIAN_USER_NAME: "Tester", GIT_AUTHOR_NAME: "Test", GIT_COMMITTER_NAME: "Test", GIT_AUTHOR_EMAIL: "test@example.invalid", GIT_COMMITTER_EMAIL: "test@example.invalid", PATH: `${bin}:${process.env.PATH}` };
     const run = () => spawnSync("bash", [path.join(import.meta.dir, "..", "install.sh")], { env, encoding: "utf8" });
     const first = run();
     expect(first.status).toBe(0);

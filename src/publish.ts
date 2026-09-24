@@ -103,7 +103,9 @@ export function publish(mind: string, intent: PublishIntent, beforeCAS?: () => v
     idle({ process: "ops", phase: "publish-replay", summary: "recovered published request", context: { id: intent.id, commit } });
     return done;
   }
-  for (let attempt = 0; attempt < 2; attempt++) {
+  // A burst of SessionEnd publishers can move the ref repeatedly. Every CAS
+  // loss rebuilds from the new tip; two attempts are not enough for five peers.
+  for (let attempt = 0; attempt < 64; attempt++) {
     const { old } = current(mind);
     const index = path.join(git(mind, ["rev-parse", "--absolute-git-dir"]), `index-publish-${randomUUID()}`);
     const changed: Record<string, string> = { ...intent.files };
@@ -132,8 +134,8 @@ export function publish(mind: string, intent: PublishIntent, beforeCAS?: () => v
           idle({ process: "ops", phase: "publish-replay", summary: "concurrent duplicate request already published", context: { id: intent.id, commit: done.commit } });
           return done;
         }
-        degraded({ process: "ops", phase: "publish-conflict", summary: "CAS lost; rebuilding on new tip", context: { id: intent.id, old, attempt }, cause: "published ref advanced", next_action: attempt === 0 ? "retrying against new tip" : "retry request after inspecting competing writer" });
-        if (attempt === 0) continue;
+        degraded({ process: "ops", phase: "publish-conflict", summary: "CAS lost; rebuilding on new tip", context: { id: intent.id, old, attempt }, cause: "published ref advanced", next_action: attempt < 63 ? "retrying against new tip" : "retry request after inspecting competing writer" });
+        if (attempt < 63) continue;
         throw e;
       }
       const done = { id: intent.id, commit, ts: new Date().toISOString() };

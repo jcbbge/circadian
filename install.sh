@@ -8,7 +8,7 @@
 #   1. resolves CIRCADIAN_HOME (this repo) and checks prerequisites (bun)
 #   2. scaffolds $CIRCADIAN_HOME/mind/ from templates/ (personalizing USER.md)
 #   3. inits the mind/ git repo (no remote, ever — it holds private memory)
-#   4. installs the nightly REM launchd job (macOS) pointed at this repo
+#   4. installs the REM launchd job (macOS) or systemd user timer (Linux)
 #   5. prints the exact Claude Code hook config to add (does not edit it blind)
 #
 # Usage:
@@ -49,7 +49,7 @@ if [ -d "$MIND_DIR" ]; then
   echo "circadian: mind/ already exists at $MIND_DIR — leaving it untouched."
 else
   echo "circadian: scaffolding mind/ from templates/"
-  mkdir -p "$MIND_DIR/episodes"
+  mkdir -p "$MIND_DIR/episodes" "$MIND_DIR/beliefs"
 
   # personalize USER.md
   USER_NAME="${CIRCADIAN_USER_NAME:-}"
@@ -194,8 +194,50 @@ EOF
     launchctl load "$CATCHUP"
     echo "circadian: catch-up agent installed (runs --if-due at every login/restart)."
   fi
+elif [ "$(uname)" = "Linux" ]; then
+  UNIT_DIR="${XDG_CONFIG_HOME:-$HOME/.config}/systemd/user"
+  SERVICE="$UNIT_DIR/circadian-rem.service"
+  TIMER="$UNIT_DIR/circadian-rem.timer"
+  mkdir -p "$UNIT_DIR"
+  if [ ! -f "$SERVICE" ]; then
+    cat > "$SERVICE" <<EOF
+[Unit]
+Description=Circadian REM consolidation
+
+[Service]
+Type=oneshot
+WorkingDirectory=$CIRCADIAN_HOME
+Environment=CIRCADIAN_HOME=$CIRCADIAN_HOME
+Environment=CIRCADIAN_BUN_BIN=$BUN_BIN
+ExecStart=$BUN_BIN $CIRCADIAN_HOME/src/rem-popmem.ts
+StandardOutput=append:$LOG_DIR/rem.log
+StandardError=append:$LOG_DIR/rem.error.log
+EOF
+  fi
+  if [ ! -f "$TIMER" ]; then
+    cat > "$TIMER" <<'EOF'
+[Unit]
+Description=Circadian REM at 09:00 and 21:00
+
+[Timer]
+OnCalendar=*-*-* 09:00:00
+OnCalendar=*-*-* 21:00:00
+Persistent=true
+Unit=circadian-rem.service
+
+[Install]
+WantedBy=timers.target
+EOF
+  fi
+  # Re-enable on every install: an existing but disabled timer is not installed.
+  # A missing user bus is reported, not a reason to destroy the generated units.
+  if systemctl --user daemon-reload && systemctl --user enable --now circadian-rem.timer; then
+    echo "circadian: REM systemd user timer active (09:00 and 21:00, persistent catch-up)."
+  else
+    echo "circadian: WARNING — systemd user timer written but not activated; run systemctl --user enable --now circadian-rem.timer when the user bus is available." >&2
+  fi
 else
-  echo "circadian: non-macOS — skipping launchd. Schedule 'CIRCADIAN_HOME=$CIRCADIAN_HOME $BUN_BIN $CIRCADIAN_HOME/src/rem-popmem.ts' via cron/systemd at 09:00 and 21:00, and 'rem-popmem.ts --if-due' at login/wake."
+  echo "circadian: unsupported scheduler on $(uname); configure REM at 09:00 and 21:00 manually." >&2
 fi
 
 # ---- 5. Claude Code hook wiring (auto-merged, idempotent) ------------------

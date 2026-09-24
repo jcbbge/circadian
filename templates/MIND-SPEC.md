@@ -117,6 +117,10 @@ committed SELF.md, byte-identical.
 
 `mind/scopes.tsv` (or `CIRCADIAN_REGISTRY`) is tab-separated `slug<TAB>path<TAB>status`; only active scopes enter footnotes. No `~/AGENTS.md` dependency. At write time cwd → git top-level → git common-dir main checkout → registry resolves scope; unknown paths are `global`. Session hooks pass the resolved scope into detached workers and pending queue. Episode/meal/atom origins retain it; new episodes also record `ts:` for exact 48h footnotes (legacy date-only episodes use noon). Wake announces the resolved scope first: in-scope NOW, episodes/why-chains, evidence and atom origins in `<mind:here scope="…">` (4k-token budget shared by NOW, evidence and detail); other active scopes' most recent episode in 48h is a one-line, receipted `<mind:elsewhere>` footnote. Global wake has global NOW and footnotes, no local detail. Corrections remain global. Per-scope greeting is composed from its NOW; no LLM at wake.
 
+## Scheduling, publication, and outages
+
+`install.sh` installs the macOS launchd schedule/catch-up or a Linux systemd user timer at 09:00/21:00 with `Persistent=true`; reinstallation preserves existing units. SLEEP publishes each session's unique episode, scoped NOW, and scoreboard lines by git compare-and-swap (retrying against the new tip on collisions, which emit events); concurrent sessions cannot overwrite one another's episodes or ledger entries. When `CIRCADIAN_LLM_BASE_URL` cannot answer, SLEEP preserves its transcript handle (even for a short SessionEnd) in `logs/pending-sleep.jsonl` and emits degraded with cause and next_action. An outage does not spend the queue's poison-entry attempt budget. REM defers undigested episodes rather than marking them held-aside or burning its due slot; once the endpoint returns, REM drains queued sleeps before absorbing their episodes. WAKE is always file-only.
+
 ## The REM payload
 
 stack(new episodes) → decay → render → greeting. An episode is new iff its

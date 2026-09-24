@@ -493,6 +493,16 @@ async function attemptLoop(base: string, prompt: string, opts: CompleteOptions):
   throw lastErr ?? new Error("local LLM call failed before any attempt ran");
 }
 
+// REM checks liveness before starting a backlog pass: a dead endpoint must
+// not turn undigested episodes into held-aside failures or burn a due slot.
+export async function probeModel(): Promise<void> {
+  try { await preflight(BASE_URL); }
+  catch (err) {
+    if (!FALLBACK_BASE_URL) throw err;
+    await preflight(FALLBACK_BASE_URL);
+  }
+}
+
 export async function complete(prompt: string, opts: CompleteOptions): Promise<string> {
   try {
     return await attemptLoop(BASE_URL, prompt, opts);

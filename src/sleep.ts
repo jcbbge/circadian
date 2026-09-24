@@ -76,13 +76,39 @@ const NOW_CAP_CHARS = 12000; // 3k tokens
 const TRANSCRIPT_CAP_CHARS = 48000; // ~12k tokens of transcript
 const LLM_TIMEOUT_MS = 6 * 60 * 1000; // local generation of both artifacts can be slow
 const LLM_MAX_TOKENS = 6000; // must exceed episode (~1k) + NOW (~3k) with headroom
-const MIN_TRANSCRIPT_BYTES = 10 * 1024; // one-shot -p sessions leave tiny transcripts; episodes from them are noise
 
 // ---------- pending queue (durability) ----------
 // FIXED CONTRACT — doctor.ts (W3) reads this exact path and line shape.
 const PENDING_QUEUE = join(CIRCADIAN_HOME, "logs", "pending-sleep.jsonl");
 const PENDING_DEAD_QUEUE = join(CIRCADIAN_HOME, "logs", "pending-sleep.dead.jsonl");
 const PENDING_LOCK = join(CIRCADIAN_HOME, "logs", "pending-sleep.lock");
+const PENDING_WRITE_LOCK = join(CIRCADIAN_HOME, "logs", "pending-sleep-write.lock");
+// Serialize append with drain's read/rename: O_APPEND alone cannot protect
+// lines appended after the read but before the rename.
+function withQueueWriteLock<T>(action: () => T): T {
+  mkdirSync(dirname(PENDING_WRITE_LOCK), { recursive: true });
+  for (let i = 0; i < 2000; i++) {
+    try {
+      writeFileSync(PENDING_WRITE_LOCK, String(process.pid), { flag: "wx" });
+      try { return action(); } finally { try { unlinkSync(PENDING_WRITE_LOCK); } catch {} }
+    } catch (e) {
+      if ((e as NodeJS.ErrnoException).code !== "EEXIST") throw e;
+      try {
+        const pid = Number(readFileSync(PENDING_WRITE_LOCK, "utf8"));
+        if (pid && pid !== process.pid) process.kill(pid, 0);
+      } catch (err) {
+        // An empty file can be a live holder between O_EXCL and its write.
+        // Reclaim only a confirmed dead PID, or an abandoned empty lock.
+        let abandoned = (err as NodeJS.ErrnoException).code === "ESRCH";
+        try { abandoned ||= Date.now() - statSync(PENDING_WRITE_LOCK).mtimeMs > 30_000; } catch {}
+        if (abandoned) { try { unlinkSync(PENDING_WRITE_LOCK); } catch {} }
+      }
+      Bun.sleepSync(10);
+    }
+  }
+  throw new Error("pending queue write lock busy");
+}
+
 const DRAFT_ATTEMPTS = 2; // LLM tries per drafting round (live worker or one drain pass)
 // The stuck policy lives here because doctor imports sleep.ts and sleep has no doctor dependency.
 // BULK-DRAIN THROTTLE (added 2026-08-23). The drain loop had no batch limit
@@ -122,10 +148,15 @@ interface PendingSleep {
   scope?: string;
 }
 
+function endpointUnavailable(reason: string): boolean {
+  return /LLM down:|LLM busy:|llm busy, deferred:|fallback also unreachable/.test(reason);
+}
+
 export function isPendingEntryStuck(
-  entry: { attempts?: number; queued_at?: string },
+  entry: { attempts?: number; queued_at?: string; last_error?: string },
   nowMs = Date.now()
 ): boolean {
+  if (endpointUnavailable(entry.last_error ?? "")) return false; // outage is not a poison episode
   if ((entry.attempts ?? 0) >= PENDING_ATTEMPTS_CAP) return true;
   if (!entry.queued_at) return false;
   const queuedMs = Date.parse(entry.queued_at);
@@ -167,7 +198,7 @@ function readPendingQueue(): PendingSleep[] {
 function enqueuePendingSleep(entry: PendingSleep, corr: string): void {
   try {
     mkdirSync(dirname(PENDING_QUEUE), { recursive: true });
-    appendFileSync(PENDING_QUEUE, JSON.stringify(entry) + "\n");
+    withQueueWriteLock(() => appendFileSync(PENDING_QUEUE, JSON.stringify(entry) + "\n"));
   } catch (e) {
     fail({
       process: "sleep", phase: "pending-queue", correlation_id: corr, session_id: entry.session_id,
@@ -188,29 +219,31 @@ function enqueuePendingSleep(entry: PendingSleep, corr: string): void {
 // queue. Returns the number of lines remaining. Throws on write failure;
 // the caller releases the lock and fails loud.
 function rewritePendingQueue(processed: Map<string, PendingSleep | null>): number {
-  const raw = existsSync(PENDING_QUEUE) ? readFileSync(PENDING_QUEUE, "utf8") : "";
-  const out: string[] = [];
-  for (const line of raw.split("\n")) {
-    if (!line.trim()) continue;
-    let e: PendingSleep | null = null;
-    try {
-      e = { attempts: 0, last_error: "", queued_at: "", ...JSON.parse(line) };
-    } catch {
-      out.push(line); // unparseable — preserved, never silently dropped
-      continue;
+  return withQueueWriteLock(() => {
+    const raw = existsSync(PENDING_QUEUE) ? readFileSync(PENDING_QUEUE, "utf8") : "";
+    const out: string[] = [];
+    for (const line of raw.split("\n")) {
+      if (!line.trim()) continue;
+      let e: PendingSleep | null = null;
+      try {
+        e = { attempts: 0, last_error: "", queued_at: "", ...JSON.parse(line) };
+      } catch {
+        out.push(line); // unparseable — preserved, never silently dropped
+        continue;
+      }
+      if (processed.has(pendingKey(e!))) {
+        const action = processed.get(pendingKey(e!));
+        if (action) out.push(JSON.stringify(action));
+        // null => drop: episode written, or transcript gone for good
+      } else {
+        out.push(line); // appended during this drain, or after a cap stop — untouched
+      }
     }
-    if (processed.has(pendingKey(e!))) {
-      const action = processed.get(pendingKey(e!));
-      if (action) out.push(JSON.stringify(action));
-      // null => drop: episode written, or transcript gone for good
-    } else {
-      out.push(line); // appended during this drain, or after a cap stop — untouched
-    }
-  }
-  const tmp = `${PENDING_QUEUE}.tmp-${process.pid}`;
-  writeFileSync(tmp, out.length ? out.join("\n") + "\n" : "", "utf8");
-  renameSync(tmp, PENDING_QUEUE);
-  return out.length;
+    const tmp = `${PENDING_QUEUE}.tmp-${process.pid}`;
+    writeFileSync(tmp, out.length ? out.join("\n") + "\n" : "", "utf8");
+    renameSync(tmp, PENDING_QUEUE);
+    return out.length;
+  });
 }
 
 // O_EXCL create; two drains never run concurrently. A lock younger than
@@ -412,10 +445,9 @@ async function runHook(): Promise<void> {
     });
     process.exit(0);
   }
-  if (tsize < MIN_TRANSCRIPT_BYTES) {
-    slog("hook", "bail: transcript too small", { bytes: tsize, min: MIN_TRANSCRIPT_BYTES });
-    process.exit(0);
-  }
+  // A short transcript is still a session. Dropping it here bypasses the
+  // pending queue entirely when the model is down; let the worker decide
+  // whether there are any user/assistant turns to digest.
 
   // BURST DEDUPE. One session end must produce ONE episode. Cursor fires its
   // sessionEnd hook TWICE for every session — measured 2026-08-14 on live
@@ -441,7 +473,7 @@ async function runHook(): Promise<void> {
     // guaranteed to flush before the parent dies — that race delivered empty
     // stdin to the worker every time, so transcript_path arrived as null and
     // the worker aborted silently. Env survives detach+exit deterministically.
-    const worker = spawn(BUN_BIN, ["run", selfPath, "--worker"], {
+    const worker = spawn(BUN_BIN, [selfPath, "--worker"], {
       detached: true,
       stdio: ["ignore", "ignore", "ignore"],
       env: { ...process.env, CIRCADIAN_SLEEP_EVENT: JSON.stringify({ ...evt, scope: resolveScope(MIND), cwd: process.cwd() }) },
@@ -689,14 +721,8 @@ ARC: <a short 2-6 word name for this episode's arc>
 === END ===`;
 }
 
-async function draftViaLLM(prompt: string): Promise<string | null> {
-  try {
-    return await complete(prompt, { timeoutMs: LLM_TIMEOUT_MS, maxTokens: LLM_MAX_TOKENS });
-  } catch {
-    // transport error, timeout, truncation, or empty content — treated as a
-    // failed draft by the caller (no partial write).
-    return null;
-  }
+async function draftViaLLM(prompt: string): Promise<string> {
+  return complete(prompt, { timeoutMs: LLM_TIMEOUT_MS, maxTokens: LLM_MAX_TOKENS });
 }
 
 function parseDraft(output: string): { arc: string; episodeBody: string; nowRaw: string } | null {
@@ -1011,10 +1037,12 @@ async function draftSessionEpisode(opts: {
   let lastReason = "";
   for (let attempt = 0; attempt < DRAFT_ATTEMPTS && !draft; attempt += 1) {
     slog(mode, "LLM draft attempt", { attempt: attempt + 1 });
-    const output = await draftViaLLM(prompt);
-    if (!output) {
-      lastReason = "LLM returned nothing (call failed or timed out)";
+    let output: string;
+    try { output = await draftViaLLM(prompt); }
+    catch (e) {
+      lastReason = (e as Error).message;
       slog(mode, lastReason, { attempt: attempt + 1 });
+      if (/LLM down:|LLM busy:|llm busy, deferred:/.test(lastReason)) break;
       continue;
     }
     draft = parseDraft(output);
@@ -1037,7 +1065,7 @@ async function draftSessionEpisode(opts: {
           session_id: sessionId,
           transcript_path: transcriptPath,
           transcript_chars: transcriptText.length,
-          attempts: DRAFT_ATTEMPTS,
+          attempts: endpointUnavailable(lastReason) ? 0 : DRAFT_ATTEMPTS,
           last_error: lastReason,
           queued_at: new Date().toISOString(),
           scope,
@@ -1051,7 +1079,7 @@ async function draftSessionEpisode(opts: {
       summary: `episode draft failed ${DRAFT_ATTEMPTS} times; queued in logs/pending-sleep.jsonl for a later drain`,
       context: { transcript_chars: transcriptText.length, attempts: DRAFT_ATTEMPTS, queued: true, queue_attempts: opts.queueAttempts },
       cause: lastReason || "LLM produced no parseable EPISODE/NOW blocks on either attempt",
-      next_action: "check the local LLM at :10240 (curl http://127.0.0.1:10240/v1/models); the queue drains via `bun src/sleep.ts --drain` (REM runs it before digesting); the full run is in logs/sleep.log",
+      next_action: "restore or set CIRCADIAN_LLM_BASE_URL to an answering endpoint; the queue drains via `bun src/sleep.ts --drain` (REM runs it before digesting)",
     });
     return { status: "draft-failed", lastError: lastReason };
   }
@@ -1083,10 +1111,12 @@ async function draftSessionEpisode(opts: {
   }
 
   const baseSlug = slugify(draft.arc);
-  let filename = backfilled ? `${date}-${sessionId}.md` : `${date}-${baseSlug}.md`;
-  let counter = 2;
-  if (backfilled && existsSync(join(EPISODES_DIR, filename))) return { status: "written" };
-  while (existsSync(join(EPISODES_DIR, filename))) filename = `${date}-${baseSlug}-${counter++}.md`;
+  // A slug is not an identity: five sessions may all get the same arc.
+  // Stable session-derived paths make collisions impossible even if none of
+  // the publishers has checked out its commit yet.
+  const sessionKey = createHash("sha256").update(sessionId).digest("hex").slice(0, 16);
+  const filename = `${date}-${baseSlug}-${sessionKey}.md`;
+  if (existsSync(join(EPISODES_DIR, filename))) return { status: "written" };
   const epPath = join(EPISODES_DIR, filename);
   const self = existsSync(join(MIND, "SELF.md")) ? readFileSync(join(MIND, "SELF.md"), "utf8") : "";
   const tokens = Math.ceil(self.length / 4);
@@ -1272,13 +1302,15 @@ async function runDrain(): Promise<void> {
           } else {
             const lastError =
               result.status === "draft-failed" ? result.lastError : "transcript yielded no user/assistant text";
-            const updated = { ...entry, attempts: entry.attempts + DRAFT_ATTEMPTS, last_error: lastError };
+            const unavailable = endpointUnavailable(lastError);
+            const updated = { ...entry, attempts: entry.attempts + (unavailable ? 0 : DRAFT_ATTEMPTS), last_error: lastError };
             if (isPendingEntryStuck(updated)) {
               deadLetter(entry, updated.attempts, lastError);
             } else {
               processed.set(key, updated);
               slog("drain", "kept: draft failed again", { session_id: entry.session_id, attempts: updated.attempts });
             }
+            if (unavailable) break; // one probe is enough; leave the rest queued
           }
         } catch (e) {
           // One poisonous line must not block the rest of the queue.

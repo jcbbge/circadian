@@ -95,7 +95,7 @@ import { detectSelfStutter } from "./immune.ts";
 import { adaptRenderedForStutterCheck, parseSelfSections } from "./migrate.ts";
 import { sweepMeals } from "./janitor.ts";
 import { buildIndex, updateIndex, loadIndex, saveIndex } from "./relindex.ts";
-import { complete } from "./llm.ts";
+import { complete, probeModel } from "./llm.ts";
 import { ok, idle, degraded, fail, correlation } from "./obs.ts";
 
 // ---------------------------------------------------------------------
@@ -1157,6 +1157,22 @@ async function main() {
     return;
   }
 
+  // Do not consume an episode or a due slot when no model can answer. Both
+  // pending transcripts and unabsorbed episodes remain in place for the next
+  // REM; a healthy endpoint can be configured by changing only the env.
+  if (!dryRun && readOrEmpty(path.join(CIRCADIAN_HOME, "logs", "pending-sleep.jsonl")).trim()) {
+    try { await probeModel(); }
+    catch (err) {
+      degraded({ process: "rem", phase: "model-absent", correlation_id: corr,
+        summary: "REM deferred: undigested work remains queued until a model answers",
+        context: { pending_queue: path.join(CIRCADIAN_HOME, "logs", "pending-sleep.jsonl") },
+        cause: (err as Error).message,
+        next_action: "set CIRCADIAN_LLM_BASE_URL to an answering OpenAI-compatible endpoint and rerun REM; pending sleeps drain before episode absorption",
+      });
+      return;
+    }
+  }
+
   // -------------------------------------------------------------------
   // 0. DRAIN THE PENDING-SLEEP QUEUE (added 2026-08-23)
   //
@@ -1177,14 +1193,15 @@ async function main() {
   // -------------------------------------------------------------------
   if (!dryRun) {
     try {
-      const drain = spawnSync(BUN_BIN, ["run", path.join(CIRCADIAN_HOME, "src/sleep.ts"), "--drain"], {
+      const drain = spawnSync(BUN_BIN, [path.join(CIRCADIAN_HOME, "src/sleep.ts"), "--drain"], {
         encoding: "utf8",
         env: { ...process.env, CIRCADIAN_HOME },
       });
-      ok({
+      (drain.status === 0 ? ok : degraded)({
         process: "rem", phase: "drain-pending", correlation_id: corr,
-        summary: "drained the pending-sleep queue before absorbing",
+        summary: drain.status === 0 ? "drained the pending-sleep queue before absorbing" : "pending-sleep drain failed; queue retained",
         context: { status: drain.status },
+        ...(drain.status === 0 ? {} : { cause: drain.stderr || `drain exited ${drain.status}`, next_action: "inspect pending-sleep queue and rerun REM" }),
       });
     } catch (e) {
       degraded({
@@ -1234,6 +1251,15 @@ async function main() {
       mindDir: MIND_DIR, beliefsDir: BELIEFS_DIR, ledgerPath: LEDGER_PATH, ioLogPath: IO_LOG_PATH,
       filename: ep.filename, correlationId: corr,
     })) as StackEpisodeResult & { failed?: boolean; failurePhase?: string; failureCause?: string };
+    if (result.failed && result.failurePhase === "extract-llm" &&
+        /LLM down:|LLM busy:|llm busy, deferred:|fallback also unreachable/.test(result.failureCause ?? "")) {
+      degraded({ process: "rem", phase: "model-absent", correlation_id: corr,
+        summary: `REM deferred: ${ep.filename} awaits a model`, context: { filename: ep.filename },
+        cause: result.failureCause ?? "model unavailable",
+        next_action: "restore CIRCADIAN_LLM_BASE_URL and rerun REM; the episode remains undigested",
+      });
+      return;
+    }
     if (result.failed) {
       // Hold aside, not absorbed: recordDigested here (not batched after
       // the loop, fact 4's multiplier) means findNewEpisodes() never
