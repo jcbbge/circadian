@@ -69,7 +69,7 @@ else
   : > "$MIND_DIR/scoreboard.jsonl"
 
   # ---- 3. init the mind git repo (private, no remote) ---------------------
-  git -C "$MIND_DIR" init -q
+  git -C "$MIND_DIR" init -q -b main
   # mind/ is standalone; guard the private file even if the dir is ever nested
   cat > "$MIND_DIR/.gitignore" <<'EOF'
 # mind/ is a private git repo (no remote) and never pushed. Two derived,
@@ -80,6 +80,9 @@ else
 #             and refreshed each REM run). Per-user derived data; not source.
 meals/
 index/
+# Local CAS publication metadata, never part of a mind commit.
+intents/
+receipts/
 EOF
   git -C "$MIND_DIR" add -A
   git -C "$MIND_DIR" commit -q -m "founding: circadian mind scaffolded from templates"

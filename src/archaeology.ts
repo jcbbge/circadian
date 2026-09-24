@@ -114,4 +114,9 @@ export function archaeologyMain(args: string[]): void {
   }
 }
 
-if (import.meta.main) archaeologyMain(process.argv.slice(2));
+if (import.meta.main) {
+  if (process.argv[2] === "lane") {
+    const { laneMain } = await import("./lane.ts");
+    laneMain(process.argv.slice(3));
+  } else archaeologyMain(process.argv.slice(2));
+}

@@ -9,6 +9,7 @@ function repo(): string {
   const home = fs.mkdtempSync(path.join(os.tmpdir(), "circ-publish-"));
   const mind = path.join(home, "mind"); fs.mkdirSync(mind);
   git(mind, "init", "-q"); git(mind, "config", "user.name", "Test"); git(mind, "config", "user.email", "test@localhost");
+  fs.writeFileSync(path.join(mind, ".gitignore"), "intents/\nreceipts/\n");
   fs.writeFileSync(path.join(mind, "beliefs.jsonl"), "");
   git(mind, "add", "."); git(mind, "commit", "-qm", "seed");
   process.env.CIRCADIAN_HOME = home;
@@ -19,6 +20,7 @@ test("receipt prevents double application; crash after CAS recovers by trailer",
   try {
     const intent = { id: "a", appends: { "beliefs.jsonl": "{\"ev\":\"stack\",\"atom\":\"a\"}\n" } };
     const first = publish(mind, intent);
+    expect(git(mind, "status", "--porcelain")).toBe("");
     expect(publish(mind, intent).commit).toBe(first.commit);
     fs.unlinkSync(path.join(mind, "receipts/a.json"));
     fs.writeFileSync(path.join(mind, "intents/a.json"), JSON.stringify(intent) + "\n");
@@ -49,6 +51,7 @@ test("two stacker publishers race: both commits land, both lines survive, one co
     expect(await exit).toBe(0);
     expect(git(mind, "rev-list", "--count", "HEAD")).toBe("3");
     expect(fs.readFileSync(path.join(mind, "beliefs.jsonl"), "utf8")).toBe('{"ev":"stack","atom":"second"}\n{"ev":"stack","atom":"first"}\n');
+    expect(git(mind, "status", "--porcelain")).toBe("");
     expect((stderr.match(/publish-conflict/g) ?? []).length).toBe(1);
   } finally { fs.rmSync(path.dirname(mind), { recursive: true, force: true }); }
 });

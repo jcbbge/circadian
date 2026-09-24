@@ -105,7 +105,7 @@ export function publish(mind: string, intent: PublishIntent, beforeCAS?: () => v
   }
   for (let attempt = 0; attempt < 2; attempt++) {
     const { old } = current(mind);
-    const index = path.join(mind, ".git", `index-publish-${randomUUID()}`);
+    const index = path.join(git(mind, ["rev-parse", "--absolute-git-dir"]), `index-publish-${randomUUID()}`);
     const changed: Record<string, string> = { ...intent.files };
     for (const p of Object.keys(changed)) {
       if (p.startsWith("beliefs/") && blob(mind, old, p)) delete changed[p]; // immutable atom
@@ -149,7 +149,7 @@ export function publish(mind: string, intent: PublishIntent, beforeCAS?: () => v
   throw new Error("CAS exhausted");
 }
 export function syncPublished(mind: string, paths: string[] = []): void {
-  const lock = path.join(mind, ".git", "circadian-checkout.lock");
+  const lock = path.join(git(mind, ["rev-parse", "--absolute-git-dir"]), "circadian-checkout.lock");
   // mkdir is atomic. Do not break an unknown holder's lock: it could be alive.
   let held = false;
   for (let i = 0; i < 200; i++) {
@@ -163,6 +163,13 @@ export function syncPublished(mind: string, paths: string[] = []): void {
       safePath(p);
       const content = blob(mind, old, p);
       if (!fs.existsSync(path.join(mind, p)) || fs.readFileSync(path.join(mind, p), "utf8") !== content) atomic(path.join(mind, p), content);
+    }
+    // update-ref changes the checked-out ref, but leaves its index at the old
+    // tree (published files appear staged-deleted and untracked). Refresh only
+    // a non-bare worktree on the ref we just synced, under the checkout lock.
+    if (git(mind, ["rev-parse", "--is-bare-repository"]) === "false") {
+      git(mind, ["read-tree", "HEAD"]);
+      git(mind, ["update-index", "-q", "--refresh"]);
     }
   } finally { fs.rmdirSync(lock); }
 }
