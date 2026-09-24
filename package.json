@@ -26,7 +26,8 @@
     "circadian-graze": "./src/graze.ts",
     "circadian-status": "./src/status.ts",
     "circadian-doctor": "./src/doctor.ts",
-    "circadian-dig": "./src/dig.ts"
+    "circadian-dig": "./src/dig.ts",
+    "circadian": "./src/archaeology.ts"
   },
   "scripts": {
     "install": "bash ./install.sh",

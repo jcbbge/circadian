@@ -36,6 +36,7 @@ never touches project source.
   | `rem` | `src/rem-popmem.ts` | twice-daily consolidation into the population |
   | `status` | `src/status.ts` | vitals, on demand |
   | `doctor` | `src/doctor.ts` | health check, on demand |
+  | `when`, `bisect` | `src/archaeology.ts` | read-only belief and episode git history |
 
   The processes are **storage-agnostic machines over markdown**: beliefs are
   weighted atoms, recurrence bumps weight instead of adding copies, forgetting
@@ -50,7 +51,7 @@ never touches project source.
 - **Twice daily (09:00 & 21:00)** → `rem` consolidates (macOS launchd job,
   installed by `install.sh`; a catch-up job runs `rem --if-due` at login and
   restart so a slot missed while the laptop was closed still runs).
-- **Anytime** → `status` (vitals) and `doctor` (health check).
+- **Anytime** → `status` (vitals), `doctor` (health check), `circadian when <id|claim-substring>` (birth, bumps, supersedes), and `circadian bisect <claim>` (first episode mention). Run `bun src/archaeology.ts when|bisect ...` from the program checkout without the package bin.
 
 Non-macOS? `install.sh` prints the equivalent cron/systemd schedule and the
 `--if-due` catch-up command.
