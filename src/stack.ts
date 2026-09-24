@@ -120,6 +120,7 @@ import {
 } from "./atoms.ts";
 import { significantTokens, jaccard, LTP_THRESHOLD } from "./ltp.ts";
 import { complete } from "./llm.ts";
+import { decide, type DecisionTransport } from "./decide.ts";
 import { ok, idle, degraded, fail, correlation } from "./obs.ts";
 import { publish, recoverPublications } from "./publish.ts";
 
@@ -729,6 +730,8 @@ export interface StackEpisodeContext {
   /** Deterministic test transports; production uses the local LLM. */
   extract?: (prompt: string) => Promise<string>;
   compare?: Comparator;
+  /** Injectable decision-only transport; production uses CIRCADIAN_DECIDE_URL. */
+  decisionTransport?: DecisionTransport;
   beforeCAS?: () => void;
 }
 
@@ -884,16 +887,18 @@ export async function stackEpisode(ctx: StackEpisodeContext): Promise<StackEpiso
     const comparator: Comparator = async (a, b) => {
       if (ctx.compare) return ctx.compare(a, b);
       const prompt = buildComparePrompt(a, b);
-      let raw: string;
-      try {
-        raw = await complete(prompt, { timeoutMs: COMPARE_TIMEOUT_MS, maxTokens: COMPARE_MAX_TOKENS });
-      } catch (err) {
-        // A failed COMPARE call is itself an unrecognized token: coerces to
-        // DISTINCT via parseCompareToken, surfaced as compareInvalid below.
-        raw = `(COMPARE call failed: ${err instanceof Error ? err.message : String(err)})`;
-      }
-      logIO(ctx.ioLogPath, { kind: "compare", episode: ctx.filename, prompt, completion: raw });
-      return raw;
+      const result = await decide({
+        question: "Compare two candidate beliefs held by a personal AI's memory system. SAME: same belief differently worded; DISTINCT: different beliefs; SUPERSEDES_A: A replaces B; SUPERSEDES_B: B replaces A.",
+        options: COMPARE_TOKENS,
+        evidence: { A: a, B: b },
+      }, {
+        fallback: () => complete(prompt, { timeoutMs: COMPARE_TIMEOUT_MS, maxTokens: COMPARE_MAX_TOKENS }),
+        transport: ctx.decisionTransport,
+      });
+      logIO(ctx.ioLogPath, { kind: "compare", episode: ctx.filename, prompt, completion: result.raw });
+      // routeCandidate applies the same exact token parser to either
+      // transport; invalid responses stay raw and count as degraded.
+      return result.raw;
     };
 
     const decision = await routeCandidate(candidate.claim, population, comparator);
