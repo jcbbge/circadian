@@ -34,7 +34,7 @@ Design language for all of these: one intelligence, many instantiations; the sub
 - Brief 15 — quorum write gate for concurrent instantiations
 - Brief 16 — contradiction graph (persist doubt)
 - Brief 17 — archaeology command (`when`, `bisect`)
-- Brief 18 — compare-and-swap publication (graft from mem; prerequisite for 13, 15)
+- [x] Brief 18 — compare-and-swap publication (graft from mem; prerequisite for 13, 15) — `1b610cb850c24f82a6eca81f226f9cecc56dd77d`
 - Brief 19 — on-demand read surface over MCP (graft from mem)
 - Brief 20 — backfill from transcripts + hard `erase` (graft from mem)
 Suggested order: 18 → 14 → 10 → 12 → 19 → 11 → 17 → 16 → 13 → 15 → 20. Brief 09 stays reserved for dense+lexical fusion.
