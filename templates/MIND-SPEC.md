@@ -59,6 +59,7 @@ in git history. The full blueprint is `docs/POPULATION-MEMORY.md`.
 ## The atom — `mind/beliefs/<id>.md`, one belief per file, never edited
 
 - **id** = first 12 hex of sha256(claim, whitespace-normalized). Identity is content.
+- `scope:` is the write-time project slug (or `global`), inherited from the source episode. Legacy atoms without it resolve their origin via their quoted episode.
 - **Fixed slots, rejected by shape at parse (no validator prose):**
   `kind:` identity | doctrine | motif | agreement (maps 1:1 to the v1 SELF.md sections)
   `claim:` ≤280 chars — the belief, one telling
@@ -112,6 +113,10 @@ with both claims and provenance (at most 5 whole lines, 500-token budget).
 Invariant (asserted in `bun test` and after every REM): render(archive) ==
 committed SELF.md, byte-identical.
 
+## Scope and resolution
+
+`mind/scopes.tsv` (or `CIRCADIAN_REGISTRY`) is tab-separated `slug<TAB>path<TAB>status`; only active scopes enter footnotes. No `~/AGENTS.md` dependency. At write time cwd → git top-level → git common-dir main checkout → registry resolves scope; unknown paths are `global`. Session hooks pass the resolved scope into detached workers and pending queue. Episode/meal/atom origins retain it; new episodes also record `ts:` for exact 48h footnotes (legacy date-only episodes use noon). Wake announces the resolved scope first: in-scope NOW, episodes/why-chains, evidence and atom origins in `<mind:here scope="…">` (4k-token budget shared by NOW, evidence and detail); other active scopes' most recent episode in 48h is a one-line, receipted `<mind:elsewhere>` footnote. Global wake has global NOW and footnotes, no local detail. Corrections remain global. Per-scope greeting is composed from its NOW; no LLM at wake.
+
 ## The REM payload
 
 stack(new episodes) → decay → render → greeting. An episode is new iff its
@@ -130,8 +135,7 @@ counterfeit-quote assert.
 ## What survives v1 unchanged
 
 Episodes; GRAZE (in-session checkpoint metabolizer → `mind/meals/`, folded by
-SLEEP at session end); SLEEP drafting; WAKE injection (~15k-token payload cap,
-loud telemetry on overage); NOW.md; USER.md; the greeting protocol (≤3 lines —
+SLEEP at session end); SLEEP drafting; WAKE injection (here 4k / elsewhere 300-token whole-line budgets, loud telemetry on overage); scope-tagged meals and episodes; `mind/now/<scope>.md` per-project SLEEP output; NOW.md is global only; USER.md; the greeting protocol (≤3 lines —
 arc, flight plan, one live tension; a "Last sleep" older than 48h prepends an
 explicit staleness warning at WAKE); hook wiring. Whole-file token caps
 (SELF 6k / USER 2k / NOW 3k / compost 1k) and per-section render budgets

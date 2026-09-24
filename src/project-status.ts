@@ -24,6 +24,8 @@ import {
 } from "./relindex.ts";
 import type { ScoreEvent } from "./status.ts";
 
+import { readScopes } from "./scopes.ts";
+
 export const DAY_MS = 86_400_000;
 export const WEEK_MS = 7 * DAY_MS;
 export const PORTFOLIO_TOKEN_BUDGET = 800;
@@ -191,8 +193,10 @@ export function collectLanded(input: PortfolioInput): LandedItem[] {
   for (const ep of input.episodes) {
     const day = parseDay(ep.date, ep.file);
     if (!day) continue;
-    const proj = matchProject(input.projects, `${ep.arc ?? ""} ${ep.text}`) ??
-      input.projects.find((p) => episodeMatchesProject(ep, p));
+    const recorded = ep.text.match(/^scope:\s*([a-z0-9_-]+)\s*$/m)?.[1];
+    const proj = (recorded ? input.projects.find(p => p.slug === recorded) : null) ??
+      (recorded ? null : matchProject(input.projects, `${ep.arc ?? ""} ${ep.text}`)) ??
+      (recorded ? null : input.projects.find((p) => episodeMatchesProject(ep, p)));
     if (!proj) continue;
     items.push({
       project: proj.name,
@@ -367,15 +371,14 @@ export function renderPortfolioFromMind(opts: {
   includeGit?: boolean;
 }): PortfolioSlice {
   const mind = path.join(opts.circadianHome, "mind");
-  const agentsPath = opts.agentsMdPath ?? path.join(homedir(), "AGENTS.md");
-  let agentsMd = "";
-  try {
-    agentsMd = fs.readFileSync(agentsPath, "utf8");
-  } catch {
-    return { block: "", reason: "no-projects", yesterday: [], last7: [], forward: [] };
-  }
-
-  const projects = mergeProjects(parseActiveProjects(agentsMd));
+  // An explicit legacy path remains useful for migration, but the default is
+  // the mind-owned registry; no home-directory prose is consulted at wake.
+  const projects = opts.agentsMdPath
+    ? mergeProjects(parseActiveProjects(fs.readFileSync(opts.agentsMdPath, "utf8")))
+    : readScopes(mind).filter(e => e.status.toLowerCase() === "active").map(e => ({
+        slug: e.slug, name: e.slug, paths: [e.path], terms: [e.slug],
+      }));
+  if (!projects.length) return { block: "", reason: "no-projects", yesterday: [], last7: [], forward: [] };
   const episodes = loadEpisodes(path.join(mind, "episodes"));
   let nowMd = "";
   try {

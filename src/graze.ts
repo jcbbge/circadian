@@ -46,6 +46,7 @@ import { complete } from "./llm.ts";
 import { ok, idle, degraded, fail, correlation } from "./obs.ts";
 import { isDroneOpening, isFleetPacketOpening, firstUserTurnFromTranscript } from "./provenance.ts";
 import { normalizeTurnText } from "./transcript-format.ts";
+import { resolveScope } from "./scopes.ts";
 
 // --dry-run: digest the delta exactly as the worker does, then print the
 // bullets to stdout instead of appending them to mind/meals/ (and without
@@ -246,7 +247,7 @@ async function runHook(): Promise<void> {
       stdio: ["ignore", "ignore", "ignore"],
       env: {
         ...process.env,
-        CIRCADIAN_GRAZE_EVENT: JSON.stringify({ transcript_path: transcriptPath, session_id: sessionId }),
+        CIRCADIAN_GRAZE_EVENT: JSON.stringify({ transcript_path: transcriptPath, session_id: sessionId, scope: resolveScope(MIND) }),
       },
     });
     worker.unref();
@@ -400,7 +401,7 @@ async function runWorker(): Promise<void> {
       return;
     }
     mkdirSync(MEALS_DIR, { recursive: true });
-    appendFileSync(mealPath, `\n## checkpoint ${n} — ${stamp}\n\n${bullets}\n`);
+    appendFileSync(mealPath, `${n === 1 ? `scope: ${evt.scope || resolveScope(MIND)}\n` : ""}\n## checkpoint ${n} — ${stamp}\n\n${bullets}\n`);
     saveState(sessionId, { lastCheckpointTs: Date.now(), byteOffset: newOffset, checkpoints: n });
     glog("worker", "checkpoint digested", { sessionId, n, delta_chars: text.length, meal: mealPath });
     ok({

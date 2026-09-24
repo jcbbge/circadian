@@ -103,8 +103,9 @@ describe("checkout of a mind ref", () => {
     git(repo, "add", "-A"); git(repo, "commit", "-qm", "rendered mind");
     const now = readFileSync(join(repo, "NOW.md"), "utf8");
     writeFileSync(join(repo, "scoreboard.jsonl"), JSON.stringify({ type: "wake", ts: new Date().toISOString() }) + "\n");
-    const expected = buildPayload({ self, now, user: files["USER.md"], greeting: files["greeting.md"],
-      constitution: files["CONSTITUTION.md"], constitutionJosh: files["CONSTITUTION-JOSH.md"] });
+    const expected = buildPayload({ self: "", now, user: files["USER.md"], greeting: "",
+      constitution: files["CONSTITUTION.md"], constitutionJosh: files["CONSTITUTION-JOSH.md"],
+      scope: "global", here: "", elsewhere: "" });
     const p = spawnSync("bun", [join(import.meta.dir, "wake.ts")], {
       encoding: "utf8", input: "", timeout: 10000,
       env: { ...process.env, CIRCADIAN_HOME: home, CIRCADIAN_BUN_BIN: "/bin/true" },

@@ -35,6 +35,7 @@ import { isDroneOpening, isFleetPacketOpening, firstUserTurnFromText } from "./p
 import { normalizeTurnText } from "./transcript-format.ts";
 import { publish, recoverPublications } from "./publish.ts";
 import { createHash } from "node:crypto";
+import { resolveScope, tagEpisode, scopeNowPath } from "./scopes.ts";
 
 // --dry-run: draft exactly as the live worker does (same transcript, same
 // prompt, same LLM, same parse), then print the episode + NOW.md to stdout
@@ -118,6 +119,7 @@ interface PendingSleep {
   last_error: string;
   queued_at: string;
   raw_line?: string;
+  scope?: string;
 }
 
 export function isPendingEntryStuck(
@@ -442,7 +444,7 @@ async function runHook(): Promise<void> {
     const worker = spawn(BUN_BIN, ["run", selfPath, "--worker"], {
       detached: true,
       stdio: ["ignore", "ignore", "ignore"],
-      env: { ...process.env, CIRCADIAN_SLEEP_EVENT: JSON.stringify(evt) },
+      env: { ...process.env, CIRCADIAN_SLEEP_EVENT: JSON.stringify({ ...evt, scope: resolveScope(MIND), cwd: process.cwd() }) },
     });
     worker.unref();
     slog("hook", "spawned worker", { transcript_bytes: tsize, pid: worker.pid });
@@ -910,8 +912,10 @@ async function draftSessionEpisode(opts: {
   queueOnFailure: boolean;
   queueAttempts: number; // cumulative queue attempts INCLUDING this round (event context only)
   mode: "worker" | "drain";
+  scope?: string;
 }): Promise<DraftResult> {
   const { transcriptPath, sessionId, corr, mode } = opts;
+  const scope = opts.scope || resolveScope(MIND);
   if (!DRY_RUN && existsSync(join(MIND, ".git"))) recoverPublications(MIND);
 
   // PROVENANCE GUARD (2026-07-24 contamination post-mortem): bench/eval
@@ -997,7 +1001,8 @@ async function draftSessionEpisode(opts: {
     slog(mode, "meal notes found", { meal: mealPath, checkpoints: mealCheckpoints });
   }
 
-  const existingNow = readFileSync(join(MIND, "NOW.md"), "utf8");
+  const nowRelative = scopeNowPath(scope);
+  const existingNow = existsSync(join(MIND, nowRelative)) ? readFileSync(join(MIND, nowRelative), "utf8") : "";
   const existingSelf = existsSync(join(MIND, "SELF.md")) ? readFileSync(join(MIND, "SELF.md"), "utf8") : "";
 
   const prompt = buildPrompt(transcriptText, sessionId, existingSelf, existingNow, mealNotes);
@@ -1035,6 +1040,7 @@ async function draftSessionEpisode(opts: {
           attempts: DRAFT_ATTEMPTS,
           last_error: lastReason,
           queued_at: new Date().toISOString(),
+          scope,
         },
         corr
       );
@@ -1056,8 +1062,9 @@ async function draftSessionEpisode(opts: {
   const preservedSerendipity = extractSection(existingNow, "Serendipity"); // REM owns this line; carry it forward as-is
 
   const backfilled = sessionId.startsWith("backfill-");
-  const episodeContent = buildEpisodeContent(date, sessionId, draft.arc, draft.episodeBody) + (backfilled ? "[backfilled]\n" : "");
-  const nowContent = buildNowContent(draft.nowRaw, preservedSerendipity, lastSleepIso);
+  const episodeContent = tagEpisode(buildEpisodeContent(date, sessionId, draft.arc, draft.episodeBody), scope)
+    .replace(/^date:.*\n/m, line => `${line}ts: ${lastSleepIso}\n`) + (backfilled ? "[backfilled]\n" : "");
+  const nowContent = `scope: ${scope}\n` + buildNowContent(draft.nowRaw, preservedSerendipity, lastSleepIso);
 
   // Dry run stops here, one step short of the mind repo: everything above is
   // the real path (extraction, redaction, guards, prompt, LLM, parse, caps),
@@ -1089,7 +1096,7 @@ async function draftSessionEpisode(opts: {
   publish(MIND, {
     id: `sleep-${createHash("sha256").update(sessionId).digest("hex")}`,
     subject: `sleep: ${sessionId}`,
-    files: backfilled ? { [`episodes/${filename}`]: episodeContent } : { [`episodes/${filename}`]: episodeContent, "NOW.md": nowContent },
+    files: backfilled ? { [`episodes/${filename}`]: episodeContent } : { [`episodes/${filename}`]: episodeContent, [nowRelative]: nowContent },
     appends: backfilled ? {} : { "scoreboard.jsonl": sleepLine + verdictLine },
   });
   if (!backfilled && verdict.event) ok({ process: "sleep", phase: "implicit-verdict", correlation_id: corr, session_id: sessionId,
@@ -1139,6 +1146,7 @@ async function runWorker(): Promise<void> {
       queueOnFailure: true,
       queueAttempts: DRAFT_ATTEMPTS,
       mode: "worker",
+      scope: evt?.scope || resolveScope(MIND, evt?.cwd || process.cwd()),
     });
   } catch (e) {
     // best-effort detached worker — but record the failure everywhere, never hide it.
@@ -1252,6 +1260,7 @@ async function runDrain(): Promise<void> {
             queueOnFailure: false, // already queued — this IS the drain
             queueAttempts: entry.attempts + DRAFT_ATTEMPTS,
             mode: "drain",
+            scope: entry.scope || "global",
           });
           if (result.status === "written") {
             processed.set(key, null);

@@ -79,6 +79,15 @@ export function plateUser(user: string): string {
   return user.endsWith("\n") ? `${trimmed}\n` : trimmed;
 }
 
+export function correctionsFromUser(user: string): string {
+  const match = /^##\s+Corrections\b/m.exec(user);
+  if (!match) return "";
+  const remaining = user.slice(match.index);
+  const next = /^##\s+/gm;
+  next.lastIndex = match[0].length;
+  return remaining.slice(0, next.exec(remaining)?.index ?? remaining.length).trim();
+}
+
 export function buildPayload(files: {
   self: string;
   user: string;
@@ -90,8 +99,11 @@ export function buildPayload(files: {
   constitutionJosh?: string;
   killSwitch?: boolean;
   slim?: boolean;
+  scope?: string;
+  here?: string;
+  elsewhere?: string;
 }): string {
-  const { self, user, now, greeting, evidence, portfolio, constitution, constitutionJosh, killSwitch, slim } = files;
+  const { self, user, now, greeting, evidence, portfolio, constitution, constitutionJosh, killSwitch, slim, scope, here, elsewhere } = files;
 
   const lastSleepRaw = extractLastSleep(now);
   const lastSleepDate = lastSleepRaw ? new Date(lastSleepRaw) : null;
@@ -184,11 +196,26 @@ export function buildPayload(files: {
         ...(greetingBlock ? ["<mind:greeting>", greetingBlock, "</mind:greeting>"] : []),
       ].join("\n");
 
-  const tokens = Math.ceil(body.length / 4);
+  const corrections = scope ? correctionsFromUser(user) : "";
+  const scoped = scope ? [
+    `Resolved scope: ${scope}`,
+    "[Circadian] WAKE — memory substrate injection from the mind repo (see mind/MIND-SPEC.md).",
+    ...constitutionBlocks, ...constitutionJoshBlocks,
+    ...(corrections ? ["<mind:corrections>", corrections, "</mind:corrections>"] : []),
+    ...(killSwitch ? ["KILL SWITCH ACTIVE: SELF/USER/greeting withheld this wake."] : scope === "global" ? [] : userBlocks),
+    `<mind:here scope="${scope}">`,
+    "<mind:now>", now.trim(), "</mind:now>",
+    ...(!killSwitch && scope !== "global" && evidence ? [evidence] : []),
+    ...(!killSwitch && scope !== "global" && here ? [here] : []),
+    ...(!killSwitch && greetingBlock ? ["<mind:greeting>", greetingBlock, "</mind:greeting>"] : []),
+    "</mind:here>",
+    ...(!slim ? ["<mind:elsewhere>", elsewhere || "", "</mind:elsewhere>"] : []),
+  ].join("\n") : body;
+  const tokens = Math.ceil(scoped.length / 4);
   if (tokens > CAP_TOKENS) {
     // Law 4: never truncate silently — announce loudly and still emit the
     // full payload.
-    return `OVER-CAP: payload ${tokens} tokens > ${CAP_TOKENS} — compost required\n${body}`;
+    return `OVER-CAP: payload ${tokens} tokens > ${CAP_TOKENS} — compost required\n${scoped}`;
   }
-  return body;
+  return scoped;
 }

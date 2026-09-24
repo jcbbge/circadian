@@ -958,6 +958,7 @@ export async function stackEpisode(ctx: StackEpisodeContext): Promise<StackEpiso
     const md = serializeAtom({
       kind: candidate.kind, claim: candidate.claim, why: candidate.why,
       quotes: candidate.quotes.map((text) => ({ text, source: ctx.filename })), eps: [episodeDate],
+      scope: episodeContent.match(/^scope:\s*([a-z0-9_-]+)\s*$/m)?.[1] || "global",
     });
     const written = parseAtom(md);
     // A supersession is also a birth. Quorum applies to all births, never

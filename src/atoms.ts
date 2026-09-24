@@ -40,6 +40,7 @@ export interface Atom {
   why: string;
   quotes: { text: string; source: string }[];
   eps: string[];
+  scope?: string;
 }
 
 export interface LedgerEvent {
@@ -142,6 +143,7 @@ export function serializeAtom(a: Omit<Atom, "id">): string {
   lines.push(`claim: ${JSON.stringify(a.claim)}`);
   lines.push(`why: ${JSON.stringify(a.why)}`);
   for (const q of a.quotes) lines.push(`quote: ${JSON.stringify(q.text)} | ${q.source}`);
+  if (a.scope) lines.push(`scope: ${a.scope}`);
   for (const ep of a.eps) lines.push(`[ep:${ep}]`);
   return lines.join("\n") + "\n";
 }
@@ -195,6 +197,11 @@ export function parseAtom(md: string): Atom {
   }
   if (quotes.length === 0) throw new AtomShapeError("no quote");
 
+  let scope: string | undefined;
+  if (lines[i]?.startsWith("scope: ")) {
+    scope = lines[i++].slice(7);
+    if (!/^[a-z0-9][a-z0-9_-]*$/.test(scope)) throw new AtomShapeError("bad scope");
+  }
   const eps: string[] = [];
   while (i < lines.length) {
     const m = EP_LINE_RE.exec(lines[i]);
@@ -204,7 +211,7 @@ export function parseAtom(md: string): Atom {
   }
   if (eps.length === 0) throw new AtomShapeError("no [ep:] stamp");
 
-  return { id: atomId(claim), kind, claim, why, quotes, eps };
+  return { id: atomId(claim), kind, claim, why, quotes, eps, ...(scope ? { scope } : {}) };
 }
 
 // ---------------------------------------------------------------------

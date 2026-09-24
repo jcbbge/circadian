@@ -22,7 +22,7 @@ import { ok, degraded, emit, correlation } from "./obs.ts";
 import { isFirstWakeToday, renderDailyReading, loadScoreboardFile, appendDailyReadingEntry } from "./scorecard.ts";
 import { loadIndex, retrieveForWake } from "./relindex.ts";
 import { computeVerdictStreak } from "./status.ts";
-import { renderPortfolioFromMind } from "./project-status.ts";
+import { resolveScope, scopedView } from "./scopes.ts";
 import { loadScoreboardFile } from "./scorecard.ts";
 import {
   CAP_TOKENS,
@@ -228,45 +228,6 @@ async function runHook(): Promise<void> {
   // (SELF/USER already withheld there), so slim is a no-op under kill switch.
   const slim = tier.tier === "AGNT" || tier.tier === "SAGT";
 
-  // Portfolio report — operator/orchestrator only; workers follow a brief.
-  let portfolio = "";
-  if (!slim && !killSwitch) {
-    try {
-      const loadedForPortfolio = loadIndex(MIND);
-      const scoreboard = loadScoreboardFile(join(MIND, "scoreboard.jsonl"));
-      const slice = renderPortfolioFromMind({
-        circadianHome: CIRCADIAN_HOME,
-        index: loadedForPortfolio?.index ?? null,
-        scoreboard,
-      });
-      portfolio = slice.block;
-      if (slice.reason === "rendered") {
-        ok({
-          process: "wake",
-          phase: "portfolio",
-          correlation_id: corr,
-          summary: `portfolio injected: yesterday=${slice.yesterday.length} last7=${slice.last7.length} forward=${slice.forward.length}`,
-          context: {
-            yesterday: slice.yesterday.slice(0, 5).map((i) => i.summary),
-            last7: slice.last7.slice(0, 8).map((i) => i.summary),
-            forward: slice.forward.slice(0, 5),
-            portfolio_tokens: Math.ceil(slice.block.length / 4),
-          },
-        });
-      }
-    } catch (e) {
-      degraded({
-        process: "wake",
-        phase: "portfolio",
-        correlation_id: corr,
-        summary: "portfolio slice threw; wake proceeds without it",
-        context: {},
-        cause: (e as Error).message,
-        next_action: "inspect project-status.ts; reproduce with `bun src/project-status.ts` if a CLI is added",
-      });
-      portfolio = "";
-    }
-  }
   if (tier.tier) {
     ok({
       process: "wake",
@@ -277,13 +238,17 @@ async function runHook(): Promise<void> {
     });
   }
 
+  const scope = resolveScope(MIND);
+  const view = scopedView(MIND, scope, Date.now(), Math.ceil(evidence.length / 4));
+  const scopedNow = view.now || (scope === "global" ? files["NOW.md"] : "");
   const payload = buildPayload({
-    self: files["SELF.md"],
+    scope, here: view.here, elsewhere: view.elsewhere,
+    self: "", // scope-specific atom origins live in <mind:here>; global has no local beliefs
     user: files["USER.md"],
-    now: files["NOW.md"],
-    greeting: files["greeting.md"],
-    evidence,
-    portfolio,
+    now: scopedNow,
+    greeting: scopedNow.match(/## Flight plan\s*\n+([^\n]+)/i)?.[1] || scopedNow.match(/## Arc\s*\n+([^\n]+)/i)?.[1] || "",
+    evidence: scope === "global" ? "" : evidence,
+    portfolio: "", // global register uses only receipted 48h footnotes, not the 7-day portfolio
     constitution: files["CONSTITUTION.md"],
     constitutionJosh: files["CONSTITUTION-JOSH.md"],
     killSwitch,
@@ -296,7 +261,7 @@ async function runHook(): Promise<void> {
   // Staleness check (>48h on NOW.md "Last sleep" timestamp). The staleness
   // warning is already prepended to the greeting in buildPayload; this event
   // makes it observable in the ledger so doctor can flag it.
-  const lastSleepRaw = extractLastSleep(files["NOW.md"]);
+  const lastSleepRaw = extractLastSleep(scopedNow);
   const lastSleepDate = lastSleepRaw ? new Date(lastSleepRaw) : null;
   const isValidDate = lastSleepDate instanceof Date && !isNaN(lastSleepDate.getTime());
   const isStale = isValidDate ? Date.now() - lastSleepDate!.getTime() > STALE_MS : true;
