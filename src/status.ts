@@ -123,8 +123,8 @@ export function remIsJudgment(e: ScoreEvent): boolean {
   return (e.propagated?.length ?? 0) > 0;
 }
 
-function loadScoreboard(): ScoreEvent[] {
-  const raw = readOrEmpty(SCOREBOARD_PATH);
+function loadScoreboard(scoreboardPath = SCOREBOARD_PATH): ScoreEvent[] {
+  const raw = readOrEmpty(scoreboardPath);
   const events: ScoreEvent[] = [];
   for (const line of raw.split("\n")) {
     const t = line.trim();
@@ -330,11 +330,11 @@ function appendVerdict(verdict: "ok" | "bad", reason?: string) {
  * for the obs ok event context. A cold reader of the ledger gets the full
  * vitals payload without re-running status.
  */
-function collectVitals(scoreboard: ScoreEvent[]) {
-  const nowMd = readOrEmpty(NOW_PATH);
-  const selfMd = readOrEmpty(SELF_PATH);
-  const userMd = readOrEmpty(USER_PATH);
-  const compostMd = readOrEmpty(COMPOST_PATH);
+function collectVitals(scoreboard: ScoreEvent[], mindDir = MIND_DIR) {
+  const nowMd = readOrEmpty(path.join(mindDir, "NOW.md"));
+  const selfMd = readOrEmpty(path.join(mindDir, "SELF.md"));
+  const userMd = readOrEmpty(path.join(mindDir, "USER.md"));
+  const compostMd = readOrEmpty(path.join(mindDir, "compost.md"));
 
   // --- last-sleep age ---
   let lastSleepIso = extractNowLastSleep(nowMd);
@@ -395,6 +395,11 @@ function collectVitals(scoreboard: ScoreEvent[]) {
     },
     worldview_tokens: tokensOf(selfMd),
   };
+}
+
+/** The same status snapshot used by the CLI, without printing or mutating the mind. */
+export function statusSnapshot(mindDir: string) {
+  return collectVitals(loadScoreboard(path.join(mindDir, "scoreboard.jsonl")), mindDir);
 }
 
 function renderStatus(vitals: ReturnType<typeof collectVitals>) {
