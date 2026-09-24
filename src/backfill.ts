@@ -94,7 +94,7 @@ export function runBackfill(args: string[], opts: {
       mkdirSync(join(home, "logs"), { recursive: true });
       appendFileSync(manifest, JSON.stringify({ id, source: kind, status: produced ? "ok" : "no-episode", ts: new Date().toISOString() }) + "\n");
       if (!produced) degraded({ process: "backfill", phase: "transcript", correlation_id: corr,
-        summary: "SLEEP produced no episode", context: { id, source: kind }, cause: result.error?.message ?? result.stderr ?? "no episode",
+        summary: "SLEEP produced no episode", context: { id, source: kind }, cause: result.error?.message || result.stderr?.trim() || `SLEEP exited ${result.status} without an episode`,
         next_action: "inspect sleep.log and retry backfill" });
     }
   }

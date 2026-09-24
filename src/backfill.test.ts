@@ -36,5 +36,27 @@ writeFileSync(join(ep, "2026-09-24-" + session_id + ".md"), "[backfilled]\\n");`
     expect(readFileSync(join(home, "logs", "backfill.jsonl"), "utf8").trim().split("\n")).toHaveLength(2);
     expect(transcriptId(p, "pi")).not.toBe(transcriptId(c, "claude"));
     expect(runBackfill(["--since", "2099-01-01"], opts).written).toBe(0);
+    expect(() => runBackfill(["--source", "unknown"], opts)).toThrow(/source/);
+    expect(() => runBackfill(["--since", "yesterday"], opts)).toThrow(/since/);
+  } finally { rmSync(dir, { recursive: true, force: true }); }
+});
+
+test("failed SLEEP draft is retried; a published episode without manifest is reconciled", () => {
+  const dir = mkdtempSync(join(tmpdir(), "circ-backfill-retry-"));
+  try {
+    const home = join(dir, "home"), pi = join(dir, "pi");
+    mkdirSync(pi); mkdirSync(join(home, "mind", "episodes"), { recursive: true });
+    writeFileSync(join(pi, "session.jsonl"), [
+      { type: "session", id: "retry-uuid" },
+      { type: "message", message: { role: "user", content: "Question" } },
+      { type: "message", message: { role: "assistant", content: [{ type: "text", text: "Answer" }] } },
+    ].map(JSON.stringify).join("\n"));
+    const worker = join(dir, "worker.ts"), opts = { home, piDir: pi, claudeDir: join(dir, "absent"), sleep: worker };
+    writeFileSync(worker, "process.exit(1);");
+    expect(runBackfill([], opts).failed).toBe(1);
+    expect(runBackfill([], opts).failed).toBe(1); // failure is not an idempotence mark
+    const id = `backfill-pi-${transcriptId(join(pi, "session.jsonl"), "pi")}`;
+    writeFileSync(join(home, "mind", "episodes", `2026-09-24-${id}.md`), "[backfilled]\n");
+    expect(runBackfill([], opts)).toEqual({ written: 0, skipped: 1, failed: 0 });
   } finally { rmSync(dir, { recursive: true, force: true }); }
 });

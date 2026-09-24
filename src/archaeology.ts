@@ -115,7 +115,13 @@ export function archaeologyMain(args: string[]): void {
 }
 
 if (import.meta.main) {
-  if (process.argv[2] === "backfill") {
+  if (process.argv[2] === "erase") {
+    const { erase } = await import("./erase.ts");
+    const args = process.argv.slice(3);
+    const m = args.indexOf("--mind"), r = args.indexOf("--reason");
+    const mind = m < 0 ? path.join(process.env.CIRCADIAN_HOME || path.join(homedir(), "circadian"), "mind") : args[m + 1];
+    erase(mind, args[0], r < 0 ? "" : args[r + 1] ?? "", args.includes("--yes"));
+  } else if (process.argv[2] === "backfill") {
     const { runBackfill } = await import("./backfill.ts");
     const result = runBackfill(process.argv.slice(3));
     console.log(`backfill: ${result.written} written, ${result.skipped} skipped, ${result.failed} failed`);

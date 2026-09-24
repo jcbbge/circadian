@@ -6,7 +6,11 @@ status, zoom, replay). If a process's behavior conflicts with this document,
 the process is wrong.
 
 The mind repo is a plain git repository. It has no remote, ever. `USER.md` is
-private relational memory and never leaves this machine.
+private relational memory and never leaves this machine. `erase` is the only
+process allowed to rewrite mind history: with an explicit reason and `--yes`,
+it removes an atom, redacts its text in episodes and all reachable commits,
+prunes unreachable objects, and records only the id and reason in compost.md.
+No remote force-push is supported.
 
 This one page is the whole design. If a change doesn't fit on this page, the
 change is wrong (Doctrine[1]: the cliff is complexity accretion). This is the
@@ -120,7 +124,7 @@ rem: <date> — stacked N, bumped M, sank K, population P
 ```
 
 The commit body auto-records the "sank below floor" list (compost.md is frozen
-as historical; git is the archive). Render-time health checks: stutter-detect,
+for REM; only `erase` appends an id-and-reason audit entry; git is the archive). Render-time health checks: stutter-detect,
 counterfeit-quote assert.
 
 ## What survives v1 unchanged
