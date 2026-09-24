@@ -827,9 +827,10 @@ export function planDistillation(
   atoms: Atom[],
   states: Map<string, AtomState>,
   ts: string,
-  cap = DISTILL_CAP
+  cap = DISTILL_CAP,
+  events: LedgerEvent[] = [],
 ): DistillPlan {
-  const { md, manifest } = renderSelf(atoms, states);
+  const { md, manifest } = renderSelf(atoms, states, undefined, { events });
   const adapted = adaptRenderedForStutterCheck(md);
   const report = detectSelfStutter(adapted);
   const addrToAtom = new Map(manifest.map((m) => [m.address, m.atom]));
@@ -897,9 +898,10 @@ export function runDistillPhase(
   ts: string,
   corr: string,
   dryRun: boolean,
-  cap = DISTILL_CAP
+  cap = DISTILL_CAP,
+  events = readLedger(ledgerPath),
 ): DistillPlan {
-  const plan = planDistillation(atoms, states, ts, cap);
+  const plan = planDistillation(atoms, states, ts, cap, events);
 
   if (!dryRun) for (const ev of plan.supersedeEvents) appendLedger(ledgerPath, ev);
 
@@ -1401,7 +1403,7 @@ async function main() {
   let renderEvents = [...ledgerBeforeDecay, ...potentiateEvents, decayEvent];
   try {
     const distillTs = new Date().toISOString();
-    const plan = runDistillPhase(atomsBeforeDecay, statesAfterDecay, LEDGER_PATH, distillTs, corr, dryRun);
+    const plan = runDistillPhase(atomsBeforeDecay, statesAfterDecay, LEDGER_PATH, distillTs, corr, dryRun, DISTILL_CAP, renderEvents);
     distilledCount = plan.clusters.reduce((s, c) => s + c.losers.length, 0);
     // Re-fold so RENDER, greeting, and the R8 assert all see the distilled
     // population. In dry-run nothing was appended to disk, so fold the plan's

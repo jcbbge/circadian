@@ -34,6 +34,11 @@ describe("strata", () => {
     expect(renderSelf(atoms, states, undefined, { events, hot: STRATA_HOT, tier: "deep" }).md).toContain("**Claim a0**");
     expect(renderSelf(atoms, states, undefined, { events, hot: STRATA_HOT }).manifest[0].address).toBe("SELF.Doctrine[1]");
   });
+  test("repeat of an earlier episode does not manufacture a new distinct stratum", () => {
+    const events = [stack("a", "2026-01-01-a.md"), stack("b", "2026-01-02-b.md"), stack("b", "2026-01-01-a.md")];
+    expect(foldStrata(events).get("a")?.depth).toBe(1);
+    expect(foldStrata(events).get("b")?.depth).toBe(0);
+  });
   test("hot knob parses infinity and rejects malformed values", () => {
     expect(hotLimit("Infinity")).toBe(Infinity);
     expect(hotLimit("0")).toBe(0);

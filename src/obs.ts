@@ -26,7 +26,7 @@ import { dirname, join } from "node:path";
 // Resolve at emit time: sandboxed callers can set CIRCADIAN_HOME after import.
 const eventLog = () => join(process.env.CIRCADIAN_HOME || join(homedir(), "circadian"), "logs", "circadian.events.jsonl");
 
-export type CircadianProcess = "wake" | "sleep" | "graze" | "rem" | "status" | "doctor" | "backfill" | "ops" | "zoom" | "replay" | "atoms" | "render" | "decay" | "stack" | "migrate" | "janitor" | "relindex";
+export type CircadianProcess = "wake" | "sleep" | "graze" | "rem" | "status" | "doctor" | "backfill" | "ops" | "zoom" | "replay" | "atoms" | "render" | "decay" | "stack" | "migrate" | "janitor" | "relindex" | "dig";
 
 /**
  * Outcome is NEVER a bare exit code. These four words are the vocabulary:

@@ -735,6 +735,28 @@ describe("planDistillation / DISTILL phase", () => {
   const foldOf = (ledgerPath: string) => foldWeights(readLedger(ledgerPath));
   const TS = "2026-08-04T12:00:00.000Z";
 
+  test("distillation only sees hot atoms, even when deeper duplicate has greater weight", () => {
+    const { beliefsDir, ledgerPath } = seedPopulation([
+      { claim: FID_A, stacks: 5 }, { claim: FID_B, stacks: 3 },
+    ]);
+    const atoms = readAtoms(beliefsDir);
+    const events = readLedger(ledgerPath);
+    // A's last stack is followed by B's stacks; the hot tier is just the
+    // last distinct episode. The old heavy A must not be superseded.
+    const hot = renderSelf(atoms, foldOf(ledgerPath), undefined, { events, hot: 0 });
+    expect(hot.manifest).toHaveLength(1);
+    expect(hot.manifest[0].atom).toBe(atoms.find((a) => a.claim === FID_B)!.id);
+    // Force the same hot limit on distillation via a temporary env override.
+    const prior = process.env.STRATA_HOT;
+    try {
+      process.env.STRATA_HOT = "0";
+      expect(planDistillation(atoms, foldOf(ledgerPath), TS, DISTILL_CAP, events).clusters).toHaveLength(0);
+    } finally {
+      if (prior === undefined) delete process.env.STRATA_HOT;
+      else process.env.STRATA_HOT = prior;
+    }
+  });
+
   test("detects a paraphrase cluster and picks the highest-weight winner", () => {
     // A=5, B=3, C=2 stacks -> A is the clear winner; B and C are losers.
     const { beliefsDir, ledgerPath, ids } = seedPopulation([

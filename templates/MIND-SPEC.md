@@ -35,7 +35,7 @@ in git history. The full blueprint is `docs/POPULATION-MEMORY.md`.
 4. **Finite body.** Size targets force excretion. v1's token targets live on
    as render budgets and whole-file caps — SOFT targets, never walls
    (chars/4 = tokens; only a gross runaway past 1.75x fails loudly; silent
-   truncation is never permitted).
+   truncation is never permitted). The hot SELF.md tier includes only atoms within STRATA_HOT distinct later stack episodes (default 40); `dig` reads deeper or below-floor atoms without deleting or changing weight.
 5. **Ash banned.** Retained conclusions carry their why-chain and verbatim
    quotes — enforced structurally by the atom shape below.
 6. **Motion is the metric.** Propagation re-potentiates an atom; a

@@ -25,7 +25,8 @@
     "circadian-rem": "./src/rem-popmem.ts",
     "circadian-graze": "./src/graze.ts",
     "circadian-status": "./src/status.ts",
-    "circadian-doctor": "./src/doctor.ts"
+    "circadian-doctor": "./src/doctor.ts",
+    "circadian-dig": "./src/dig.ts"
   },
   "scripts": {
     "install": "bash ./install.sh",
