@@ -25,7 +25,9 @@ test("fresh Linux install enables a visible persistent twice-daily user timer; r
     expect(timer).toContain("OnCalendar=*-*-* 21:00:00");
     expect(timer).toContain("Persistent=true");
     expect(spawnSync("systemctl", ["--user", "list-timers"], { env, encoding: "utf8" }).stdout).toContain("circadian-rem.timer");
+    expect(fs.readlinkSync(path.join(home, ".local/bin/circadian"))).toBe(path.join(install, "bin/circadian"));
     expect(run().status).toBe(0);
+    expect(fs.readlinkSync(path.join(home, ".local/bin/circadian"))).toBe(path.join(install, "bin/circadian"));
     expect(fs.readFileSync(path.join(dir, "circadian-rem.service"), "utf8")).toBe(service);
     expect(fs.readFileSync(path.join(dir, "circadian-rem.timer"), "utf8")).toBe(timer);
     expect((fs.readFileSync(path.join(root, "systemctl.log"), "utf8").match(/enable --now circadian-rem.timer/g) ?? []).length).toBe(2);

@@ -219,7 +219,7 @@ export function buildPayload(files: {
     // Law 4: never truncate silently — announce loudly and still emit the
     // full payload.
     const warning = `OVER-CAP: payload ${tokens} tokens > ${CAP_TOKENS} — compost required`;
-    return scope ? scoped.replace(/^(Resolved scope: [^\n]+\n)/, `$1${warning}\n`) : `${warning}\n${scoped}`;
+    return scope ? scoped.replace(/^(Resolved scope: [^\n]+\n(?:Next move: [^\n]+\n)?)/, `$1${warning}\n`) : `${warning}\n${scoped}`;
   }
   return scoped;
 }

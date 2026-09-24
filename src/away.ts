@@ -20,7 +20,9 @@ export function whileAway(home: string, scope: string, nowMs = Date.now(), sessi
     try {
       let branch = "main";
       try { branch = git(["symbolic-ref", "--quiet", "--short", "refs/remotes/origin/HEAD"]).replace(/^origin\//, ""); } catch { /* local-only repo */ }
-      const ref = git(["rev-parse", "--verify", "refs/heads/" + branch]);
+      let ref: string;
+      try { ref = git(["rev-parse", "--verify", "refs/heads/" + branch]); }
+      catch { ref = git(["rev-parse", "--verify", "refs/remotes/origin/" + branch]); }
       const commits = git(["log", ref, `--since=${new Date(wake).toISOString()}`, "--format=%h %s", "-20"]);
       if (commits) lines.push("Commits on " + branch + ":", ...commits.split("\n"));
       // Compare the ledger at the last pre-wake commit with today's tracked file.
@@ -28,7 +30,7 @@ export function whileAway(home: string, scope: string, nowMs = Date.now(), sessi
       if (prior) {
         for (const name of ["TASKS.md", "tasks.md"]) {
           const diff = git(["diff", "--unified=0", prior, ref, "--", name]);
-          const changes = diff.split("\n").filter(l => /^[+-](?![+-])/.test(l));
+          const changes = diff.split("\n").filter(l => /^[+-]/.test(l) && !/^(?:\+\+\+|---)/.test(l));
           if (changes.length) lines.push(`Ledger ${name}:`, ...changes.slice(0, 20));
         }
       }

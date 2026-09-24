@@ -4,7 +4,7 @@ import * as path from "node:path";
 import { tmpdir } from "node:os";
 import { execFileSync } from "node:child_process";
 import { recallScope, scopedView } from "./scopes.ts";
-import { buildPayload } from "./wake-payload.ts";
+import { buildPayload, CAP_TOKENS } from "./wake-payload.ts";
 import { whileAway } from "./away.ts";
 import { healthLine, recall, changeAtom } from "../bin/circadian";
 import { atomId, serializeAtom, foldWeights, readLedger } from "./atoms.ts";
@@ -35,6 +35,11 @@ test("Accept when: a torn-down worker's episode is findable by its id; stamped w
   expect(operator).not.toContain("<mind:corrections>");
 }));
 
+test("over-cap scoped wake still names the resolved scope first and the next move before warnings", () => {
+  const payload = buildPayload({ scope: "arc", self: "", user: "", now: "## Next move\n\nFix the build.\n", greeting: "", here: "a".repeat(CAP_TOKENS * 4 + 1) });
+  expect(payload.split("\n").slice(0, 3)).toEqual(["Resolved scope: arc", "Next move: Fix the build.", expect.stringContaining("OVER-CAP:")]);
+});
+
 test("Lane-stamped SLEEP writes searchable worker provenance in episode frontmatter and obs context, without attaching identity to beliefs", () => {
   expect(shouldGateWorker("You are a worker. Read and execute your brief", undefined, "circ-23")).toBe(false);
   expect(shouldGateWorker("You are a worker. Read and execute your brief")).toBe(true);
@@ -55,7 +60,7 @@ test("While you were away: default-branch commits, ledger openings/closures and 
   fs.writeFileSync(path.join(repo, "TASKS.md"), "DONE\n- [x] old\nNOW\n- [ ] new\n"); git("add", "."); git("commit", "-qm", "finished old, opened new");
   fs.writeFileSync(path.join(mind, "episodes/2026-09-24-worker.md"), "---\nscope: arc\nts: 2026-09-24T12:00:00Z\nsession: worker\n---\n");
   const output = whileAway(home, "arc", Date.parse("2026-09-25"), "concierge");
-  expect(output).toContain("finished old, opened new"); expect(output).toContain("Ledger TASKS.md:\n+DONE");
+  expect(output).toContain("finished old, opened new"); expect(output).toContain("Ledger TASKS.md:\n+DONE"); expect(output).toContain("+- [x] old"); expect(output).toContain("+- [ ] new");
   expect(output).toContain("Other session: 2026-09-24-worker.md [episode: 2026-09-24-worker.md]");
   expect(output).not.toContain("(no model)");
 }));
