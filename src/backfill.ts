@@ -1,220 +1,113 @@
 #!/usr/bin/env bun
-/**
- * backfill.ts — one-shot: run SLEEP over the entire history of past sessions
- * from BOTH agents (Claude Code + Pi), depositing an episode for each
- * substantial conversation, so REM can then digest a lifetime of prior work
- * into the mind. Not a scheduled process — run once (or re-run; it resumes).
- *
- * Design choices, deliberate:
- *   - MAIN sessions only. Claude sub-agent transcripts (agent-*.jsonl) are
- *     delegated task fragments, not conversations — backfilling them would
- *     flood the mind with noise (violates 'load-bearing or dead'). Skipped.
- *   - Substantial only. Files below --min-bytes (default 100KB) are skipped;
- *     tiny/aborted sessions carry no episode worth keeping.
- *   - Synchronous, one at a time. We call sleep's worker inline (not the
- *     detached hook) so we can watch progress and not spawn hundreds of procs.
- *   - Resumable. A manifest (logs/backfill.jsonl) records every processed
- *     transcript; re-running skips only ones that produced an episode
- *     (status "ok"). Failures (status "no-episode") are RETRIED on re-run —
- *     a dead-LLM night no longer marks those transcripts done forever.
- *   - SLEEP writes episodes; REM (run after) does the absorbing. This script
- *     never touches SELF.md.
- *
- * Usage:
- *   bun run src/backfill.ts                 # both sources, >=100KB, main only
- *   bun run src/backfill.ts --min-bytes 200000
- *   bun run src/backfill.ts --limit 20      # cap N (test run)
- *   bun run src/backfill.ts --days 7        # only sessions modified in last 7 days
- *   bun run src/backfill.ts --dry-run       # list what WOULD be processed
- *   bun run src/backfill.ts --claude-only | --pi-only
- */
-
+/** Backfill historical sessions through SLEEP's existing episode drafter.
+ * No extraction or recurrence happens here: REM sees each episode once. */
+import { createHash } from "node:crypto";
 import { spawnSync } from "node:child_process";
-import { appendFileSync, existsSync, mkdirSync, readFileSync, statSync } from "node:fs";
+import { existsSync, mkdirSync, readFileSync, readdirSync, statSync, appendFileSync } from "node:fs";
 import { homedir } from "node:os";
-import { join } from "node:path";
-import { execSync } from "node:child_process";
-import { ok, degraded, correlation } from "./obs.ts";
+import { basename, join } from "node:path";
+import { normalizeTurnText } from "./transcript-format.ts";
+import { correlation, degraded, ok, idle } from "./obs.ts";
 
-const CIRCADIAN_HOME = process.env.CIRCADIAN_HOME || join(homedir(), "circadian");
-const BUN_BIN = process.env.CIRCADIAN_BUN_BIN || join(homedir(), ".bun/bin/bun");
-const SLEEP_TS = join(CIRCADIAN_HOME, "src", "sleep.ts");
-const MANIFEST = join(CIRCADIAN_HOME, "logs", "backfill.jsonl");
-const EPISODES_DIR = join(CIRCADIAN_HOME, "mind", "episodes");
-
-const corr = correlation("backfill");
-
-const args = process.argv.slice(2);
-const flag = (n: string) => args.includes(n);
-const opt = (n: string, d: number) => {
-  const i = args.indexOf(n);
-  return i >= 0 && args[i + 1] ? Number(args[i + 1]) : d;
-};
-
-const MIN_BYTES = opt("--min-bytes", 100_000);
-const LIMIT = opt("--limit", Infinity);
-const DAYS = opt("--days", Infinity); // only transcripts modified within N days
-const maxAgeMs = DAYS === Infinity ? Infinity : DAYS * 24 * 60 * 60 * 1000;
-const DRY = flag("--dry-run");
-const CLAUDE_ONLY = flag("--claude-only");
-const PI_ONLY = flag("--pi-only");
-
-function findFiles(cmd: string): string[] {
+export type Source = "claude" | "pi";
+export function transcriptId(path: string, source: Source): string {
+  // Pi header has a UUID; Claude's sessionId is present on message rows.
+  // Filename/path fallback scopes ids from unrelated project directories.
+  let id = "";
   try {
-    return execSync(cmd, { encoding: "utf8", maxBuffer: 64 * 1024 * 1024 })
-      .split("\n")
-      .map((s) => s.trim())
-      .filter(Boolean);
-  } catch {
-    return [];
-  }
-}
-
-// Claude Code: exclude agent-*.jsonl (sub-agent fragments); main sessions only.
-const claudeFiles = CLAUDE_ONLY || !PI_ONLY
-  ? findFiles(`find ${homedir()}/.claude/projects -name '*.jsonl' -type f 2>/dev/null`).filter(
-      (f) => !/\/agent-[^/]*\.jsonl$/.test(f)
-    )
-  : [];
-
-// Pi: exclude node_modules cruft; main sessions only.
-const piFiles = PI_ONLY || !CLAUDE_ONLY
-  ? findFiles(`find ${homedir()}/.pi/agent/sessions -name '*.jsonl' -type f 2>/dev/null`).filter(
-      (f) => !f.includes("node_modules")
-    )
-  : [];
-
-interface Cand {
-  path: string;
-  source: "claude" | "pi";
-  bytes: number;
-}
-const candidates: Cand[] = [];
-for (const [files, source] of [[claudeFiles, "claude"], [piFiles, "pi"]] as const) {
-  for (const path of files) {
-    let bytes = 0;
-    let mtimeMs = 0;
-    try {
-      const st = statSync(path);
-      bytes = st.size;
-      mtimeMs = st.mtimeMs;
-    } catch {
-      continue;
+    for (const line of readFileSync(path, "utf8").split("\n").slice(0, 20)) {
+      try {
+        const row = JSON.parse(line);
+        id = source === "pi" ? (row.type === "session" ? row.id : "") : row.sessionId;
+        if (typeof id === "string" && id) break;
+      } catch { /* partial row */ }
     }
-    if (bytes < MIN_BYTES) continue;
-    if (maxAgeMs !== Infinity && Date.now() - mtimeMs > maxAgeMs) continue;
-    candidates.push({ path, source, bytes });
-  }
-}
-// largest first — richest sessions absorbed before token pressure grows
-candidates.sort((a, b) => b.bytes - a.bytes);
-
-// resume: skip already-processed transcripts
-const done = new Set<string>();
-if (existsSync(MANIFEST)) {
-  for (const line of readFileSync(MANIFEST, "utf8").split("\n")) {
-    if (!line.trim()) continue;
-    try {
-      const rec = JSON.parse(line);
-      // Only a successful digest bars re-processing. "no-episode" lines
-      // record a FAILURE (dead LLM, no parseable draft); skipping them made
-      // a transient outage permanently lose those episodes. Re-running now
-      // retries them.
-      if (rec?.status === "ok" && typeof rec?.path === "string") done.add(rec.path);
-    } catch {
-      /* skip */
-    }
-  }
+  } catch { /* missing transcript: skip upstream */ }
+  return createHash("sha256").update(`${source}\0${id || path}`).digest("hex").slice(0, 24);
 }
 
-const todo = candidates.filter((c) => !done.has(c.path)).slice(0, LIMIT);
-
-console.log(`backfill: ${candidates.length} candidate(s) >= ${(MIN_BYTES / 1024).toFixed(0)}KB` +
-  `${DAYS === Infinity ? "" : `, last ${DAYS}d`} ` +
-  `(${claudeFiles.length} claude main, ${piFiles.length} pi main scanned)`);
-console.log(`backfill: ${done.size} already processed, ${todo.length} to do this run\n`);
-
-if (DRY) {
-  for (const c of todo.slice(0, 40)) console.log(`  [${c.source}] ${(c.bytes / 1024).toFixed(0)}KB  ${c.path}`);
-  if (todo.length > 40) console.log(`  ... and ${todo.length - 40} more`);
-  console.log(`\n(dry run — nothing written)`);
-  ok({
-    process: "backfill", phase: "dry-run", correlation_id: corr,
-    summary: `dry-run: ${todo.length} transcript(s) would be processed`,
-    context: { candidates: todo.length, min_bytes: MIN_BYTES, source_counts: { claude: claudeFiles.length, pi: piFiles.length } },
-  });
-  process.exit(0);
-}
-
-mkdirSync(join(CIRCADIAN_HOME, "logs"), { recursive: true });
-
-function episodeCount(): number {
+export function hasConversation(path: string): boolean {
   try {
-    return execSync(`ls ${EPISODES_DIR}/*.md 2>/dev/null | wc -l`, { encoding: "utf8" }).trim() === ""
-      ? 0
-      : Number(execSync(`ls ${EPISODES_DIR}/*.md 2>/dev/null | grep -v gitkeep | wc -l`, { encoding: "utf8" }).trim());
-  } catch {
-    return 0;
-  }
+    let user = false, assistant = false;
+    for (const line of readFileSync(path, "utf8").split("\n")) {
+      try {
+        const row = JSON.parse(line);
+        const role = row.message?.role ?? row.role;
+        const content = row.message?.content ?? row.content;
+        const blocks = Array.isArray(content) ? content : [{ type: "text", text: content }];
+        if (!blocks.some((b: any) => b?.type === "text" && typeof b.text === "string" && normalizeTurnText(b.text).trim())) continue;
+        if (role === "user") user = true;
+        if (role === "assistant") assistant = true;
+      } catch { /* partial row */ }
+    }
+    return user && assistant;
+  } catch { return false; }
 }
 
-let okCount = 0;
-let failCount = 0;
-const startEpisodes = episodeCount();
-
-for (let i = 0; i < todo.length; i++) {
-  const c = todo[i];
-  const sessionId = `backfill-${c.source}-${c.path.split("/").pop()?.replace(/\.jsonl$/, "")}`;
-  const before = episodeCount();
-  process.stdout.write(`[${i + 1}/${todo.length}] ${c.source} ${(c.bytes / 1024).toFixed(0)}KB ... `);
-
-  // call sleep's worker synchronously, event via env (its documented path)
-  const res = spawnSync(BUN_BIN, ["run", SLEEP_TS, "--worker"], {
-    env: {
-      ...process.env,
-      CIRCADIAN_SLEEP_EVENT: JSON.stringify({ transcript_path: c.path, session_id: sessionId }),
-    },
-    stdio: ["ignore", "ignore", "ignore"],
-    timeout: 8 * 60 * 1000,
+function walk(dir: string): string[] {
+  if (!existsSync(dir)) return [];
+  return readdirSync(dir, { withFileTypes: true }).flatMap((e) => {
+    const p = join(dir, e.name);
+    return e.isDirectory() ? walk(p) : e.isFile() && e.name.endsWith(".jsonl") ? [p] : [];
   });
-
-  const after = episodeCount();
-  const produced = after > before;
-  const status = produced ? "ok" : "no-episode";
-  if (produced) okCount++;
-  else failCount++;
-  console.log(produced ? "episode written" : `skipped (${res.status === null ? "timeout" : "no draft"})`);
-
-  if (produced) {
-    ok({
-      process: "backfill", phase: "transcript", correlation_id: corr,
-      summary: `episode written for ${c.source} transcript`,
-      context: { path: c.path, source: c.source, bytes: c.bytes, episode_produced: true },
-    });
-  } else {
-    degraded({
-      process: "backfill", phase: "transcript", correlation_id: corr,
-      summary: `no episode produced for ${c.source} transcript`,
-      context: { path: c.path, source: c.source, bytes: c.bytes, episode_produced: false, exit_status: res.status },
-      cause: res.status === null ? `sleep worker timed out after ${8 * 60 * 1000}ms` : "sleep worker produced no episode (LLM draft failed or transcript yielded no content)",
-      next_action: "inspect logs/sleep.log for the session_id; re-run backfill for this transcript if the failure is transient",
-    });
-  }
-
-  appendFileSync(
-    MANIFEST,
-    JSON.stringify({ ts: new Date().toISOString(), path: c.path, source: c.source, status }) + "\n"
-  );
 }
 
-const endEpisodes = episodeCount();
-console.log(
-  `\nbackfill done: ${okCount} episode(s) written, ${failCount} produced nothing. ` +
-    `episodes/ went ${startEpisodes} -> ${endEpisodes}.`
-);
-console.log(`next: run REM to digest them ->  ${BUN_BIN} ${join(CIRCADIAN_HOME, "src", "rem.ts")}`);
-ok({
-  process: "backfill", phase: "summary", correlation_id: corr,
-  summary: `backfill complete: ${okCount} written, ${failCount} skipped`,
-  context: { written: okCount, skipped: failCount, source_counts: { claude: claudeFiles.length, pi: piFiles.length }, episodes_before: startEpisodes, episodes_after: endEpisodes },
-});
+export function runBackfill(args: string[], opts: {
+  home?: string; claudeDir?: string; piDir?: string; bun?: string; sleep?: string;
+} = {}): { written: number; skipped: number; failed: number } {
+  const home = opts.home ?? process.env.CIRCADIAN_HOME ?? join(homedir(), "circadian");
+  const mind = join(home, "mind");
+  const corr = correlation("backfill");
+  const value = (name: string) => { const i = args.indexOf(name); return i < 0 ? undefined : args[i + 1]; };
+  const source = value("--source");
+  if (source && source !== "claude" && source !== "pi") throw new Error("--source must be claude or pi");
+  const since = value("--since");
+  if (args.includes("--since") && (!since || !/^\d{4}-\d\d-\d\d$/.test(since) || Number.isNaN(Date.parse(since)))) throw new Error("--since requires YYYY-MM-DD");
+  const manifest = join(home, "logs", "backfill.jsonl");
+  const done = new Set<string>();
+  if (existsSync(manifest)) for (const line of readFileSync(manifest, "utf8").split("\n")) {
+    try { const r = JSON.parse(line); if (r.status === "ok" && typeof r.id === "string") done.add(r.id); } catch { /* partial line */ }
+  }
+  const sources: [Source, string][] = [
+    ["claude", opts.claudeDir ?? join(homedir(), ".claude", "projects")],
+    ["pi", opts.piDir ?? join(homedir(), ".pi", "agent", "sessions")],
+  ];
+  let written = 0, skipped = 0, failed = 0;
+  for (const [kind, dir] of sources) {
+    if (source && kind !== source) continue;
+    for (const path of walk(dir).sort()) {
+      if (kind === "claude" && /^agent-/.test(basename(path))) continue;
+      if (since && statSync(path).mtimeMs < Date.parse(since)) continue;
+      if (!hasConversation(path)) { skipped++; continue; }
+      const id = `backfill-${kind}-${transcriptId(path, kind)}`;
+      // Reconcile a crash between SLEEP publishing and manifest append, including
+      // episodes created by an earlier invocation of this command.
+      const present = existsSync(join(mind, "episodes")) && readdirSync(join(mind, "episodes")).some((f) => f.endsWith(`${id}.md`));
+      if (done.has(id) || present) { skipped++; continue; }
+      const result = spawnSync(opts.bun ?? process.execPath, [opts.sleep ?? join(home, "src", "sleep.ts"), "--worker"], {
+        env: { ...process.env, CIRCADIAN_HOME: home, CIRCADIAN_SLEEP_EVENT: JSON.stringify({ session_id: id, transcript_path: path }) },
+        encoding: "utf8", timeout: 8 * 60 * 1000,
+      });
+      const produced = result.status === 0 && existsSync(join(mind, "episodes")) &&
+        readdirSync(join(mind, "episodes")).some((f) => f.endsWith(`${id}.md`));
+      if (produced) { written++; done.add(id); } else failed++;
+      mkdirSync(join(home, "logs"), { recursive: true });
+      appendFileSync(manifest, JSON.stringify({ id, source: kind, status: produced ? "ok" : "no-episode", ts: new Date().toISOString() }) + "\n");
+      if (!produced) degraded({ process: "backfill", phase: "transcript", correlation_id: corr,
+        summary: "SLEEP produced no episode", context: { id, source: kind }, cause: result.error?.message ?? result.stderr ?? "no episode",
+        next_action: "inspect sleep.log and retry backfill" });
+    }
+  }
+  (failed ? degraded : written ? ok : idle)({ process: "backfill", phase: "summary", correlation_id: corr,
+    summary: `${written} written, ${skipped} skipped, ${failed} failed`, context: { written, skipped, failed },
+    ...(failed ? { cause: "one or more drafts failed", next_action: "retry backfill after checking sleep.log" } : {}) });
+  return { written, skipped, failed };
+}
+
+if (import.meta.main) {
+  try {
+    const result = runBackfill(process.argv.slice(2));
+    console.log(`backfill: ${result.written} written, ${result.skipped} skipped, ${result.failed} failed`);
+    if (result.failed) process.exitCode = 1;
+  } catch (e) { console.error((e as Error).message); process.exitCode = 1; }
+}

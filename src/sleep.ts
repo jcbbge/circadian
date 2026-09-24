@@ -1055,7 +1055,8 @@ async function draftSessionEpisode(opts: {
   const lastSleepIso = now.toISOString();
   const preservedSerendipity = extractSection(existingNow, "Serendipity"); // REM owns this line; carry it forward as-is
 
-  const episodeContent = buildEpisodeContent(date, sessionId, draft.arc, draft.episodeBody);
+  const backfilled = sessionId.startsWith("backfill-");
+  const episodeContent = buildEpisodeContent(date, sessionId, draft.arc, draft.episodeBody) + (backfilled ? "[backfilled]\n" : "");
   const nowContent = buildNowContent(draft.nowRaw, preservedSerendipity, lastSleepIso);
 
   // Dry run stops here, one step short of the mind repo: everything above is
@@ -1075,8 +1076,9 @@ async function draftSessionEpisode(opts: {
   }
 
   const baseSlug = slugify(draft.arc);
-  let filename = `${date}-${baseSlug}.md`;
+  let filename = backfilled ? `${date}-${sessionId}.md` : `${date}-${baseSlug}.md`;
   let counter = 2;
+  if (backfilled && existsSync(join(EPISODES_DIR, filename))) return { status: "written" };
   while (existsSync(join(EPISODES_DIR, filename))) filename = `${date}-${baseSlug}-${counter++}.md`;
   const epPath = join(EPISODES_DIR, filename);
   const self = existsSync(join(MIND, "SELF.md")) ? readFileSync(join(MIND, "SELF.md"), "utf8") : "";
@@ -1087,12 +1089,12 @@ async function draftSessionEpisode(opts: {
   publish(MIND, {
     id: `sleep-${createHash("sha256").update(sessionId).digest("hex")}`,
     subject: `sleep: ${sessionId}`,
-    files: { [`episodes/${filename}`]: episodeContent, "NOW.md": nowContent },
-    appends: { "scoreboard.jsonl": sleepLine + verdictLine },
+    files: backfilled ? { [`episodes/${filename}`]: episodeContent } : { [`episodes/${filename}`]: episodeContent, "NOW.md": nowContent },
+    appends: backfilled ? {} : { "scoreboard.jsonl": sleepLine + verdictLine },
   });
-  if (verdict.event) ok({ process: "sleep", phase: "implicit-verdict", correlation_id: corr, session_id: sessionId,
+  if (!backfilled && verdict.event) ok({ process: "sleep", phase: "implicit-verdict", correlation_id: corr, session_id: sessionId,
     summary: `implicit ok verdict recorded: ${verdict.reason}`, context: { basis: verdict.event.basis } });
-  else idle({ process: "sleep", phase: "implicit-verdict", correlation_id: corr, session_id: sessionId,
+  else if (!backfilled) idle({ process: "sleep", phase: "implicit-verdict", correlation_id: corr, session_id: sessionId,
     summary: `no implicit verdict recorded: ${verdict.reason}`, context: {} });
   slog(mode, "SUCCESS: episode written", { episode: epPath, arc: draft.arc });
   // The letter was written. Success is as legible as failure.
