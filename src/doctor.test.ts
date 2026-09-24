@@ -30,7 +30,7 @@ afterEach(() => {
 
 // Entire doctor runs against a disposable HOME/mind and stub executables;
 // neither the real user timer nor ~/circadian is ever probed.
-function linuxDoctor(ageHours: number, options: { timer?: string; logger?: string; grazeFailure?: boolean } = {}) {
+function linuxDoctor(ageHours: number, options: { timer?: string; logger?: string; grazeFailure?: boolean; recentCommit?: boolean } = {}) {
   const root = fs.mkdtempSync(path.join(tmpdir(), "doctor-linux-"));
   try {
     const home = path.join(root, "home");
@@ -61,6 +61,13 @@ function linuxDoctor(ageHours: number, options: { timer?: string; logger?: strin
     const commit = spawnSync("git", ["-C", mind, "add", "."], { env });
     expect(commit.status).toBe(0);
     expect(spawnSync("git", ["-C", mind, "commit", "-qm", "founding"], { env }).status).toBe(0);
+    if (options.recentCommit) {
+      fs.writeFileSync(path.join(mind, "NOW.md"), "# Current\n");
+      expect(spawnSync("git", ["-C", mind, "add", "NOW.md"], { env }).status).toBe(0);
+      expect(spawnSync("git", ["-C", mind, "commit", "-qm", "recent write"], {
+        env: { ...env, GIT_AUTHOR_DATE: new Date().toISOString(), GIT_COMMITTER_DATE: new Date().toISOString() },
+      }).status).toBe(0);
+    }
     fs.writeFileSync(path.join(home, ".pi/agent/sessions", "session.jsonl"), "{}\n");
     const events = [
       { ts: new Date().toISOString(), process: "wake", phase: "inject", outcome: "ok", summary: "injected" },
@@ -93,8 +100,8 @@ if (process.platform === "linux") describe("doctor on a fresh Linux mind", () =>
     expect(check("LLM service").level).toBe("WARN");
     expect(check("LLM service").detail).toContain("pending-sleep.jsonl");
   });
-  test("a 49-hour-old silent mind with session evidence fails sleep", () => {
-    const { status, report } = linuxDoctor(49);
+  test("a 49-hour-old silent mind with session evidence fails sleep even after a recent commit", () => {
+    const { status, report } = linuxDoctor(49, { recentCommit: true });
     expect(status).toBe(1);
     expect(report.checks.find(c => c.name === "sleep")?.level).toBe("FAIL");
   });
@@ -103,6 +110,11 @@ if (process.platform === "linux") describe("doctor on a fresh Linux mind", () =>
     expect(status).toBe(1);
     expect(report.checks.find(c => c.name === "systemd user timer")?.level).toBe("WARN");
     expect(report.checks.find(c => c.name === "LLM patch integrity")?.level).toBe("FAIL");
+  });
+  test("an enabled timer without a next run warns", () => {
+    const { status, report } = linuxDoctor(0.1, { timer: "missing" });
+    expect(status).toBe(0);
+    expect(report.checks.find(c => c.name === "systemd user timer")?.level).toBe("WARN");
   });
   test("an unaddressed graze failure remains a failure", () => {
     const { status, report } = linuxDoctor(0.1, { grazeFailure: true });
