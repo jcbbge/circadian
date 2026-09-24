@@ -148,7 +148,21 @@ material the processes evolve on their own.
 
 ### Configuration
 
-All knobs are environment variables (install-time and runtime):
+Runtime settings can also live in `~/.config/circadian/env` (or the path in
+`CIRCADIAN_ENV_FILE`): plain `KEY=VALUE` lines, blank lines and `#` comments;
+no shell expansion. Set `chmod 600` on this file. The installer never creates
+it; systemd REM loads it optionally. Exported environment variables take
+precedence. For a remote endpoint, for example:
+
+```text
+CIRCADIAN_LLM_BASE_URL=https://developer-78339--ep-hivevps-server.us-west.modal.direct/v1
+CIRCADIAN_LLM_MODEL=deepseek-ai/DeepSeek-V4.1-Flash
+CIRCADIAN_LLM_API_KEY=<token-id>.<token-secret>
+CIRCADIAN_LLM_NO_THINK_PREFIX=0
+CIRCADIAN_LLM_EXTRA_BODY={"reasoning_effort":"low"}
+```
+
+Configuration knobs (install-time and runtime):
 
 | Variable | Default | Purpose |
 |---|---|---|
@@ -158,7 +172,9 @@ All knobs are environment variables (install-time and runtime):
 | `CIRCADIAN_LLM_BASE_URL` | `LOCAL_LLM_BASE_URL` else `http://127.0.0.1:10240/v1` | Drafting/consolidation endpoint |
 | `CIRCADIAN_LLM_MODEL` | local default | Model used for drafting/consolidation |
 | `CIRCADIAN_LLM_API_KEY` | `LOCAL_LLM_API_KEY` else `"local"` | Key for the endpoint |
-| `CIRCADIAN_LLM_THINK` | off | `"1"` to allow the reasoning trace |
+| `CIRCADIAN_ENV_FILE` | `~/.config/circadian/env` | Optional private runtime settings file |
+| `CIRCADIAN_LLM_NO_THINK_PREFIX` | `1` | `0` disables `/no_think` prompt prefix |
+| `CIRCADIAN_LLM_EXTRA_BODY` | unset | JSON object merged into requests; core protocol fields cannot be overridden |
 | `CIRCADIAN_LLM_FALLBACK_BASE_URL` | unset | Optional fallback endpoint |
 | `CIRCADIAN_LLM_RETRIES` | `3` | Total attempts per call |
 | `CIRCADIAN_LLM_RETRY_BACKOFF_MS` | `"2000,10000,30000"` | Delay schedule |

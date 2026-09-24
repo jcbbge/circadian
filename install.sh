@@ -214,6 +214,7 @@ Type=oneshot
 WorkingDirectory=$CIRCADIAN_HOME
 Environment=CIRCADIAN_HOME=$CIRCADIAN_HOME
 Environment=CIRCADIAN_BUN_BIN=$BUN_BIN
+EnvironmentFile=-%h/.config/circadian/env
 ExecStart=$BUN_BIN $CIRCADIAN_HOME/src/rem-popmem.ts
 StandardOutput=append:$LOG_DIR/rem.log
 StandardError=append:$LOG_DIR/rem.error.log

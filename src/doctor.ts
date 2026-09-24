@@ -27,6 +27,7 @@
  * --quiet prints only non-OK lines.
  */
 
+import "./env.ts";
 import * as fs from "fs";
 import * as path from "path";
 import { homedir } from "os";
@@ -45,6 +46,7 @@ const EPISODES_DIR = path.join(MIND_DIR, "episodes");
 const PENDING_SLEEP_QUEUE = path.join(LOG_DIR, "pending-sleep.jsonl");
 const LLM_BASE_URL =
   process.env.CIRCADIAN_LLM_BASE_URL || process.env.LOCAL_LLM_BASE_URL || "http://127.0.0.1:10240/v1";
+const LLM_API_KEY = process.env.CIRCADIAN_LLM_API_KEY || process.env.LOCAL_LLM_API_KEY || "local";
 // The mlx-omni-server markup patch (2026-07-23) lives in site-packages — one
 // package upgrade away from silently regressing to the episode-killing crash.
 const LLM_LOGGER_FILE =
@@ -330,18 +332,27 @@ function checkLedger(events: CircadianEvent[]): void {
   }
 }
 
-function checkLLM(): void {
-  const url = LLM_BASE_URL.replace(/\/$/, "") + "/models";
-  const r = tryExec(`curl -s -m 5 -o /dev/null -w "%{http_code}" ${JSON.stringify(url)}`);
-  if (r.ok && r.out.trim() === "200") {
-    add("LLM service", "OK", `reachable at ${LLM_BASE_URL}`);
-  } else {
-    add(
-      "LLM service",
-      "WARN",
-      `not reachable at ${LLM_BASE_URL} (http ${r.out.trim() || "?"}) — rem/sleep drafting will fail; failed sleep drafts await recovery in logs/pending-sleep.jsonl (pending sleep queue)`
-    );
+export async function probeLLMService(base: string, key: string): Promise<Check> {
+  const url = base.replace(/\/$/, "") + "/models";
+  try {
+    const res = await fetch(url, {
+      headers: { Authorization: `Bearer ${key}` },
+      signal: AbortSignal.timeout(5000),
+    });
+    if (res.status === 200) {
+      return { name: "LLM service", level: "OK", detail: `reachable at ${base}` };
+    }
+    if (res.status === 401 || res.status === 403) {
+      return { name: "LLM service", level: "WARN", detail: `authentication failed at ${base} (HTTP ${res.status}) — check CIRCADIAN_LLM_API_KEY` };
+    }
+    return { name: "LLM service", level: "WARN", detail: `HTTP ${res.status} at ${base} — rem/sleep drafting will fail; failed sleep drafts await recovery in logs/pending-sleep.jsonl (pending sleep queue)` };
+  } catch {
+    return { name: "LLM service", level: "WARN", detail: `not reachable at ${base} — rem/sleep drafting will fail; failed sleep drafts await recovery in logs/pending-sleep.jsonl (pending sleep queue)` };
   }
+}
+
+async function checkLLM(): Promise<void> {
+  checks.push(await probeLLMService(LLM_BASE_URL, LLM_API_KEY));
 }
 
 /**
@@ -861,7 +872,7 @@ function checkLaunchdAgents(): void {
 
 const ICON: Record<Level, string> = { OK: "✓", IDLE: "•", WARN: "!", FAIL: "✗" };
 
-function main() {
+async function main() {
   const args = process.argv.slice(2);
   const corr = correlation("doctor");
   const events = readLedger();
@@ -885,7 +896,7 @@ function main() {
   checkProcess("rem", events, REM_EXPECTED_HOURS, true); // rem is always expected (time-scheduled)
 
   // Supplementary cheap probes
-  checkLLM();
+  await checkLLM();
   checkLLMPatchIntegrity();
   checkHooks();
   checkMindRepo();

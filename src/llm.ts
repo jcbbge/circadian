@@ -13,7 +13,8 @@
 //   CIRCADIAN_LLM_BASE_URL          (default: LOCAL_LLM_BASE_URL, then :10240/v1)
 //   CIRCADIAN_LLM_MODEL             (default: Qwen3-4B-Instruct-2507-4bit)
 //   CIRCADIAN_LLM_API_KEY           (default: LOCAL_LLM_API_KEY, then "local"; unused by mlx)
-//   CIRCADIAN_LLM_THINK             ("1" to allow the reasoning trace; default off)
+//   CIRCADIAN_LLM_NO_THINK_PREFIX   ("0" disables the default /no_think prefix)
+//   CIRCADIAN_LLM_EXTRA_BODY        (JSON object with server-specific request options)
 //   CIRCADIAN_LLM_FALLBACK_BASE_URL (default: unset — no fallback endpoint)
 //   CIRCADIAN_LLM_RETRIES           (default: 3 total attempts per call)
 //   CIRCADIAN_LLM_RETRY_BACKOFF_MS  (default: "2000,10000,30000" — delay before
@@ -59,6 +60,8 @@
 // below are harmless belt-and-suspenders in case the model is ever
 // overridden to a reasoning one.
 
+import "./env.ts";
+import { ok } from "./obs.ts";
 import { mkdirSync, readFileSync, unlinkSync, writeFileSync } from "node:fs";
 import { homedir } from "node:os";
 import { join } from "node:path";
@@ -71,7 +74,20 @@ const BASE_URL =
 // lines 1→0 vs the 4B. The dense-32B ban above still stands; this is not that.
 const MODEL = process.env.CIRCADIAN_LLM_MODEL || "mlx-community/Qwen3-30B-A3B-Instruct-2507-4bit";
 const API_KEY = process.env.CIRCADIAN_LLM_API_KEY || process.env.LOCAL_LLM_API_KEY || "local";
-const ALLOW_THINK = process.env.CIRCADIAN_LLM_THINK === "1";
+const NO_THINK_PREFIX = process.env.CIRCADIAN_LLM_NO_THINK_PREFIX !== "0";
+const EXTRA_BODY: Record<string, unknown> = (() => {
+  const raw = process.env.CIRCADIAN_LLM_EXTRA_BODY;
+  if (raw === undefined) return {};
+  let value: unknown;
+  try { value = JSON.parse(raw); }
+  catch { throw new Error("CIRCADIAN_LLM_EXTRA_BODY must be a JSON object"); }
+  if (value === null || typeof value !== "object" || Array.isArray(value))
+    throw new Error("CIRCADIAN_LLM_EXTRA_BODY must be a JSON object");
+  const protectedKeys = ["model", "messages", "stream", "stream_options", "max_tokens"];
+  const conflict = protectedKeys.find((key) => Object.hasOwn(value, key));
+  if (conflict) throw new Error(`CIRCADIAN_LLM_EXTRA_BODY cannot override ${conflict}`);
+  return value as Record<string, unknown>;
+})();
 const FALLBACK_BASE_URL = process.env.CIRCADIAN_LLM_FALLBACK_BASE_URL || "";
 // Total attempts per call (1 = no retries); clamped to >= 1 so the call
 // itself can never be configured away.
@@ -357,7 +373,7 @@ export interface CompleteOptions {
  * because an aborted signal can never be reused.
  */
 async function generate(base: string, prompt: string, opts: CompleteOptions): Promise<string> {
-  const content = ALLOW_THINK ? prompt : `/no_think\n${prompt}`;
+  const content = NO_THINK_PREFIX ? `/no_think\n${prompt}` : prompt;
 
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), opts.timeoutMs);
@@ -374,6 +390,7 @@ async function generate(base: string, prompt: string, opts: CompleteOptions): Pr
         messages: [{ role: "user", content }],
         max_tokens: opts.maxTokens,
         temperature: opts.temperature ?? 0.3,
+        ...EXTRA_BODY,
         stream: true,
         // The final chunk carries `usage` — the only honest truncation signal
         // this server gives (see the ceiling check below).
@@ -391,6 +408,8 @@ async function generate(base: string, prompt: string, opts: CompleteOptions): Pr
     let acc = "";
     let finish: string | null = null;
     let completionTokens: number | null = null;
+    let reasoningTokens: number | null = null;
+    let sawReasoning = false;
     let buf = "";
     const decoder = new TextDecoder();
     const reader = res.body.getReader();
@@ -411,18 +430,25 @@ async function generate(base: string, prompt: string, opts: CompleteOptions): Pr
         if (payload === "[DONE]") continue;
         try {
           const chunk = JSON.parse(payload);
-          const delta = chunk?.choices?.[0]?.delta?.content;
-          if (typeof delta === "string") acc += delta;
+          const delta = chunk?.choices?.[0]?.delta;
+          if (typeof delta?.content === "string") acc += delta.content;
+          if (typeof delta?.reasoning_content === "string" || typeof delta?.reasoning === "string") sawReasoning = true;
           const fr = chunk?.choices?.[0]?.finish_reason;
           if (fr) finish = fr;
           const ct = chunk?.usage?.completion_tokens;
           if (typeof ct === "number") completionTokens = ct;
+          const rt = chunk?.usage?.completion_tokens_details?.reasoning_tokens;
+          if (typeof rt === "number") reasoningTokens = rt;
         } catch {
           // tolerate keep-alive/comment lines and partial JSON
         }
       }
     }
 
+    if (sawReasoning || reasoningTokens !== null) {
+      ok({ process: "ops", phase: "llm-usage", summary: "LLM reasoning usage",
+        context: { model: MODEL, completion_tokens: completionTokens, reasoning_tokens: reasoningTokens } });
+    }
     if (!acc.trim()) throw new Error("local LLM returned empty content");
     // TRUNCATION. finish_reason is the OpenAI-contract signal, but this
     // machine's local server LIES: probed 2026-08-14 against
