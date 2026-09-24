@@ -95,5 +95,16 @@ describe("checkout of a mind ref", () => {
     });
     expect(p.status).toBe(0);
     expect(p.stdout).toBe(expected + "\n");
+    // If checkout cannot fold the committed ledger, Law 7 still delivers
+    // the original file payload; the degraded event explains the fallback.
+    writeFileSync(join(repo, "beliefs.jsonl"), "not json\n");
+    git(repo, "add", "-A"); git(repo, "commit", "-qm", "broken ledger");
+    const fallback = spawnSync("bun", [join(import.meta.dir, "wake.ts")], {
+      encoding: "utf8", input: "", timeout: 10000,
+      env: { ...process.env, CIRCADIAN_HOME: home, CIRCADIAN_BUN_BIN: "/bin/true" },
+    });
+    expect(fallback.status).toBe(0);
+    expect(fallback.stdout).toBe(expected + "\n");
+    expect(fallback.stderr).toContain("wake/checkout DEGRADED");
   });
 });
