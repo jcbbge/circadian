@@ -34,7 +34,7 @@
 
 import * as fs from "fs";
 import * as path from "path";
-import { type Atom, type AtomKind, type AtomState, type LedgerEvent, readAtoms, readLedger, foldWeights } from "./atoms.ts";
+import { type Atom, type AtomKind, type AtomState, type LedgerEvent, readAtoms, readLedger, foldBeliefs } from "./atoms.ts";
 import { foldStrata, hotLimit } from "./strata.ts";
 import { ok, degraded, fail, correlation } from "./obs.ts";
 
@@ -55,6 +55,8 @@ export interface RenderBudgets {
 // don't render. A budget of 0 removes the section entirely (no heading).
 export const DEFAULT_BUDGETS: RenderBudgets = { identity: 0, doctrine: 3400, motif: 800, agreement: 1200 };
 export const RENDER_FLOOR = 0.5;
+export const TENSIONS_MAX = 5;
+export const TENSIONS_BUDGET = 500; // additional tokens; default SELF selection stays below 6k
 
 /** chars/4 = tokens (MIND-SPEC.md "Token Targets"), matching status.ts/rem.ts/wake.ts. */
 function tokensOf(s: string): number {
@@ -164,6 +166,31 @@ export function renderSelf(
     parts.push("");
   }
 
+  // An open edge is shown only while BOTH endpoints remain in the hot tier.
+  // Stable edge order and a separate budget keep doubt visible without
+  // displacing the four existing section budgets or silently truncating atoms.
+  if (options.tier !== "deep" && options.events) {
+    const byId = new Map(atoms.map((a) => [a.id, a]));
+    const open = foldBeliefs(options.events).contradictions;
+    const lines: string[] = [];
+    let used = 0;
+    for (const edge of [...open.values()].sort((a, b) => a.edge.localeCompare(b.edge))) {
+      const a = byId.get(edge.a), b = byId.get(edge.b);
+      if (!a || !b) continue;
+      if ([a, b].some((atom) => {
+        const { weight, status } = weightOf(states, atom.id);
+        return status !== "active" || weight < RENDER_FLOOR || (depths.get(atom.id)?.depth ?? 0) > limit;
+      })) continue;
+      const line = `${renderAtomLine(a)} ⇄ ${renderAtomLine(b)}`;
+      const cost = tokensOf(line);
+      if (used + cost > TENSIONS_BUDGET) break;
+      lines.push(line);
+      used += cost;
+      if (lines.length === TENSIONS_MAX) break;
+    }
+    if (lines.length) parts.push("## Tensions", "", lines.join("\n\n"), "");
+  }
+
   const md = parts.join("\n").replace(/\n+$/, "") + "\n";
   return { md, manifest };
 }
@@ -209,7 +236,7 @@ async function main() {
   const skippedUnparseable = allFiles.length - atoms.length;
 
   const events = readLedger(ledgerPath);
-  const states = foldWeights(events);
+  const { states } = foldBeliefs(events);
   const { md, manifest } = renderSelf(atoms, states, undefined, { events });
 
   fs.mkdirSync(path.dirname(outPath), { recursive: true });

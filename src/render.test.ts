@@ -1,8 +1,8 @@
 // render.test.ts — the render (popmem WS-B). Pure-function tests against
 // hand-built atom/state fixtures; no filesystem, no LLM, no clock.
 import { describe, test, expect } from "bun:test";
-import { renderSelf, RENDER_FLOOR, DEFAULT_BUDGETS } from "./render.ts";
-import type { Atom, AtomState } from "./atoms.ts";
+import { renderSelf, RENDER_FLOOR, DEFAULT_BUDGETS, TENSIONS_MAX, TENSIONS_BUDGET } from "./render.ts";
+import { foldWeights, contradictionEdge, type Atom, type AtomState, type LedgerEvent } from "./atoms.ts";
 
 function atom(id: string, kind: Atom["kind"], claim: string, quoteText = "verbatim telling", eps = ["2026-07-16"]): Atom {
   return { id, kind, claim, why: "because", quotes: [{ text: quoteText, source: "2026-07-16-ep.md" }], eps };
@@ -11,6 +11,45 @@ function atom(id: string, kind: Atom["kind"], claim: string, quoteText = "verbat
 function active(weight: number): AtomState {
   return { weight, status: "active" };
 }
+
+describe("contradiction rendering", () => {
+  const a = atom("aaa", "doctrine", "The first claim.", "first quote");
+  const b = atom("bbb", "motif", "The contrary claim.", "second quote");
+  const events: LedgerEvent[] = [
+    { ev: "stack", atom: a.id, ep: "one.md", ts: "t1" },
+    { ev: "stack", atom: b.id, ep: "two.md", ts: "t2" },
+    { ev: "contradiction", a: a.id, b: b.id, ts: "t3" },
+  ];
+  const render = (es: LedgerEvent[], hot?: number) => renderSelf([a, b], foldWeights(es), undefined, { events: es, hot });
+
+  test("one open edge renders one line with both claims, quotes, sources and origin stamps", () => {
+    const { md } = render(events);
+    const line = md.split("## Tensions\n\n")[1].trim();
+    expect(line.split("\n")).toHaveLength(1);
+    for (const text of [a.claim, b.claim, "first quote", "second quote", "2026-07-16-ep.md", "[ep:2026-07-16]"]) expect(line).toContain(text);
+    expect(render(events).md).toBe(md);
+  });
+
+  test("resolution transfers weight and removes the tension; inactive and deep endpoints are hidden", () => {
+    const resolved = [...events, { ev: "resolve", edge: contradictionEdge(a.id, b.id), winner: a.id, ts: "t4" } as LedgerEvent];
+    expect(render(resolved).md).not.toContain("## Tensions");
+    expect(foldWeights(resolved).get(a.id)?.weight).toBe(2);
+    expect(render([...events, { ev: "decay", factor: 0.1, ts: "t4" }]).md).not.toContain("## Tensions");
+    const newer = [...events, { ev: "stack", atom: "new", ep: "three.md", ts: "t4" } as LedgerEvent];
+    expect(render(newer, 0).md).not.toContain("## Tensions");
+    expect(renderSelf([a, b], foldWeights(events), undefined, { events, tier: "deep" }).md).not.toContain("## Tensions");
+  });
+
+  test("at most five whole lines within the separate 500-token budget", () => {
+    const atoms = Array.from({ length: 14 }, (_, i) => atom(`id${i}`, "doctrine", `Claim ${i}.`));
+    const es: LedgerEvent[] = atoms.map((x) => ({ ev: "stack", atom: x.id, ep: "same.md", ts: "t1" }));
+    for (let i = 0; i < 7; i++) es.push({ ev: "contradiction", a: atoms[2 * i].id, b: atoms[2 * i + 1].id, ts: "t2" });
+    const { md } = renderSelf(atoms, foldWeights(es), undefined, { events: es });
+    const lines = md.split("## Tensions\n\n")[1].trim().split("\n\n");
+    expect(lines).toHaveLength(TENSIONS_MAX);
+    expect(lines.reduce((n, line) => n + Math.ceil(line.length / 4), 0)).toBeLessThanOrEqual(TENSIONS_BUDGET);
+  });
+});
 
 describe("renderSelf", () => {
   test("byte-identical re-render for identical inputs", () => {

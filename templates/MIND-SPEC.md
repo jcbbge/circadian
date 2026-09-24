@@ -76,6 +76,10 @@ One JSON object per line; malformed lines skipped, never fatal. Events:
 - `{"ev":"supersede","winner":<id>,"loser":<id>,"ts":…}` — loser's current weight
   TRANSFERS to winner; loser keeps its file and lineage, status becomes
   superseded-by:<winner>. Zoom shows the old telling forever.
+- `{"ev":"contradiction","a":<id>,"b":<id>,"ts":…}` — opens an undirected
+  tension (edge key = sorted ids joined by `:`); never changes weight.
+- `{"ev":"resolve","edge":<key>,"winner":<id>,"ts":…}` — closes an open
+  edge; transfers the other endpoint's weight to the winner as a supersede.
 
 **Weight is never stored — it is fold(ledger), deterministic.** Defaults (knobs):
 birth 1, bump +1, decay ×0.95/night, RENDER_FLOOR 0.5. A never-bumped singleton
@@ -97,6 +101,8 @@ Deterministic, byte-identical re-runs, no clock in the fold. Four v1 sections,
 folded by kind; within a section, atoms sort weight desc (tiebreak: id lex),
 strongest telling verbatim with its `[ep:]` stamps. v1 token targets become
 **render budgets**: selection stops at the budget — atom text is never truncated.
+Open contradictions whose endpoints are active and hot render in `## Tensions`
+with both claims and provenance (at most 5 whole lines, 500-token budget).
 Invariant (asserted in `bun test` and after every REM): render(archive) ==
 committed SELF.md, byte-identical.
 

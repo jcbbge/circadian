@@ -29,12 +29,12 @@ export function classifyFleetTier(s: string): FleetTier | null {
 }
 
 /** Slim the SELF payload for executor-tier workers (3-AGNT/4-SAGT): keep the
- * identity-load DOCTRINE section, drop Motifs and How-we-work. A worker runs a
+ * DOCTRINE section and any open Tensions, drop Motifs and How-we-work. A worker runs a
  * single self-contained brief — it needs the constitution + doctrine + NOW +
  * brief-relevant evidence, not the full ~8k worldview dump (wake-slim,
- * 2026-08-11). Deterministic: cut at the second `## ` heading. If the shape is
- * unexpected (fewer than two headings), return SELF unchanged rather than
- * guess — never silently drop content we cannot bound. */
+ * 2026-08-11). Deterministic: cut at the second `## ` heading and retain
+ * Tensions if present. If the shape is unexpected (fewer than two headings),
+ * return SELF unchanged rather than guess. */
 export function sliceSelf(self: string): string {
   const trimmed = self.trim();
   const headingRe = /^##\s+/gm;
@@ -47,7 +47,13 @@ export function sliceSelf(self: string): string {
   // Need a first section (headings[0], expected `## Doctrine`) and a second
   // heading to cut before. Without both, keep SELF whole (fail open, not out).
   if (headings.length < 2) return trimmed;
-  return trimmed.slice(headings[0], headings[1]).trim();
+  const doctrine = trimmed.slice(headings[0], headings[1]).trim();
+  const tension = /^## Tensions\s*$/m.exec(trimmed);
+  if (!tension) return doctrine;
+  const next = /^##\s+/gm;
+  next.lastIndex = tension.index + tension[0].length;
+  const end = next.exec(trimmed)?.index ?? trimmed.length;
+  return `${doctrine}\n\n${trimmed.slice(tension.index, end).trim()}`;
 }
 
 /** Cut USER at `/^##\s+Corrections\b/` through the next `/^##\s+/` or EOF.
@@ -118,7 +124,7 @@ export function buildPayload(files: {
       : []),
   ];
 
-  // Executor tiers (3-AGNT/4-SAGT) get the DOCTRINE-only SELF slice; the USER
+  // Executor tiers (3-AGNT/4-SAGT) get the DOCTRINE + Tensions SELF slice; the USER
   // operational file is dropped entirely (a worker follows a self-contained
   // brief — it does not need Josh's day-to-day working preferences). Operator
   // tiers and operator panes keep the full worldview.

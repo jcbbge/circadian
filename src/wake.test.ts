@@ -86,6 +86,18 @@ describe("sliceSelf (wake-slim)", () => {
     expect(sliced).not.toContain("## How we work");
     expect(sliced.length).toBeLessThan(SELF_FIXTURE.length);
   });
+  test("keeps the bounded Tensions slot in both slim and operator payloads", () => {
+    const self = `${SELF_FIXTURE}\n\n## Tensions\n\n**Claim A** (a.md) ⇄ **Claim B** (b.md)`;
+    expect(sliceSelf(self)).toContain("## Tensions");
+    expect(sliceSelf(self)).toContain("Claim B");
+    expect(sliceSelf(self)).not.toContain("## Motifs");
+    for (const slim of [true, false]) {
+      const payload = buildPayload({ ...COMMON, self, slim });
+      expect(payload).toContain("Claim A");
+      expect(payload).toContain("Claim B");
+      expect(payload).not.toContain("OVER-CAP:");
+    }
+  });
   test("fails open: returns SELF unchanged when it has fewer than two headings", () => {
     const oneHeading = "## Doctrine\n\nonly one section here.";
     expect(sliceSelf(oneHeading)).toBe(oneHeading.trim());
