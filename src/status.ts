@@ -28,6 +28,7 @@ import { homedir } from "os";
 import { createHash } from "crypto";
 import { ok, degraded, correlation } from "./obs.ts";
 import { renderRedundancy } from "./redundancy.ts";
+import { readAtoms, readLedger } from "./atoms.ts";
 
 // CIRCADIAN_HOME overrides; default ~/circadian. See wake.ts for the contract.
 const CIRCADIAN_HOME = process.env.CIRCADIAN_HOME || path.join(homedir(), "circadian");
@@ -370,7 +371,14 @@ function collectVitals(scoreboard: ScoreEvent[], mindDir = MIND_DIR) {
   const remEvents = scoreboard.filter((e) => e.type === "rem");
   const recentRem = remEvents.slice(-RECENT_REM_EVENTS);
 
+  const born = new Set(readLedger(path.join(mindDir, "beliefs.jsonl"))
+    .filter(e => e.ev === "stack").map(e => e.atom));
+  const proposed = readAtoms(path.join(mindDir, "proposed"))
+    .filter(a => !born.has(a.id) && !fs.existsSync(path.join(mindDir, "beliefs", `${a.id}.md`)))
+    .map(a => ({ id: a.id, claim: a.claim }));
+
   return {
+    proposed,
     last_sleep: lastSleepIso ?? null,
     last_sleep_age: lastSleepAge,
     last_sleep_source: lastSleepIso ? lastSleepSource : null,
@@ -421,6 +429,10 @@ function renderStatus(vitals: ReturnType<typeof collectVitals>) {
       console.log(`  ${name}: ${info.tokens} / ${info.cap} tokens`);
     }
   }
+
+  console.log(`\nproposed beliefs (${vitals.proposed.length}):`);
+  for (const a of vitals.proposed) console.log(`  ${a.id}: ${a.claim}`);
+  if (!vitals.proposed.length) console.log("  (none)");
 
   // --- last 7 greeting verdicts ---
   const last7 = vitals.verdicts.recent_7;

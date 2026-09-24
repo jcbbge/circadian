@@ -108,6 +108,7 @@
 
 import * as fs from "fs";
 import * as path from "path";
+import { execFileSync } from "node:child_process";
 import {
   atomId,
   serializeAtom,
@@ -160,6 +161,23 @@ export const COMPARE_TOP_K = 2;
  * before COMPARE is ever needed — this also hardens the idempotence
  * suspenders layer (same content -> same candidate -> exact hash hit). */
 export const EXTRACT_TEMPERATURE = 0;
+/** Independent decisions required to admit a birth when multiple fm lanes exist. */
+export const QUORUM = { n: 2, m: 3 } as const;
+
+/** Only checked-out fm worktrees count as lanes. A dormant branch is not an
+ * instantiation; a single lane keeps the historical write path unchanged. */
+export function activeLaneViews(mindDir: string): string[] {
+  try {
+    const raw = execFileSync("git", ["-C", mindDir, "worktree", "list", "--porcelain"], { encoding: "utf8", stdio: ["ignore", "pipe", "pipe"] });
+    const entries = raw.trim().split(/\n\n+/).map(block => ({
+      dir: block.match(/^worktree (.+)$/m)?.[1], branch: block.match(/^branch refs\/heads\/(.+)$/m)?.[1],
+    }));
+    const lanes = entries.filter(e => e.dir && e.branch?.startsWith("fm/")).map(e => e.dir!);
+    if (lanes.length < 2) return [];
+    return [mindDir, ...lanes.filter(dir => path.resolve(dir) !== path.resolve(mindDir))];
+  } catch { return []; } // non-git sandboxes and single instantiations
+}
+
 
 // ---------------------------------------------------------------------
 // exposure metering — flash vs standard (w2 brief: the light meter)
@@ -733,6 +751,10 @@ export interface StackEpisodeContext {
   /** Injectable decision-only transport; production uses CIRCADIAN_DECIDE_URL. */
   decisionTransport?: DecisionTransport;
   beforeCAS?: () => void;
+  /** Test override: each path is a separate lane view, never the live mind. */
+  laneViews?: string[];
+  /** Injectable per-vote decision transport; production uses decide. */
+  voteTransport?: DecisionTransport;
 }
 
 export interface StackCounts {
@@ -744,6 +766,7 @@ export interface StackCounts {
   droppedOverCap: number;
   compareCalls: number;
   compareInvalid: number;
+  proposed?: number;
   /** identity-kind candidates suppressed because this episode is a flash
    * exposure (w2: flash exposures are barred from minting identity). */
   identitySuppressed?: number;
@@ -877,12 +900,21 @@ export async function stackEpisode(ctx: StackEpisodeContext): Promise<StackEpiso
     droppedOverCap,
     compareCalls: 0,
     compareInvalid: 0,
+    proposed: 0,
     identitySuppressed,
     exposure,
   };
 
   const files: Record<string, string> = {};
   const events: LedgerEvent[] = [];
+  const views = ctx.laneViews ?? activeLaneViews(ctx.mindDir);
+  const lanePopulations = views.map(dir => {
+    if (path.resolve(dir) === path.resolve(ctx.mindDir)) return population;
+    const states = foldWeights(readLedger(path.join(dir, "beliefs.jsonl")));
+    return readAtoms(path.join(dir, "beliefs"))
+      .filter(a => states.get(a.id)?.status === "active")
+      .map(a => ({ id: a.id, claim: a.claim }));
+  });
   for (const candidate of candidatePool) {
     const comparator: Comparator = async (a, b) => {
       if (ctx.compare) return ctx.compare(a, b);
@@ -928,6 +960,42 @@ export async function stackEpisode(ctx: StackEpisodeContext): Promise<StackEpiso
       quotes: candidate.quotes.map((text) => ({ text, source: ctx.filename })), eps: [episodeDate],
     });
     const written = parseAtom(md);
+    // A supersession is also a birth. Quorum applies to all births, never
+    // to the stack branch above (exact/overlap/COMPARE recurrence).
+    if (views.length > 1) {
+      let distinct = 0;
+      const dissent = new Set<string>();
+      for (let i = 0; i < QUORUM.m; i++) {
+        const view = i % lanePopulations.length === 0 ? population : lanePopulations[i % lanePopulations.length];
+        const prompt = `Is A DISTINCT from every active belief in B? Answer exactly DISTINCT or SAME.\nA: ${JSON.stringify(candidate.claim)}\nB: ${JSON.stringify(view.map(a => a.claim))}`;
+        const vote = await decide({
+          question: "Is candidate A DISTINCT from every active belief in lane B?",
+          options: ["DISTINCT", "SAME"] as const,
+          evidence: { A: candidate.claim, B: view.map(a => a.claim) },
+        }, {
+          transport: ctx.voteTransport,
+          fallback: () => complete(prompt, { timeoutMs: COMPARE_TIMEOUT_MS, maxTokens: COMPARE_MAX_TOKENS }),
+        });
+        logIO(ctx.ioLogPath, { kind: "compare", episode: ctx.filename, prompt, completion: vote.raw });
+        // An invalid answer is an abstention, not a free DISTINCT vote.
+        if (!vote.valid) counts.compareInvalid++;
+        else if (vote.option === "DISTINCT") distinct++;
+        else if (view.length) {
+          const nearest = [...view].sort((a, b) => jaccard(significantTokens(candidate.claim), significantTokens(b.claim)) - jaccard(significantTokens(candidate.claim), significantTokens(a.claim)))[0];
+          dissent.add(nearest.id);
+        }
+      }
+      // Persist doubt as edges where an opposing active atom exists. The
+      // proposed file itself has no weight, so these edges never render hot
+      // until a human admits it.
+      for (const b of dissent) if (b !== written.id) events.push({ ev: "contradiction", a: written.id, b, ts: new Date().toISOString() });
+      if (distinct < QUORUM.n) {
+        const proposal = path.join(ctx.mindDir, "proposed", `${written.id}.md`);
+        if (!fs.existsSync(proposal)) files[`proposed/${written.id}.md`] = md;
+        counts.proposed!++;
+        continue;
+      }
+    }
     files[`beliefs/${written.id}.md`] = md;
     events.push({
       ev: "stack",
@@ -952,9 +1020,10 @@ export async function stackEpisode(ctx: StackEpisodeContext): Promise<StackEpiso
     population.push({ id: written.id, claim: candidate.claim });
   }
 
-  if (events.length > 0) publish(ctx.mindDir, {
-    id: `stack-${atomId(ctx.filename)}`, subject: `stack: ${ctx.filename}`,
-    files, appends: { "beliefs.jsonl": events.map(e => JSON.stringify(e) + "\n").join("") },
+  if (events.length > 0 || Object.keys(files).length > 0) publish(ctx.mindDir, {
+    id: `stack-${atomId(ctx.filename)}-${atomId(JSON.stringify({ files: Object.keys(files).sort(), events: events.map(e => [e.ev, e.atom, e.winner, e.loser, e.a, e.b]) }))}`,
+    subject: `stack: ${ctx.filename}`,
+    files, ...(events.length ? { appends: { "beliefs.jsonl": events.map(e => JSON.stringify(e) + "\n").join("") } } : {}),
   }, ctx.beforeCAS);
   const rejectedTotal = counts.rejected + counts.droppedOverCap + counts.compareInvalid;
   const emit = rejectedTotal > 0 ? degraded : ok;
@@ -964,7 +1033,7 @@ export async function stackEpisode(ctx: StackEpisodeContext): Promise<StackEpiso
     correlation_id: ctx.correlationId,
     summary:
       `stacked ${ctx.filename}: ${counts.new} new (${counts.superseded} superseding), ` +
-      `${counts.stacked} stacked, ${counts.bumped} bumped, ${counts.rejected} rejected, ` +
+      `${counts.stacked} stacked, ${counts.bumped} bumped, ${counts.proposed} proposed, ${counts.rejected} rejected, ` +
       `${counts.droppedOverCap} dropped-over-cap`,
     context: { filename: ctx.filename, ...counts },
     ...(rejectedTotal > 0

@@ -50,9 +50,9 @@ function validate(intent: PublishIntent): void {
   for (const p of [...Object.keys(intent.files ?? {}), ...Object.keys(intent.appends ?? {})]) safePath(p);
   if (Object.keys(intent.files ?? {}).some(p => p in (intent.appends ?? {}))) throw new Error("file cannot be both replaced and appended");
   for (const [p, value] of Object.entries(intent.files ?? {})) {
-    if (p.startsWith("beliefs/") && p.endsWith(".md")) {
+    if ((p.startsWith("beliefs/") || p.startsWith("proposed/")) && p.endsWith(".md")) {
       const atom = parseAtom(value);
-      if (p !== `beliefs/${atom.id}.md`) throw new Error(`atom path mismatches claim: ${p}`);
+      if (p !== `beliefs/${atom.id}.md` && p !== `proposed/${atom.id}.md`) throw new Error(`atom path mismatches claim: ${p}`);
     }
   }
   for (const [p, value] of Object.entries(intent.appends ?? {})) {
@@ -108,7 +108,7 @@ export function publish(mind: string, intent: PublishIntent, beforeCAS?: () => v
     const index = path.join(git(mind, ["rev-parse", "--absolute-git-dir"]), `index-publish-${randomUUID()}`);
     const changed: Record<string, string> = { ...intent.files };
     for (const p of Object.keys(changed)) {
-      if (p.startsWith("beliefs/") && blob(mind, old, p)) delete changed[p]; // immutable atom
+      if ((p.startsWith("beliefs/") || p.startsWith("proposed/")) && blob(mind, old, p)) delete changed[p]; // immutable atom
     }
     for (const [p, lines] of Object.entries(intent.appends ?? {})) changed[p] = blob(mind, old, p) + lines;
     try {
