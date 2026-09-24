@@ -36,7 +36,7 @@ Design language for all of these: one intelligence, many instantiations; the sub
 - [x] Brief 17 — archaeology command (`when`, `bisect`) — `03df36c`
 - [x] Brief 18 — compare-and-swap publication (graft from mem; prerequisite for 13, 15) — `1b610cb850c24f82a6eca81f226f9cecc56dd77d`
 - [x] Brief 19 — on-demand read surface over MCP (graft from mem) — `940cbd3`
-- Brief 20 — backfill from transcripts + hard `erase` (graft from mem)
+- [x] Brief 20 — backfill from transcripts + hard `erase` (graft from mem) — `270c254`
 Suggested order: 18 → 14 → 10 → 12 → 19 → 11 → 17 → 16 → 13 → 15 → 20. Brief 09 stays reserved for dense+lexical fusion.
 
 ## BLOCKED
