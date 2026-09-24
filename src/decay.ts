@@ -35,7 +35,9 @@
 import * as fs from "fs";
 import * as path from "path";
 import { homedir } from "os";
-import { readAtoms, readLedger, appendLedger, foldWeights, type Atom, type AtomState, type LedgerEvent } from "./atoms.ts";
+import { randomUUID } from "node:crypto";
+import { readAtoms, readLedger, foldWeights, type Atom, type AtomState, type LedgerEvent } from "./atoms.ts";
+import { publish, recoverPublications } from "./publish.ts";
 import { RENDER_FLOOR, type RenderManifestEntry } from "./render.ts";
 import { ok, idle, degraded, correlation } from "./obs.ts";
 
@@ -199,6 +201,7 @@ async function main() {
   const dryRun = args.includes("--dry-run");
   const corr = correlation("decay");
 
+  if (fs.existsSync(path.join(MIND_DIR, ".git"))) recoverPublications(MIND_DIR);
   const beliefsDirExists = fs.existsSync(BELIEFS_DIR);
   const manifest = beliefsDirExists ? readManifest(MANIFEST_PATH) : null;
 
@@ -233,9 +236,11 @@ async function main() {
   const srcLoc = countSrcLoc();
 
   if (!dryRun) {
-    for (const ev of potentiateEvents) appendLedger(LEDGER_PATH, ev);
-    appendLedger(LEDGER_PATH, decayEvent);
-    appendLedger(LEDGER_PATH, renormEvent);
+    publish(MIND_DIR, {
+      id: process.env.CIRCADIAN_REQUEST_ID ?? `decay-${randomUUID()}`,
+      subject: `decay: ${runTs.slice(0, 10)}`,
+      appends: { "beliefs.jsonl": [...potentiateEvents, decayEvent, renormEvent].map(ev => JSON.stringify(ev) + "\n").join("") },
+    });
 
     const vitals = {
       ts: runTs,

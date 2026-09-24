@@ -110,10 +110,10 @@ import * as fs from "fs";
 import * as path from "path";
 import {
   atomId,
-  writeAtom,
+  serializeAtom,
+  parseAtom,
   readAtoms,
   readLedger,
-  appendLedger,
   foldWeights,
   type AtomKind,
   type LedgerEvent,
@@ -121,6 +121,7 @@ import {
 import { significantTokens, jaccard, LTP_THRESHOLD } from "./ltp.ts";
 import { complete } from "./llm.ts";
 import { ok, idle, degraded, fail, correlation } from "./obs.ts";
+import { publish, recoverPublications } from "./publish.ts";
 
 // ---------------------------------------------------------------------
 // knobs — all thresholds exported, per the brief
@@ -725,6 +726,10 @@ export interface StackEpisodeContext {
   ioLogPath: string;
   filename: string;
   correlationId: string;
+  /** Deterministic test transports; production uses the local LLM. */
+  extract?: (prompt: string) => Promise<string>;
+  compare?: Comparator;
+  beforeCAS?: () => void;
 }
 
 export interface StackCounts {
@@ -756,6 +761,7 @@ export interface StackEpisodeResult {
 }
 
 export async function stackEpisode(ctx: StackEpisodeContext): Promise<StackEpisodeResult> {
+  recoverPublications(ctx.mindDir);
   const episodePath = path.join(ctx.mindDir, "episodes", ctx.filename);
   let episodeContent: string;
   try {
@@ -806,7 +812,7 @@ export async function stackEpisode(ctx: StackEpisodeContext): Promise<StackEpiso
   const extractPrompt = buildExtractPrompt(episodeContent);
   let rawExtract: string;
   try {
-    rawExtract = await complete(extractPrompt, {
+    rawExtract = ctx.extract ? await ctx.extract(extractPrompt) : await complete(extractPrompt, {
       timeoutMs: EXTRACT_TIMEOUT_MS,
       maxTokens: EXTRACT_MAX_TOKENS,
       temperature: EXTRACT_TEMPERATURE,
@@ -872,8 +878,11 @@ export async function stackEpisode(ctx: StackEpisodeContext): Promise<StackEpiso
     exposure,
   };
 
+  const files: Record<string, string> = {};
+  const events: LedgerEvent[] = [];
   for (const candidate of candidatePool) {
     const comparator: Comparator = async (a, b) => {
+      if (ctx.compare) return ctx.compare(a, b);
       const prompt = buildComparePrompt(a, b);
       let raw: string;
       try {
@@ -894,7 +903,7 @@ export async function stackEpisode(ctx: StackEpisodeContext): Promise<StackEpiso
     }
 
     if (decision.action === "stack") {
-      appendLedger(ctx.ledgerPath, {
+      events.push({
         ev: "stack",
         atom: decision.targetAtomId!,
         ep: ctx.filename,
@@ -909,14 +918,13 @@ export async function stackEpisode(ctx: StackEpisodeContext): Promise<StackEpiso
     // "new" or "supersede": a brand-new atom is born (source = this
     // episode's own filename, [ep:] = its own date — both injected, never
     // asked of the model).
-    const written = writeAtom(ctx.beliefsDir, {
-      kind: candidate.kind,
-      claim: candidate.claim,
-      why: candidate.why,
-      quotes: candidate.quotes.map((text) => ({ text, source: ctx.filename })),
-      eps: [episodeDate],
+    const md = serializeAtom({
+      kind: candidate.kind, claim: candidate.claim, why: candidate.why,
+      quotes: candidate.quotes.map((text) => ({ text, source: ctx.filename })), eps: [episodeDate],
     });
-    appendLedger(ctx.ledgerPath, {
+    const written = parseAtom(md);
+    files[`beliefs/${written.id}.md`] = md;
+    events.push({
       ev: "stack",
       atom: written.id,
       ep: ctx.filename,
@@ -926,7 +934,7 @@ export async function stackEpisode(ctx: StackEpisodeContext): Promise<StackEpiso
     counts.new++;
 
     if (decision.action === "supersede") {
-      appendLedger(ctx.ledgerPath, {
+      events.push({
         ev: "supersede",
         winner: written.id,
         loser: decision.targetAtomId!,
@@ -939,6 +947,10 @@ export async function stackEpisode(ctx: StackEpisodeContext): Promise<StackEpiso
     population.push({ id: written.id, claim: candidate.claim });
   }
 
+  if (events.length > 0) publish(ctx.mindDir, {
+    id: `stack-${atomId(ctx.filename)}`, subject: `stack: ${ctx.filename}`,
+    files, appends: { "beliefs.jsonl": events.map(e => JSON.stringify(e) + "\n").join("") },
+  }, ctx.beforeCAS);
   const rejectedTotal = counts.rejected + counts.droppedOverCap + counts.compareInvalid;
   const emit = rejectedTotal > 0 ? degraded : ok;
   emit({

@@ -187,6 +187,13 @@ describe("decay runway (DECAY_FACTOR/RENDER_FLOOR knobs, via foldWeights)", () =
 // ---------------------------------------------------------------------
 // CLI end-to-end, sandboxed CIRCADIAN_HOME (real subprocess, no mocks)
 // ---------------------------------------------------------------------
+function commitFixture(home: string): void {
+  const mind = path.join(home, "mind");
+  for (const args of [["init", "-q"], ["config", "user.name", "Test"], ["config", "user.email", "test@localhost"], ["add", "."], ["commit", "-qm", "seed"]]) {
+    const result = spawnSync("git", ["-C", mind, ...args]);
+    if (result.status !== 0) throw new Error(result.stderr.toString());
+  }
+}
 function runDecayCli(circadianHome: string, extraArgs: string[] = []): { status: number | null; stderr: string } {
   const r = spawnSync(BUN_BIN, [DECAY_SCRIPT, ...extraArgs], {
     env: { ...process.env, CIRCADIAN_HOME: circadianHome },
@@ -228,6 +235,7 @@ describe("decay.ts CLI — sandboxed", () => {
     const ledgerPath = path.join(home, "mind", "beliefs.jsonl");
     appendLedger(ledgerPath, { ev: "stack", atom: "seed", ep: "2026-07-16-ep.md", ts: "2026-07-16T00:00:00.000Z" });
 
+    commitFixture(home);
     const { status } = runDecayCli(home);
     expect(status).toBe(0);
 
@@ -255,6 +263,7 @@ describe("decay.ts CLI — sandboxed", () => {
     const ledgerPath = path.join(home, "mind", "beliefs.jsonl");
     appendLedger(ledgerPath, { ev: "stack", atom: "seed", ep: "2026-07-16-ep.md", ts: "2026-07-16T00:00:00.000Z" });
 
+    commitFixture(home);
     expect(runDecayCli(home).status).toBe(0);
     const afterFirst = fs.readFileSync(ledgerPath, "utf8");
     expect(runDecayCli(home).status).toBe(0);

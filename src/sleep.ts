@@ -33,6 +33,8 @@ import { complete } from "./llm.ts";
 import { ok, idle, degraded, fail, correlation } from "./obs.ts";
 import { isDroneOpening, isFleetPacketOpening, firstUserTurnFromText } from "./provenance.ts";
 import { normalizeTurnText } from "./transcript-format.ts";
+import { publish, recoverPublications } from "./publish.ts";
+import { createHash } from "node:crypto";
 
 // --dry-run: draft exactly as the live worker does (same transcript, same
 // prompt, same LLM, same parse), then print the episode + NOW.md to stdout
@@ -773,42 +775,6 @@ function buildNowContent(nowRaw: string, preservedSerendipity: string, lastSleep
   return truncateToCharCap(content, NOW_CAP_CHARS, "NOW.md");
 }
 
-function writeEpisodeFile(date: string, arc: string, content: string): string {
-  const baseSlug = slugify(arc);
-  let filename = `${date}-${baseSlug}.md`;
-  let counter = 2;
-  while (existsSync(join(EPISODES_DIR, filename))) {
-    filename = `${date}-${baseSlug}-${counter}.md`;
-    counter += 1;
-  }
-  const finalPath = join(EPISODES_DIR, filename);
-  const tmpPath = join(EPISODES_DIR, `.tmp-${process.pid}-${Date.now()}.md`);
-  writeFileSync(tmpPath, content, "utf8");
-  renameSync(tmpPath, finalPath);
-  return finalPath;
-}
-
-function writeNowFile(content: string): void {
-  const finalPath = join(MIND, "NOW.md");
-  const tmpPath = join(MIND, `.NOW.md.tmp-${process.pid}`);
-  writeFileSync(tmpPath, content, "utf8");
-  renameSync(tmpPath, finalPath);
-}
-
-function appendSleepScoreboard(): void {
-  try {
-    const self = readFileSync(join(MIND, "SELF.md"), "utf8");
-    const event = {
-      ts: new Date().toISOString(),
-      type: "sleep",
-      worldview_tokens: Math.ceil(self.length / 4),
-    };
-    appendFileSync(join(MIND, "scoreboard.jsonl"), JSON.stringify(event) + "\n");
-  } catch {
-    // scoreboard append failure must not undo the writes above
-  }
-}
-
 // ---------------------------------------------------------------------
 // R7 implicit-ok verdict (popmem WS-0, docs/POPULATION-MEMORY.md §7 R7):
 // "silence is a verdict" — a greeting whose arc/flight-plan/live-tension
@@ -899,7 +865,10 @@ export function checkImplicitOk(corr: string, sessionId: string): void {
     const nowIso = new Date().toISOString();
     const decision = decideImplicitOk(scoreboard, nowIso, Math.ceil(selfMd.length / 4));
     if (decision.event) {
-      appendFileSync(join(MIND, "scoreboard.jsonl"), JSON.stringify(decision.event) + "\n");
+      publish(MIND, {
+        id: `verdict-${createHash("sha256").update(decision.event.basis ?? sessionId).digest("hex")}`,
+        appends: { "scoreboard.jsonl": JSON.stringify(decision.event) + "\n" },
+      });
       ok({
         process: "sleep", phase: "implicit-verdict", correlation_id: corr, session_id: sessionId,
         summary: `implicit ok verdict recorded (R7 propagation): ${decision.reason}`,
@@ -943,6 +912,7 @@ async function draftSessionEpisode(opts: {
   mode: "worker" | "drain";
 }): Promise<DraftResult> {
   const { transcriptPath, sessionId, corr, mode } = opts;
+  if (!DRY_RUN && existsSync(join(MIND, ".git"))) recoverPublications(MIND);
 
   // PROVENANCE GUARD (2026-07-24 contamination post-mortem): bench/eval
   // harness sessions (pi-spine bench-greeting, bench-compaction, anything
@@ -1104,10 +1074,26 @@ async function draftSessionEpisode(opts: {
     return { status: "written" };
   }
 
-  const epPath = writeEpisodeFile(date, draft.arc, episodeContent);
-  writeNowFile(nowContent);
-  appendSleepScoreboard();
-  checkImplicitOk(corr, sessionId);
+  const baseSlug = slugify(draft.arc);
+  let filename = `${date}-${baseSlug}.md`;
+  let counter = 2;
+  while (existsSync(join(EPISODES_DIR, filename))) filename = `${date}-${baseSlug}-${counter++}.md`;
+  const epPath = join(EPISODES_DIR, filename);
+  const self = existsSync(join(MIND, "SELF.md")) ? readFileSync(join(MIND, "SELF.md"), "utf8") : "";
+  const tokens = Math.ceil(self.length / 4);
+  const sleepLine = JSON.stringify({ ts: lastSleepIso, type: "sleep", worldview_tokens: tokens }) + "\n";
+  const verdict = decideImplicitOk(loadScoreboardForImplicitOk(), lastSleepIso, tokens);
+  const verdictLine = verdict.event ? JSON.stringify(verdict.event) + "\n" : "";
+  publish(MIND, {
+    id: `sleep-${createHash("sha256").update(sessionId).digest("hex")}`,
+    subject: `sleep: ${sessionId}`,
+    files: { [`episodes/${filename}`]: episodeContent, "NOW.md": nowContent },
+    appends: { "scoreboard.jsonl": sleepLine + verdictLine },
+  });
+  if (verdict.event) ok({ process: "sleep", phase: "implicit-verdict", correlation_id: corr, session_id: sessionId,
+    summary: `implicit ok verdict recorded: ${verdict.reason}`, context: { basis: verdict.event.basis } });
+  else idle({ process: "sleep", phase: "implicit-verdict", correlation_id: corr, session_id: sessionId,
+    summary: `no implicit verdict recorded: ${verdict.reason}`, context: {} });
   slog(mode, "SUCCESS: episode written", { episode: epPath, arc: draft.arc });
   // The letter was written. Success is as legible as failure.
   ok({

@@ -23,8 +23,8 @@ import { appendFileSync, mkdirSync } from "node:fs";
 import { homedir } from "node:os";
 import { dirname, join } from "node:path";
 
-const CIRCADIAN_HOME = process.env.CIRCADIAN_HOME || join(homedir(), "circadian");
-const EVENT_LOG = join(CIRCADIAN_HOME, "logs", "circadian.events.jsonl");
+// Resolve at emit time: sandboxed callers can set CIRCADIAN_HOME after import.
+const eventLog = () => join(process.env.CIRCADIAN_HOME || join(homedir(), "circadian"), "logs", "circadian.events.jsonl");
 
 export type CircadianProcess = "wake" | "sleep" | "graze" | "rem" | "status" | "doctor" | "backfill" | "ops" | "zoom" | "replay" | "atoms" | "render" | "decay" | "stack" | "migrate" | "janitor" | "relindex";
 
@@ -82,11 +82,12 @@ export function emit(e: Omit<CircadianEvent, "ts"> & { ts?: string }): Circadian
 
   process.stderr.write(line(ev) + "\n");
   try {
-    mkdirSync(dirname(EVENT_LOG), { recursive: true });
-    appendFileSync(EVENT_LOG, JSON.stringify(ev) + "\n");
+    const log = eventLog();
+    mkdirSync(dirname(log), { recursive: true });
+    appendFileSync(log, JSON.stringify(ev) + "\n");
   } catch (err) {
     process.stderr.write(
-      `✗ circadian obs/event-log FAILED: could not append to ${EVENT_LOG}: ${(err as Error).message}\n`
+      `✗ circadian obs/event-log FAILED: could not append to ${eventLog()}: ${(err as Error).message}\n`
     );
   }
   return ev;

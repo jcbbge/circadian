@@ -5,6 +5,7 @@ import * as path from "node:path";
 import { execFileSync } from "node:child_process";
 import { randomUUID } from "node:crypto";
 import { ok, idle, degraded } from "./obs.ts";
+import { parseAtom } from "./atoms.ts";
 
 export interface PublishIntent {
   id: string;
@@ -26,7 +27,7 @@ function git(mind: string, args: string[], opts: { input?: string; index?: strin
 function atomic(file: string, content: string): void {
   fs.mkdirSync(path.dirname(file), { recursive: true });
   const tmp = `${file}.tmp-${randomUUID()}`;
-  try { fs.writeFileSync(tmp, content); fs.renameSync(tmp, file); }
+  try { fs.writeFileSync(tmp, content); const fd = fs.openSync(tmp, "r"); try { fs.fsyncSync(fd); } finally { fs.closeSync(fd); } fs.renameSync(tmp, file); }
   finally { if (fs.existsSync(tmp)) fs.unlinkSync(tmp); }
 }
 function safePath(p: string): void {
@@ -48,7 +49,19 @@ function current(mind: string): { ref: string; old: string } {
 function validate(intent: PublishIntent): void {
   for (const p of [...Object.keys(intent.files ?? {}), ...Object.keys(intent.appends ?? {})]) safePath(p);
   if (Object.keys(intent.files ?? {}).some(p => p in (intent.appends ?? {}))) throw new Error("file cannot be both replaced and appended");
-  for (const value of Object.values(intent.appends ?? {})) if (!value.endsWith("\n")) throw new Error("append must end with newline");
+  for (const [p, value] of Object.entries(intent.files ?? {})) {
+    if (p.startsWith("beliefs/") && p.endsWith(".md")) {
+      const atom = parseAtom(value);
+      if (p !== `beliefs/${atom.id}.md`) throw new Error(`atom path mismatches claim: ${p}`);
+    }
+  }
+  for (const [p, value] of Object.entries(intent.appends ?? {})) {
+    if (!value.endsWith("\n")) throw new Error("append must end with newline");
+    if (p.endsWith(".jsonl")) for (const line of value.trimEnd().split("\n")) JSON.parse(line);
+  }
+}
+function committedRequest(mind: string, ref: string, id: string): string {
+  return git(mind, ["log", "-1", "--format=%H", `--grep=^Circadian-Request: ${id}$`, ref]);
 }
 function receipt(mind: string, id: string): Receipt | null {
   try { return JSON.parse(fs.readFileSync(metadataPath(mind, "receipts", id), "utf8")); }
@@ -62,28 +75,41 @@ export function publish(mind: string, intent: PublishIntent, beforeCAS?: () => v
   const intentPath = metadataPath(mind, "intents", intent.id);
   const receiptPath = metadataPath(mind, "receipts", intent.id);
   const found = receipt(mind, intent.id);
-  if (found) { idle({ process: "stack", phase: "publish-receipt", summary: "request already published", context: { id: intent.id, commit: found.commit } }); return found; }
+  if (found) {
+    if (fs.existsSync(intentPath)) { syncPublished(mind, [...Object.keys(intent.files ?? {}), ...Object.keys(intent.appends ?? {})]); fs.unlinkSync(intentPath); }
+    idle({ process: "ops", phase: "publish-receipt", summary: "request already published", context: { id: intent.id, commit: found.commit } }); return found;
+  }
   fs.mkdirSync(path.dirname(intentPath), { recursive: true });
-  try { fs.writeFileSync(intentPath, JSON.stringify(intent) + "\n", { flag: "wx" }); }
+  try {
+    const fd = fs.openSync(intentPath, "wx");
+    try { fs.writeSync(fd, JSON.stringify({ ...intent, owner_pid: process.pid }) + "\n"); fs.fsyncSync(fd); }
+    finally { fs.closeSync(fd); }
+  }
   catch (e) {
-    if ((e as NodeJS.ErrnoException).code !== "EEXIST" || fs.readFileSync(intentPath, "utf8") !== JSON.stringify(intent) + "\n") throw e;
+    if ((e as NodeJS.ErrnoException).code !== "EEXIST") throw e;
+    const stored = JSON.parse(fs.readFileSync(intentPath, "utf8"));
+    const { owner_pid, ...same } = stored;
+    if (JSON.stringify(same) !== JSON.stringify(intent)) throw new Error(`request id reused with different intent: ${intent.id}`);
   }
   const { ref } = current(mind);
   // A crash after CAS but before receipt is recovered by finding the request trailer.
-  const prior = git(mind, ["log", ref, "--format=%H%x09%B%x00"]);
-  const match = prior.split("\0").find(entry => entry.includes(`Circadian-Request: ${intent.id}\n`));
-  if (match) {
-    const commit = match.split("\t")[0];
+  const prior = committedRequest(mind, ref, intent.id);
+  if (prior) {
+    const commit = prior;
     const done = { id: intent.id, commit, ts: new Date().toISOString() };
     atomic(receiptPath, JSON.stringify(done) + "\n");
+    syncPublished(mind, [...Object.keys(intent.files ?? {}), ...Object.keys(intent.appends ?? {})]);
     fs.unlinkSync(intentPath);
-    idle({ process: "stack", phase: "publish-replay", summary: "recovered published request", context: { id: intent.id, commit } });
+    idle({ process: "ops", phase: "publish-replay", summary: "recovered published request", context: { id: intent.id, commit } });
     return done;
   }
   for (let attempt = 0; attempt < 2; attempt++) {
     const { old } = current(mind);
     const index = path.join(mind, ".git", `index-publish-${randomUUID()}`);
     const changed: Record<string, string> = { ...intent.files };
+    for (const p of Object.keys(changed)) {
+      if (p.startsWith("beliefs/") && blob(mind, old, p)) delete changed[p]; // immutable atom
+    }
     for (const [p, lines] of Object.entries(intent.appends ?? {})) changed[p] = blob(mind, old, p) + lines;
     try {
       git(mind, ["read-tree", old], { index });
@@ -96,23 +122,33 @@ export function publish(mind: string, intent: PublishIntent, beforeCAS?: () => v
       if (attempt === 0) beforeCAS?.();
       try { git(mind, ["update-ref", ref, commit, old]); }
       catch (e) {
-        degraded({ process: "stack", phase: "publish-conflict", summary: "CAS lost; rebuilding on new tip", context: { id: intent.id, old, attempt }, cause: "published ref advanced", next_action: attempt === 0 ? "retrying against new tip" : "retry request after inspecting competing writer" });
+        // The competing writer may have published the same request id.
+        const winner = committedRequest(mind, ref, intent.id);
+        if (winner) {
+          const done = { id: intent.id, commit: winner, ts: new Date().toISOString() };
+          atomic(receiptPath, JSON.stringify(done) + "\n");
+          syncPublished(mind, [...Object.keys(intent.files ?? {}), ...Object.keys(intent.appends ?? {})]);
+          fs.unlinkSync(intentPath);
+          idle({ process: "ops", phase: "publish-replay", summary: "concurrent duplicate request already published", context: { id: intent.id, commit: done.commit } });
+          return done;
+        }
+        degraded({ process: "ops", phase: "publish-conflict", summary: "CAS lost; rebuilding on new tip", context: { id: intent.id, old, attempt }, cause: "published ref advanced", next_action: attempt === 0 ? "retrying against new tip" : "retry request after inspecting competing writer" });
         if (attempt === 0) continue;
         throw e;
       }
       const done = { id: intent.id, commit, ts: new Date().toISOString() };
       atomic(receiptPath, JSON.stringify(done) + "\n");
-      fs.unlinkSync(intentPath);
       // Working files are a view, not the publication authority. Avoid stale
       // checkout overwrites by reading the latest ref under an exclusive lock.
-      syncPublished(mind);
-      ok({ process: "stack", phase: "publish", summary: "candidate published", context: { id: intent.id, commit, attempt } });
+      syncPublished(mind, Object.keys(changed));
+      fs.unlinkSync(intentPath);
+      ok({ process: "ops", phase: "publish", summary: "candidate published", context: { id: intent.id, commit, attempt } });
       return done;
     } finally { try { fs.unlinkSync(index); } catch {} }
   }
   throw new Error("CAS exhausted");
 }
-export function syncPublished(mind: string): void {
+export function syncPublished(mind: string, paths: string[] = []): void {
   const lock = path.join(mind, ".git", "circadian-checkout.lock");
   // mkdir is atomic. Do not break an unknown holder's lock: it could be alive.
   let held = false;
@@ -123,8 +159,7 @@ export function syncPublished(mind: string): void {
   if (!held) throw new Error("published checkout lock busy");
   try {
     const { old } = current(mind);
-    const names = git(mind, ["ls-tree", "-r", "--name-only", old]).split("\n").filter(Boolean);
-    for (const p of names) {
+    for (const p of paths) {
       safePath(p);
       const content = blob(mind, old, p);
       if (!fs.existsSync(path.join(mind, p)) || fs.readFileSync(path.join(mind, p), "utf8") !== content) atomic(path.join(mind, p), content);
@@ -141,8 +176,12 @@ export function recoverPublications(mind: string): void {
     if (Date.now() - fs.statSync(file).mtimeMs > 30 * 86400_000) fs.unlinkSync(file);
   }
   if (fs.existsSync(dir)) for (const name of fs.readdirSync(dir).filter(n => n.endsWith(".json"))) {
-    const intent = JSON.parse(fs.readFileSync(path.join(dir, name), "utf8")) as PublishIntent;
+    const { owner_pid, ...intent } = JSON.parse(fs.readFileSync(path.join(dir, name), "utf8")) as PublishIntent & { owner_pid?: number };
+    if (owner_pid) {
+      try { process.kill(owner_pid, 0); continue; }
+      catch (e) { if ((e as NodeJS.ErrnoException).code === "EPERM") continue; }
+    }
     publish(mind, intent);
   }
-  syncPublished(mind);
+  // Never checkout the whole mind: other organs may have unpublished work.
 }
