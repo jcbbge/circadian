@@ -45,6 +45,7 @@ returns a typed choice. The substrate then depends on a language model only for 
 
 ## 9. Acceptance Criteria
 - COMPARE agreement ≥ 95% on the recorded pair set, with the decision transport ≥ 10x faster per call.
+Measurement status: pending (see WORK.md)
 
 ## 10. Clarification Check
 - None outstanding.

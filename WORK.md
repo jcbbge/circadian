@@ -30,7 +30,7 @@ Design language for all of these: one intelligence, many instantiations; the sub
 - Brief 11 — stratigraphy: depth tiers alongside decay; `dig` reads below the floor
 - Brief 12 — belief interchange format (atom shape as protocol; reader for mem-shaped stores)
 - Brief 13 — stigmergic memory on worker branches (lanes; landing consolidates; conflicts escalate)
-- Brief 14 — decision-boundary split (COMPARE and every fixed choice on a decision-only transport)
+- [x] Brief 14 — decision-boundary split (COMPARE and every fixed choice on a decision-only transport); code landed at a7eafb2; acceptance measurement pending — needs the recorded pair set from a real mind and a configured decision endpoint
 - Brief 15 — quorum write gate for concurrent instantiations
 - Brief 16 — contradiction graph (persist doubt)
 - Brief 17 — archaeology command (`when`, `bisect`)
