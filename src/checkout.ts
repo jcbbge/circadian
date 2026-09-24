@@ -53,7 +53,7 @@ export function checkout(repo: string, ref = "HEAD"): CheckoutResult {
   const states = foldWeights(events);
   const weight = [...states.values()].reduce((sum, s) => sum + s.weight, 0);
   if (![weight, ...[...states.values()].map((s) => s.weight)].every((n) => Number.isFinite(n) && n >= 0)) throw new Error("ledger fold produced invalid weight");
-  return { sha, self: renderSelf(atoms, states).md, now: names.has("NOW.md") ? blob("NOW.md") : "", atoms: atoms.length, weight };
+  return { sha, self: renderSelf(atoms, states, undefined, { events }).md, now: names.has("NOW.md") ? blob("NOW.md") : "", atoms: atoms.length, weight };
 }
 
 function usage(): never { throw new Error("usage: bun src/checkout.ts [--ref <commit>] [--repo <mind repo>] [--out <directory>]"); }

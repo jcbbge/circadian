@@ -34,7 +34,8 @@
 
 import * as fs from "fs";
 import * as path from "path";
-import { type Atom, type AtomKind, type AtomState, readAtoms, readLedger, foldWeights } from "./atoms.ts";
+import { type Atom, type AtomKind, type AtomState, type LedgerEvent, readAtoms, readLedger, foldWeights } from "./atoms.ts";
+import { foldStrata, hotLimit } from "./strata.ts";
 import { ok, degraded, fail, correlation } from "./obs.ts";
 
 // ---------------------------------------------------------------------
@@ -114,9 +115,13 @@ export interface RenderResult {
 export function renderSelf(
   atoms: Atom[],
   states: Map<string, AtomState>,
-  budgets?: Partial<RenderBudgets>
+  budgets?: Partial<RenderBudgets>,
+  options: { tier?: "hot" | "deep"; events?: LedgerEvent[]; hot?: number } = {},
 ): RenderResult {
   const merged: RenderBudgets = { ...DEFAULT_BUDGETS, ...budgets };
+  const depths = foldStrata(options.events ?? []);
+  const limit = options.hot ?? hotLimit();
+  if (limit < 0 || Number.isNaN(limit)) throw new Error("invalid hot depth");
   const manifest: RenderManifestEntry[] = [];
   const parts: string[] = [];
 
@@ -127,7 +132,10 @@ export function renderSelf(
     const eligible = atoms.filter((a) => {
       if (a.kind !== section.kind) return false;
       const { weight, status } = weightOf(states, a.id);
-      return status === "active" && weight >= RENDER_FLOOR;
+      const depth = depths.get(a.id)?.depth ?? 0;
+      return status === "active" && (options.tier === "deep"
+        ? depth > limit
+        : weight >= RENDER_FLOOR && depth <= limit);
     });
     eligible.sort((a, b) => {
       const wa = weightOf(states, a.id).weight;
@@ -202,7 +210,7 @@ async function main() {
 
   const events = readLedger(ledgerPath);
   const states = foldWeights(events);
-  const { md, manifest } = renderSelf(atoms, states);
+  const { md, manifest } = renderSelf(atoms, states, undefined, { events });
 
   fs.mkdirSync(path.dirname(outPath), { recursive: true });
   fs.writeFileSync(outPath, md);

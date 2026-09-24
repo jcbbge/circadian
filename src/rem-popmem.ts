@@ -949,8 +949,9 @@ export interface RenderInvariantResult {
  * in-memory path would never see. */
 export function assertRenderInvariant(beliefsDir: string, ledgerPath: string, committedMd: string): RenderInvariantResult {
   const atoms = readAtoms(beliefsDir);
-  const states = foldWeights(readLedger(ledgerPath));
-  const { md } = renderSelf(atoms, states);
+  const events = readLedger(ledgerPath);
+  const states = foldWeights(events);
+  const { md } = renderSelf(atoms, states, undefined, { events });
   return { ok: md === committedMd, expectedLength: md.length, actualLength: committedMd.length };
 }
 
@@ -1046,7 +1047,7 @@ async function main() {
     const statesAfter = foldWeights([...ledgerBefore, ...plan.supersedeEvents]);
     const atomsForRender = readAtoms(BELIEFS_DIR);
     const oldSelfMd = readOrEmpty(SELF_PATH);
-    const { md: newSelfMd, manifest: newManifest } = renderSelf(atomsForRender, statesAfter);
+    const { md: newSelfMd, manifest: newManifest } = renderSelf(atomsForRender, statesAfter, undefined, { events: [...ledgerBefore, ...plan.supersedeEvents] });
 
     if (dryRun) {
       idle({
@@ -1397,6 +1398,7 @@ async function main() {
   // -------------------------------------------------------------------
   let distilledCount = 0;
   let statesAfterDistill = statesAfterDecay;
+  let renderEvents = [...ledgerBeforeDecay, ...potentiateEvents, decayEvent];
   try {
     const distillTs = new Date().toISOString();
     const plan = runDistillPhase(atomsBeforeDecay, statesAfterDecay, LEDGER_PATH, distillTs, corr, dryRun);
@@ -1404,7 +1406,8 @@ async function main() {
     // Re-fold so RENDER, greeting, and the R8 assert all see the distilled
     // population. In dry-run nothing was appended to disk, so fold the plan's
     // events in memory to preview the distilled render truthfully.
-    statesAfterDistill = foldWeights([...ledgerBeforeDecay, ...potentiateEvents, decayEvent, ...plan.supersedeEvents]);
+    renderEvents = [...renderEvents, ...plan.supersedeEvents];
+    statesAfterDistill = foldWeights(renderEvents);
   } catch (err) {
     degraded({
       process: "rem", phase: "distill", correlation_id: corr,
@@ -1427,7 +1430,7 @@ async function main() {
   // -------------------------------------------------------------------
   const atomsForRender = readAtoms(BELIEFS_DIR); // fresh: absorb may have added files since atomsBeforeDecay was read
   const oldSelfMd = readOrEmpty(SELF_PATH);
-  const { md: newSelfMd, manifest: newManifest } = renderSelf(atomsForRender, statesAfterDistill);
+  const { md: newSelfMd, manifest: newManifest } = renderSelf(atomsForRender, statesAfterDistill, undefined, { events: renderEvents });
 
   if (!dryRun) {
     atomicWrite(SELF_PATH, newSelfMd);
