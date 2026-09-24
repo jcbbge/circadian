@@ -2,6 +2,7 @@
 import * as fs from "node:fs";
 import * as path from "node:path";
 import { execFileSync } from "node:child_process";
+import { readLedger, foldWeights } from "./atoms.ts";
 
 export interface ScopeEntry { slug: string; path: string; status: string }
 export function registryPath(mind: string): string {
@@ -57,13 +58,15 @@ function budget(lines: string[], tokens: number): string {
     return true;
   }).join("\n");
 }
-export function scopedView(mind: string, scope: string, nowMs = Date.now(), reserveTokens = 0): { here: string; elsewhere: string; now: string } {
+export function scopedView(mind: string, scope: string, nowMs = Date.now(), reserveTokens = 0, sinceMs = 0, depthTokens = HERE_TOKENS): { here: string; elsewhere: string; now: string } {
   const nowFile = path.join(mind, scopeNowPath(scope));
   const now = fs.existsSync(nowFile) ? fs.readFileSync(nowFile, "utf8") : "";
   const active = new Set(readScopes(mind).filter(e => e.status.toLowerCase() === "active").map(e => e.slug));
   const episodes = fs.existsSync(path.join(mind, "episodes")) ? fs.readdirSync(path.join(mind, "episodes")).filter(f => f.endsWith(".md")).sort().reverse() : [];
   const here: string[] = [];
   const elsewhere = new Map<string, string>();
+  const ledger = readLedger(path.join(mind, "beliefs.jsonl"));
+  const states = foldWeights(ledger);
   for (const file of episodes) {
     const text = fs.readFileSync(path.join(mind, "episodes", file), "utf8");
     const epScope = episodeScope(text);
@@ -71,7 +74,7 @@ export function scopedView(mind: string, scope: string, nowMs = Date.now(), rese
     const stamp = text.match(/^ts:\s*(\S+)\s*$/m)?.[1];
     // Legacy date-only episodes are noon estimates; new episodes carry exact UTC.
     const episodeTime = Date.parse(stamp || `${date}T12:00:00Z`);
-    if (epScope === scope && scope !== "global") here.push(`### ${file}\n${text.trim()}`);
+    if (epScope === scope && scope !== "global" && episodeTime >= sinceMs) here.push(`### ${file}\n${text.trim()}`);
     else if (epScope !== "global" && active.has(epScope) && !elsewhere.has(epScope) && nowMs - episodeTime < 48 * 3600_000 && episodeTime <= nowMs) {
       const arc = text.match(/^arc:\s*(.*)$/m)?.[1] || "session";
       elsewhere.set(epScope, `${epScope}, ${date}: ${arc.replace(/\s+/g, " ")} [episode: ${file}]`);
@@ -81,6 +84,7 @@ export function scopedView(mind: string, scope: string, nowMs = Date.now(), rese
   const beliefs = path.join(mind, "beliefs");
   if (scope !== "global" && fs.existsSync(beliefs)) {
     for (const file of fs.readdirSync(beliefs).filter(f => f.endsWith(".md")).sort()) {
+      if (states.get(file.slice(0, -3))?.status === "forgotten") continue;
       const atom = fs.readFileSync(path.join(beliefs, file), "utf8");
       const sources = [...atom.matchAll(/^quote: .* \| (.+)$/gm)].map(m => m[1]);
       if (sources.some(source => {
@@ -88,5 +92,12 @@ export function scopedView(mind: string, scope: string, nowMs = Date.now(), rese
       })) here.push(`### atom ${file}\n${atom.trim()}`);
     }
   }
-  return { now, here: budget(here, Math.max(0, HERE_TOKENS - Math.ceil(now.length / 4) - reserveTokens)), elsewhere: budget([...elsewhere.values()], ELSEWHERE_TOKENS) };
+  return { now, here: budget(here, Math.max(0, depthTokens - Math.ceil(now.length / 4) - reserveTokens)), elsewhere: budget([...elsewhere.values()], ELSEWHERE_TOKENS) };
+}
+
+/** Read-only scope view shared by the wake hook and the pull door. */
+export function recallScope(mind: string, scope: string, options: { nowMs?: number; sinceMs?: number; slim?: boolean; evidenceTokens?: number; deep?: boolean } = {}) {
+  if (!/^(?:global|[a-z0-9][a-z0-9_-]*)$/.test(scope)) throw new Error("invalid scope");
+  const view = scopedView(mind, scope, options.nowMs, options.evidenceTokens, options.sinceMs, options.deep ? 16000 : HERE_TOKENS);
+  return { ...view, elsewhere: options.slim ? "" : view.elsewhere };
 }

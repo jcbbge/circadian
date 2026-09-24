@@ -102,8 +102,9 @@ export function buildPayload(files: {
   scope?: string;
   here?: string;
   elsewhere?: string;
+  away?: string;
 }): string {
-  const { self, user, now, greeting, evidence, portfolio, constitution, constitutionJosh, killSwitch, slim, scope, here, elsewhere } = files;
+  const { self, user, now, greeting, evidence, portfolio, constitution, constitutionJosh, killSwitch, slim, scope, here, elsewhere, away } = files;
 
   const lastSleepRaw = extractLastSleep(now);
   const lastSleepDate = lastSleepRaw ? new Date(lastSleepRaw) : null;
@@ -199,6 +200,7 @@ export function buildPayload(files: {
   const corrections = scope ? correctionsFromUser(user) : "";
   const scoped = scope ? [
     `Resolved scope: ${scope}`,
+    ...((now.match(/## (?:Next move|Flight plan)\s*\n+([^\n]+)/i)?.[1]?.trim()) ? [`Next move: ${now.match(/## (?:Next move|Flight plan)\s*\n+([^\n]+)/i)![1].trim()}`] : []),
     "[Circadian] WAKE — memory substrate injection from the mind repo (see mind/MIND-SPEC.md).",
     ...constitutionBlocks, ...constitutionJoshBlocks,
     ...(corrections ? ["<mind:corrections>", corrections, "</mind:corrections>"] : []),
@@ -206,6 +208,7 @@ export function buildPayload(files: {
     `<mind:here scope="${scope}">`,
     "<mind:now>", now.trim(), "</mind:now>",
     ...(!killSwitch && scope !== "global" && evidence ? [evidence] : []),
+    ...(!killSwitch && scope !== "global" && away ? [away] : []),
     ...(!killSwitch && scope !== "global" && here ? [here] : []),
     ...(!killSwitch && greetingBlock ? ["<mind:greeting>", greetingBlock, "</mind:greeting>"] : []),
     "</mind:here>",
@@ -215,7 +218,8 @@ export function buildPayload(files: {
   if (tokens > CAP_TOKENS) {
     // Law 4: never truncate silently — announce loudly and still emit the
     // full payload.
-    return `OVER-CAP: payload ${tokens} tokens > ${CAP_TOKENS} — compost required\n${scoped}`;
+    const warning = `OVER-CAP: payload ${tokens} tokens > ${CAP_TOKENS} — compost required`;
+    return scope ? scoped.replace(/^(Resolved scope: [^\n]+\n)/, `$1${warning}\n`) : `${warning}\n${scoped}`;
   }
   return scoped;
 }

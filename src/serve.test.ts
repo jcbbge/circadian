@@ -7,7 +7,7 @@ import { writeAtom, appendLedger } from "./atoms.ts";
 import { buildIndex, saveIndex } from "./relindex.ts";
 
 const server = path.join(import.meta.dir, "serve.ts");
-test("MCP stdio lists five tools; reads pinned evidence under 100ms and writes only a change intent", async () => {
+test("MCP stdio lists six tools; reads pinned evidence under 100ms and writes only a change intent", async () => {
   const home = fs.mkdtempSync(path.join(os.tmpdir(), "circadian-serve-"));
   const mind = path.join(home, "mind");
   const ep = "2026-01-01-stutter.md";
@@ -48,7 +48,7 @@ test("MCP stdio lists five tools; reads pinned evidence under 100ms and writes o
     try {
       expect((await send(1, "initialize")).hit.result.capabilities).toEqual({ tools: {} });
       expect((await send(2, "tools/list")).hit.result.tools.map((t: any) => t.name)).toEqual([
-        "memory_search", "memory_read", "memory_history", "memory_status", "memory_request_change",
+        "memory_search", "memory_read", "memory_history", "memory_recall", "memory_status", "memory_request_change",
       ]);
       const unpack = (r: any) => JSON.parse(r.hit.result.content[0].text);
       const searched = await send(3, "tools/call", { name: "memory_search", arguments: { query: "stutter" } });

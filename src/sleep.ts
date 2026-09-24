@@ -146,6 +146,8 @@ interface PendingSleep {
   queued_at: string;
   raw_line?: string;
   scope?: string;
+  lane?: string;
+  provenance?: Record<string, string>;
 }
 
 function endpointUnavailable(reason: string): boolean {
@@ -476,7 +478,7 @@ async function runHook(): Promise<void> {
     const worker = spawn(BUN_BIN, [selfPath, "--worker"], {
       detached: true,
       stdio: ["ignore", "ignore", "ignore"],
-      env: { ...process.env, CIRCADIAN_SLEEP_EVENT: JSON.stringify({ ...evt, scope: resolveScope(MIND), cwd: process.cwd() }) },
+      env: { ...process.env, CIRCADIAN_SLEEP_EVENT: JSON.stringify({ ...evt, scope: resolveScope(MIND), cwd: process.cwd(), lane: process.env.CIRCADIAN_LANE, provenance: { harness: process.env.CIRCADIAN_HARNESS || evt?.harness || "unknown", model: process.env.CIRCADIAN_MODEL || evt?.model || "unknown", machine: process.env.CIRCADIAN_MACHINE || process.env.HOSTNAME || "unknown", session: evt?.session_id || "unknown" } }) },
     });
     worker.unref();
     slog("hook", "spawned worker", { transcript_bytes: tsize, pid: worker.pid });
@@ -778,6 +780,10 @@ function buildNowContent(nowRaw: string, preservedSerendipity: string, lastSleep
     "",
     arc,
     "",
+    "## Next move",
+    "",
+    flightPlan.split("\n").find(line => line.trim()) || "(no next move recorded)",
+    "",
     "## Flight plan",
     "",
     flightPlan,
@@ -931,6 +937,18 @@ type DraftResult =
 // append. queueOnFailure is true ONLY for the live worker — the drain
 // replays lines that are already queued, so re-enqueueing would duplicate
 // them (and mask the attempts ratchet).
+export function shouldGateWorker(firstTurn: string, transcriptPath?: string, lane?: string): boolean {
+  return !lane && (isDroneOpening(firstTurn) || isFleetPacketOpening(firstTurn, transcriptPath));
+}
+
+export function episodeMetadata(lane: string | undefined, provenance: Record<string, string>, sessionId: string): string {
+  const safe = (value: string) => value.replace(/[\r\n]/g, " ").slice(0, 180);
+  return [
+    ...(lane ? [`lane: ${safe(lane)}`] : []),
+    ...(["harness", "model", "machine", "session"] as const).map(key => `${key === "session" ? "provenance_session" : key}: ${safe(provenance[key] || (key === "session" ? sessionId : "unknown"))}`),
+  ].join("\n");
+}
+
 async function draftSessionEpisode(opts: {
   transcriptPath: string | undefined;
   sessionId: string;
@@ -939,6 +957,8 @@ async function draftSessionEpisode(opts: {
   queueAttempts: number; // cumulative queue attempts INCLUDING this round (event context only)
   mode: "worker" | "drain";
   scope?: string;
+  lane?: string;
+  provenance?: Record<string, string>;
 }): Promise<DraftResult> {
   const { transcriptPath, sessionId, corr, mode } = opts;
   const scope = opts.scope || resolveScope(MIND);
@@ -1006,7 +1026,7 @@ async function draftSessionEpisode(opts: {
   // an orchestrator says to a worker are not the user's words. Drone
   // sessions leave no letter. See src/provenance.ts.
   const firstTurn = firstUserTurnFromText(transcriptText);
-  if (isDroneOpening(firstTurn) || isFleetPacketOpening(firstTurn, transcriptPath)) {
+  if (shouldGateWorker(firstTurn, transcriptPath, opts.lane)) {
     slog(mode, "skip: fleet-drone session — worker-brief opening, no episode", { sessionId });
     ok({
       process: "sleep", phase: "provenance", correlation_id: corr, session_id: sessionId,
@@ -1031,7 +1051,7 @@ async function draftSessionEpisode(opts: {
   const existingNow = existsSync(join(MIND, nowRelative)) ? readFileSync(join(MIND, nowRelative), "utf8") : "";
   const existingSelf = existsSync(join(MIND, "SELF.md")) ? readFileSync(join(MIND, "SELF.md"), "utf8") : "";
 
-  const prompt = buildPrompt(transcriptText, sessionId, existingSelf, existingNow, mealNotes);
+  const prompt = buildPrompt(transcriptText, sessionId, existingSelf, existingNow, mealNotes) + (opts.lane ? "\nThis is a worker brief, not a conversation with the operator. Record project artifacts and reasons; write user-observed: nothing new unless direct operator evidence exists.\n" : "");
 
   let draft: ReturnType<typeof parseDraft> = null;
   let lastReason = "";
@@ -1069,6 +1089,8 @@ async function draftSessionEpisode(opts: {
           last_error: lastReason,
           queued_at: new Date().toISOString(),
           scope,
+          lane: opts.lane,
+          provenance: opts.provenance,
         },
         corr
       );
@@ -1090,8 +1112,10 @@ async function draftSessionEpisode(opts: {
   const preservedSerendipity = extractSection(existingNow, "Serendipity"); // REM owns this line; carry it forward as-is
 
   const backfilled = sessionId.startsWith("backfill-");
+  const provenance = opts.provenance || {};
+  const fields = episodeMetadata(opts.lane, provenance, sessionId);
   const episodeContent = tagEpisode(buildEpisodeContent(date, sessionId, draft.arc, draft.episodeBody), scope)
-    .replace(/^date:.*\n/m, line => `${line}ts: ${lastSleepIso}\n`) + (backfilled ? "[backfilled]\n" : "");
+    .replace(/^date:.*\n/m, line => `${line}ts: ${lastSleepIso}\n${fields}\n`) + (backfilled ? "[backfilled]\n" : "");
   const nowContent = `scope: ${scope}\n` + buildNowContent(draft.nowRaw, preservedSerendipity, lastSleepIso);
 
   // Dry run stops here, one step short of the mind repo: everything above is
@@ -1140,7 +1164,7 @@ async function draftSessionEpisode(opts: {
     summary: `episode written for this session: ${draft.arc}`,
     context: {
       episode: epPath,
-      arc: draft.arc,
+      arc: draft.arc, lane: opts.lane ?? null, provenance: { ...provenance, session: sessionId },
       transcript_chars: transcriptText.length,
       meal_notes_used: mealCheckpoints > 0,
       checkpoints: mealCheckpoints,
@@ -1177,6 +1201,8 @@ async function runWorker(): Promise<void> {
       queueAttempts: DRAFT_ATTEMPTS,
       mode: "worker",
       scope: evt?.scope || resolveScope(MIND, evt?.cwd || process.cwd()),
+      lane: evt?.lane || process.env.CIRCADIAN_LANE,
+      provenance: evt?.provenance || { harness: process.env.CIRCADIAN_HARNESS || evt?.harness || "unknown", model: process.env.CIRCADIAN_MODEL || evt?.model || "unknown", machine: process.env.CIRCADIAN_MACHINE || process.env.HOSTNAME || "unknown", session: evt?.session_id || "unknown" },
     });
   } catch (e) {
     // best-effort detached worker — but record the failure everywhere, never hide it.
@@ -1291,6 +1317,8 @@ async function runDrain(): Promise<void> {
             queueAttempts: entry.attempts + DRAFT_ATTEMPTS,
             mode: "drain",
             scope: entry.scope || "global",
+            lane: entry.lane,
+            provenance: entry.provenance,
           });
           if (result.status === "written") {
             processed.set(key, null);

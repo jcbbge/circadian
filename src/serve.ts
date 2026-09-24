@@ -15,12 +15,14 @@ import { dig } from "./dig.ts";
 import { hotLimit } from "./strata.ts";
 import { collectEpisodes, matchEpisodes, parseQuery, selfLinesForDate, taughtLine, compostEntriesFor } from "./zoom.ts";
 import { statusSnapshot } from "./status.ts";
+import { recallScope } from "./scopes.ts";
 import { ok, idle, degraded, correlation } from "./obs.ts";
 
 const tools = [
   { name: "memory_search", description: "Search provenance-pinned mind evidence; depth >= 0 includes deeper and below-floor atoms via dig (0 searches all atoms).", inputSchema: { type: "object", properties: { query: { type: "string" }, k: { type: "integer", minimum: 1, maximum: 50 }, depth: { type: "integer", minimum: 0 } }, required: ["query"], additionalProperties: false } },
   { name: "memory_read", description: "Read a belief or episode by its search result id, or drill to an episode by date/slug (including composted episodes).", inputSchema: { type: "object", properties: { id: { type: "string" } }, required: ["id"], additionalProperties: false } },
   { name: "memory_history", description: "Trace episode provenance, including composted git history, SELF citations and taught lines.", inputSchema: { type: "object", properties: { query: { type: "string" } }, required: ["query"], additionalProperties: false } },
+  { name: "memory_recall", description: "Full-resolution read of a named scope (same path as wake and CLI).", inputSchema: { type: "object", properties: { scope: { type: "string" }, since: { type: "string" }, depth: { type: "string" } }, required: ["scope"], additionalProperties: false } },
   { name: "memory_status", description: "Read the mind vitals from circadian status.", inputSchema: { type: "object", properties: {}, additionalProperties: false } },
   { name: "memory_request_change", description: "Suggest a change to the stacker. Records an intent only; never edits or publishes an atom.", inputSchema: { type: "object", properties: { change: { type: "string", description: "Proposed change and why" }, source: { type: "string", description: "Optional provenance for the stacker to verify" } }, required: ["change"], additionalProperties: false } },
 ] as const;
@@ -45,7 +47,7 @@ export async function callTool(home: string, name: string, args: Args): Promise<
   const mind = path.join(home, "mind");
   if (!tools.some(t => t.name === name)) throw new Error(`unknown tool: ${name}`);
   if (!args || typeof args !== "object" || Array.isArray(args)) throw new Error("arguments must be an object");
-  const allowed: Record<string, string[]> = { memory_search: ["query", "k", "depth"], memory_read: ["id"], memory_history: ["query"], memory_status: [], memory_request_change: ["change", "source"] };
+  const allowed: Record<string, string[]> = { memory_search: ["query", "k", "depth"], memory_read: ["id"], memory_history: ["query"], memory_status: [], memory_recall: ["scope", "since", "depth"], memory_request_change: ["change", "source"] };
   if (Object.keys(args).some(k => !allowed[name].includes(k))) throw new Error("unknown argument");
   if (name === "memory_search") {
     const query = text(args, "query");
@@ -69,6 +71,12 @@ export async function callTool(home: string, name: string, args: Args): Promise<
     return queryIndex(loaded.index, query, { k }); // deterministic, no remote embedding
   }
   if (name === "memory_status") return statusSnapshot(mind);
+  if (name === "memory_recall") {
+    const scope = text(args, "scope", 80);
+    const since = args.since === undefined ? 0 : /^\d+d$/.test(text(args, "since")) ? Date.now() - parseInt(args.since as string) * 86400000 : NaN;
+    if (!Number.isFinite(since) || (args.depth !== undefined && args.depth !== "deep")) throw new Error("invalid recall options");
+    return recallScope(mind, scope, { sinceMs: since, deep: args.depth === "deep" });
+  }
   if (name === "memory_request_change") {
     const change = text(args, "change");
     const source = args.source === undefined ? undefined : text(args, "source", 1024);

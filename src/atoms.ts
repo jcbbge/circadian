@@ -44,9 +44,10 @@ export interface Atom {
 }
 
 export interface LedgerEvent {
-  ev: "stack" | "decay" | "potentiate" | "supersede" | "renorm" | "contradiction" | "resolve";
+  ev: "stack" | "decay" | "potentiate" | "supersede" | "renorm" | "contradiction" | "resolve" | "pin" | "forget";
   ts: string;
   atom?: string;
+  reason?: string;
   ep?: string;
   /** fractional deposit multiplier for a stack event (flash exposures).
    * Absent => 1 (full weight). Stack stays the decay-eligibility event
@@ -362,12 +363,13 @@ export function foldBeliefs(events: LedgerEvent[]): { states: Map<string, AtomSt
     switch (ev.ev) {
       case "stack": {
         if (!ev.atom) break;
+        if (ensure(ev.atom).status === "forgotten") break;
         ensure(ev.atom).weight += ev.grain ?? 1; // absent grain = full weight (backward compatible)
         everStacked.add(ev.atom);
         break;
       }
       case "potentiate": {
-        if (!ev.atom) break;
+        if (!ev.atom || ensure(ev.atom).status === "forgotten") break;
         ensure(ev.atom).weight += 1;
         break;
       }
@@ -399,6 +401,14 @@ export function foldBeliefs(events: LedgerEvent[]): { states: Map<string, AtomSt
         const loser = ev.winner === edge.a ? edge.b : edge.a;
         if (ensure(ev.winner).status !== "active" || ensure(loser).status !== "active") break;
         supersede(ev.winner, loser);
+        break;
+      }
+      case "pin": {
+        if (ev.atom && ensure(ev.atom).status !== "forgotten") ensure(ev.atom).status = "pinned";
+        break;
+      }
+      case "forget": {
+        if (ev.atom && ev.reason?.trim()) { ensure(ev.atom).status = "forgotten"; ensure(ev.atom).weight = 0; }
         break;
       }
       case "renorm": {

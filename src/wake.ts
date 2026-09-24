@@ -22,8 +22,8 @@ import { ok, degraded, emit, correlation } from "./obs.ts";
 import { isFirstWakeToday, renderDailyReading, loadScoreboardFile, appendDailyReadingEntry } from "./scorecard.ts";
 import { loadIndex, retrieveForWake } from "./relindex.ts";
 import { computeVerdictStreak } from "./status.ts";
-import { resolveScope, scopedView } from "./scopes.ts";
-import { loadScoreboardFile } from "./scorecard.ts";
+import { resolveScope, recallScope } from "./scopes.ts";
+import { whileAway } from "./away.ts";
 import {
   CAP_TOKENS,
   STALE_MS,
@@ -239,15 +239,16 @@ async function runHook(): Promise<void> {
   }
 
   const scope = resolveScope(MIND);
-  const view = scopedView(MIND, scope, Date.now(), Math.ceil(evidence.length / 4));
+  const view = recallScope(MIND, scope, { slim, evidenceTokens: slim ? 0 : Math.ceil(evidence.length / 4) });
   const scopedNow = view.now || (scope === "global" ? files["NOW.md"] : "");
   const payload = buildPayload({
     scope, here: view.here, elsewhere: view.elsewhere,
+    away: whileAway(CIRCADIAN_HOME, scope, Date.now(), process.env.CIRCADIAN_SESSION || "", process.env.CIRCADIAN_LANE || ""),
     self: "", // scope-specific atom origins live in <mind:here>; global has no local beliefs
     user: files["USER.md"],
     now: scopedNow,
     greeting: scopedNow.match(/## Flight plan\s*\n+([^\n]+)/i)?.[1] || scopedNow.match(/## Arc\s*\n+([^\n]+)/i)?.[1] || "",
-    evidence: scope === "global" ? "" : evidence,
+    evidence: scope === "global" || slim ? "" : evidence,
     portfolio: "", // global register uses only receipted 48h footnotes, not the 7-day portfolio
     constitution: files["CONSTITUTION.md"],
     constitutionJosh: files["CONSTITUTION-JOSH.md"],
@@ -344,6 +345,8 @@ async function runHook(): Promise<void> {
     const event = {
       ts: new Date().toISOString(),
       type: "wake",
+      scope,
+      lane: process.env.CIRCADIAN_LANE || "",
       worldview_tokens: selfTokens,
     };
     appendFileSync(join(MIND, "scoreboard.jsonl"), JSON.stringify(event) + "\n");

@@ -135,9 +135,9 @@ export function renderSelf(
       if (a.kind !== section.kind) return false;
       const { weight, status } = weightOf(states, a.id);
       const depth = depths.get(a.id)?.depth ?? 0;
-      return status === "active" && (options.tier === "deep"
-        ? depth > limit
-        : weight >= RENDER_FLOOR && depth <= limit);
+      return (status === "active" || status === "pinned") && (options.tier === "deep"
+        ? depth > limit && status !== "pinned"
+        : status === "pinned" || (weight >= RENDER_FLOOR && depth <= limit));
     });
     eligible.sort((a, b) => {
       const wa = weightOf(states, a.id).weight;
@@ -179,7 +179,7 @@ export function renderSelf(
       if (!a || !b) continue;
       if ([a, b].some((atom) => {
         const { weight, status } = weightOf(states, atom.id);
-        return status !== "active" || weight < RENDER_FLOOR || (depths.get(atom.id)?.depth ?? 0) > limit;
+        return status !== "pinned" && (status !== "active" || weight < RENDER_FLOOR || (depths.get(atom.id)?.depth ?? 0) > limit);
       })) continue;
       const line = `${renderAtomLine(a)} ⇄ ${renderAtomLine(b)}`;
       const cost = tokensOf(line);

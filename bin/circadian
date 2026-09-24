@@ -1,0 +1,68 @@
+#!/usr/bin/env bun
+// Local, harness-neutral pull door. No network or model calls.
+import * as fs from "node:fs";
+import * as path from "node:path";
+import { homedir } from "node:os";
+import { createHash, randomUUID } from "node:crypto";
+import { recallScope } from "../src/scopes.ts";
+import { buildPayload } from "../src/wake-payload.ts";
+import { whileAway } from "../src/away.ts";
+import { readAtoms, readLedger, foldWeights, type LedgerEvent } from "../src/atoms.ts";
+import { renderSelf } from "../src/render.ts";
+import { publish } from "../src/publish.ts";
+
+export function healthLine(home: string, now = Date.now()): string {
+  const mind = path.join(home, "mind");
+  const rows = (file: string) => {
+    try { return fs.readFileSync(file, "utf8").split("\n").flatMap(l => { try { return [JSON.parse(l)]; } catch { return []; } }); } catch { return []; }
+  };
+  const scores = rows(path.join(mind, "scoreboard.jsonl"));
+  const latest = (type: string) => scores.filter(e => e.type === type).at(-1)?.ts;
+  const age = (ts?: string) => ts && Number.isFinite(Date.parse(ts)) ? `${Math.max(0, Math.floor((now - Date.parse(ts)) / 60000))}m` : "never";
+  const pending = rows(path.join(home, "logs", "pending-sleep.jsonl")).length;
+  const digested = new Set(rows(path.join(mind, "digested.jsonl")).map(e => e.hash));
+  let backlog = pending;
+  try { backlog += fs.readdirSync(path.join(mind, "episodes")).filter(f => f.endsWith(".md") && !digested.has(createHash("sha256").update(fs.readFileSync(path.join(mind, "episodes", f))).digest("hex"))).length; } catch { /* fresh install */ }
+  const degraded = rows(path.join(home, "logs", "circadian.events.jsonl")).some(e => ["degraded", "failed"].includes(e.outcome) && now - Date.parse(e.ts) < 86400000);
+  return `wake ${age(latest("wake"))} · REM ${age(latest("rem"))} · backlog ${backlog}${degraded ? " · degraded" : ""}`;
+}
+
+export function recall(home: string, scope: string, sinceMs = 0, deep = false): string {
+  const mind = path.join(home, "mind");
+  const view = recallScope(mind, scope, { sinceMs, deep });
+  const read = (file: string) => { try { return fs.readFileSync(path.join(mind, file), "utf8"); } catch { return ""; } };
+  return buildPayload({ scope, self: "", user: read("USER.md"), now: view.now, here: view.here,
+    elsewhere: view.elsewhere, away: whileAway(home, scope), greeting: "", constitution: read("CONSTITUTION.md"),
+    constitutionJosh: read("CONSTITUTION-JOSH.md") });
+}
+
+export function changeAtom(home: string, action: "pin" | "forget", id: string, reason = ""): void {
+  if (!/^[a-f0-9]{12}$/.test(id)) throw new Error("expected a 12-hex atom id");
+  if (action === "forget" && !reason.trim()) throw new Error("forget requires --reason");
+  const mind = path.join(home, "mind");
+  const atoms = readAtoms(path.join(mind, "beliefs"));
+  if (!atoms.some(a => a.id === id)) throw new Error("unknown atom");
+  const ev: LedgerEvent = { ev: action, atom: id, ts: new Date().toISOString(), ...(reason ? { reason } : {}) };
+  const events = [...readLedger(path.join(mind, "beliefs.jsonl")), ev];
+  const rendered = renderSelf(atoms, foldWeights(events), undefined, { events });
+  publish(mind, { id: `${action}-${id}-${randomUUID()}`, subject: `${action}: ${id}`,
+    appends: { "beliefs.jsonl": JSON.stringify(ev) + "\n" },
+    files: { "SELF.md": rendered.md, "render-manifest.json": JSON.stringify(rendered.manifest, null, 2) + "\n" } });
+}
+
+if (import.meta.main) {
+  const [command, arg, ...flags] = process.argv.slice(2);
+  const home = process.env.CIRCADIAN_HOME || path.join(homedir(), "circadian");
+  try {
+    if (command === "status" && arg === "--line") console.log(healthLine(home));
+    else if (command === "recall" && arg && /^[a-z0-9][a-z0-9_-]*$/.test(arg)) {
+      const since = flags.indexOf("--since");
+      const depth = flags.indexOf("--depth");
+      if (flags.some((f, i) => f.startsWith("--") && !["--since", "--depth"].includes(f)) || (since >= 0 && !/^\d+d$/.test(flags[since + 1] || "")) || (depth >= 0 && flags[depth + 1] !== "deep")) throw new Error("invalid recall options");
+      console.log(recall(home, arg, since < 0 ? 0 : Date.now() - parseInt(flags[since + 1]) * 86400000, depth >= 0));
+    } else if ((command === "pin" || command === "forget") && arg) {
+      changeAtom(home, command, arg, flags[0] === "--reason" ? flags.slice(1).join(" ") : "");
+      console.log(`${command}: ${arg}`);
+    } else throw new Error("usage: circadian recall <scope> [--since 7d] [--depth deep] | status --line | pin <id> | forget <id> --reason <why>");
+  } catch (e) { console.error((e as Error).message); process.exitCode = 1; }
+}

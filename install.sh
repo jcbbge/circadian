@@ -90,6 +90,11 @@ EOF
 fi
 
 mkdir -p "$LOG_DIR"
+# Harness-neutral pull door; preserve an existing command rather than overwrite it.
+mkdir -p "$HOME/.local/bin"
+if [ ! -e "$HOME/.local/bin/circadian" ] && [ ! -L "$HOME/.local/bin/circadian" ]; then
+  ln -s "$CIRCADIAN_HOME/bin/circadian" "$HOME/.local/bin/circadian"
+fi
 
 # ---- 4. install the nightly REM launchd job (macOS only) ------------------
 if [ "$(uname)" = "Darwin" ]; then
