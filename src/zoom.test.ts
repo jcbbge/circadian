@@ -19,7 +19,7 @@ import {
   nearestDates,
 } from "./zoom.ts";
 import { assertSandboxSafe, sectionTokens, seedNeedsShim, plantGenesisShim } from "./replay.ts";
-import { repoRoot, missingMindFiles, missingMindRevision, evidenceName } from "./test-evidence.ts";
+import { repoRoot, missingMindFiles, missingMindRevision, missingMindHistory, evidenceName } from "./test-evidence.ts";
 
 const HOME = repoRoot;
 const MIND = path.join(HOME, "mind");
@@ -30,7 +30,14 @@ const MIND = path.join(HOME, "mind");
 // guaranteed to exist in history, exactly where zoom recovers things from.
 const PINNED_MIND_REV = "6271e090226a9970b158399d621d69eac15c5a80";
 const missingPinned = missingMindRevision(PINNED_MIND_REV, "SELF.md", "compost.md");
-const missingLive = missingMindFiles("episodes", "SELF.md", ".git");
+const missingLive = missingMindFiles("episodes", "SELF.md") ||
+  missingMindHistory("episodes/2026-07-26-spine-ring-confirmed.md");
+// This accounting assertion describes the populated, post-constitution author's
+// worldview, not the empty SELF.md produced by the scaffold.
+const missingRenderedSelf = missingMindFiles("SELF.md") ||
+  (!fs.readFileSync(path.join(MIND, "SELF.md"), "utf8").includes("**")
+    ? "missing populated mind/SELF.md worldview corpus marker (rendered beliefs)"
+    : "");
 const pinnedMindFile = (f: string) =>
   execFileSync("git", ["show", `${PINNED_MIND_REV}:${f}`], { cwd: MIND, encoding: "utf8" });
 
@@ -204,7 +211,7 @@ describe("replay genesis bootstrap shim", () => {
 });
 
 describe("replay section accounting", () => {
-  test.skipIf(!!missingLive)(evidenceName("sectionTokens splits the MIND-SPEC sections of the real SELF.md — identity ceded to CONSTITUTION.md (2026-08-09)", missingLive), () => {
+  test.skipIf(!!missingRenderedSelf)(evidenceName("sectionTokens splits the MIND-SPEC sections of the real SELF.md — identity ceded to CONSTITUTION.md (2026-08-09)", missingRenderedSelf), () => {
     const selfMd = fs.readFileSync(path.join(MIND, "SELF.md"), "utf8");
     const sections = sectionTokens(selfMd);
     expect(Object.keys(sections)).toEqual(["Who I am across sessions", "Doctrine", "Motifs", "How we work"]);

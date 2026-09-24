@@ -1,5 +1,5 @@
-// relindex.test.ts — the relational evidence index, exercised against the
-// REAL mind on disk plus deterministic in-memory fixtures (repo doctrine: no
+// relindex.test.ts — the relational evidence index, exercised against pinned
+// real-mind evidence and deterministic in-memory/disk fixtures (repo doctrine: no
 // mocks of the code under test; see ltp.test.ts, zoom.test.ts). The dense path
 // is tested with the HashEmbedder — a REAL embedder (deterministic
 // bag-of-hashed-tokens, no network), not a mock — exactly as brief §5.3
@@ -9,6 +9,7 @@ import { describe, test, expect } from "bun:test";
 import * as fs from "fs";
 import * as path from "path";
 import { missingMindFiles, evidenceName } from "./test-evidence.ts";
+import { tmpdir } from "os";
 import {
   tokenize,
   extractEntities,
@@ -35,7 +36,25 @@ import {
 
 const HOME = path.resolve(import.meta.dir, "..");
 const MIND = path.join(HOME, "mind");
-const missingMind = missingMindFiles("episodes", "beliefs");
+const missingCorpus = missingMindFiles(
+  "episodes/2026-07-28-the-stutter-resolved.md",
+  "episodes/2026-08-02-herdr-integration-closure.md",
+  "episodes/2026-07-28-genesis-archaeology.md",
+);
+const missingHerdr = missingMindFiles("episodes/2026-08-02-herdr-integration-closure.md");
+const missingStutter = missingMindFiles("episodes/2026-07-28-the-stutter-resolved.md");
+const missingCompost = missingMindFiles("episodes/2026-07-28-genesis-archaeology.md");
+
+// A disk-backed mind for tests of indexing mechanics, not the author's corpus.
+function withIndexMind<T>(run: (mind: string) => Promise<T>): Promise<T> {
+  const mind = fs.mkdtempSync(path.join(tmpdir(), "relindex-mind-"));
+  fs.mkdirSync(path.join(mind, "episodes"));
+  fs.mkdirSync(path.join(mind, "beliefs"));
+  fs.writeFileSync(path.join(mind, "episodes", "2026-07-28-stutter.md"), "circadian stutter resolved by src/immune.ts");
+  fs.writeFileSync(path.join(mind, "episodes", "2026-08-02-herdr.md"), "circadian herdr tower board");
+  fs.writeFileSync(path.join(mind, "beliefs", "compost.md"), "circadian compost lessons from the stutter");
+  return run(mind).finally(() => fs.rmSync(mind, { recursive: true, force: true }));
+}
 
 // A small, hand-built corpus with KNOWN entities and co-occurrence — the
 // deterministic fixture for the pure graph/scoring functions (mirrors the
@@ -343,10 +362,10 @@ describe("excerpt + renderEvidenceBlock — provenance-pinned rendering", () => 
 });
 
 // -----------------------------------------------------------------------
-// REAL MIND — build, smoke retrievals, determinism, incremental = full
+// Pinned real-corpus smokes; mechanical builds use temporary disk minds
 // -----------------------------------------------------------------------
-describe.skipIf(!!missingMind)(evidenceName("buildIndex over the REAL mind on disk", missingMind), () => {
-  test("builds a non-trivial index in well under a second", async () => {
+describe("buildIndex over the REAL mind on disk", () => {
+  test.skipIf(!!missingCorpus)(evidenceName("builds a non-trivial index in well under a second", missingCorpus), async () => {
     const { index } = await buildIndex(MIND);
     expect(index.meta.unitCount).toBeGreaterThan(50); // ~55 episodes + ~104 beliefs
     expect(index.meta.entityCount).toBeGreaterThan(100);
@@ -355,7 +374,7 @@ describe.skipIf(!!missingMind)(evidenceName("buildIndex over the REAL mind on di
     expect(index.adjacency.length).toBeGreaterThan(0);
   });
 
-  test("SMOKE: 'herdr' returns herdr-bearing units with provenance", async () => {
+  test.skipIf(!!missingHerdr)(evidenceName("SMOKE: 'herdr' returns herdr-bearing units with provenance", missingHerdr), async () => {
     const { index } = await buildIndex(MIND);
     const results = queryIndex(index, "herdr", { k: 5 });
     expect(results.length).toBeGreaterThan(0);
@@ -364,49 +383,55 @@ describe.skipIf(!!missingMind)(evidenceName("buildIndex over the REAL mind on di
     expect(hit).toBe(true);
   });
 
-  test("SMOKE: 'stutter' returns the-stutter-resolved episode", async () => {
+  test.skipIf(!!missingStutter)(evidenceName("SMOKE: 'stutter' returns the-stutter-resolved episode", missingStutter), async () => {
     const { index } = await buildIndex(MIND);
     const results = queryIndex(index, "stutter", { k: 5 });
     expect(results.some((r) => r.id.includes("the-stutter-resolved"))).toBe(true);
   });
 
-  test("SMOKE: 'compost.md' returns compost-related atoms/episodes", async () => {
+  test.skipIf(!!missingCompost)(evidenceName("SMOKE: 'compost.md' returns compost-related atoms/episodes", missingCompost), async () => {
     const { index } = await buildIndex(MIND);
     const results = queryIndex(index, "compost.md", { k: 5 });
     expect(results.some((r) => /compost/i.test(r.id) || /compost/i.test(r.snippet))).toBe(true);
   });
 
   test("DETERMINISM: two builds agree byte-for-byte except meta.builtAt/buildMs", async () => {
-    const a = (await buildIndex(MIND)).index;
-    const b = (await buildIndex(MIND)).index;
-    const strip = (i: IndexData) => JSON.stringify({ ...i, meta: { ...i.meta, builtAt: "X", buildMs: 0 } });
-    expect(strip(a)).toBe(strip(b));
+    await withIndexMind(async (mind) => {
+      const a = (await buildIndex(mind)).index;
+      const b = (await buildIndex(mind)).index;
+      const strip = (i: IndexData) => JSON.stringify({ ...i, meta: { ...i.meta, builtAt: "X", buildMs: 0 } });
+      expect(strip(a)).toBe(strip(b));
+    });
   });
 });
 
-describe.skipIf(!!missingMind)(evidenceName("updateIndex — incremental, and equal to a full rebuild", missingMind), () => {
+describe("updateIndex — incremental, and equal to a full rebuild (temporary mind)", () => {
   test("no changes -> reuses every cached unit, same graph as full build", async () => {
-    const full = (await buildIndex(MIND)).index;
-    const { index: updated, changed, deleted } = updateIndex(MIND, full);
-    expect(changed).toBe(0);
-    expect(deleted).toBe(0);
-    const strip = (i: IndexData) => JSON.stringify({ units: i.units, entities: i.entities, df: i.df, adjacency: i.adjacency });
-    expect(strip(updated)).toBe(strip(full));
+    await withIndexMind(async (mind) => {
+      const full = (await buildIndex(mind)).index;
+      const { index: updated, changed, deleted } = updateIndex(mind, full);
+      expect(changed).toBe(0);
+      expect(deleted).toBe(0);
+      const strip = (i: IndexData) => JSON.stringify({ units: i.units, entities: i.entities, df: i.df, adjacency: i.adjacency });
+      expect(strip(updated)).toBe(strip(full));
+    });
   });
 
   test("a changed unit re-extracts; result still equals a full rebuild", async () => {
     // Simulate a prior index missing the newest content by handing updateIndex
     // a prior with one unit's hash corrupted — it must re-ingest exactly that
     // unit and converge on the full-rebuild graph.
-    const full = (await buildIndex(MIND)).index;
-    const tampered: IndexData = {
-      ...full,
-      units: full.units.map((u, i) => (i === 0 ? { ...u, hash: "deadbeefdeadbeef", tf: {}, entities: [], len: 0 } : u)),
-    };
-    const { index: updated, changed } = updateIndex(MIND, tampered);
-    expect(changed).toBe(1); // exactly the tampered unit re-ingested
-    const strip = (i: IndexData) => JSON.stringify({ units: i.units, entities: i.entities, df: i.df, adjacency: i.adjacency });
-    expect(strip(updated)).toBe(strip(full)); // converges on the truth
+    await withIndexMind(async (mind) => {
+      const full = (await buildIndex(mind)).index;
+      const tampered: IndexData = {
+        ...full,
+        units: full.units.map((u, i) => (i === 0 ? { ...u, hash: "deadbeefdeadbeef", tf: {}, entities: [], len: 0 } : u)),
+      };
+      const { index: updated, changed } = updateIndex(mind, tampered);
+      expect(changed).toBe(1); // exactly the tampered unit re-ingested
+      const strip = (i: IndexData) => JSON.stringify({ units: i.units, entities: i.entities, df: i.df, adjacency: i.adjacency });
+      expect(strip(updated)).toBe(strip(full)); // converges on the truth
+    });
   });
 });
 
@@ -415,7 +440,7 @@ describe("save/load round-trip (no network, no writes to episodes/beliefs)", () 
     // Sandbox: write to a temp CIRCADIAN_HOME-shaped dir, never the real mind.
     const tmp = fs.mkdtempSync(path.join(require("os").tmpdir(), "relindex-test-"));
     try {
-      const { index } = await buildIndex(MIND);
+      const { index } = await withIndexMind(async (mind) => buildIndex(mind));
       saveIndex(tmp, index, null);
       expect(fs.existsSync(path.join(tmp, "index", "index.json"))).toBe(true);
       const loaded = loadIndex(tmp);

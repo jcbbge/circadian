@@ -5,7 +5,9 @@
 // rev and never assume a live census.
 import { describe, test, expect } from "bun:test";
 import * as path from "path";
-import { repoRoot, missingMindRevision, missingMindFiles, evidenceName } from "./test-evidence.ts";
+import * as fs from "fs";
+import { tmpdir } from "os";
+import { repoRoot, missingMindRevision, evidenceName } from "./test-evidence.ts";
 import { execFileSync } from "child_process";
 import { collectAllEpisodes, collectAllEpisodesAt } from "./replay.ts";
 
@@ -43,17 +45,32 @@ export function collectFloodFixture(mindDir: string = MIND, rev: string = PINNED
   return collectAllEpisodesAt(rev, mindDir).filter((e) => e.filename.startsWith("2026-07-24-bidirectional-"));
 }
 
-const missingLive = missingMindFiles("episodes");
 const missingPinned = missingMindRevision(PINNED_MIND_REV, "episodes/2026-07-24-bidirectional-sync-test.md");
-describe.skipIf(!!missingLive)(evidenceName("existing live-mode replay behavior is untouched", missingLive), () => {
+describe("existing live-mode replay behavior is untouched (temporary mind)", () => {
   test("collectAllEpisodes still reads the live working tree + HEAD-reachable history", () => {
-    const live = collectAllEpisodes(MIND);
-    expect(Array.isArray(live)).toBe(true);
-    expect(live.length).toBeGreaterThan(0);
-    expect(live.every((e) => e.source === "live" || e.source === "git")).toBe(true);
-    // sorted chronologically (filenames are YYYY-MM-DD-<slug>.md)
-    const sorted = [...live].sort((a, b) => a.filename.localeCompare(b.filename));
-    expect(live.map((e) => e.filename)).toEqual(sorted.map((e) => e.filename));
+    const mind = fs.mkdtempSync(path.join(tmpdir(), "replay-live-mind-"));
+    try {
+      fs.mkdirSync(path.join(mind, "episodes"));
+      fs.writeFileSync(path.join(mind, "episodes", "2026-01-01-live.md"), "a live episode");
+      fs.writeFileSync(path.join(mind, "episodes", "2026-01-02-live.md"), "another episode");
+      fs.writeFileSync(path.join(mind, "episodes", "2025-12-31-shed.md"), "a shed episode");
+      execFileSync("git", ["init", "-q", mind]);
+      execFileSync("git", ["add", "episodes"], { cwd: mind });
+      execFileSync("git", ["-c", "user.name=Test", "-c", "user.email=test@example.invalid", "commit", "-qm", "seed"], { cwd: mind });
+      fs.rmSync(path.join(mind, "episodes", "2025-12-31-shed.md"));
+      execFileSync("git", ["add", "-u"], { cwd: mind });
+      execFileSync("git", ["-c", "user.name=Test", "-c", "user.email=test@example.invalid", "commit", "-qm", "shed"], { cwd: mind });
+      const live = collectAllEpisodes(mind);
+      expect(live.find((e) => e.filename === "2025-12-31-shed.md")?.source).toBe("git");
+      expect(Array.isArray(live)).toBe(true);
+      expect(live.length).toBeGreaterThan(0);
+      expect(live.every((e) => e.source === "live" || e.source === "git")).toBe(true);
+      // sorted chronologically (filenames are YYYY-MM-DD-<slug>.md)
+      const sorted = [...live].sort((a, b) => a.filename.localeCompare(b.filename));
+      expect(live.map((e) => e.filename)).toEqual(sorted.map((e) => e.filename));
+    } finally {
+      fs.rmSync(mind, { recursive: true, force: true });
+    }
   });
 });
 
