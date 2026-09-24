@@ -42,7 +42,8 @@ in git history. The full blueprint is `docs/POPULATION-MEMORY.md`.
    never-moving atom decays below the render floor. Memory that sits inert
    is not memory, it is inventory.
 7. **The mind survives infra death.** Wake is file reads only. No step in
-   WAKE may depend on a running service.
+   WAKE may depend on a running service. The ref is the reconstitution; every
+   process after `checkout` is presentation.
 8. **Anchor-aware.** Greetings orient to the work — the current arc, the
    live tension, the next move — never to the memory system itself.
 9. **Nothing silent.** Every process emits context-bound events to

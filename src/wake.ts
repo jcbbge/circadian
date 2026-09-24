@@ -13,6 +13,7 @@
 
 import { appendFileSync, readFileSync } from "node:fs";
 import { refreshStatusline } from "./statusline-refresh.ts";
+import { checkout } from "./checkout.ts";
 import { logInvocation } from "./invocation-ledger.ts";
 import { homedir } from "node:os";
 import { join } from "node:path";
@@ -100,6 +101,26 @@ async function runHook(): Promise<void> {
       missing.push(name);
       files[name] = "";
     }
+  }
+
+  // The committed ref is the handoff; checkout folds its ledger and renders
+  // SELF without writing to mind/. For an unpublished working tree (or a
+  // legacy mind whose committed SELF is not yet a fold), keep the old file
+  // reads: wake must not discard in-flight work or withhold the injection.
+  try {
+    const restored = checkout(MIND);
+    if (!missing.includes("SELF.md") && !missing.includes("NOW.md") &&
+        files["SELF.md"] === restored.self && files["NOW.md"] === restored.now) {
+      files["SELF.md"] = restored.self;
+      files["NOW.md"] = restored.now;
+    }
+  } catch (e) {
+    degraded({
+      process: "wake", phase: "checkout", correlation_id: corr,
+      summary: "committed ref unavailable; wake uses mind files directly",
+      context: { mind_dir: MIND }, cause: (e as Error).message,
+      next_action: "verify mind is a git repo with a valid beliefs ledger; run bun src/checkout.ts --ref HEAD",
+    });
   }
 
   if (missing.length > 0) {

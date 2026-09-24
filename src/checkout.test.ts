@@ -5,6 +5,7 @@ import { join } from "node:path";
 import { spawnSync } from "node:child_process";
 import { atomId, serializeAtom } from "./atoms.ts";
 import { renderSelf } from "./render.ts";
+import { buildPayload } from "./wake-payload.ts";
 import { checkout } from "./checkout.ts";
 
 const script = join(import.meta.dir, "checkout.ts");
@@ -71,5 +72,28 @@ describe("checkout of a mind ref", () => {
   test("unknown ref fails closed with exit 2", () => {
     const { root, repo } = fixture();
     expect(run(repo, root, "--ref", "not-a-ref").status).toBe(2);
+  });
+  test("wake golden: committed ref produces the same injection as the existing file payload", () => {
+    const { root, repo } = fixture();
+    const home = root;
+    // The ref's SELF must be the canonical render; wake reads it verbatim.
+    const self = checkout(repo).self;
+    writeFileSync(join(repo, "SELF.md"), self);
+    const files = {
+      "CONSTITUTION.md": "# Constitution\n", "CONSTITUTION-JOSH.md": "# Josh\n",
+      "USER.md": "# User\n", "greeting.md": "Back at work.\n",
+    };
+    for (const [name, content] of Object.entries(files)) writeFileSync(join(repo, name), content);
+    git(repo, "add", "-A"); git(repo, "commit", "-qm", "rendered mind");
+    const now = readFileSync(join(repo, "NOW.md"), "utf8");
+    writeFileSync(join(repo, "scoreboard.jsonl"), JSON.stringify({ type: "wake", ts: new Date().toISOString() }) + "\n");
+    const expected = buildPayload({ self, now, user: files["USER.md"], greeting: files["greeting.md"],
+      constitution: files["CONSTITUTION.md"], constitutionJosh: files["CONSTITUTION-JOSH.md"] });
+    const p = spawnSync("bun", [join(import.meta.dir, "wake.ts")], {
+      encoding: "utf8", input: "", timeout: 10000,
+      env: { ...process.env, CIRCADIAN_HOME: home, CIRCADIAN_BUN_BIN: "/bin/true" },
+    });
+    expect(p.status).toBe(0);
+    expect(p.stdout).toBe(expected + "\n");
   });
 });
