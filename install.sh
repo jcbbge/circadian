@@ -231,10 +231,14 @@ ensure("SessionStart", wakeCmd, "/src/wake.ts", 10);
 ensure("SessionEnd", sleepCmd, "/src/sleep.ts", 15);
 ensure("PostToolUse", grazeCmd, "/src/graze.ts", 10);
 ensure("UserPromptSubmit", grazeCmd, "/src/graze.ts", 10);
-// Preserve every other MCP server and an operator-customized circadian entry.
-s.mcpServers ??= {};
-s.mcpServers.circadian ??= { command: bunBin, args: [home + "/src/serve.ts"], env: { CIRCADIAN_HOME: home } };
 await Bun.write(file, JSON.stringify(s, null, 2) + "\n");
+// Claude Code's user-scope MCP registry is ~/.claude.json (not hooks settings.json).
+// Preserve other servers and an existing operator-customized circadian entry.
+const registry = process.env.HOME + "/.claude.json";
+const user = JSON.parse(await Bun.file(registry).text().catch(() => "{}") || "{}");
+user.mcpServers ??= {};
+user.mcpServers.circadian ??= { command: bunBin, args: [home + "/src/serve.ts"], env: { CIRCADIAN_HOME: home } };
+await Bun.write(registry, JSON.stringify(user, null, 2) + "\n");
 console.log("circadian: hooks and MCP wired — SessionStart->wake, SessionEnd->sleep, PostToolUse+UserPromptSubmit->graze");
 JS
 

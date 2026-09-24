@@ -84,7 +84,10 @@ export async function callTool(home: string, name: string, args: Args): Promise<
   const id = name === "memory_read" ? text(args, "id", 256) : text(args, "query", 256);
   if (name === "memory_read" && safeId(id)) {
     const p = path.join(mind, id);
-    if (fs.existsSync(p)) return { id, content: fs.readFileSync(p, "utf8"), provenance: id };
+    if (fs.existsSync(p)) {
+      if (!fs.realpathSync(p).startsWith(fs.realpathSync(mind) + path.sep)) throw new Error("memory id escapes mind");
+      return { id, content: fs.readFileSync(p, "utf8"), provenance: id };
+    }
   }
   if ((id.startsWith("beliefs/") || id.startsWith("episodes/")) && !safeId(id)) throw new Error("invalid memory id");
   if (name === "memory_read" && id.startsWith("beliefs/")) return [];
@@ -92,7 +95,9 @@ export async function callTool(home: string, name: string, args: Args): Promise<
   // its stamped episode(s), with the immutable belief file returned by read.
   const query = id.startsWith("episodes/") ? id.slice("episodes/".length) : id;
   const records = collectEpisodes(mind);
-  let matches = matchEpisodes(records, parseQuery(query));
+  let matches = id.startsWith("episodes/") && safeId(id)
+    ? records.filter(r => r.filename === query)
+    : matchEpisodes(records, parseQuery(query));
   if (id.startsWith("beliefs/") && safeId(id) && name === "memory_history") {
     const file = path.join(mind, id);
     if (!fs.existsSync(file)) return [];

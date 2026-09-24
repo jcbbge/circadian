@@ -16,7 +16,7 @@ test("MCP stdio lists five tools; reads pinned evidence under 100ms and writes o
     fs.writeFileSync(path.join(mind, "episodes", ep), "# stutter\nA stutter resolved in testing.\n");
     fs.writeFileSync(path.join(mind, "SELF.md"), "# mind\n- continuity [ep:2026-01-01]\n");
     fs.writeFileSync(path.join(mind, "NOW.md"), "# now\n");
-    fs.writeFileSync(path.join(mind, "scoreboard.jsonl"), "");
+    fs.writeFileSync(path.join(mind, "scoreboard.jsonl"), JSON.stringify({ ts: "2026-01-02T00:00:00Z", type: "verdict", worldview_tokens: 1, greeting_verdict: "ok" }) + "\n");
     const { id } = writeAtom(path.join(mind, "beliefs"), { kind: "doctrine", claim: "stutter resolved by tests", why: "observed", quotes: [{ text: "stutter", source: ep }], eps: ["2026-01-01"] });
     appendLedger(path.join(mind, "beliefs.jsonl"), { ev: "stack", atom: id, ep, ts: "2026-01-01" });
     // More recent episode makes the atom deep (hot limit overridden to zero).
@@ -59,7 +59,19 @@ test("MCP stdio lists five tools; reads pinned evidence under 100ms and writes o
       expect(deep[0].provenance.episode).toBe(ep);
       expect(unpack(await send(5, "tools/call", { name: "memory_read", arguments: { id: `beliefs/${id}.md` } })).content).toBe(before);
       expect(unpack(await send(6, "tools/call", { name: "memory_history", arguments: { query: `beliefs/${id}.md` } }))[0].citations).toContain("- continuity [ep:2026-01-01]");
-      expect(unpack(await send(7, "tools/call", { name: "memory_status", arguments: {} })).token_counts["SELF.md"].cap).toBe(6000);
+      const vitals = unpack(await send(7, "tools/call", { name: "memory_status", arguments: {} }));
+      expect(vitals.token_counts["SELF.md"].cap).toBe(6000);
+      expect(vitals.verdicts.total).toBe(1);
+      fs.rmSync(path.join(mind, "episodes", ep));
+      spawnSync("git", ["-C", mind, "add", "-u"]);
+      spawnSync("git", ["-C", mind, "-c", "user.name=test", "-c", "user.email=test@example.invalid", "commit", "-qm", "compost fixture"]);
+      const archived = unpack(await send(11, "tools/call", { name: "memory_read", arguments: { id: `episodes/${ep}` } }));
+      expect(archived[0].composted).toBe(true);
+      expect(archived[0].content).toContain("stutter resolved");
+      expect(unpack(await send(12, "tools/call", { name: "memory_history", arguments: { query: ep } }))[0].deletingCommit).toBeTruthy();
+      fs.symlinkSync(path.join(home, "outside.md"), path.join(mind, "beliefs", "outside.md"));
+      fs.writeFileSync(path.join(home, "outside.md"), "secret");
+      expect((await send(13, "tools/call", { name: "memory_read", arguments: { id: "beliefs/outside.md" } })).hit.result.isError).toBe(true);
       const result = unpack(await send(8, "tools/call", { name: "memory_request_change", arguments: { change: "Consider revising stutter", source: ep } }));
       expect(result.state).toBe("pending-stacker-review");
       expect(JSON.parse(fs.readFileSync(path.join(home, "logs", "change-requests", `${result.id}.json`), "utf8")).change).toBe("Consider revising stutter");
@@ -67,6 +79,6 @@ test("MCP stdio lists five tools; reads pinned evidence under 100ms and writes o
       expect((await send(9, "tools/call", { name: "memory_read", arguments: { id: "beliefs/../../secret.md" } })).hit.result.isError).toBe(true);
       expect((await send(10, "tools/call", { name: "memory_search", arguments: { query: "stutter", depth: -1 } })).hit.result.isError).toBe(true);
     } finally { child.stdin.end(); child.kill(); }
-    expect(fs.readdirSync(path.join(mind, "beliefs"))).toEqual([`${id}.md`]);
+    expect(fs.readFileSync(path.join(mind, "beliefs", `${id}.md`), "utf8")).toBe(before);
   } finally { fs.rmSync(home, { recursive: true, force: true }); }
 });
