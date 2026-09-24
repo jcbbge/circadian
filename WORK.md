@@ -26,7 +26,7 @@
 
 ### Fringe wave (2026-09-23) — from the VPS comparison with `mem`; briefs 10–20 in `briefs/`
 Design language for all of these: one intelligence, many instantiations; the substrate closes the gap.
-- Brief 10 — reconstitution is a checkout (the ref is the handoff; wake is narration)
+- [x] Brief 10 — reconstitution is a checkout (the ref is the handoff; wake is narration) — `0e658654d785e26f35eb84bde8fae26266d772dc`
 - Brief 11 — stratigraphy: depth tiers alongside decay; `dig` reads below the floor
 - Brief 12 — belief interchange format (atom shape as protocol; reader for mem-shaped stores)
 - Brief 13 — stigmergic memory on worker branches (lanes; landing consolidates; conflicts escalate)
