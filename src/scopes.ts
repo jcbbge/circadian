@@ -26,9 +26,11 @@ export function resolveScope(mind: string, cwd = process.cwd(), override = proce
   try {
     const git = (args: string[]) => execFileSync("git", args, { cwd, encoding: "utf8", stdio: ["ignore", "pipe", "ignore"] }).trim();
     root = git(["rev-parse", "--show-toplevel"]);
-    const common = git(["rev-parse", "--git-common-dir"]);
+    // --git-common-dir without --path-format=absolute is relative to cwd,
+    // not the checkout root (notably when invoked from a nested directory).
+    const common = git(["rev-parse", "--path-format=absolute", "--git-common-dir"]);
     // Worktree common dir is <main>/.git; a normal checkout has the same root.
-    if (path.resolve(root, common) !== path.join(root, ".git")) root = path.dirname(path.resolve(root, common));
+    if (common !== path.join(root, ".git")) root = path.dirname(common);
   } catch { /* outside git: match the cwd against registered paths */ }
   try { root = fs.realpathSync(root); } catch { /* path may no longer exist */ }
   for (const entry of readScopes(mind)) {

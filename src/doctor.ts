@@ -339,7 +339,7 @@ function checkLLM(): void {
     add(
       "LLM service",
       "WARN",
-      `not reachable at ${LLM_BASE_URL} (http ${r.out.trim() || "?"}) — rem/sleep drafting will fail until it's up`
+      `not reachable at ${LLM_BASE_URL} (http ${r.out.trim() || "?"}) — rem/sleep drafting will fail; failed sleep drafts await recovery in logs/pending-sleep.jsonl (pending sleep queue)`
     );
   }
 }
@@ -354,6 +354,10 @@ function checkLLM(): void {
  */
 function checkLLMPatchIntegrity(): void {
   const raw = readOrEmpty(LLM_LOGGER_FILE);
+  if (!raw && !process.env.CIRCADIAN_LLM_LOGGER_FILE && !fs.existsSync(path.join(homedir(), "local-llm"))) {
+    add("LLM patch integrity", "IDLE", "mlx-omni-server install not present — macOS markup patch not applicable");
+    return;
+  }
   if (!raw) {
     add(
       "LLM patch integrity",
@@ -487,6 +491,13 @@ function checkHooks(): void {
     anyGap ? "WARN" : "OK",
     parts.join("; ") + (anyGap ? " — memory won't inject/deposit/checkpoint on the gapped harness" : "")
   );
+}
+
+// The founding commit is the earliest commit, not the most recent REM write.
+// Unknown founding age must never suppress the cardinal silence check.
+function foundingAgeHours(): number | null {
+  const r = tryExec(`git -C ${JSON.stringify(MIND_DIR)} log --reverse --format=%cI 2>/dev/null`);
+  return r.ok && r.out ? hoursSince(r.out.split("\n")[0]) : null;
 }
 
 function checkMindRepo(): void {
@@ -794,6 +805,20 @@ function checkPendingSleepQueue(): void {
   }
 }
 
+// ---------- scheduled REM ----------
+
+function checkSystemdTimer(): void {
+  const enabled = tryExec("systemctl --user is-enabled circadian-rem.timer");
+  const timers = tryExec("systemctl --user list-timers --all --no-legend --no-pager circadian-rem.timer");
+  const line = timers.out.split("\n").find((l) => /\bcircadian-rem\.timer\b/.test(l));
+  const hasNext = timers.ok && line && !/^\s*(?:n\/a|-)\s/.test(line);
+  if (enabled.ok && enabled.out.trim() === "enabled" && hasNext) {
+    add("systemd user timer", "OK", `circadian-rem.timer enabled, next run: ${line!.trim()}`);
+  } else {
+    add("systemd user timer", "WARN", `circadian-rem.timer ${enabled.ok ? enabled.out.trim() : "unavailable"}; ${!timers.ok ? "cannot query next run" : hasNext ? "next run scheduled" : "no next run scheduled"}`);
+  }
+}
+
 // ---------- launchd agents ----------
 
 /**
@@ -849,7 +874,14 @@ function main() {
   checkLedger(events);
   checkProcess("wake", events, SESSION_EXPECTED_HOURS, sessionEvidence.found);
   checkProcess("graze", events, SESSION_EXPECTED_HOURS, sessionEvidence.found);
-  checkProcess("sleep", events, SESSION_EXPECTED_HOURS, sessionEvidence.found);
+  const foundingAge = foundingAgeHours();
+  // A session in a newly founded mind does not yet owe a sleep event. Once
+  // the window closes, silence with session evidence is again a real failure.
+  if (eventsFor(events, "sleep").length === 0 && foundingAge !== null && foundingAge < SESSION_EXPECTED_HOURS) {
+    add("sleep", "IDLE", `no sleep event yet — mind founded ${fmtAge(foundingAge)}; first ${SESSION_EXPECTED_HOURS}h window still open`);
+  } else {
+    checkProcess("sleep", events, SESSION_EXPECTED_HOURS, sessionEvidence.found);
+  }
   checkProcess("rem", events, REM_EXPECTED_HOURS, true); // rem is always expected (time-scheduled)
 
   // Supplementary cheap probes
@@ -864,7 +896,8 @@ function main() {
   checkEpisodes(events);
   checkWorldviewMotion();
   checkPendingSleepQueue();
-  checkLaunchdAgents();
+  if (process.platform === "linux") checkSystemdTimer();
+  else if (process.platform === "darwin") checkLaunchdAgents();
 
   const anyFail = checks.some((c) => c.level === "FAIL");
 

@@ -29,7 +29,7 @@ function fixture() {
   return { root, repo, id, sha: git(repo, "rev-parse", "HEAD") };
 }
 function run(repo: string, root: string, ...args: string[]) {
-  return spawnSync("bun", [script, "--repo", repo, ...args], { encoding: "utf8", env: { ...process.env, CIRCADIAN_HOME: join(root, "home") } });
+  return spawnSync("bun", [script, "--repo", repo, ...args], { encoding: "utf8", env: { ...process.env, HOME: root, CIRCADIAN_HOME: join(root, "home") } });
 }
 
 describe("checkout of a mind ref", () => {
@@ -108,7 +108,7 @@ describe("checkout of a mind ref", () => {
       scope: "global", here: "", elsewhere: "" });
     const p = spawnSync("bun", [join(import.meta.dir, "wake.ts")], {
       encoding: "utf8", input: "", timeout: 10000,
-      env: { ...process.env, CIRCADIAN_HOME: home, CIRCADIAN_BUN_BIN: "/bin/true" },
+      env: { ...process.env, HOME: root, CIRCADIAN_HOME: home, CIRCADIAN_SCOPE: "global", CIRCADIAN_ROLE: "", CIRCADIAN_BUN_BIN: "/bin/true" },
     });
     expect(p.status).toBe(0);
     expect(p.stdout).toBe(expected + "\n");
@@ -118,7 +118,7 @@ describe("checkout of a mind ref", () => {
     git(repo, "add", "-A"); git(repo, "commit", "-qm", "broken ledger");
     const fallback = spawnSync("bun", [join(import.meta.dir, "wake.ts")], {
       encoding: "utf8", input: "", timeout: 10000,
-      env: { ...process.env, CIRCADIAN_HOME: home, CIRCADIAN_BUN_BIN: "/bin/true" },
+      env: { ...process.env, HOME: root, CIRCADIAN_HOME: home, CIRCADIAN_SCOPE: "global", CIRCADIAN_ROLE: "", CIRCADIAN_BUN_BIN: "/bin/true" },
     });
     expect(fallback.status).toBe(0);
     expect(fallback.stdout).toBe(expected + "\n");

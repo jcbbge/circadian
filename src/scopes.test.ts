@@ -34,10 +34,16 @@ test("Accept when: an episode written from ~/concierge/work/t3-labor-fee carries
   fs.mkdirSync(path.dirname(work), { recursive: true });
   git(["-C", main, "worktree", "add", "-qb", "t3", work]);
   fs.writeFileSync(path.join(mind, "scopes.tsv"), `arc\t${main}\tactive\n`);
-  expect(resolveScope(mind, work)).toBe("arc");
-  const episode = tagEpisode("---\ndate: 2026-09-24\narc: labor fee\n---\n", resolveScope(mind, work));
+  expect(resolveScope(mind, work, "")).toBe("arc");
+  const mainSubdir = path.join(main, "src");
+  const workSubdir = path.join(work, "src");
+  fs.mkdirSync(mainSubdir);
+  fs.mkdirSync(workSubdir);
+  expect(resolveScope(mind, mainSubdir, "")).toBe("arc");
+  expect(resolveScope(mind, workSubdir, "")).toBe("arc");
+  const episode = tagEpisode("---\ndate: 2026-09-24\narc: labor fee\n---\n", resolveScope(mind, work, ""));
   expect(episode).toContain("scope: arc\n");
-  expect(resolveScope(mind, dir)).toBe("global");
+  expect(resolveScope(mind, dir, "")).toBe("global");
 }));
 
 test("Accept when: two sessions in two projects on one day leave two NOW files, and neither overwrote the other; reversed wakes show local detail and one-line remote receipt", () => sandbox((dir, mind) => {
@@ -93,7 +99,7 @@ test("Accept when: portfolio renders without ~/AGENTS.md using a mind-owned regi
   const old = process.env.CIRCADIAN_REGISTRY;
   try {
     process.env.CIRCADIAN_REGISTRY = registry;
-    expect(resolveScope(mind, path.join(dir, "arc"))).toBe("arc");
+    expect(resolveScope(mind, path.join(dir, "arc"), "")).toBe("arc");
   } finally {
     if (old === undefined) delete process.env.CIRCADIAN_REGISTRY;
     else process.env.CIRCADIAN_REGISTRY = old;
