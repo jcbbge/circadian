@@ -402,13 +402,17 @@ async function runHook(): Promise<void> {
       pruneSpool(spoolDir(CIRCADIAN_HOME), SPOOL_MAX_AGE_MS);
       writeSpool(spool, outputs);
     } catch (e) {
+      // No spool, no parts 2..n: print the whole payload instead. Claude Code
+      // then keeps all of it in its own saved file behind a preview that
+      // opens with the scoped sections — degraded, but nothing dropped.
       degraded({
         process: "wake", phase: "parts", correlation_id: corr,
-        summary: `could not publish the wake spool — parts 2..${outputs.length} will not be delivered`,
+        summary: `could not publish the wake spool — whole payload printed as one over-cap output (${outputs.length} parts needed)`,
         context: { spool, parts: outputs.length },
         cause: (e as Error).message,
         next_action: `verify ${spoolDir(CIRCADIAN_HOME)} is writable`,
       });
+      outputs = [finalPayload];
     }
     if (outputs.length > WAKE_PARTS) {
       degraded({
@@ -492,7 +496,18 @@ const partFlag = process.argv.indexOf("--part");
 const PART = partFlag >= 0 ? Number(process.argv[partFlag + 1]) : 1;
 if (Number.isInteger(PART) && PART >= 2) {
   logInvocation({ script: "wake", mode: `part-${PART}` });
-  runPart(PART).catch(() => process.exit(0));
+  runPart(PART).catch((e) => {
+    emit({
+      process: "wake",
+      phase: "part",
+      outcome: "failed",
+      summary: `wake part ${PART} threw unexpectedly; that part was not delivered`,
+      context: { part: PART, error: (e as Error).message },
+      cause: (e as Error).message,
+      next_action: "inspect logs/circadian.events.jsonl for this failed event and the session's spool under logs/wake-parts/",
+    });
+    process.exit(0);
+  });
 } else {
   refreshStatusline();
   logInvocation({ script: "wake" });

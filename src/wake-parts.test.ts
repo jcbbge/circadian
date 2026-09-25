@@ -273,3 +273,18 @@ describe("Claude Code wake with the current mind", () => {
     }
   }, 120000);
 });
+
+describe("wake.ts spool failure (subprocess)", () => {
+  test("an unwritable spool prints the whole wake from part 1 rather than dropping parts 2..n", () => {
+    const { home, project } = fixtureMind();
+    fs.mkdirSync(path.join(home, "logs"), { recursive: true });
+    fs.writeFileSync(path.join(home, "logs", "wake-parts"), "not a directory"); // spool dir cannot be created
+    const env = wakeEnv(home);
+    const event = JSON.stringify({ session_id: "sess-c", hook_event_name: "SessionStart" });
+    const part1 = spawnSync(process.execPath, [WAKE], { cwd: project, env, input: event, encoding: "utf8" });
+    const whole = spawnSync(process.execPath, [WAKE], { cwd: project, env, input: "", encoding: "utf8" });
+    expect(part1.stdout).toBe(whole.stdout);
+    expect(part1.stdout).toContain(MAX.constitution);
+    expect(part1.stderr).toContain("wake/parts DEGRADED");
+  }, 30000);
+});
