@@ -8,6 +8,86 @@
 // source of truth (CONSTITUTION-JOSH Article 6).
 
 export const CAP_TOKENS = 15000;
+
+/** Claude Code's cap on one hook output string. SOURCE: Claude Code hooks
+ * reference, https://code.claude.com/docs/en/hooks ("JSON output", fetched
+ * 2026-09-25): "A hook's additionalContext, systemMessage, and
+ * initialUserMessage strings, and its plain stdout, are capped at 10,000
+ * characters" — "Claude Code measures each string on its own, even when
+ * several hooks run for the same event"; over the limit the output is saved
+ * to a file and replaced with "a preview of up to the first 2,000
+ * characters", and "this cap has no setting or environment variable to raise
+ * it". Observed on hive 2026-09-25 (session b356f077): an 11.9KB wake arrived
+ * as a 2KB preview. */
+export const HOOK_OUTPUT_LIMIT = 10_000;
+/** SessionStart hook slots install.sh wires for WAKE: `wake.ts` is part 1 and
+ * `wake.ts --part k` is part k for k = 2..WAKE_PARTS. Enough slots that any
+ * payload within the CAP_TOKENS hard cap (chars/4) is delivered whole. */
+export const WAKE_PARTS = 8;
+/** Headroom each part keeps under HOOK_OUTPUT_LIMIT for its part marker and
+ * the trailing newline (and the spool path named in part 1's marker). */
+const PART_MARKER_BYTES = 600;
+
+const utf8Bytes = (s: string) => Buffer.byteLength(s, "utf8");
+
+/** Split a payload into ordered parts whose concatenation is the payload,
+ * byte for byte. Each part is at most `budget` UTF-8 bytes (bytes bound the
+ * character count under any counting, so a byte-sized part is always within
+ * a character-sized cap). Cuts prefer section starts (a line opening a
+ * `<mind:…>` tag): a section that fits in a part is never split across two.
+ * A section larger than a part fills the current part and continues, cut
+ * after a newline; a single line longer than the budget is cut at code-point
+ * boundaries. Deterministic. */
+export function splitForHook(payload: string, budget = HOOK_OUTPUT_LIMIT - PART_MARKER_BYTES): string[] {
+  if (budget < 4) throw new Error(`splitForHook budget ${budget} is too small`);
+  const sections: string[] = [];
+  for (const line of payload.match(/[^\n]*\n|[^\n]+$/g) ?? []) {
+    if (!sections.length || /^<mind:[a-z-]+[\s>]/.test(line)) sections.push(line);
+    else sections[sections.length - 1] += line;
+  }
+  const parts: string[] = [];
+  let current = "";
+  let currentBytes = 0;
+  const flush = () => { if (current) parts.push(current); current = ""; currentBytes = 0; };
+  const add = (text: string, bytes: number) => { current += text; currentBytes += bytes; };
+  for (const section of sections) {
+    const sectionBytes = utf8Bytes(section);
+    if (currentBytes + sectionBytes <= budget) { add(section, sectionBytes); continue; }
+    if (sectionBytes <= budget) { flush(); add(section, sectionBytes); continue; }
+    for (const line of section.match(/[^\n]*\n|[^\n]+$/g) ?? []) {
+      const lineBytes = utf8Bytes(line);
+      if (currentBytes + lineBytes <= budget) { add(line, lineBytes); continue; }
+      flush();
+      if (lineBytes <= budget) { add(line, lineBytes); continue; }
+      for (const ch of line) {
+        const b = utf8Bytes(ch);
+        if (currentBytes + b > budget) flush();
+        add(ch, b);
+      }
+    }
+  }
+  flush();
+  return parts.length ? parts : [""];
+}
+
+/** The hook outputs for a Claude Code wake: part k of n is `outputs[k-1]`.
+ * A payload that fits one hook output is emitted unchanged (n = 1, no
+ * marker). Otherwise part 1 opens with the payload itself — the scoped
+ * sections — and closes with a marker naming the other parts and the spool
+ * file holding every part, so a missing slot is announced, never silent;
+ * parts 2..n open with a continuation marker. Every output (plus the newline
+ * the hook prints after it) is within HOOK_OUTPUT_LIMIT. */
+export function hookOutputs(payload: string, spoolPath: string): string[] {
+  if (utf8Bytes(payload) + 1 <= HOOK_OUTPUT_LIMIT) return [payload];
+  const bodies = splitForHook(payload, HOOK_OUTPUT_LIMIT - PART_MARKER_BYTES - utf8Bytes(spoolPath));
+  const n = bodies.length;
+  return bodies.map((body, i) => {
+    const sep = body.endsWith("\n") ? "" : "\n";
+    return i === 0
+      ? `${body}${sep}[Circadian] WAKE part 1/${n} ends here — Claude Code caps each hook output at ${HOOK_OUTPUT_LIMIT} characters, so parts 2..${n} (the rest, including the constitutions) arrive as separate SessionStart outputs from \`wake.ts --part k\`. If any part is absent from your context, the whole wake is in ${spoolPath}.`
+      : `[Circadian] WAKE part ${i + 1}/${n} — continues part ${i} verbatim.\n${body}${sep}[Circadian] WAKE part ${i + 1}/${n} ends here.`;
+  });
+}
 export const STALE_MS = 48 * 60 * 60 * 1000;
 
 export function extractLastSleep(nowMd: string): string | null {
@@ -121,8 +201,10 @@ export function buildPayload(files: {
     greetingBlock = `${staleLine}\n${greetingBlock}`;
   }
 
-  // THE CONSTITUTION LAYER (2026-08-09): injected FIRST, verbatim, above
-  // memory. The constitution is never rendered, never re-derived, never
+  // THE CONSTITUTION LAYER (2026-08-09): injected verbatim and whole, above
+  // memory in authority (the scoped wake places it after the scoped sections
+  // so a size cap can never crowd them out — circ-29). The constitution is
+  // never rendered, never re-derived, never
   // decayed — experience has no write access to it (see the poisoning
   // post-mortem: nine days of fleet drills rewrote the rendered SELF into
   // obedience doctrine; the constitution is the layer that cannot be).
@@ -198,22 +280,29 @@ export function buildPayload(files: {
       ].join("\n");
 
   const corrections = scope ? correctionsFromUser(user) : "";
+  // Scoped layout, most-needed first (circ-29): a Claude Code hook string
+  // over HOOK_OUTPUT_LIMIT reaches the agent only as a 2,000-character
+  // preview, and the wake is delivered in ordered parts (splitForHook) of
+  // which only part 1 is certain to arrive. So the scope, next move,
+  // corrections, USER, the elsewhere footnotes and <mind:here> (NOW, then the
+  // greeting, then evidence/away/detail) come first; the constitutions follow
+  // verbatim, whole, in the later parts — delivered, never dropped.
   const scoped = scope ? [
     `Resolved scope: ${scope}`,
     ...((now.match(/## (?:Next move|Flight plan)\s*\n+([^\n]+)/i)?.[1]?.trim()) ? [`Next move: ${now.match(/## (?:Next move|Flight plan)\s*\n+([^\n]+)/i)![1].trim()}`] : []),
     "[Circadian] WAKE — memory substrate injection from the mind repo (see mind/MIND-SPEC.md).",
-    ...constitutionBlocks, ...constitutionJoshBlocks,
     ...(corrections ? ["<mind:corrections>", corrections, "</mind:corrections>"] : []),
     ...(killSwitch ? ["KILL SWITCH ACTIVE: SELF/USER/greeting withheld this wake."] : scope === "global" ? [] : userBlocks),
+    ...(!slim ? ["<mind:elsewhere>", elsewhere || "", "</mind:elsewhere>"] : []),
     `<mind:here scope="${scope}">`,
     "<mind:now>", now.trim(), "</mind:now>",
+    ...(!killSwitch && greetingBlock ? ["<mind:greeting>", greetingBlock, "</mind:greeting>"] : []),
     ...(!killSwitch && scope !== "global" && evidence ? [evidence] : []),
     ...(!killSwitch && scope !== "global" && away ? [away] : []),
     ...(!killSwitch && scope !== "global" && here ? [here] : []),
-    ...(!killSwitch && greetingBlock ? ["<mind:greeting>", greetingBlock, "</mind:greeting>"] : []),
     "</mind:here>",
-    ...(!slim ? ["<mind:elsewhere>", elsewhere || "", "</mind:elsewhere>"] : []),
-  ].join("\n") : body;
+    ...constitutionBlocks, ...constitutionJoshBlocks,
+  ].join("\n").trimEnd() : body;
   const tokens = Math.ceil(scoped.length / 4);
   if (tokens > CAP_TOKENS) {
     // Law 4: never truncate silently — announce loudly and still emit the

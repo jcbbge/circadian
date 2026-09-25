@@ -261,16 +261,23 @@ mkdir -p "$(dirname "$SETTINGS")"
 [ -f "$SETTINGS" ] || echo '{}' > "$SETTINGS"
 cp "$SETTINGS" "$SETTINGS.bak-$(date +%s)"
 
-"$BUN_BIN" - "$SETTINGS" "$WAKE_CMD" "$SLEEP_CMD" "$GRAZE_CMD" "$BUN_BIN" "$CIRCADIAN_HOME" <<'JS'
-const [file, wakeCmd, sleepCmd, grazeCmd, bunBin, home] = Bun.argv.slice(2);
+"$BUN_BIN" - "$SETTINGS" "$WAKE_CMD" "$SLEEP_CMD" "$GRAZE_CMD" "$BUN_BIN" "$CIRCADIAN_HOME" "$SCRIPT_DIR" <<'JS'
+const [file, wakeCmd, sleepCmd, grazeCmd, bunBin, home, scriptDir] = Bun.argv.slice(2);
+const { WAKE_PARTS } = await import(scriptDir + "/src/wake-payload.ts");
 const s = JSON.parse(await Bun.file(file).text() || "{}");
 s.hooks ??= {};
 const has = (evt, needle) =>
   (s.hooks[evt] || []).some(g => (g.hooks || []).some(h => (h.command || "").includes(needle)));
-const ensure = (evt, cmd, needle, timeout) => {
+const ensure = (evt, cmd, needle, timeout, present = has) => {
   s.hooks[evt] ??= [];
-  if (!has(evt, needle)) s.hooks[evt].push({ hooks: [{ type: "command", command: cmd, timeout }] });
+  if (!present(evt, needle)) s.hooks[evt].push({ hooks: [{ type: "command", command: cmd, timeout }] });
 };
+// WAKE part slots: Claude Code caps each hook output at 10,000 characters, so
+// a larger wake arrives as parts — `wake.ts` is part 1, `wake.ts --part k` is
+// part k (src/wake-payload.ts WAKE_PARTS). Matched by exact command suffix so
+// part 1 never counts as a part slot, nor a part slot as part 1.
+const hasCmd = (evt, suffix) =>
+  (s.hooks[evt] || []).some(g => (g.hooks || []).some(h => (h.command || "").trimEnd().endsWith(suffix)));
 // SLEEP must live on SessionEnd only — strip any legacy copy on Stop.
 if (Array.isArray(s.hooks.Stop)) {
   for (const g of s.hooks.Stop) if (Array.isArray(g.hooks))
@@ -278,7 +285,9 @@ if (Array.isArray(s.hooks.Stop)) {
   s.hooks.Stop = s.hooks.Stop.filter(g => (g.hooks || []).length);
   if (!s.hooks.Stop.length) delete s.hooks.Stop;
 }
-ensure("SessionStart", wakeCmd, "/src/wake.ts", 10);
+ensure("SessionStart", wakeCmd, "/src/wake.ts", 10, hasCmd);
+for (let k = 2; k <= WAKE_PARTS; k++)
+  ensure("SessionStart", `${wakeCmd} --part ${k}`, `/src/wake.ts --part ${k}`, 10, hasCmd);
 ensure("SessionEnd", sleepCmd, "/src/sleep.ts", 15);
 ensure("PostToolUse", grazeCmd, "/src/graze.ts", 10);
 ensure("UserPromptSubmit", grazeCmd, "/src/graze.ts", 10);
@@ -290,7 +299,7 @@ const user = JSON.parse(await Bun.file(registry).text().catch(() => "{}") || "{}
 user.mcpServers ??= {};
 user.mcpServers.circadian ??= { command: bunBin, args: [home + "/src/serve.ts"], env: { CIRCADIAN_HOME: home } };
 await Bun.write(registry, JSON.stringify(user, null, 2) + "\n");
-console.log("circadian: hooks and MCP wired — SessionStart->wake, SessionEnd->sleep, PostToolUse+UserPromptSubmit->graze");
+console.log("circadian: hooks and MCP wired — SessionStart->wake (parts 1-${WAKE_PARTS}), SessionEnd->sleep, PostToolUse+UserPromptSubmit->graze");
 JS
 
 # ---- 6. Pi.dev extension wiring (idempotent) ------------------------------

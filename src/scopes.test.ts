@@ -78,7 +78,8 @@ test("Accept when: two sessions in two projects on one day leave two NOW files, 
   expect(payload.startsWith("Resolved scope: circadian")).toBe(true);
   expect(payload).toContain('<mind:here scope="circadian">'); expect(payload).toContain("<mind:elsewhere>");
   expect(payload.indexOf("<mind:now>")).toBeGreaterThan(payload.indexOf('<mind:here scope="circadian">'));
-  expect(payload.indexOf("<mind:elsewhere>")).toBeGreaterThan(payload.indexOf("</mind:here>"));
+  // Small scoped sections lead; the budgeted <mind:here> detail follows (circ-29).
+  expect(payload.indexOf("<mind:elsewhere>")).toBeLessThan(payload.indexOf('<mind:here scope="circadian">'));
   const worker = buildPayload({ self: "", user: "## Corrections\n\nAlways verify receipts.\n## Preferences\n\nKeep it short.", now: arc.now, greeting: "", scope: "arc", here: arc.here, elsewhere: arc.elsewhere, slim: true });
   expect(worker).not.toContain("<mind:elsewhere>");
   expect(worker).toContain("Always verify receipts.");

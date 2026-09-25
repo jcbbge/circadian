@@ -6,6 +6,7 @@ import * as fs from "fs";
 import * as path from "path";
 import { tmpdir } from "os";
 import { ccSettingsMissingHooks, ccSettingsMissingHooksFromPath } from "./doctor.ts";
+import { WAKE_PARTS } from "./wake-payload.ts";
 import { renderSelf } from "./render.ts";
 
 const dirs: string[] = [];
@@ -133,10 +134,24 @@ if (process.platform === "linux") describe("doctor on a fresh Linux mind", () =>
   });
 });
 
+const WAKE_PART_LINES = Array.from({ length: WAKE_PARTS - 1 }, (_, i) => `"command": "bun /Users/jrg/circadian/src/wake.ts --part ${i + 2}"`);
+
 describe("ccSettingsMissingHooks", () => {
+  test("wake without its part slots is flagged — those parts (the constitutions) never reach context", () => {
+    const text = [
+      '"command": "bun /Users/jrg/circadian/src/wake.ts"',
+      '"command": "bun /Users/jrg/circadian/src/wake.ts --part 2"',
+      '"command": "bun /Users/jrg/circadian/src/sleep.ts"',
+      '"command": "bun /Users/jrg/circadian/src/graze.ts"',
+    ].join("\n");
+    const rest = Array.from({ length: WAKE_PARTS - 2 }, (_, i) => i + 3).join(",");
+    expect(ccSettingsMissingHooks(text)).toEqual([`wake.ts --part ${rest} (re-run install.sh)`]);
+  });
+
   test("settings containing graze.ts passes", () => {
     const text = [
       '"command": "bun /Users/jrg/circadian/src/wake.ts"',
+      ...WAKE_PART_LINES,
       '"command": "bun /Users/jrg/circadian/src/sleep.ts"',
       '"command": "bun /Users/jrg/circadian/src/graze.ts"',
     ].join("\n");
@@ -148,6 +163,7 @@ describe("ccSettingsMissingHooks", () => {
   test("settings containing circadian-graze-gate (with wake + sleep) passes", () => {
     const text = [
       '"command": "bun /Users/jrg/circadian/src/wake.ts"',
+      ...WAKE_PART_LINES,
       '"command": "bun /Users/jrg/circadian/src/sleep.ts"',
       '"command": "/Users/jrg/circadian/bin/circadian-graze-gate"',
     ].join("\n");
@@ -159,6 +175,7 @@ describe("ccSettingsMissingHooks", () => {
   test("settings with neither graze marker fails graze only", () => {
     const text = [
       '"command": "bun /Users/jrg/circadian/src/wake.ts"',
+      ...WAKE_PART_LINES,
       '"command": "bun /Users/jrg/circadian/src/sleep.ts"',
     ].join("\n");
     expect(ccSettingsMissingHooks(text)).toEqual(["graze.ts"]);

@@ -36,6 +36,7 @@ import { ok, correlation } from "./obs.ts";
 import { selfSimilarity, detectSelfStutter } from "./immune.ts";
 import { adaptRenderedForStutterCheck, parseSelfSections } from "./migrate.ts";
 import { isPendingEntryStuck, PENDING_ATTEMPTS_CAP, PENDING_STALE_HOURS } from "./sleep.ts";
+import { WAKE_PARTS } from "./wake-payload.ts";
 
 const CIRCADIAN_HOME = process.env.CIRCADIAN_HOME || path.join(homedir(), "circadian");
 const LOG_DIR = path.join(CIRCADIAN_HOME, "logs");
@@ -420,6 +421,14 @@ function checkLLMPatchIntegrity(): void {
 export function ccSettingsMissingHooks(settingsText: string): string[] {
   const missing: string[] = [];
   if (!settingsText.includes("wake.ts")) missing.push("wake.ts");
+  // A Claude Code wake over the 10,000-character hook cap arrives as parts;
+  // an unwired slot leaves its part (often a constitution) out of context.
+  else {
+    const unwired: number[] = [];
+    for (let k = 2; k <= WAKE_PARTS; k++)
+      if (!new RegExp(`wake\\.ts --part ${k}(?!\\d)`).test(settingsText)) unwired.push(k);
+    if (unwired.length) missing.push(`wake.ts --part ${unwired.join(",")} (re-run install.sh)`);
+  }
   if (!settingsText.includes("sleep.ts")) missing.push("sleep.ts");
   const grazePresent =
     settingsText.includes("graze.ts") || settingsText.includes("circadian-graze-gate");

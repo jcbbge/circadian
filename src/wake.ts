@@ -30,8 +30,12 @@ import {
   extractLastSleep,
   classifyFleetTier,
   buildPayload,
+  hookOutputs,
+  HOOK_OUTPUT_LIMIT,
+  WAKE_PARTS,
   type FleetTier,
 } from "./wake-payload.ts";
+import { outputForSlot, pruneSpool, spoolDir, spoolPath, waitForSpool, writeSpool } from "./wake-parts.ts";
 
 // Path resolution (single-source, distributable): CIRCADIAN_HOME overrides;
 // otherwise ~/circadian. The mind data lives at $CIRCADIAN_HOME/mind. This is
@@ -40,14 +44,62 @@ import {
 const CIRCADIAN_HOME = process.env.CIRCADIAN_HOME || join(homedir(), "circadian");
 const MIND = join(CIRCADIAN_HOME, "mind");
 
-async function readStdin(): Promise<void> {
-  // WAKE has no use for stdin content (file reads only, per Law 7) but must
-  // still drain it so the harness never sees a broken pipe.
+async function readStdin(): Promise<string> {
+  // WAKE reads no mind content from stdin (file reads only, per Law 7) but
+  // must drain it so the harness never sees a broken pipe. The one fact it
+  // takes from it is whether this is a Claude Code SessionStart event.
   try {
-    await new Response(Bun.stdin.stream()).text();
+    return await new Response(Bun.stdin.stream()).text();
   } catch {
-    // tolerated — stdin drain must never break the hook
+    return ""; // tolerated — stdin drain must never break the hook
   }
+}
+
+/** The Claude Code SessionStart event on stdin, or null (pi spawns wake with
+ * no stdin; a manual run may pass nothing). Only a Claude Code hook output is
+ * capped, so only then is the wake cut into parts (circ-29). */
+function sessionStartEvent(raw: string): { session_id?: string } | null {
+  try {
+    const event = JSON.parse(raw);
+    return event && typeof event === "object" && event.hook_event_name === "SessionStart" ? event : null;
+  } catch {
+    return null;
+  }
+}
+
+// A part slot accepts only a spool written by this wake's part 1: the slots
+// start together, so one written well before this slot started belongs to an
+// earlier wake of the same session (resume, compact).
+const SPOOL_SKEW_MS = 10_000;
+const SPOOL_MAX_AGE_MS = 24 * 60 * 60 * 1000;
+// Bounded wait for part 1, inside install.sh's 10s hook timeout.
+const PART_WAIT_MS = Number(process.env.CIRCADIAN_WAKE_PART_WAIT_MS) || 8000;
+
+/** `wake.ts --part k` (k >= 2): print part k of this session's wake, as
+ * part 1 published it. Composes nothing and writes nothing but telemetry. */
+async function runPart(k: number): Promise<void> {
+  const started = Date.now();
+  const raw = await readStdin();
+  if (process.env.CIRCADIAN_INTERNAL === "1") process.exit(0);
+  const event = sessionStartEvent(raw);
+  // Parts exist only to carry a Claude Code wake past its hook-output cap;
+  // any other caller gets the whole wake from `wake.ts` itself.
+  if (!event) process.exit(0);
+  const path = spoolPath(CIRCADIAN_HOME, event.session_id || "");
+  const spool = await waitForSpool(path, started - SPOOL_SKEW_MS, PART_WAIT_MS);
+  if (!spool) {
+    degraded({
+      process: "wake", phase: "part", correlation_id: correlation("wake"),
+      summary: `wake part ${k} found no spool from part 1 within ${PART_WAIT_MS}ms — part not delivered`,
+      context: { part: k, spool: path, wait_ms: PART_WAIT_MS },
+      cause: "wake.ts (part 1) did not publish this session's spool in time (it failed, exited early, or is slow)",
+      next_action: "inspect logs/circadian.events.jsonl for this session's wake events; the full wake is in the spool once part 1 writes it",
+    });
+    process.exit(0);
+  }
+  const out = outputForSlot(spool.outputs, k, WAKE_PARTS);
+  if (out) process.stdout.write(out + "\n");
+  process.exit(0);
 }
 
 /** Detect this session's tier (or null for operator/unstamped sessions).
@@ -72,7 +124,7 @@ function detectFleetTier(): { tier: FleetTier | null; reason: string } {
 
 async function runHook(): Promise<void> {
   const corr = correlation("wake");
-  await readStdin();
+  const hookEvent = sessionStartEvent(await readStdin());
 
   // Claude sessions spawned BY the metabolism itself (sleep/REM drafting set
   // CIRCADIAN_INTERNAL=1) must not receive the injection: the mind payload
@@ -337,8 +389,40 @@ async function runHook(): Promise<void> {
     });
   }
 
+  // Claude Code caps each hook output at HOOK_OUTPUT_LIMIT characters and
+  // shows only a 2KB preview of anything larger (circ-29), so a Claude Code
+  // wake is cut into ordered parts: this process prints part 1 (the scoped
+  // sections) and publishes every part to the spool for the `--part k` slots.
+  // Everyone else (pi, a manual run) gets the whole payload in one piece.
+  let outputs = [finalPayload];
+  if (hookEvent) {
+    const spool = spoolPath(CIRCADIAN_HOME, hookEvent.session_id || "");
+    outputs = hookOutputs(finalPayload, spool);
+    try {
+      pruneSpool(spoolDir(CIRCADIAN_HOME), SPOOL_MAX_AGE_MS);
+      writeSpool(spool, outputs);
+    } catch (e) {
+      degraded({
+        process: "wake", phase: "parts", correlation_id: corr,
+        summary: `could not publish the wake spool — parts 2..${outputs.length} will not be delivered`,
+        context: { spool, parts: outputs.length },
+        cause: (e as Error).message,
+        next_action: `verify ${spoolDir(CIRCADIAN_HOME)} is writable`,
+      });
+    }
+    if (outputs.length > WAKE_PARTS) {
+      degraded({
+        process: "wake", phase: "parts", correlation_id: corr,
+        summary: `wake needs ${outputs.length} parts but ${WAKE_PARTS} hook slots exist — the last slot exceeds the ${HOOK_OUTPUT_LIMIT}-character hook cap and arrives as a preview`,
+        context: { parts: outputs.length, slots: WAKE_PARTS, payload_tokens: payloadTokens, spool },
+        cause: "the wake payload outgrew the hook slots (it is also over CAP_TOKENS if this fires)",
+        next_action: "compost mind content (run rem or trim USER.md/NOW.md) until the payload is back under the cap",
+      });
+    }
+  }
+
   // Deliver the injection. Law 7: wake must always deliver, even when degraded.
-  process.stdout.write(finalPayload + "\n");
+  process.stdout.write(outputForSlot(outputs, 1, WAKE_PARTS) + "\n");
 
   // Scoreboard append (MIND-SPEC schema — kept for status.ts to read).
   try {
@@ -369,6 +453,8 @@ async function runHook(): Promise<void> {
       stale: isStale,
       over_cap: payloadTokens > CAP_TOKENS,
       last_sleep: lastSleepRaw ?? null,
+      hook_parts: hookEvent ? outputs.length : null,
+      part_bytes: hookEvent ? outputs.map((o) => Buffer.byteLength(o, "utf8") + 1) : null,
     },
   });
 
@@ -400,18 +486,27 @@ async function runHook(): Promise<void> {
 // Statusline freshness anchor: every session start rewrites the cached
 // vitals line, so bin/circadian-statusline never serves a line older than
 // the current session. Detached — never delays wake injection.
-refreshStatusline();
-logInvocation({ script: "wake" });
-runHook().catch((e) => {
-  emit({
-    process: "wake",
-    phase: "hook",
-    outcome: "failed",
-    summary: "wake hook threw unexpectedly; injection may be incomplete",
-    context: { error: (e as Error).message },
-    cause: (e as Error).message,
-    next_action:
-      "inspect logs/circadian.events.jsonl for the failed event; verify mind/ files are readable and CIRCADIAN_HOME is set correctly",
+// `wake.ts --part k` is hook slot k of a Claude Code wake (circ-29); plain
+// `wake.ts` is part 1, which composes and delivers the wake.
+const partFlag = process.argv.indexOf("--part");
+const PART = partFlag >= 0 ? Number(process.argv[partFlag + 1]) : 1;
+if (Number.isInteger(PART) && PART >= 2) {
+  logInvocation({ script: "wake", mode: `part-${PART}` });
+  runPart(PART).catch(() => process.exit(0));
+} else {
+  refreshStatusline();
+  logInvocation({ script: "wake" });
+  runHook().catch((e) => {
+    emit({
+      process: "wake",
+      phase: "hook",
+      outcome: "failed",
+      summary: "wake hook threw unexpectedly; injection may be incomplete",
+      context: { error: (e as Error).message },
+      cause: (e as Error).message,
+      next_action:
+        "inspect logs/circadian.events.jsonl for the failed event; verify mind/ files are readable and CIRCADIAN_HOME is set correctly",
+    });
+    process.exit(0);
   });
-  process.exit(0);
-});
+}

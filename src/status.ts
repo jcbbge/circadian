@@ -41,7 +41,7 @@ const SCOREBOARD_PATH = path.join(MIND_DIR, "scoreboard.jsonl");
 
 // Token caps: chars/4 = tokens (MIND-SPEC.md "Token Caps"). No cap listed
 // for episodes/ here — status reports on the four whole-mind files only.
-const CAPS: Record<string, number> = {
+export const CAPS: Record<string, number> = {
   "SELF.md": 6000,
   "USER.md": 2000,
   "NOW.md": 3000,

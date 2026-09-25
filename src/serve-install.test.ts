@@ -3,6 +3,7 @@ import * as fs from "node:fs";
 import * as path from "node:path";
 import * as os from "node:os";
 import { spawnSync } from "node:child_process";
+import { WAKE_PARTS } from "./wake-payload.ts";
 
 test("installer merges MCP registration and Pi extension without clobbering existing settings", () => {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), "circadian-install-mcp-"));
@@ -25,6 +26,9 @@ test("installer merges MCP registration and Pi extension without clobbering exis
     expect(registry.mcpServers.existing.command).toBe("other");
     expect(registry.mcpServers.circadian).toEqual({ command: process.execPath, args: [path.join(install, "src/serve.ts")], env: { CIRCADIAN_HOME: install } });
     expect(settings.hooks.Custom[0].hooks[0].command).toBe("keep");
+    // WAKE is wired as WAKE_PARTS SessionStart slots: part 1, then --part 2..N.
+    const wakeCommands = settings.hooks.SessionStart.flatMap((g: any) => g.hooks.map((h: any) => h.command)).filter((c: string) => c.includes("/src/wake.ts"));
+    expect(wakeCommands).toEqual([`${process.execPath} ${install}/src/wake.ts`, ...Array.from({ length: WAKE_PARTS - 1 }, (_, i) => `${process.execPath} ${install}/src/wake.ts --part ${i + 2}`)]);
     expect(fs.readFileSync(path.join(home, ".pi/agent/extensions/circadian-mind.ts"), "utf8")).toContain(`${install}/src/circadian-mind.ts`);
     expect(run().status).toBe(0);
     expect(JSON.parse(fs.readFileSync(file, "utf8"))).toEqual(settings);
