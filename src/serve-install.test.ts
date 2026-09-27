@@ -30,8 +30,48 @@ test("installer merges MCP registration and Pi extension without clobbering exis
     const wakeCommands = settings.hooks.SessionStart.flatMap((g: any) => g.hooks.map((h: any) => h.command)).filter((c: string) => c.includes("/src/wake.ts"));
     expect(wakeCommands).toEqual([`${process.execPath} ${install}/src/wake.ts`, ...Array.from({ length: WAKE_PARTS - 1 }, (_, i) => `${process.execPath} ${install}/src/wake.ts --part ${i + 2}`)]);
     expect(fs.readFileSync(path.join(home, ".pi/agent/extensions/circadian-mind.ts"), "utf8")).toContain(`${install}/src/circadian-mind.ts`);
+    // The vitals strip (R11) and the graze gate, as the MacBook is wired.
+    const commands = (evt: string) => (settings.hooks[evt] ?? []).flatMap((g: any) => g.hooks.map((h: any) => h.command));
+    const gate = `CIRCADIAN_HOME=${install} CIRCADIAN_BUN_BIN=${process.execPath} ${install}/bin/circadian-graze-gate`;
+    expect(commands("SessionStart")).toContain(`${process.execPath} ${install}/src/status.ts --line`);
+    expect(settings.statusLine).toEqual({ type: "command", command: `CIRCADIAN_HOME=${install} ${install}/bin/circadian-statusline` });
+    expect(commands("PostToolUse")).toEqual([gate]);
+    expect(commands("UserPromptSubmit")).toEqual([gate]);
     expect(run().status).toBe(0);
     expect(JSON.parse(fs.readFileSync(file, "utf8"))).toEqual(settings);
     expect(JSON.parse(fs.readFileSync(path.join(home, ".claude.json"), "utf8"))).toEqual(registry);
+  } finally { fs.rmSync(root, { recursive: true, force: true }); }
+});
+
+test("installer upgrades its own direct graze hook to the gate, keeps other graze wiring and an operator statusLine", () => {
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), "circadian-install-gate-"));
+  try {
+    const home = path.join(root, "home"), install = path.join(root, "install"), bin = path.join(root, "bin");
+    fs.mkdirSync(path.join(home, ".claude"), { recursive: true });
+    fs.mkdirSync(bin);
+    fs.cpSync(path.join(import.meta.dir, "..", "templates"), path.join(install, "templates"), { recursive: true });
+    fs.writeFileSync(path.join(bin, "curl"), "#!/bin/sh\nexit 1\n", { mode: 0o755 });
+    fs.writeFileSync(path.join(bin, "systemctl"), "#!/bin/sh\nexit 0\n", { mode: 0o755 });
+    const direct = `${process.execPath} ${install}/src/graze.ts`, handWired = "bun /elsewhere/src/graze.ts --custom";
+    fs.writeFileSync(path.join(home, ".claude", "settings.json"), JSON.stringify({
+      statusLine: { type: "command", command: "my-statusline" },
+      hooks: {
+        PostToolUse: [{ hooks: [{ type: "command", command: direct, timeout: 10 }] }],
+        UserPromptSubmit: [{ hooks: [{ type: "command", command: handWired }] }],
+      },
+    }));
+    const env = { ...process.env, HOME: home, XDG_CONFIG_HOME: path.join(root, "config"), XDG_DATA_HOME: path.join(root, "data"), XDG_CACHE_HOME: path.join(root, "cache"), CIRCADIAN_HOME: install, CIRCADIAN_BUN_BIN: process.execPath, CIRCADIAN_USER_NAME: "Tester", GIT_AUTHOR_NAME: "Test", GIT_COMMITTER_NAME: "Test", GIT_AUTHOR_EMAIL: "test@example.invalid", GIT_COMMITTER_EMAIL: "test@example.invalid", PATH: `${bin}:${process.env.PATH}` };
+    const run = () => spawnSync("bash", [path.join(import.meta.dir, "..", "install.sh")], { env, encoding: "utf8" });
+    expect(run().status).toBe(0);
+    const file = path.join(home, ".claude", "settings.json");
+    const settings = JSON.parse(fs.readFileSync(file, "utf8"));
+    const commands = (evt: string) => (settings.hooks[evt] ?? []).flatMap((g: any) => g.hooks.map((h: any) => h.command));
+    const gate = `CIRCADIAN_HOME=${install} CIRCADIAN_BUN_BIN=${process.execPath} ${install}/bin/circadian-graze-gate`;
+    expect(commands("PostToolUse")).toEqual([gate]);
+    expect(settings.hooks.PostToolUse[0].hooks[0].timeout).toBe(10);
+    expect(commands("UserPromptSubmit")).toEqual([handWired]);
+    expect(settings.statusLine).toEqual({ type: "command", command: "my-statusline" });
+    expect(run().status).toBe(0);
+    expect(JSON.parse(fs.readFileSync(file, "utf8"))).toEqual(settings);
   } finally { fs.rmSync(root, { recursive: true, force: true }); }
 });

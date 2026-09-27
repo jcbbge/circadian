@@ -9,7 +9,9 @@
 #   2. scaffolds $CIRCADIAN_HOME/mind/ from templates/ (personalizing USER.md)
 #   3. inits the mind/ git repo (no remote, ever — it holds private memory)
 #   4. installs the REM launchd job (macOS) or systemd user timer (Linux)
-#   5. prints the exact Claude Code hook config to add (does not edit it blind)
+#   5. merges the Claude Code hooks, status strip and statusLine into
+#      settings.json (only circadian's own direct graze command is upgraded
+#      in place, to the graze gate)
 #
 # Usage:
 #   ./install.sh                 # interactive: prompts for your name
@@ -256,13 +258,18 @@ SETTINGS="$HOME/.claude/settings.json"
 WAKE_CMD="$BUN_BIN $CIRCADIAN_HOME/src/wake.ts"
 SLEEP_CMD="$BUN_BIN $CIRCADIAN_HOME/src/sleep.ts"
 GRAZE_CMD="$BUN_BIN $CIRCADIAN_HOME/src/graze.ts"
+# The gate and the statusline are shell (no runtime boot); they find the
+# program through CIRCADIAN_HOME, so the command carries it explicitly.
+GATE_CMD="CIRCADIAN_HOME=$CIRCADIAN_HOME CIRCADIAN_BUN_BIN=$BUN_BIN $CIRCADIAN_HOME/bin/circadian-graze-gate"
+STATUS_CMD="$BUN_BIN $CIRCADIAN_HOME/src/status.ts --line"
+STATUSLINE_CMD="CIRCADIAN_HOME=$CIRCADIAN_HOME $CIRCADIAN_HOME/bin/circadian-statusline"
 
 mkdir -p "$(dirname "$SETTINGS")"
 [ -f "$SETTINGS" ] || echo '{}' > "$SETTINGS"
 cp "$SETTINGS" "$SETTINGS.bak-$(date +%s)"
 
-"$BUN_BIN" - "$SETTINGS" "$WAKE_CMD" "$SLEEP_CMD" "$GRAZE_CMD" "$BUN_BIN" "$CIRCADIAN_HOME" "$SCRIPT_DIR" <<'JS'
-const [file, wakeCmd, sleepCmd, grazeCmd, bunBin, home, scriptDir] = Bun.argv.slice(2);
+"$BUN_BIN" - "$SETTINGS" "$WAKE_CMD" "$SLEEP_CMD" "$GRAZE_CMD" "$BUN_BIN" "$CIRCADIAN_HOME" "$SCRIPT_DIR" "$GATE_CMD" "$STATUS_CMD" "$STATUSLINE_CMD" <<'JS'
+const [file, wakeCmd, sleepCmd, grazeCmd, bunBin, home, scriptDir, gateCmd, statusCmd, statuslineCmd] = Bun.argv.slice(2);
 const { WAKE_PARTS } = await import(scriptDir + "/src/wake-payload.ts");
 const s = JSON.parse(await Bun.file(file).text() || "{}");
 s.hooks ??= {};
@@ -288,9 +295,20 @@ if (Array.isArray(s.hooks.Stop)) {
 ensure("SessionStart", wakeCmd, "/src/wake.ts", 10, hasCmd);
 for (let k = 2; k <= WAKE_PARTS; k++)
   ensure("SessionStart", `${wakeCmd} --part ${k}`, `/src/wake.ts --part ${k}`, 10, hasCmd);
+// The vitals strip (R11): printed into context at SessionStart, and rendered
+// by the zero-fork statusline reader. An operator's own statusLine is kept.
+ensure("SessionStart", statusCmd, "/src/status.ts --line", 10);
+s.statusLine ??= { type: "command", command: statuslineCmd };
 ensure("SessionEnd", sleepCmd, "/src/sleep.ts", 15);
-ensure("PostToolUse", grazeCmd, "/src/graze.ts", 10);
-ensure("UserPromptSubmit", grazeCmd, "/src/graze.ts", 10);
+// GRAZE through the shell gate: it execs graze.ts only when a checkpoint is
+// due, instead of booting a runtime on every tool call. Our own direct
+// graze.ts command is upgraded in place; any other graze wiring is left alone.
+const hasGraze = evt => has(evt, "/src/graze.ts") || has(evt, "circadian-graze-gate");
+for (const evt of ["PostToolUse", "UserPromptSubmit"]) {
+  for (const g of s.hooks[evt] || []) for (const h of g.hooks || [])
+    if ((h.command || "").trim() === grazeCmd) h.command = gateCmd;
+  ensure(evt, gateCmd, "", 10, hasGraze);
+}
 await Bun.write(file, JSON.stringify(s, null, 2) + "\n");
 // Claude Code's user-scope MCP registry is ~/.claude.json (not hooks settings.json).
 // Preserve other servers and an existing operator-customized circadian entry.
@@ -299,7 +317,7 @@ const user = JSON.parse(await Bun.file(registry).text().catch(() => "{}") || "{}
 user.mcpServers ??= {};
 user.mcpServers.circadian ??= { command: bunBin, args: [home + "/src/serve.ts"], env: { CIRCADIAN_HOME: home } };
 await Bun.write(registry, JSON.stringify(user, null, 2) + "\n");
-console.log("circadian: hooks and MCP wired — SessionStart->wake (parts 1-${WAKE_PARTS}), SessionEnd->sleep, PostToolUse+UserPromptSubmit->graze");
+console.log(`circadian: hooks and MCP wired — SessionStart->wake (parts 1-${WAKE_PARTS}) + status strip, SessionEnd->sleep, PostToolUse+UserPromptSubmit->graze gate, statusLine`);
 JS
 
 # ---- 6. Pi.dev extension wiring (idempotent) ------------------------------
