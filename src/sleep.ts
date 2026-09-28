@@ -1166,9 +1166,14 @@ async function draftSessionEpisode(opts: {
   publish(MIND, {
     id: `sleep-${createHash("sha256").update(sessionId).digest("hex")}`,
     subject: `sleep: ${sessionId}`,
-    files: backfilled ? { [`episodes/${filename}`]: episodeContent } : { [`episodes/${filename}`]: episodeContent, [nowRelative]: nowContent },
+    // A lane session (a worker, a piece's step) leaves its episode but never rewrites NOW: NOW is
+    // the next move every session in the scope wakes to, and a worker's leftover step is not it.
+    files: backfilled || opts.lane ? { [`episodes/${filename}`]: episodeContent } : { [`episodes/${filename}`]: episodeContent, [nowRelative]: nowContent },
     appends: backfilled ? {} : { "scoreboard.jsonl": sleepLine + verdictLine },
   });
+  if (opts.lane && !backfilled) idle({ process: "sleep", phase: "now", correlation_id: corr, session_id: sessionId,
+    summary: `lane session (${opts.lane}): episode written, NOW left for the operator's sessions`,
+    context: { lane: opts.lane, scope, now_path: nowRelative } });
   if (!backfilled && verdict.event) ok({ process: "sleep", phase: "implicit-verdict", correlation_id: corr, session_id: sessionId,
     summary: `implicit ok verdict recorded: ${verdict.reason}`, context: { basis: verdict.event.basis } });
   else if (!backfilled) idle({ process: "sleep", phase: "implicit-verdict", correlation_id: corr, session_id: sessionId,
