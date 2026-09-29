@@ -13,6 +13,9 @@ test("a lane session writes its episode but leaves NOW alone; an operator sessio
     mkdirSync(episodes, { recursive: true }); mkdirSync(join(home, "logs"));
     for (const [file, content] of Object.entries({ "SELF.md": "", "NOW.md": "untouched\n", "scoreboard.jsonl": "" })) writeFileSync(join(mind, file), content);
     const genv = { ...process.env, GIT_AUTHOR_NAME: "Test", GIT_COMMITTER_NAME: "Test", GIT_AUTHOR_EMAIL: "test@example.invalid", GIT_COMMITTER_EMAIL: "test@example.invalid" };
+    // A worker's own stamps must not leak in: a pinned CIRCADIAN_SCOPE sends
+    // the operator session's NOW to now/<scope>.md instead of NOW.md.
+    for (const k of ["CIRCADIAN_SCOPE", "CIRCADIAN_ROLE", "CIRCADIAN_LANE", "CIRCADIAN_SESSION", "CIRCADIAN_INTERNAL"]) delete genv[k];
     const git = (...args: string[]) => spawnSync("git", ["-C", mind, ...args], { encoding: "utf8", env: genv });
     expect(git("init", "-q", "-b", "main").status).toBe(0); expect(git("add", "-A").status).toBe(0); expect(git("commit", "-qm", "seed").status).toBe(0);
     const transcript = join(root, ".claude", "projects", "-tmp-fixture", "session.jsonl");
