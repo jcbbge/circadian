@@ -12,7 +12,14 @@
 import { mkdirSync, readFileSync, readdirSync, renameSync, statSync, unlinkSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 
-export type Spool = { written_at: number; outputs: string[] };
+/** `scope` is the scope this wake resolved (the SessionStart notice names
+ * it); spools written before it existed carry none, and readers accept that. */
+export type Spool = { written_at: number; outputs: string[]; scope?: string };
+
+// A reader accepts only a spool written by this wake's part 1: the
+// SessionStart slots start together, so one written well before the reader
+// started belongs to an earlier wake of the same session (resume, compact).
+export const SPOOL_SKEW_MS = 10_000;
 
 export function spoolDir(circadianHome: string): string {
   return join(circadianHome, "logs", "wake-parts");
@@ -25,10 +32,10 @@ export function spoolPath(circadianHome: string, sessionId: string): string {
 }
 
 /** Atomic write (tmp + rename): a reading slot sees the whole spool or none. */
-export function writeSpool(path: string, outputs: string[], nowMs = Date.now()): void {
+export function writeSpool(path: string, outputs: string[], nowMs = Date.now(), scope?: string): void {
   mkdirSync(join(path, ".."), { recursive: true });
   const tmp = `${path}.${process.pid}.tmp`;
-  writeFileSync(tmp, JSON.stringify({ written_at: nowMs, outputs } satisfies Spool));
+  writeFileSync(tmp, JSON.stringify({ written_at: nowMs, outputs, ...(scope ? { scope } : {}) } satisfies Spool));
   renameSync(tmp, path);
 }
 

@@ -35,7 +35,7 @@ import {
   WAKE_PARTS,
   type FleetTier,
 } from "./wake-payload.ts";
-import { outputForSlot, pruneSpool, spoolDir, spoolPath, waitForSpool, writeSpool } from "./wake-parts.ts";
+import { SPOOL_SKEW_MS, outputForSlot, pruneSpool, spoolDir, spoolPath, waitForSpool, writeSpool } from "./wake-parts.ts";
 
 // Path resolution (single-source, distributable): CIRCADIAN_HOME overrides;
 // otherwise ~/circadian. The mind data lives at $CIRCADIAN_HOME/mind. This is
@@ -67,10 +67,6 @@ function sessionStartEvent(raw: string): { session_id?: string } | null {
   }
 }
 
-// A part slot accepts only a spool written by this wake's part 1: the slots
-// start together, so one written well before this slot started belongs to an
-// earlier wake of the same session (resume, compact).
-const SPOOL_SKEW_MS = 10_000;
 const SPOOL_MAX_AGE_MS = 24 * 60 * 60 * 1000;
 // Bounded wait for part 1, inside install.sh's 10s hook timeout.
 const PART_WAIT_MS = Number(process.env.CIRCADIAN_WAKE_PART_WAIT_MS) || 8000;
@@ -400,7 +396,7 @@ async function runHook(): Promise<void> {
     outputs = hookOutputs(finalPayload, spool);
     try {
       pruneSpool(spoolDir(CIRCADIAN_HOME), SPOOL_MAX_AGE_MS);
-      writeSpool(spool, outputs);
+      writeSpool(spool, outputs, Date.now(), scope);
     } catch (e) {
       // No spool, no parts 2..n: print the whole payload instead. Claude Code
       // then keeps all of it in its own saved file behind a preview that

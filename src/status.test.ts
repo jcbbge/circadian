@@ -8,7 +8,11 @@ import * as fs from "fs";
 import * as path from "path";
 import { tmpdir } from "os";
 import { spawnSync } from "child_process";
+import { spawn } from "child_process";
 import { computeVerdictStreak, populationVitalsSegment, type ScoreEvent, type PopulationVitalsSnapshot } from "./status.ts";
+import { spoolPath, writeSpool } from "./wake-parts.ts";
+import { wakeNotice, payloadScope, WAKE_NOT_DELIVERED } from "./wake-notice.ts";
+import { WAKE_PARTS } from "./wake-payload.ts";
 
 const BUN_BIN = process.execPath;
 const STATUS_SCRIPT = path.join(import.meta.dir, "status.ts");
@@ -30,10 +34,10 @@ afterEach(() => {
   }
 });
 
-function runStatusLine(circadianHome: string): { status: number | null; stdout: string } {
-  const r = spawnSync(BUN_BIN, [STATUS_SCRIPT, "--line"], {
-    env: { ...process.env, CIRCADIAN_HOME: circadianHome },
-    input: "",
+function runStatusLine(circadianHome: string, input = "", args: string[] = [], extraEnv: Record<string, string> = {}): { status: number | null; stdout: string } {
+  const r = spawnSync(BUN_BIN, [STATUS_SCRIPT, "--line", ...args], {
+    env: { ...process.env, CIRCADIAN_HOME: circadianHome, ...extraEnv },
+    input,
     encoding: "utf8",
   });
   return { status: r.status, stdout: r.stdout ?? "" };
@@ -457,4 +461,183 @@ describe("status.ts --line CLI — sandboxed", () => {
     const after = fs.readFileSync(eventsLogPath, "utf8");
     expect(after).toBe(before);
   });
+});
+
+// ---------------------------------------------------------------------
+// The wake notice (brief 22): as a Claude Code SessionStart hook, --line
+// prints the operator's notice (systemMessage) and the unchanged strip
+// (additionalContext); every other --line call prints what it always did.
+// Real subprocesses against a sandboxed CIRCADIAN_HOME and a real spool.
+// ---------------------------------------------------------------------
+describe("wakeNotice (pure)", () => {
+  const strip = "circadian · wake 0m ago · self 10/6000 · rem 0 today";
+
+  test("a delivered wake names scope and parts, then the strip without its leading `circadian · `", () => {
+    expect(wakeNotice({ scope: "arc", parts: 3 }, strip)).toBe(
+      "circadian · memory loaded · scope arc · 3 of 3 parts · wake 0m ago · self 10/6000 · rem 0 today",
+    );
+  });
+
+  test("a spool with no scope (written before scopes were spooled) says `scope unknown`", () => {
+    expect(wakeNotice({ parts: 1 }, strip)).toStartWith("circadian · memory loaded · scope unknown · 1 of 1 parts · wake");
+  });
+
+  test("more parts than hook slots: only WAKE_PARTS arrive whole, and the count says so", () => {
+    expect(wakeNotice({ scope: "arc", parts: WAKE_PARTS + 1 }, strip)).toContain(`· ${WAKE_PARTS} of ${WAKE_PARTS + 1} parts ·`);
+  });
+
+  test("no wake is the loud line, whatever the strip", () => {
+    expect(wakeNotice(null, strip)).toBe("circadian · WAKE NOT DELIVERED this session · see logs/circadian.events.jsonl");
+    expect(WAKE_NOT_DELIVERED).toBe(wakeNotice(null, ""));
+  });
+
+  test("payloadScope reads the wake's first line, and only that", () => {
+    expect(payloadScope("Resolved scope: circadian\nNext move: land it")).toBe("circadian");
+    expect(payloadScope("Next move: x\nResolved scope: arc")).toBeUndefined();
+  });
+});
+
+describe("status.ts --line as a SessionStart hook — sandboxed", () => {
+  function seedMind(home: string) {
+    fs.mkdirSync(path.join(home, "mind"), { recursive: true });
+    fs.writeFileSync(path.join(home, "mind", "SELF.md"), "# SELF\n");
+    fs.writeFileSync(path.join(home, "mind", "scoreboard.jsonl"), "");
+  }
+  const sessionStart = (sid: string) => JSON.stringify({ session_id: sid, hook_event_name: "SessionStart", source: "startup" });
+  const statusLineEvent = (sid: string) => JSON.stringify({ session_id: sid, model: { id: "m" }, workspace: { current_dir: "/" } });
+  const fast = { CIRCADIAN_NOTICE_WAIT_MS: "300" };
+
+  function parseHookOutput(stdout: string) {
+    const lines = stdout.trim().split("\n");
+    expect(lines.length).toBe(1); // one JSON object on one line
+    return JSON.parse(lines[0]) as { systemMessage: string; hookSpecificOutput: { hookEventName: string; additionalContext: string } };
+  }
+
+  test("this session's spool found: systemMessage is the loaded notice, additionalContext is today's strip unchanged", () => {
+    const home = tmpDir();
+    seedMind(home);
+    writeSpool(spoolPath(home, "sess-1"), ["part 1", "part 2", "part 3"], Date.now(), "arc");
+    const { status, stdout } = runStatusLine(home, sessionStart("sess-1"));
+    expect(status).toBe(0);
+    const out = parseHookOutput(stdout);
+    // The strip exactly as the statusLine renders it for the same session.
+    const strip = runStatusLine(home, statusLineEvent("sess-1")).stdout.trim();
+    expect(strip).toStartWith("circadian · ");
+    expect(out.hookSpecificOutput).toEqual({ hookEventName: "SessionStart", additionalContext: strip });
+    expect(out.systemMessage).toBe(`circadian · memory loaded · scope arc · 3 of 3 parts · ${strip.slice("circadian · ".length)}`);
+  });
+
+  test("a spool without a scope field still counts as delivered: `scope unknown`", () => {
+    const home = tmpDir();
+    seedMind(home);
+    const p = spoolPath(home, "sess-old");
+    fs.mkdirSync(path.dirname(p), { recursive: true });
+    fs.writeFileSync(p, JSON.stringify({ written_at: Date.now(), outputs: ["whole wake"] }));
+    const out = parseHookOutput(runStatusLine(home, sessionStart("sess-old")).stdout);
+    expect(out.systemMessage).toStartWith("circadian · memory loaded · scope unknown · 1 of 1 parts · ");
+  });
+
+  test("no spool for this session: the loud line, still exit 0, strip still carried", () => {
+    const home = tmpDir();
+    seedMind(home);
+    writeSpool(spoolPath(home, "someone-else"), ["x"], Date.now(), "arc");
+    const { status, stdout } = runStatusLine(home, sessionStart("sess-none"), [], fast);
+    expect(status).toBe(0);
+    const out = parseHookOutput(stdout);
+    expect(out.systemMessage).toBe("circadian · WAKE NOT DELIVERED this session · see logs/circadian.events.jsonl");
+    expect(out.hookSpecificOutput.additionalContext).toStartWith("circadian · ");
+  });
+
+  test("an earlier wake's spool for the same session (resume) is not this wake", () => {
+    const home = tmpDir();
+    seedMind(home);
+    writeSpool(spoolPath(home, "sess-resumed"), ["stale"], Date.now() - 60_000, "arc");
+    const out = parseHookOutput(runStatusLine(home, sessionStart("sess-resumed"), [], fast).stdout);
+    expect(out.systemMessage).toBe(WAKE_NOT_DELIVERED);
+  });
+
+  test("the hooks run in parallel: a spool part 1 publishes after the notice starts waiting is still found", async () => {
+    const home = tmpDir();
+    seedMind(home);
+    const child = spawn(BUN_BIN, [STATUS_SCRIPT, "--line"], {
+      env: { ...process.env, CIRCADIAN_HOME: home, CIRCADIAN_NOTICE_WAIT_MS: "5000" },
+      stdio: ["pipe", "pipe", "ignore"],
+    });
+    let stdout = "";
+    child.stdout!.on("data", (d) => (stdout += d));
+    child.stdin!.end(sessionStart("sess-late"));
+    await Bun.sleep(700);
+    writeSpool(spoolPath(home, "sess-late"), ["a", "b"], Date.now(), "concierge");
+    const code = await new Promise<number | null>((done) => child.on("close", done));
+    expect(code).toBe(0);
+    expect(parseHookOutput(stdout).systemMessage).toStartWith("circadian · memory loaded · scope concierge · 2 of 2 parts · ");
+  }, 15000);
+
+  test("statusLine JSON (no hook_event_name) prints the plain strip, not JSON", () => {
+    const home = tmpDir();
+    seedMind(home);
+    writeSpool(spoolPath(home, "sess-sl"), ["x"], Date.now(), "arc");
+    const { status, stdout } = runStatusLine(home, statusLineEvent("sess-sl"));
+    expect(status).toBe(0);
+    expect(stdout).toMatch(/^circadian · [^\n]*\n$/);
+    expect(stdout).toContain("graze 0"); // the session's segments, as before
+    expect(stdout).not.toContain("memory loaded");
+  });
+
+  test("no stdin prints the plain strip, not JSON", () => {
+    const home = tmpDir();
+    seedMind(home);
+    const { stdout } = runStatusLine(home, "");
+    expect(stdout).toMatch(/^circadian · [^\n]*\n$/);
+  });
+
+  test("--write-cache is unchanged even when fed a SessionStart event: strip to logs/.statusline, nothing on stdout", () => {
+    const home = tmpDir();
+    seedMind(home);
+    writeSpool(spoolPath(home, "sess-wc"), ["x"], Date.now(), "arc");
+    const { status, stdout } = runStatusLine(home, sessionStart("sess-wc"), ["--write-cache"], fast);
+    expect(status).toBe(0);
+    expect(stdout).toBe("");
+    const cached = fs.readFileSync(path.join(home, "logs", ".statusline"), "utf8");
+    expect(cached).toMatch(/^circadian · [^\n]*\n$/);
+    expect(cached).not.toContain("memory loaded");
+  });
+
+  test("the SessionStart notice is obs-silent too", () => {
+    const home = tmpDir();
+    seedMind(home);
+    const log = path.join(home, "logs", "circadian.events.jsonl");
+    fs.mkdirSync(path.dirname(log), { recursive: true });
+    fs.writeFileSync(log, "");
+    runStatusLine(home, sessionStart("sess-quiet"), [], fast);
+    expect(fs.readFileSync(log, "utf8")).toBe("");
+  });
+});
+
+describe("wake.ts + status.ts --line, started together like Claude Code's SessionStart hooks", () => {
+  test("the notice names the scope wake resolved and the parts wake spooled", async () => {
+    const home = tmpDir();
+    const mind = path.join(home, "mind"), project = path.join(home, "project");
+    fs.cpSync(path.join(import.meta.dir, "..", "templates"), mind, { recursive: true });
+    fs.mkdirSync(project);
+    fs.writeFileSync(path.join(mind, "scopes.tsv"), `proj\t${project}\tactive\n`);
+    fs.writeFileSync(path.join(mind, "scoreboard.jsonl"), JSON.stringify({ type: "wake", ts: new Date().toISOString(), scope: "proj" }) + "\n");
+    const env: Record<string, string> = { ...(process.env as Record<string, string>), HOME: home, CIRCADIAN_HOME: home,
+      CIRCADIAN_BUN_BIN: "/bin/true", CIRCADIAN_INVOCATION_LEDGER: "off" };
+    for (const k of ["CIRCADIAN_ROLE", "CIRCADIAN_SCOPE", "CIRCADIAN_LANE", "CIRCADIAN_INTERNAL", "CIRCADIAN_SESSION"]) delete env[k];
+    const event = JSON.stringify({ session_id: "sess-e2e", hook_event_name: "SessionStart", source: "startup", cwd: project });
+    const run = (args: string[]) => new Promise<string>((done, failed) => {
+      const child = spawn(BUN_BIN, args, { cwd: project, env, stdio: ["pipe", "pipe", "ignore"] });
+      let out = "";
+      child.stdout!.on("data", (d) => (out += d));
+      child.on("error", failed);
+      child.on("close", () => done(out));
+      child.stdin!.end(event);
+    });
+    const [notice] = await Promise.all([run([STATUS_SCRIPT, "--line"]), run([path.join(import.meta.dir, "wake.ts")])]);
+    const spool = JSON.parse(fs.readFileSync(spoolPath(home, "sess-e2e"), "utf8"));
+    expect(spool.scope).toBe("proj");
+    const n = spool.outputs.length;
+    expect(JSON.parse(notice).systemMessage).toStartWith(`circadian · memory loaded · scope proj · ${n} of ${n} parts · wake `);
+  }, 30000);
 });

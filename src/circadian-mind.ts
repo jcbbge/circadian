@@ -32,6 +32,7 @@ import { join, resolve } from "node:path";
 import { ok, degraded, correlation } from "./obs.ts";
 import { callTool } from "./serve.ts";
 import { resolveScope, sessionLocation } from "./scopes.ts";
+import { payloadScope, wakeNotice } from "./wake-notice.ts";
 
 const CIRCADIAN_HOME = process.env.CIRCADIAN_HOME || join(homedir(), "circadian");
 const BUN_BIN = process.env.CIRCADIAN_BUN_BIN || join(homedir(), ".bun/bin/bun");
@@ -86,6 +87,45 @@ export function acquireNativeSessionFile(
   }
 }
 
+/** Run a circadian script from the install and collect its stdout. */
+function runScript(args: string[], input?: string): Promise<{ code: number; stdout: string; stderr: string }> {
+  return new Promise((done, failed) => {
+    const child = spawn(BUN_BIN, ["run", join(CIRCADIAN_HOME, "src", args[0]), ...args.slice(1)], {
+      env: { ...process.env, CIRCADIAN_HOME, CIRCADIAN_BUN_BIN: BUN_BIN },
+      stdio: [input === undefined ? "ignore" : "pipe", "pipe", "pipe"],
+    });
+    let stdout = "";
+    let stderr = "";
+    child.stdout?.on("data", (d) => (stdout += d.toString()));
+    child.stderr?.on("data", (d) => (stderr += d.toString()));
+    child.on("error", failed);
+    child.on("close", (code) => done({ code: code ?? -1, stdout, stderr }));
+    child.stdin?.end(input);
+  });
+}
+
+/** The operator's one line at session start (wake-notice.ts): Pi shows the
+ * wake to the model, not to the person, so the notice goes to ctx.ui.notify.
+ * The strip is `status.ts --line` for this session, as the statusLine shows it. */
+async function notifyWake(
+  ctx: { hasUI: boolean; ui: { notify(message: string, type?: "info" | "warning" | "error"): void } },
+  sessionId: string,
+  payload: string | null,
+): Promise<void> {
+  if (!ctx.hasUI) return;
+  if (!payload) {
+    ctx.ui.notify(wakeNotice(null, ""), "error");
+    return;
+  }
+  let strip = "";
+  try {
+    strip = (await runScript(["status.ts", "--line"], JSON.stringify({ session_id: sessionId }))).stdout.trim();
+  } catch {
+    // the strip decorates the notice; the notice still says memory loaded
+  }
+  ctx.ui.notify(wakeNotice({ scope: payloadScope(payload), parts: 1 }, strip), "info");
+}
+
 export default function circadianMind(pi: ExtensionAPI) {
   // Module-level state for this extension instance.
   // On /reload, the extension is re-instantiated, so these reset.
@@ -136,22 +176,12 @@ export default function circadianMind(pi: ExtensionAPI) {
     const sessionId = ctx.sessionManager.getSessionId();
     const transcriptPath = ctx.sessionManager.getSessionFile();
 
+    let delivered: string | null = null;
     try {
-      const child = spawn(BUN_BIN, ["run", join(CIRCADIAN_HOME, "src/wake.ts")], {
-        env: { ...process.env, CIRCADIAN_HOME, CIRCADIAN_BUN_BIN: BUN_BIN },
-        stdio: ["ignore", "pipe", "pipe"],
-      });
-
-      let stdout = "";
-      let stderr = "";
-      child.stdout?.on("data", (d) => (stdout += d.toString()));
-      child.stderr?.on("data", (d) => (stderr += d.toString()));
-
-      const exitCode = await new Promise<number>((resolve) => {
-        child.on("close", resolve);
-      });
+      const { code: exitCode, stdout, stderr } = await runScript(["wake.ts"]);
 
       if (stdout) {
+        delivered = stdout;
         wakePayload = stdout;
         ok({
           process: "wake",
@@ -196,6 +226,7 @@ export default function circadianMind(pi: ExtensionAPI) {
         next_action: "verify CIRCADIAN_HOME and BUN_BIN are correct in the environment",
       });
     }
+    await notifyWake(ctx, sessionId, delivered);
   });
 
   // Inject the wake payload as a persistent message on the first agent start.

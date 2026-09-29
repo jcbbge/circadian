@@ -440,6 +440,21 @@ async function runHook(): Promise<void> {
     if (!stat.isFile()) throw new Error("native transcript_path is not a regular file");
     tsize = stat.size;
   } catch (error) {
+    // A session nobody prompted leaves no transcript and no graze state
+    // (graze leaves meals/.<session_id>.state.json once it has seen the
+    // session's transcript): nothing happened, so nothing is missing. A
+    // transcript gone after graze saw it IS lost history, and stays degraded.
+    const sid = typeof evt?.session_id === "string" ? evt.session_id : "";
+    if (transcriptPath && sid && (error as NodeJS.ErrnoException).code === "ENOENT" &&
+        !existsSync(join(MIND, "meals", `.${sid}.state.json`))) {
+      ok({
+        process: "sleep", phase: "session-end", correlation_id: correlation("sleep"),
+        session_id: sid,
+        summary: "no transcript: session was never prompted; nothing to sleep on",
+        context: { transcript_path: transcriptPath },
+      });
+      process.exit(0);
+    }
     degraded({
       process: "sleep", phase: "session-end", correlation_id: correlation("sleep"),
       session_id: evt?.session_id,

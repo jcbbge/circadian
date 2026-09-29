@@ -29,6 +29,8 @@ import { createHash } from "crypto";
 import { ok, degraded, correlation } from "./obs.ts";
 import { renderRedundancy } from "./redundancy.ts";
 import { readAtoms, readLedger } from "./atoms.ts";
+import { SPOOL_SKEW_MS, spoolPath, waitForSpool } from "./wake-parts.ts";
+import { wakeNotice } from "./wake-notice.ts";
 
 // CIRCADIAN_HOME overrides; default ~/circadian. See wake.ts for the contract.
 const CIRCADIAN_HOME = process.env.CIRCADIAN_HOME || path.join(homedir(), "circadian");
@@ -473,25 +475,38 @@ function renderStatus(vitals: ReturnType<typeof collectVitals>) {
 // ---------------------------------------------------------------------------
 // --line: the one-line vitals strip. Consumed by two harness surfaces that
 // both pass hook JSON on stdin (session_id included): the SessionStart hook
-// (visible at the top of every session, next to the wake injection) and the
-// Claude Code statusLine (persistently visible, so the end-of-session state
-// and the session diff are always on screen). Read-only render of state other
-// processes already deposited — it makes no decision and mutates nothing, so
-// it does NOT emit to the obs ledger: the statusline re-runs many times a
-// minute and would bury real events under render noise (the same jam Law 9
-// exists to surface, caused by the instrument built to satisfy it).
+// and the Claude Code statusLine (persistently visible, so the end-of-session
+// state and the session diff are always on screen). Claude Code adds plain
+// SessionStart stdout to the MODEL's context only — the operator never sees
+// it — so as a SessionStart hook --line prints JSON instead: the strip as
+// additionalContext (the model's copy, unchanged) and the wake notice as
+// systemMessage, the operator's one line that memory loaded or did not
+// (wake-notice.ts, brief 22). Read-only render of state other processes
+// already deposited — it makes no decision and mutates nothing, so it does
+// NOT emit to the obs ledger: the statusline re-runs many times a minute and
+// would bury real events under render noise (the same jam Law 9 exists to
+// surface, caused by the instrument built to satisfy it). A wake that was not
+// delivered has already emitted its own events; the notice points at them.
 // ---------------------------------------------------------------------------
 
-function sessionIdFromStdin(): string | null {
+type HookEvent = { session_id?: unknown; hook_event_name?: unknown };
+
+/** The hook event on stdin, parsed once (stdin drains once), or null when
+ * there is none (a TTY, empty input, not JSON). */
+function hookEventFromStdin(): HookEvent | null {
   try {
     if (process.stdin.isTTY) return null;
     const raw = fs.readFileSync(0, "utf8");
     if (!raw.trim()) return null;
     const j = JSON.parse(raw);
-    return typeof j.session_id === "string" ? j.session_id : null;
+    return j && typeof j === "object" ? (j as HookEvent) : null;
   } catch {
     return null;
   }
+}
+
+function sessionIdOf(event: HookEvent | null): string | null {
+  return typeof event?.session_id === "string" ? event.session_id : null;
 }
 
 /** One pass over logs/circadian.events.jsonl computing BOTH the graze
@@ -699,7 +714,7 @@ function buildLine(vitals: ReturnType<typeof collectVitals>, scoreboard: ScoreEv
   return `circadian · ${parts.join(" · ")}`;
 }
 
-/** Print the strip (SessionStart hook + any direct `--line` call). */
+/** Print the strip (the statusLine, or any direct `--line` call). */
 function renderLine(
   vitals: ReturnType<typeof collectVitals>,
   scoreboard: ScoreEvent[],
@@ -718,7 +733,7 @@ const STATUSLINE_CACHE = path.join(CIRCADIAN_HOME, "logs", ".statusline");
 export function writeStatuslineCache(): void {
   try {
     const scoreboard = loadScoreboard();
-    const line = buildLine(collectVitals(scoreboard), scoreboard, sessionIdFromStdin());
+    const line = buildLine(collectVitals(scoreboard), scoreboard, sessionIdOf(hookEventFromStdin()));
     fs.mkdirSync(path.dirname(STATUSLINE_CACHE), { recursive: true });
     const tmp = `${STATUSLINE_CACHE}.${process.pid}.tmp`;
     fs.writeFileSync(tmp, line + "\n");
@@ -728,7 +743,28 @@ export function writeStatuslineCache(): void {
   }
 }
 
+// Bounded wait for wake part 1 to publish this session's spool: the
+// SessionStart hooks run in parallel, and this one must finish inside
+// install.sh's 10s hook timeout.
+const NOTICE_WAIT_MS = Number(process.env.CIRCADIAN_NOTICE_WAIT_MS) || 6000;
+
+/** `--line` as a Claude Code SessionStart hook: one JSON object carrying the
+ * strip to the model (additionalContext, unchanged) and the wake notice to
+ * the operator (systemMessage). The notice reads this wake's spool — the
+ * only record that part 1 delivered, and of how many parts and which scope. */
+async function printSessionStartNotice(sessionId: string | null, startedMs: number): Promise<void> {
+  const spool = await waitForSpool(spoolPath(CIRCADIAN_HOME, sessionId || ""), startedMs - SPOOL_SKEW_MS, NOTICE_WAIT_MS);
+  const scoreboard = loadScoreboard();
+  const strip = buildLine(collectVitals(scoreboard), scoreboard, sessionId);
+  const notice = wakeNotice(spool ? { scope: spool.scope, parts: spool.outputs.length } : null, strip);
+  console.log(JSON.stringify({
+    systemMessage: notice,
+    hookSpecificOutput: { hookEventName: "SessionStart", additionalContext: strip },
+  }));
+}
+
 function main() {
+  const started = Date.now();
   const args = process.argv.slice(2);
   const corr = correlation("status");
 
@@ -740,8 +776,13 @@ function main() {
       writeStatuslineCache();
       return;
     }
+    const event = hookEventFromStdin();
+    if (event?.hook_event_name === "SessionStart") {
+      void printSessionStartNotice(sessionIdOf(event), started);
+      return;
+    }
     const scoreboard = loadScoreboard();
-    renderLine(collectVitals(scoreboard), scoreboard, sessionIdFromStdin());
+    renderLine(collectVitals(scoreboard), scoreboard, sessionIdOf(event));
     return;
   }
 
