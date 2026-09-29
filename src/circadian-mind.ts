@@ -100,6 +100,10 @@ function runScript(args: string[], input?: string): Promise<{ code: number; stdo
     child.stderr?.on("data", (d) => (stderr += d.toString()));
     child.on("error", failed);
     child.on("close", (code) => done({ code: code ?? -1, stdout, stderr }));
+    // A child that dies before reading its stdin makes the pipe error; the
+    // child's own error/close above already report it, and an unhandled
+    // stream error would take down the Pi process instead.
+    child.stdin?.on("error", (e) => (stderr += `stdin: ${e.message}\n`));
     child.stdin?.end(input);
   });
 }
