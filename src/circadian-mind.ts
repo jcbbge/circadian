@@ -76,8 +76,8 @@ export function acquireNativeSessionFile(
     }
     return { kind: "persisted", path, size: stat.size };
   } catch (error) {
-    // Pi delays creating its native file until the first assistant message.
-    // Only its in-memory entries can distinguish unused sessions from lost history.
+    // A native file may not exist yet. Only the in-memory entries can
+    // distinguish unused sessions from conversation history awaiting persistence.
     if ((error as NodeJS.ErrnoException).code === "ENOENT" &&
         sessionManager.getEntries().every((entry) =>
           entry.type === "model_change" || entry.type === "thinking_level_change" || entry.type === "session_info")) {

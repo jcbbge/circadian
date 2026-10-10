@@ -9,6 +9,9 @@ test("fresh Linux install enables a visible persistent twice-daily user timer; r
   try {
     const home = path.join(root, "home"), config = path.join(root, "config"), install = path.join(root, "install"), bin = path.join(root, "bin");
     fs.mkdirSync(bin); fs.mkdirSync(home);
+    // Exercise the Linux branch on either host without reaching a real scheduler.
+    fs.writeFileSync(path.join(bin, "uname"), "#!/bin/sh\necho Linux\n", { mode: 0o755 });
+    fs.writeFileSync(path.join(bin, "launchctl"), "#!/bin/sh\nexit 99\n", { mode: 0o755 });
     fs.cpSync(path.join(import.meta.dir, "..", "templates"), path.join(install, "templates"), { recursive: true });
     fs.writeFileSync(path.join(bin, "curl"), "#!/bin/sh\nexit 1\n", { mode: 0o755 });
     fs.writeFileSync(path.join(bin, "systemctl"), `#!/bin/sh\necho "$*" >> '${root}/systemctl.log'\nif [ "$2" = list-timers ]; then [ -f '${root}/enabled' ] && echo circadian-rem.timer; fi\nif [ "$2" = enable ]; then touch '${root}/enabled'; fi\n`, { mode: 0o755 });

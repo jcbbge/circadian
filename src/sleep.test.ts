@@ -4,7 +4,7 @@
 // scoreboard and appending the verdict — happens in checkImplicitOk, which
 // this suite does not need to exercise to prove the decision logic).
 import { describe, test, expect } from "bun:test";
-import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { mkdirSync, mkdtempSync, readFileSync, realpathSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { spawnSync } from "node:child_process";
@@ -147,7 +147,7 @@ describe("session-end after worktree teardown", () => {
         for (let i = 0; i < 100; i++) {
           try { entry = JSON.parse(readFileSync(queue, "utf8").trim()); break; } catch { await Bun.sleep(100); }
         }
-        expect(entry).toMatchObject({ session_id, transcript_path: transcript, scope: "fixture", attempts: 0 });
+        expect(entry).toMatchObject({ session_id, transcript_path: realpathSync(transcript), scope: "fixture", attempts: 0 });
         expect(entry.last_error).toMatch(exception ? /EISDIR/ : /LLM down:/);
         expect(readFileSync(join(home, "logs", "sleep.log"), "utf8")).toContain(exception ? "EXCEPTION" : "no valid draft");
       } finally { rmSync(root, { recursive: true, force: true }); }

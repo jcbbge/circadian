@@ -33,6 +33,8 @@ export function refreshStatusline(): void {
       ["run", join(CIRCADIAN_HOME, "src/status.ts"), "--line", "--write-cache"],
       { detached: true, stdio: "ignore", env: { ...process.env, CIRCADIAN_HOME } }
     );
+    // Spawn errors arrive asynchronously; try/catch alone cannot contain them.
+    child.once("error", () => { /* the cache must never interrupt its producer */ });
     child.unref();
   } catch {
     /* the statusline is a convenience, never a dependency */

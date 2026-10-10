@@ -14,6 +14,7 @@ test("installer merges MCP registration and Pi extension without clobbering exis
     fs.cpSync(path.join(import.meta.dir, "..", "templates"), path.join(install, "templates"), { recursive: true });
     fs.writeFileSync(path.join(bin, "curl"), "#!/bin/sh\nexit 1\n", { mode: 0o755 });
     fs.writeFileSync(path.join(bin, "systemctl"), "#!/bin/sh\nexit 0\n", { mode: 0o755 });
+    fs.writeFileSync(path.join(bin, "launchctl"), "#!/bin/sh\nexit 0\n", { mode: 0o755 });
     fs.writeFileSync(path.join(home, ".claude", "settings.json"), JSON.stringify({ mcpServers: { existing: { command: "other" } }, hooks: { Custom: [{ hooks: [{ type: "command", command: "keep" }] }] } }));
     fs.writeFileSync(path.join(home, ".claude.json"), JSON.stringify({ mcpServers: { existing: { command: "other" } } }));
     const env = { ...process.env, HOME: home, XDG_CONFIG_HOME: path.join(root, "config"), XDG_DATA_HOME: path.join(root, "data"), XDG_CACHE_HOME: path.join(root, "cache"), CIRCADIAN_HOME: install, CIRCADIAN_BUN_BIN: process.execPath, CIRCADIAN_USER_NAME: "Tester", GIT_AUTHOR_NAME: "Test", GIT_COMMITTER_NAME: "Test", GIT_AUTHOR_EMAIL: "test@example.invalid", GIT_COMMITTER_EMAIL: "test@example.invalid", PATH: `${bin}:${process.env.PATH}` };
@@ -52,6 +53,7 @@ test("installer upgrades its own direct graze hook to the gate, keeps other graz
     fs.cpSync(path.join(import.meta.dir, "..", "templates"), path.join(install, "templates"), { recursive: true });
     fs.writeFileSync(path.join(bin, "curl"), "#!/bin/sh\nexit 1\n", { mode: 0o755 });
     fs.writeFileSync(path.join(bin, "systemctl"), "#!/bin/sh\nexit 0\n", { mode: 0o755 });
+    fs.writeFileSync(path.join(bin, "launchctl"), "#!/bin/sh\nexit 0\n", { mode: 0o755 });
     const direct = `${process.execPath} ${install}/src/graze.ts`, handWired = "bun /elsewhere/src/graze.ts --custom";
     fs.writeFileSync(path.join(home, ".claude", "settings.json"), JSON.stringify({
       statusLine: { type: "command", command: "my-statusline" },

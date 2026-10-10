@@ -623,7 +623,7 @@ describe("wake.ts + status.ts --line, started together like Claude Code's Sessio
     fs.writeFileSync(path.join(mind, "scopes.tsv"), `proj\t${project}\tactive\n`);
     fs.writeFileSync(path.join(mind, "scoreboard.jsonl"), JSON.stringify({ type: "wake", ts: new Date().toISOString(), scope: "proj" }) + "\n");
     const env: Record<string, string> = { ...(process.env as Record<string, string>), HOME: home, CIRCADIAN_HOME: home,
-      CIRCADIAN_BUN_BIN: "/bin/true", CIRCADIAN_INVOCATION_LEDGER: "off" };
+      CIRCADIAN_BUN_BIN: fs.existsSync("/usr/bin/true") ? "/usr/bin/true" : "/bin/true", CIRCADIAN_INVOCATION_LEDGER: "off" };
     for (const k of ["CIRCADIAN_ROLE", "CIRCADIAN_SCOPE", "CIRCADIAN_LANE", "CIRCADIAN_INTERNAL", "CIRCADIAN_SESSION"]) delete env[k];
     const event = JSON.stringify({ session_id: "sess-e2e", hook_event_name: "SessionStart", source: "startup", cwd: project });
     const run = (args: string[]) => new Promise<string>((done, failed) => {

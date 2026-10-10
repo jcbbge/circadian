@@ -18,7 +18,7 @@ const stagedSessions = process.env.CIRCADIAN_TEST_PI_SESSIONS_DIR;
 const ownedSessions = !stagedSessions;
 const PI_SESSIONS = stagedSessions
   ? fs.realpathSync(stagedSessions)
-  : fs.mkdtempSync(path.join(tmpdir(), "circadian-pi-sessions-"));
+  : fs.realpathSync(fs.mkdtempSync(path.join(tmpdir(), "circadian-pi-sessions-")));
 if (path.relative(fs.realpathSync(tmpdir()), PI_SESSIONS).startsWith("..")) {
   throw new Error("CIRCADIAN_TEST_PI_SESSIONS_DIR must be a temp directory, never the real ~/.pi");
 }

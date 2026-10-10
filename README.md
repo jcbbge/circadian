@@ -263,9 +263,21 @@ Configuration knobs (install-time and runtime):
 ### Development
 
 ```bash
-bun test        # 509 tests across 24 files — zero runtime deps
+bun test           # run the full suite on each host
 bun src/doctor.ts   # health check against the live mind
 ```
+
+Put installed harness executables on `PATH` when testing, including `pi`;
+otherwise native Pi integration tests are skipped. Missing private historical
+fixtures and live-model opt-ins are reported as skips, not successful checks.
+Installer tests isolate both `launchctl` and `systemctl`; changing `HOME` alone
+does not isolate the user's service manager.
+
+For a Mac/VPS update, push the tested commit, fast-forward the other checkout,
+compare `git rev-parse HEAD` on both hosts, and run the suite and doctor on each.
+Re-run the installer when lifecycle registration changes are needed; existing
+memory and unrelated hooks are preserved. Machine-specific paths, credentials,
+private memory, and `logs/change-requests/` do not belong in the public repo.
 
 - `src/` is the product: six small processes, each self-contained, each with
   its own test file. No framework — plain `bun` scripts with shebangs.

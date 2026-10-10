@@ -1,5 +1,5 @@
 import { afterAll, expect, test } from "bun:test";
-import { cpSync, mkdirSync, mkdtempSync, realpathSync, rmSync, symlinkSync, writeFileSync, unlinkSync } from "node:fs";
+import { cpSync, existsSync, mkdirSync, mkdtempSync, readFileSync, realpathSync, rmSync, symlinkSync, writeFileSync, unlinkSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { acquireNativeSessionFile } from "./circadian-mind.ts";
@@ -33,7 +33,13 @@ nativeTest("unused native session is empty despite its not-yet-created path", ()
 nativeTest("user input without an assistant reply is NOT empty", () => {
   const manager = session();
   manager.appendMessage({ role: "user", content: "must not disappear", timestamp: Date.now() });
-  expect(acquireNativeSessionFile(manager).kind).toBe("degraded");
+  const acquired = acquireNativeSessionFile(manager);
+  if (existsSync(manager.getSessionFile())) {
+    expect(acquired).toMatchObject({ kind: "persisted", path: manager.getSessionFile() });
+    expect(readFileSync(manager.getSessionFile(), "utf8")).toContain("must not disappear");
+  } else {
+    expect(acquired.kind).toBe("degraded");
+  }
 });
 nativeTest("native history in a custom directory is acquired", () => {
   const manager = session();
