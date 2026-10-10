@@ -31,7 +31,7 @@ export function recall(home: string, scope: string, sinceMs = 0, deep = false): 
   const mind = path.join(home, "mind");
   const view = recallScope(mind, scope, { sinceMs, deep });
   const read = (file: string) => { try { return fs.readFileSync(path.join(mind, file), "utf8"); } catch { return ""; } };
-  return buildPayload({ scope, self: "", user: read("USER.md"), now: view.now, here: view.here,
+  return buildPayload({ scope, includeGlobalDetail: true, self: "", user: read("USER.md"), now: view.now, here: view.here,
     elsewhere: view.elsewhere, away: whileAway(home, scope), greeting: "", constitution: read("CONSTITUTION.md"),
     constitutionJosh: read("CONSTITUTION-JOSH.md") });
 }

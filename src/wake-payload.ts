@@ -180,6 +180,7 @@ export function buildPayload(files: {
   killSwitch?: boolean;
   slim?: boolean;
   scope?: string;
+  includeGlobalDetail?: boolean; // Explicit recall only; startup remains an overview.
   here?: string;
   elsewhere?: string;
   away?: string;
@@ -288,7 +289,8 @@ export function buildPayload(files: {
   // greeting, then evidence/away/detail) come first; the constitutions follow
   // verbatim, whole, in the later parts — delivered, never dropped.
   // A global wake is an overview, not a continuation of the last project.
-  const nextMove = scope !== "global" ? now.match(/## (?:Next move|Flight plan)\s*\n+([^\n]+)/i)?.[1]?.trim() : "";
+  const showHere = scope !== "global" || files.includeGlobalDetail;
+  const nextMove = showHere ? now.match(/## (?:Next move|Flight plan)\s*\n+([^\n]+)/i)?.[1]?.trim() : "";
   const scoped = scope ? [
     `Resolved scope: ${scope}`,
     ...(nextMove ? [`Next move: ${nextMove}`] : []),
@@ -296,7 +298,7 @@ export function buildPayload(files: {
     ...(corrections ? ["<mind:corrections>", corrections, "</mind:corrections>"] : []),
     ...(killSwitch ? ["KILL SWITCH ACTIVE: SELF/USER/greeting withheld this wake."] : scope === "global" ? [] : userBlocks),
     ...(!slim ? ["<mind:elsewhere>", elsewhere || "", "</mind:elsewhere>"] : []),
-    ...(scope !== "global" ? [
+    ...(showHere ? [
       `<mind:here scope="${scope}">`,
       "<mind:now>", now.trim(), "</mind:now>",
       ...(!killSwitch && greetingBlock ? ["<mind:greeting>", greetingBlock, "</mind:greeting>"] : []),

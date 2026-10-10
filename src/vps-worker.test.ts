@@ -97,3 +97,14 @@ test("Pin lifts a below-floor atom; forget with reason hides it from render and 
   expect(scopedView(mind, "arc").here).not.toContain(`### atom ${id}.md`);
   expect(readLedger(path.join(mind, "beliefs.jsonl")).at(-1)?.reason).toBe("operator correction");
 }));
+
+
+test("explicit global recall retains the handoff that home wake omits", () => sandbox(async (home, mind) => {
+  const now = "## Next move\n\nResume the requested project.\n\nDetailed global handoff.";
+  fs.writeFileSync(path.join(mind, "NOW.md"), now);
+  const view = recallScope(mind, "global");
+  const wake = buildPayload({ scope: "global", self: "", user: "", greeting: "", ...view });
+  expect(wake).not.toContain("Detailed global handoff.");
+  expect(recall(home, "global")).toContain(now);
+  expect(await callTool(home, "memory_recall", { scope: "global" })).toMatchObject({ now });
+}));
