@@ -125,3 +125,21 @@ describe("checkout of a mind ref", () => {
     expect(fallback.stderr).toContain("wake/checkout DEGRADED");
   });
 });
+
+
+test("batched committed blobs preserve UTF-8 byte boundaries and ignore working edits", () => {
+  const { repo, id } = fixture();
+  const claim = "Mémoire commune — 知識";
+  const second = atomId(claim);
+  writeFileSync(join(repo, "beliefs", `${second}.md`), serializeAtom({ kind: "doctrine", claim, why: "Shared across sessions", quotes: [{ text: "café", source: "example.md" }], eps: ["2026-09-24"] }));
+  writeFileSync(join(repo, "beliefs.jsonl"), [id, second].map(atom => JSON.stringify({ ev: "stack", atom, ts: "t" })).join("\n") + "\n");
+  const now = "# Now\n\nÀ bientôt — 世界\n";
+  writeFileSync(join(repo, "NOW.md"), now);
+  git(repo, "add", "beliefs", "beliefs.jsonl", "NOW.md"); git(repo, "commit", "-qm", "unicode");
+  writeFileSync(join(repo, "NOW.md"), "uncommitted");
+  const result = checkout(repo);
+  expect(result.atoms).toBe(2);
+  expect(result.weight).toBe(2);
+  expect(result.self).toContain(claim);
+  expect(result.now).toBe(now);
+});

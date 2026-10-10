@@ -16,7 +16,7 @@ import { refreshStatusline } from "./statusline-refresh.ts";
 import { checkout } from "./checkout.ts";
 import { logInvocation } from "./invocation-ledger.ts";
 import { homedir } from "node:os";
-import { join } from "node:path";
+import { join, isAbsolute } from "node:path";
 import { spawn } from "node:child_process";
 import { ok, degraded, emit, correlation } from "./obs.ts";
 import { isFirstWakeToday, renderDailyReading, loadScoreboardFile, appendDailyReadingEntry } from "./scorecard.ts";
@@ -46,8 +46,8 @@ const MIND = join(CIRCADIAN_HOME, "mind");
 
 async function readStdin(): Promise<string> {
   // WAKE reads no mind content from stdin (file reads only, per Law 7) but
-  // must drain it so the harness never sees a broken pipe. The one fact it
-  // takes from it is whether this is a Claude Code SessionStart event.
+  // must drain it so the harness never sees a broken pipe. Session metadata
+  // identifies the hook, session, and cwd; it supplies no memory content.
   try {
     return await new Response(Bun.stdin.stream()).text();
   } catch {
@@ -58,7 +58,7 @@ async function readStdin(): Promise<string> {
 /** The Claude Code SessionStart event on stdin, or null (pi spawns wake with
  * no stdin; a manual run may pass nothing). Only a Claude Code hook output is
  * capped, so only then is the wake cut into parts (circ-29). */
-function sessionStartEvent(raw: string): { session_id?: string } | null {
+function sessionStartEvent(raw: string): { session_id?: string; cwd?: string } | null {
   try {
     const event = JSON.parse(raw);
     return event && typeof event === "object" && event.hook_event_name === "SessionStart" ? event : null;
@@ -121,6 +121,7 @@ function detectFleetTier(): { tier: FleetTier | null; reason: string } {
 async function runHook(): Promise<void> {
   const corr = correlation("wake");
   const hookEvent = sessionStartEvent(await readStdin());
+  const sessionCwd = typeof hookEvent?.cwd === "string" && isAbsolute(hookEvent.cwd) ? hookEvent.cwd : process.cwd();
 
   // Claude sessions spawned BY the metabolism itself (sleep/REM drafting set
   // CIRCADIAN_INTERNAL=1) must not receive the injection: the mind payload
@@ -196,7 +197,7 @@ async function runHook(): Promise<void> {
     const source = process.env.CIRCADIAN_WAKE_SOURCE;
     // budget halved 2000 -> 1000 (2026-08-09 stitch audit): the worldview +
     // constitutions carry the identity load; evidence is a garnish, not a meal.
-    const slice = retrieveForWake(loaded, process.cwd(), { source, k: 5, budgetTokens: 1000 });
+    const slice = retrieveForWake(loaded, sessionCwd, { source, k: 5, budgetTokens: 1000 });
     evidence = slice.block;
     if (slice.reason === "injected") {
       ok({
@@ -232,7 +233,7 @@ async function runHook(): Promise<void> {
       ok({
         process: "wake", phase: "session-evidence", correlation_id: corr,
         summary: `worldview-only — ${slice.reason} (${slice.anchors.chain.join("+") || "no anchors"})`,
-        context: { reason: slice.reason, anchors: slice.anchors.chain, known_entities: slice.anchors.knownEntities, cwd: process.cwd() },
+        context: { reason: slice.reason, anchors: slice.anchors.chain, known_entities: slice.anchors.knownEntities, cwd: sessionCwd },
       });
     }
   } catch (e) {
@@ -286,7 +287,7 @@ async function runHook(): Promise<void> {
     });
   }
 
-  const scope = resolveScope(MIND);
+  const scope = resolveScope(MIND, sessionCwd);
   const view = recallScope(MIND, scope, { slim, evidenceTokens: slim ? 0 : Math.ceil(evidence.length / 4) });
   const scopedNow = view.now || (scope === "global" ? files["NOW.md"] : "");
   const payload = buildPayload({
@@ -315,7 +316,7 @@ async function runHook(): Promise<void> {
   const isValidDate = lastSleepDate instanceof Date && !isNaN(lastSleepDate.getTime());
   const isStale = isValidDate ? Date.now() - lastSleepDate!.getTime() > STALE_MS : true;
 
-  if (isStale) {
+  if (scope !== "global" && isStale) {
     degraded({
       process: "wake",
       phase: "staleness-check",

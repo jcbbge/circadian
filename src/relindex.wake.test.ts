@@ -175,7 +175,8 @@ describe("wake.ts integration — source-text + live subprocess (no live import)
       const fromTmp = runWake(tmpdir());
       expect(fromTmp).not.toContain("<mind:session-evidence>");
       expect(fromCircadian).toContain('<mind:here scope="circadian">');
-      expect(fromTmp).toContain('<mind:here scope="global">');
+      expect(fromTmp).toStartWith("Resolved scope: global\n");
+      expect(fromTmp).not.toContain("<mind:here");
     });
   });
 

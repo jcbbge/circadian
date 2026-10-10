@@ -287,20 +287,24 @@ export function buildPayload(files: {
   // corrections, USER, the elsewhere footnotes and <mind:here> (NOW, then the
   // greeting, then evidence/away/detail) come first; the constitutions follow
   // verbatim, whole, in the later parts — delivered, never dropped.
+  // A global wake is an overview, not a continuation of the last project.
+  const nextMove = scope !== "global" ? now.match(/## (?:Next move|Flight plan)\s*\n+([^\n]+)/i)?.[1]?.trim() : "";
   const scoped = scope ? [
     `Resolved scope: ${scope}`,
-    ...((now.match(/## (?:Next move|Flight plan)\s*\n+([^\n]+)/i)?.[1]?.trim()) ? [`Next move: ${now.match(/## (?:Next move|Flight plan)\s*\n+([^\n]+)/i)![1].trim()}`] : []),
+    ...(nextMove ? [`Next move: ${nextMove}`] : []),
     "[Circadian] WAKE — memory substrate injection from the mind repo (see mind/MIND-SPEC.md).",
     ...(corrections ? ["<mind:corrections>", corrections, "</mind:corrections>"] : []),
     ...(killSwitch ? ["KILL SWITCH ACTIVE: SELF/USER/greeting withheld this wake."] : scope === "global" ? [] : userBlocks),
     ...(!slim ? ["<mind:elsewhere>", elsewhere || "", "</mind:elsewhere>"] : []),
-    `<mind:here scope="${scope}">`,
-    "<mind:now>", now.trim(), "</mind:now>",
-    ...(!killSwitch && greetingBlock ? ["<mind:greeting>", greetingBlock, "</mind:greeting>"] : []),
-    ...(!killSwitch && scope !== "global" && evidence ? [evidence] : []),
-    ...(!killSwitch && scope !== "global" && away ? [away] : []),
-    ...(!killSwitch && scope !== "global" && here ? [here] : []),
-    "</mind:here>",
+    ...(scope !== "global" ? [
+      `<mind:here scope="${scope}">`,
+      "<mind:now>", now.trim(), "</mind:now>",
+      ...(!killSwitch && greetingBlock ? ["<mind:greeting>", greetingBlock, "</mind:greeting>"] : []),
+      ...(!killSwitch && evidence ? [evidence] : []),
+      ...(!killSwitch && away ? [away] : []),
+      ...(!killSwitch && here ? [here] : []),
+      "</mind:here>",
+    ] : []),
     ...constitutionBlocks, ...constitutionJoshBlocks,
   ].join("\n").trimEnd() : body;
   const tokens = Math.ceil(scoped.length / 4);

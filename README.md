@@ -57,6 +57,22 @@ never touches project source.
 - **Quorum births** → with at least two checked-out `fm/*` lanes, new atoms require 2 of 3 independent DISTINCT decisions against lane views. Disagreement keeps an immutable `mind/proposed/<id>.md` without a birth event; `bun src/status.ts` lists proposals, and `bun src/admit.ts <id> [--mind <repo>]` is the human promotion door (`circadian admit <id>` in a command-dispatching installation). Recurrences do not vote. Without multiple lanes the gate is off.
 - **Worker lanes** → `circadian lane open <id>` makes local mind branch `fm/<id>` in `mind-lanes/<id>` (sibling of `mind/`). Point the worker's `CIRCADIAN_HOME` at a sandbox home with `mind/` symlinked to that worktree (or commit directly in it), then `circadian lane conflicts [id]` and `circadian lane land <id>` from the main mind root. Landing requires clean committed worktrees; it merges immutable atoms, unions ledger events by hash and timestamp, re-renders SELF, and surfaces divergent supersessions as contradictions. Unlanded branches are preserved. Each command accepts `--mind <repo>` for a non-default mind path.
 
+Wake follows the session directory. From home or an unregistered directory, it
+shows a brief overview of the last 48 hours: one title and episode receipt per
+active project, within a 300-token budget. It omits the last project's full
+`NOW.md`, greeting, and next action. Up to three recent unscoped episode titles
+can appear as `unscoped`; legacy memories are never assigned a project by guesswork.
+Inside a registered project (including its subdirectories and worktrees), wake
+includes that project's handoff and detailed memory, with brief notes from other
+projects. Shared constitutions and corrections remain available in both views.
+
+Register projects in the machine's `mind/scopes.tsv` (or `CIRCADIAN_REGISTRY`),
+one tab-separated `slug`, absolute checkout path, and `active`/`paused` status
+per line. The most specific matching path wins. New episodes record this scope;
+registration does not relabel older memories. For detail on demand, use
+`bun bin/circadian recall <slug> --depth deep` or the `memory_recall` MCP tool.
+The registry contains machine-local paths; it is not a portable memory identity.
+
 For Linux and VPS setup, see [Linux / VPS](#linux--vps) below. Other operating
 systems need a separately configured scheduler.
 

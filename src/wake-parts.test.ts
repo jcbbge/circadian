@@ -97,7 +97,7 @@ describe("Claude Code wake at the largest sizes the mind spec allows", () => {
   for (const [name, opts] of Object.entries(variants)) {
     test(`${name}: every hook output is under ${HOOK_OUTPUT_LIMIT} characters, within ${WAKE_PARTS} slots, and the parts are the whole wake`, () => {
       const payload = buildPayload({ scope: "circadian", self: "", ...MAX, ...opts });
-      expect(payload.length).toBeGreaterThan(HOOK_OUTPUT_LIMIT * 3); // genuinely needs parts
+      expect(payload.length).toBeGreaterThan(HOOK_OUTPUT_LIMIT * 2); // even the overview genuinely needs parts
       const outputs = hookOutputs(payload, SPOOL);
       expect(outputs.length).toBeGreaterThan(1);
       expect(outputs.length).toBeLessThanOrEqual(WAKE_PARTS);
@@ -105,13 +105,18 @@ describe("Claude Code wake at the largest sizes the mind spec allows", () => {
       expect(bodies(outputs)).toBe(payload);
       // Part 1 — the one slot every install has — opens with the scope and
       // the next move, and its closing marker names the spool holding all.
-      expect(outputs[0].startsWith(`Resolved scope: ${"scope" in opts ? opts.scope : "circadian"}\nNext move: Ship the wake parts.`)).toBe(true);
+      expect(outputs[0]).toStartWith(`Resolved scope: ${"scope" in opts ? opts.scope : "circadian"}\n`);
+      if (name !== "global") expect(outputs[0]).toContain("Next move: Ship the wake parts.");
+      else expect(payload).not.toContain("Next move:");
       expect(outputs[0].trimEnd().split("\n").at(-1)).toContain(SPOOL);
       // Delivery order: every scoped section lands before any constitution part.
       const firstConstitutionPart = outputs.findIndex((o) => o.includes("<mind:constitution"));
       const nowPart = outputs.findIndex((o) => o.includes("<mind:now>"));
-      expect(nowPart).toBeGreaterThanOrEqual(0);
-      expect(nowPart).toBeLessThan(firstConstitutionPart);
+      if (name === "global") expect(nowPart).toBe(-1);
+      else {
+        expect(nowPart).toBeGreaterThanOrEqual(0);
+        expect(nowPart).toBeLessThan(firstConstitutionPart);
+      }
       expect(outputs.findIndex((o) => o.includes("</mind:here>"))).toBeLessThanOrEqual(firstConstitutionPart);
       // The constitutions are delivered verbatim, never dropped.
       expect(payload).toContain(MAX.constitution);
@@ -178,7 +183,7 @@ afterAll(() => { for (const d of sandboxes) fs.rmSync(d, { recursive: true, forc
 
 function wakeEnv(home: string, extra: Record<string, string> = {}) {
   const env: Record<string, string> = { ...(process.env as Record<string, string>), HOME: home, CIRCADIAN_HOME: home,
-    CIRCADIAN_BUN_BIN: "/bin/true", CIRCADIAN_INVOCATION_LEDGER: "off", CIRCADIAN_WAKE_PART_WAIT_MS: "5000", ...extra };
+    CIRCADIAN_BUN_BIN: fs.existsSync("/usr/bin/true") ? "/usr/bin/true" : "/bin/true", CIRCADIAN_INVOCATION_LEDGER: "off", CIRCADIAN_WAKE_PART_WAIT_MS: "5000", ...extra };
   for (const k of ["CIRCADIAN_ROLE", "CIRCADIAN_SCOPE", "CIRCADIAN_LANE", "CIRCADIAN_INTERNAL", "CIRCADIAN_SESSION"]) if (!(k in extra)) delete env[k];
   return env;
 }
@@ -266,7 +271,8 @@ describe("Claude Code wake with the current mind", () => {
     for (const scope of [...scopes, "global"]) {
       const outputs = (await runAllSlots(home, wakeEnv(home, { CIRCADIAN_SCOPE: scope }), `live-${scope}`)).map((o) => o.replace(/\n$/, ""));
       for (const o of outputs) expectWithinHookCap(o);
-      expect(outputs[0]).toContain(`<mind:here scope="${scope}">`);
+      if (scope === "global") expect(outputs[0]).not.toContain("<mind:here");
+      else expect(outputs[0]).toContain(`<mind:here scope="${scope}">`);
       const delivered = bodies(outputs.filter(Boolean));
       expect(delivered).toContain(constitution);
       expect(delivered).toContain(josh);
@@ -287,4 +293,15 @@ describe("wake.ts spool failure (subprocess)", () => {
     expect(part1.stdout).toContain(MAX.constitution);
     expect(part1.stderr).toContain("wake/parts DEGRADED");
   }, 30000);
+});
+
+
+test("hook session cwd overrides the runner cwd in both directions", async () => {
+  const { home, project } = fixtureMind();
+  for (const [runner, session, scope] of [[home, project, "proj"], [project, home, "global"]]) {
+    const output = await runSlot(1, runner, wakeEnv(home), JSON.stringify({ hook_event_name: "SessionStart", session_id: `cwd-${scope}`, cwd: session }));
+    expect(output).toStartWith(`Resolved scope: ${scope}\n`);
+    if (scope === "global") expect(output).not.toContain("Next move:");
+    else expect(output).toContain("Next move: Ship the wake parts.");
+  }
 });

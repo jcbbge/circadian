@@ -25,8 +25,31 @@ export function checkout(repo: string, ref = "HEAD"): CheckoutResult {
   if (git(root, "rev-parse", "--show-toplevel").toString().trim() !== root) throw new Error("path is not a git repository root");
   const sha = git(root, "rev-parse", "--verify", "--end-of-options", `${ref}^{commit}`).toString().trim();
   if (!/^[a-f0-9]{40,64}$/.test(sha)) throw new Error("ref did not resolve to a commit");
-  const names = new Set(git(root, "ls-tree", "-r", "--name-only", "-z", sha).toString().split("\0"));
-  const blob = (name: string) => git(root, "show", `${sha}:${name}`).toString("utf8");
+  // Read committed blobs in one Git process. A process per atom can exceed
+  // the SessionStart hook deadline on a mature mind.
+  const entries = git(root, "ls-tree", "-r", "-z", sha).toString().split("\0").flatMap(line => {
+    const match = line.match(/^\d+ blob ([a-f0-9]+)\t([\s\S]+)$/);
+    return match && /^(?:beliefs\/[^/]+\.md|beliefs\.jsonl|NOW\.md)$/.test(match[2]) ? [{ hash: match[1], name: match[2] }] : [];
+  });
+  const blobs = new Map<string, string>();
+  if (entries.length) {
+    const result = spawnSync("git", ["-C", root, "cat-file", "--batch"], {
+      input: entries.map(e => e.hash).join("\n") + "\n", maxBuffer: 64 * 1024 * 1024,
+    });
+    if (result.error || result.status !== 0) throw new Error(`git cat-file failed: ${result.error?.message ?? result.stderr.toString().trim()}`);
+    let offset = 0;
+    for (const entry of entries) {
+      const newline = result.stdout.indexOf(10, offset);
+      const header = result.stdout.subarray(offset, newline).toString().match(/^([a-f0-9]+) blob (\d+)$/);
+      if (newline < 0 || !header || header[1] !== entry.hash) throw new Error(`invalid blob response: ${entry.name}`);
+      const end = newline + 1 + Number(header[2]);
+      if (end >= result.stdout.length || result.stdout[end] !== 10) throw new Error(`incomplete blob: ${entry.name}`);
+      blobs.set(entry.name, result.stdout.subarray(newline + 1, end).toString("utf8"));
+      offset = end + 1;
+    }
+  }
+  const names = new Set(blobs.keys());
+  const blob = (name: string) => blobs.get(name)!;
   const atoms: Atom[] = [];
   for (const name of [...names].filter((n) => /^beliefs\/[^/]+\.md$/.test(n)).sort()) {
     const atom = parseAtom(blob(name));

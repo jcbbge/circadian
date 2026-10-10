@@ -41,8 +41,8 @@ test("Accept when: an episode written from ~/concierge/work/t3-labor-fee carries
   fs.mkdirSync(workSubdir);
   expect(resolveScope(mind, mainSubdir, "")).toBe("arc");
   expect(resolveScope(mind, workSubdir, "")).toBe("arc");
-  expect(sessionLocation(workSubdir)).toEqual({ cwd: workSubdir, git_toplevel: work, project_path: main });
-  expect(sessionLocation(mainSubdir)).toEqual({ cwd: mainSubdir, git_toplevel: main, project_path: main });
+  expect(sessionLocation(workSubdir)).toEqual({ cwd: workSubdir, git_toplevel: fs.realpathSync(work), project_path: fs.realpathSync(main) });
+  expect(sessionLocation(mainSubdir)).toEqual({ cwd: mainSubdir, git_toplevel: fs.realpathSync(main), project_path: fs.realpathSync(main) });
   expect(sessionLocation(dir)).toEqual({ cwd: dir, git_toplevel: null, project_path: dir });
   const episode = tagEpisode("---\ndate: 2026-09-24\narc: labor fee\n---\n", resolveScope(mind, work, ""));
   expect(episode).toContain("scope: arc\n");
@@ -112,4 +112,37 @@ test("Accept when: portfolio renders without ~/AGENTS.md using a mind-owned regi
   expect(result.reason).toBe("rendered");
   expect(result.block).toContain("arc");
   expect(result.block).not.toContain("paused");
+}));
+
+
+test("home wake shows titles and receipts, never the last project's detailed handoff", () => {
+  const files = { self: "", user: "## Corrections\n\nVerify receipts.", now: "## Flight plan\n\nRepair the tunnel.\n\nPrivate project details", greeting: "Resume tunnel debugging", here: "Long local history", evidence: "Evidence detail", away: "Away detail", elsewhere: "arc, yesterday: Tunnel repaired", constitution: "Shared identity" };
+  for (const options of [{}, { slim: true }, { killSwitch: true }]) {
+    const payload = buildPayload({ ...files, ...options, scope: "global" });
+    for (const detail of ["Next move:", files.now, files.greeting, files.here, files.evidence, files.away, "<mind:now>", "STALENESS WARNING"])
+      expect(payload).not.toContain(detail);
+    expect(payload).toContain(files.constitution);
+    expect(payload).toContain("Verify receipts.");
+    if (!("slim" in options)) expect(payload).toContain(files.elsewhere);
+  }
+  const project = buildPayload({ ...files, scope: "arc" });
+  for (const detail of [files.now, files.greeting, files.here, files.evidence, files.away]) expect(project).toContain(detail);
+});
+
+test("overview chooses latest timestamps and gives legacy episodes title-only unscoped receipts", () => sandbox((dir, mind) => {
+  seed(mind, dir);
+  fs.writeFileSync(path.join(mind, "episodes/2026-09-24-aaa.md"), "scope: arc\nts: 2026-09-24T13:00:00Z\narc: Newest title\nPrivate detail");
+  fs.writeFileSync(path.join(mind, "episodes/2026-09-24-legacy.md"), "ts: 2026-09-24T13:30:00Z\narc: Legacy title\nDo not inject this body");
+  const view = scopedView(mind, "global", Date.parse("2026-09-24T14:00:00Z"));
+  expect(view.elsewhere).toContain("arc, 2026-09-24: Newest title");
+  expect(view.elsewhere).not.toContain("arc work landed");
+  expect(view.elsewhere).toContain("unscoped, 2026-09-24: Legacy title");
+  expect(view.elsewhere).not.toContain("Do not inject this body");
+  expect(scopedView(mind, "arc", Date.parse("2026-09-24T14:00:00Z")).here).not.toContain("Legacy title");
+}));
+
+test("nested project registrations take precedence over their parent", () => sandbox((dir, mind) => {
+  fs.mkdirSync(path.join(dir, "parent/child"), { recursive: true });
+  fs.writeFileSync(path.join(mind, "scopes.tsv"), `parent\t${dir}/parent\tactive\nchild\t${dir}/parent/child\tactive\n`);
+  expect(resolveScope(mind, path.join(dir, "parent/child"), "")).toBe("child");
 }));

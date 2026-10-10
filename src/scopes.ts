@@ -46,7 +46,7 @@ export function resolveScope(mind: string, cwd = process.cwd(), override = proce
     if (common !== path.join(root, ".git")) root = path.dirname(common);
   } catch { /* outside git: match the cwd against registered paths */ }
   try { root = fs.realpathSync(root); } catch { /* path may no longer exist */ }
-  for (const entry of readScopes(mind)) {
+  for (const entry of readScopes(mind).sort((a, b) => b.path.length - a.path.length)) {
     if (root === entry.path || root.startsWith(entry.path + path.sep)) return entry.slug;
   }
   return "global";
@@ -82,17 +82,25 @@ export function scopedView(mind: string, scope: string, nowMs = Date.now(), rese
   const elsewhere = new Map<string, string>();
   const ledger = readLedger(path.join(mind, "beliefs.jsonl"));
   const states = foldWeights(ledger);
-  for (const file of episodes) {
+  const records = episodes.map(file => {
     const text = fs.readFileSync(path.join(mind, "episodes", file), "utf8");
     const epScope = episodeScope(text);
     const date = file.slice(0, 10);
     const stamp = text.match(/^ts:\s*(\S+)\s*$/m)?.[1];
     // Legacy date-only episodes are noon estimates; new episodes carry exact UTC.
     const episodeTime = Date.parse(stamp || `${date}T12:00:00Z`);
+    return { file, text, epScope, date, episodeTime };
+  }).sort((a, b) => b.episodeTime - a.episodeTime || b.file.localeCompare(a.file));
+  let unscopedCount = 0;
+  for (const { file, text, epScope, date, episodeTime } of records) {
     if (epScope === scope && scope !== "global" && episodeTime >= sinceMs) here.push(`### ${file}\n${text.trim()}`);
     else if (epScope !== "global" && active.has(epScope) && !elsewhere.has(epScope) && nowMs - episodeTime < 48 * 3600_000 && episodeTime <= nowMs) {
       const arc = text.match(/^arc:\s*(.*)$/m)?.[1] || "session";
       elsewhere.set(epScope, `${epScope}, ${date}: ${arc.replace(/\s+/g, " ")} [episode: ${file}]`);
+    } else if (scope === "global" && epScope === "global" && unscopedCount < 3 && nowMs - episodeTime < 48 * 3600_000 && episodeTime <= nowMs) {
+      const arc = text.match(/^arc:\s*(.*)$/m)?.[1] || "session";
+      elsewhere.set(`unscoped:${file}`, `unscoped, ${date}: ${arc.replace(/\s+/g, " ")} [episode: ${file}]`);
+      unscopedCount++;
     }
   }
   // Atom origin is the source episode, not the current cwd or claim vocabulary.
