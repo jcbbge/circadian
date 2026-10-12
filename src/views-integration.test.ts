@@ -24,7 +24,7 @@ function fixture() {
 }
 
 async function cli(home: string, args: string[], entry = checkoutCli) {
-  const child = Bun.spawn([process.execPath, entry, ...args], { env: { ...process.env, CIRCADIAN_HOME: home }, stdout: "pipe", stderr: "pipe" });
+  const child = Bun.spawn([process.execPath, entry, ...args, ...(args[0] === "extensions" ? ["--json"] : [])], { env: { ...process.env, CIRCADIAN_HOME: home }, stdout: "pipe", stderr: "pipe" });
   const [stdout, stderr, code] = await Promise.all([new Response(child.stdout).text(), new Response(child.stderr).text(), child.exited]);
   expect(stdout.trim().split("\n")).toHaveLength(1);
   return { data: JSON.parse(stdout), stderr, code };
@@ -69,7 +69,7 @@ test("both installed CLI doors enable, read and expand the same whole memory wit
   const f = fixture();
   try {
     const before = snapshot(f.mind);
-    expect((await cli(f.home, ["extensions", "status"])).data).toEqual({ views: false });
+    expect((await cli(f.home, ["extensions", "status"])).data).toMatchObject({ views: false });
     const disabled = await cli(f.home, ["view", "travel"]);
     expect(disabled.code).toBe(1);
     expect(disabled.data.reason).toContain("enable views");

@@ -123,7 +123,9 @@ Optional coordinated views (`circadian view` / `expand`, MCP `memory_view` /
 `memory_expand`) are read-only and disabled unless the local `extensions.json`
 enables them. They preserve whole atoms within a serialized character budget,
 report omissions, and check current eligibility and observed source revisions
-on expansion. They neither alter wake/recall nor assert semantic truth. See
+on expansion. Enabled wake includes a short code-owned usage notice outside
+memory data; disabled wake and ordinary recall are unchanged. Controls expose
+ON/OFF, recent requests, and an explicit live read check. None asserts semantic truth. See
 `docs/COORDINATED-VIEWS.md` for the interface and current-file limits.
 
 ## Scheduling, publication, and outages

@@ -10,6 +10,7 @@ import { whileAway } from "../src/away.ts";
 import { readAtoms, readLedger, foldWeights, type LedgerEvent } from "../src/atoms.ts";
 import { renderSelf } from "../src/render.ts";
 import { publish } from "../src/publish.ts";
+import { readExtensions } from "../src/extensions.ts";
 
 export function healthLine(home: string, now = Date.now()): string {
   const mind = path.join(home, "mind");
@@ -24,7 +25,8 @@ export function healthLine(home: string, now = Date.now()): string {
   let backlog = pending;
   try { backlog += fs.readdirSync(path.join(mind, "episodes")).filter(f => f.endsWith(".md") && !digested.has(createHash("sha256").update(fs.readFileSync(path.join(mind, "episodes", f))).digest("hex"))).length; } catch { /* fresh install */ }
   const degraded = rows(path.join(home, "logs", "circadian.events.jsonl")).some(e => ["degraded", "failed"].includes(e.outcome) && now - Date.parse(e.ts) < 86400000);
-  return `wake ${age(latest("wake"))} · REM ${age(latest("rem"))} · backlog ${backlog}${degraded ? " · degraded" : ""}`;
+  const views = readExtensions(home);
+  return `wake ${age(latest("wake"))} · REM ${age(latest("rem"))} · backlog ${backlog}${degraded ? " · degraded" : ""}${views.views ? " · views ON" : views.error ? " · views CONFIG ERROR" : ""}`;
 }
 
 export function recall(home: string, scope: string, sinceMs = 0, deep = false): string {
@@ -54,7 +56,7 @@ if (import.meta.main) {
   const [command, arg, ...flags] = process.argv.slice(2);
   const home = process.env.CIRCADIAN_HOME || path.join(homedir(), "circadian");
   try {
-    if (["extensions", "view", "expand"].includes(command)) {
+    if (!command || ["help", "--help", "-h", "extensions", "view", "expand"].includes(command)) {
       const { viewsMain } = await import("../src/views-cli.ts");
       await viewsMain(home, process.argv.slice(2));
     } else if (command === "status" && arg === "--line") console.log(healthLine(home));

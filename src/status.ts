@@ -31,6 +31,7 @@ import { renderRedundancy } from "./redundancy.ts";
 import { readAtoms, readLedger } from "./atoms.ts";
 import { SPOOL_SKEW_MS, spoolPath, waitForSpool } from "./wake-parts.ts";
 import { wakeNotice } from "./wake-notice.ts";
+import { readExtensions } from "./extensions.ts";
 
 // CIRCADIAN_HOME overrides; default ~/circadian. See wake.ts for the contract.
 const CIRCADIAN_HOME = process.env.CIRCADIAN_HOME || path.join(homedir(), "circadian");
@@ -710,6 +711,10 @@ function buildLine(vitals: ReturnType<typeof collectVitals>, scoreboard: ScoreEv
   }
 
   if (vitals.verdicts.kill_switch) parts.push("!!! KILL SWITCH");
+
+  const extensions = readExtensions(CIRCADIAN_HOME);
+  if (extensions.error) parts.push("views CONFIG ERROR");
+  else if (extensions.views) parts.push("views ON");
 
   return `circadian · ${parts.join(" · ")}`;
 }

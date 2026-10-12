@@ -30,7 +30,7 @@ import { existsSync, statSync, readFileSync, mkdirSync, writeFileSync } from "no
 import { homedir } from "node:os";
 import { join, resolve } from "node:path";
 import { ok, degraded, correlation } from "./obs.ts";
-import { callTool } from "./serve.ts";
+import { callTool, enabledViewTools } from "./serve.ts";
 import { resolveScope, sessionLocation } from "./scopes.ts";
 import { payloadScope, wakeNotice } from "./wake-notice.ts";
 
@@ -135,14 +135,18 @@ export default function circadianMind(pi: ExtensionAPI) {
   // On /reload, the extension is re-instantiated, so these reset.
   // Pi has no built-in MCP client: expose the same five server operations as
   // native Pi tools through this already-installed extension (no second daemon).
-  const registerMindTool = (name: string, description: string, properties: Record<string, unknown>, required: string[]) => {
+  // Optional views are discovered at load; every invocation rechecks the flag.
+  const registerMindTool = (name: string, description: string, properties: Record<string, unknown>, required: readonly string[], optional = false) => {
     pi.registerTool({
       name, label: name, description,
       parameters: { type: "object", properties, required, additionalProperties: false } as any,
       async execute(_id, params) {
         try {
           const value = await callTool(CIRCADIAN_HOME, name, params);
-          const event = { process: "ops" as const, phase: `pi-${name}`, summary: `${name} completed`, context: piContext({ results: Array.isArray(value) ? value.length : 1 }) };
+          const view = optional ? value as { kind: string; coverage?: { complete: boolean }; complete?: boolean; entries?: { status: string; sources?: { status: string }[] }[] } : undefined;
+          if (view && !["view", "expansion"].includes(view.kind)) throw new Error(JSON.stringify(value));
+          const partial = view?.coverage?.complete === false || view?.complete === false || view?.entries?.some(entry => entry.status !== "available" || entry.sources?.some(source => source.status !== "available"));
+          const event = { process: "ops" as const, phase: `pi-${name}`, summary: partial ? `${name} returned partial coverage` : `${name} completed`, context: piContext({ results: Array.isArray(value) ? value.length : 1, ...(partial ? { complete: false } : {}) }) };
           ok(event);
           return { content: [{ type: "text", text: JSON.stringify(value) }], details: {} };
         } catch (error) {
@@ -157,6 +161,9 @@ export default function circadianMind(pi: ExtensionAPI) {
   registerMindTool("memory_history", "Trace episodes and their citations across git history", { query: { type: "string" } }, ["query"]);
   registerMindTool("memory_status", "Read circadian mind vitals", {}, []);
   registerMindTool("memory_request_change", "Suggest a change for stacker review; never edits an atom", { change: { type: "string" }, source: { type: "string" } }, ["change"]);
+  for (const tool of enabledViewTools(CIRCADIAN_HOME)) {
+    registerMindTool(tool.name, tool.description, tool.inputSchema.properties, tool.inputSchema.required, true);
+  }
 
   let wakePayload: string | null = null;
   let wakeInjected = false;

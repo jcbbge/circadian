@@ -75,8 +75,11 @@ The registry contains machine-local paths; it is not a portable memory identity.
 
 For optional whole-record views with omission counts and revision-checked
 evidence expansion, see [Coordinated memory views](docs/COORDINATED-VIEWS.md).
-Enable with `circadian extensions enable views`; the default lifecycle and
-ordinary recall stay unchanged.
+Enable with `circadian extensions enable views`, inspect ON/OFF and recent use
+with `circadian extensions status`, and verify a live read/expansion with
+`circadian extensions check views`. Disable with `circadian extensions disable
+views`. Enabled sessions receive usage guidance; `circadian --help` lists the
+controls. The disabled default and ordinary recall stay unchanged.
 
 For Linux and VPS setup, see [Linux / VPS](#linux--vps) below. Other operating
 systems need a separately configured scheduler.

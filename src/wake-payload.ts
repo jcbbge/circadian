@@ -184,8 +184,9 @@ export function buildPayload(files: {
   here?: string;
   elsewhere?: string;
   away?: string;
+  capabilities?: string; // Enabled tool guidance, outside all remembered data blocks.
 }): string {
-  const { self, user, now, greeting, evidence, portfolio, constitution, constitutionJosh, killSwitch, slim, scope, here, elsewhere, away } = files;
+  const { self, user, now, greeting, evidence, portfolio, constitution, constitutionJosh, killSwitch, slim, scope, here, elsewhere, away, capabilities } = files;
 
   const lastSleepRaw = extractLastSleep(now);
   const lastSleepDate = lastSleepRaw ? new Date(lastSleepRaw) : null;
@@ -240,6 +241,7 @@ export function buildPayload(files: {
     ? [
         "[Circadian] WAKE — memory substrate injection from the mind repo (see mind/MIND-SPEC.md).",
         "",
+        ...(capabilities ? [capabilities, ""] : []),
         "KILL SWITCH ACTIVE: greeting fitness failed (R7). SELF/USER/greeting are withheld this wake — constitution and NOW only. The decommission decision is human; do not speak the memory's voice until it is made.",
         "",
         ...constitutionBlocks,
@@ -251,6 +253,7 @@ export function buildPayload(files: {
     : [
         "[Circadian] WAKE — memory substrate injection from the mind repo (see mind/MIND-SPEC.md).",
         "",
+        ...(capabilities ? [capabilities, ""] : []),
         ...constitutionBlocks,
         "<mind:self>",
         selfContent,
@@ -294,6 +297,7 @@ export function buildPayload(files: {
   const scoped = scope ? [
     `Resolved scope: ${scope}`,
     ...(nextMove ? [`Next move: ${nextMove}`] : []),
+    ...(capabilities ? [capabilities] : []),
     "[Circadian] WAKE — memory substrate injection from the mind repo (see mind/MIND-SPEC.md).",
     ...(corrections ? ["<mind:corrections>", corrections, "</mind:corrections>"] : []),
     ...(killSwitch ? ["KILL SWITCH ACTIVE: SELF/USER/greeting withheld this wake."] : scope === "global" ? [] : userBlocks),

@@ -13,6 +13,28 @@ mathematical ontology engine.
 
 ## Turn it on
 
+These commands operate on the machine where you run them:
+
+| You want to know or do | Command | What it proves or changes |
+| --- | --- | --- |
+| Is it enabled? | `circadian extensions status` | Prints ON/OFF, config location and the last recorded view/expand request. |
+| Does it actually work? | `circadian extensions check views` | Reads a real global memory, expands it, checks budgets and compares atom/source bytes to the current files. |
+| Turn it off | `circadian extensions disable views` | Immediately rejects new view/expand calls; ordinary Circadian continues. |
+| Turn it on | `circadian extensions enable views` | Enables the optional tools and next wake's usage notice. |
+| Show usage | `circadian --help` | Lists controls, read commands and agent usage. |
+
+Controls/checks print readable text. Add `--json` for scripts. A check reports
+`PASS`, `INCOMPLETE`, `FAIL`, or `OFF`; only PASS exits zero. INCOMPLETE/OFF exit
+2 and FAIL exits 1. An empty global view or unavailable evidence is incomplete,
+not a made-up success. The check reads memory and writes an operational receipt
+to the existing event log; it calls no model and changes no memory.
+
+ON describes configuration. The last recorded request describes a call through
+CLI, MCP or Pi; it cannot tell whether a person or an agent initiated that call,
+or whether a later answer used the evidence well. Status checks only the last
+64 KiB of the event log and says when no request was found there. Running the
+check command does not manufacture an ordinary view/expand usage receipt.
+
 ```sh
 circadian extensions enable views
 circadian extensions status
@@ -38,8 +60,45 @@ error when requested; ordinary tools remain available.
 circadian extensions disable views
 ```
 
-Wake, graze, sleep, REM, and ordinary recall retain their existing behavior.
-Enabling this addition does not add material to the wake injection.
+The disabled default retains its original wake output. When enabled, wake adds
+a short capability notice outside remembered data, and the existing status
+strip shows `views ON`. Graze, sleep, REM, and ordinary recall are unchanged.
+
+## How the agent knows and uses it
+
+You normally keep talking to the agent. For example: “What did we decide about
+that trip?” or “Use my earlier preferences when suggesting options.” You do not
+have to name this extension each time. Enabled startup guidance and tool
+descriptions tell the agent to use it when the task needs remembered
+preferences, decisions or context absent from wake, then expand relevant
+references for evidence. They do not require a call on every prompt.
+
+1. The existing wake path delivers the short usage note when views are enabled.
+2. The MCP server advertises `memory_view` and `memory_expand` with their
+   triggers and rules. Pi's existing extension registers the same definitions
+   as native tools. Both paths check the flag again when called.
+3. The agent chooses the scope, checks omissions, expands relevant records,
+   checks freshness/eligibility, and uses the returned evidence in its response.
+4. A harness with shell access can use the equivalent CLI commands.
+
+Delivery and registration are testable. Whether a particular model follows the
+instructions is a behavioral outcome, visible in that session's actual tool
+calls and answer. An enabled flag alone is not evidence of that outcome.
+
+Existing MCP sessions need a reconnect/new session to load updated server code
+and discover tools. Pi needs `/reload` or a new session for newly registered
+tools; a new session also receives the wake note. Turning views off takes effect
+on the next call, including from a previously advertised tool. Already loaded
+context cannot be removed from an ongoing conversation by disabling a tool.
+
+For Codex installations without a Circadian connection, register the existing
+local server with `codex mcp add circadian --env CIRCADIAN_HOME=/absolute/path/to/circadian -- /absolute/path/to/bun /absolute/path/to/circadian/src/serve.ts`.
+Use the actual installation paths and verify with `codex mcp get circadian`.
+This adds the read tools; it does not install Codex wake/sleep lifecycle hooks.
+See [official MCP configuration](https://developers.openai.com/codex/mcp/).
+
+Other harnesses need either that MCP connection or an existing wake/CLI binding;
+enabling the flag does not install an integration into an arbitrary harness.
 
 ## Use the returned reference
 
@@ -61,9 +120,7 @@ receipts. Exact original atom text is in an available entry's `content`; the
 preview carries the parsed atom fields once to avoid spending context on a
 duplicate copy.
 
-The existing MCP server exposes `memory_view` and `memory_expand` when enabled.
-Ask the harness to refresh its tool discovery if it retains the earlier tool
-list. The tools take the same options, with `maxRecords` and `scanCap` in camel
+The tools take the same options, with `maxRecords` and `scanCap` in camel
 case; `memory_expand` takes a `refs` array of `{id, revision}` objects. The
 configuration is rechecked on each optional call, so disabling it also rejects
 calls made from a previously discovered tool list.
