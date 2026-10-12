@@ -1,8 +1,14 @@
 # Circadian session handoff — 2026-10-12
 
-## Starting command
+## Current state: PARKED
 
-After this branch is landed and pulled where you work:
+This closeout is parked on branch `circ/circadian-close-final` pending box/tooling-owner repair of the missing activity hooks and the sanctioned landing path. The required worker land command refused with: `the spine shows no activity for this worker, so its grounding cannot be shown (are its hooks loading? hive doctor)`. Do not bypass that refusal, fabricate events, retry landing from this worker, or change machine tooling from Circadian work.
+
+Main remains `5df695dfe265a90dfbadbd762b4a912560e34a71`. Views remain ON/PASS on both checked machines. The completed project gate receipt is preserved: `/home/jrg/concierge/bin/gate sh -c 'bun test'` passed with 939 pass, 93 skip, 0 fail.
+
+## Starting command after tooling repair and landing
+
+After the sanctioned landing path is repaired, this branch is landed, and the result is pulled where you work:
 
 ```sh
 cd ~/circadian && git pull --ff-only && circadian extensions status && circadian extensions check views
@@ -21,6 +27,8 @@ Enabled wake adds a short usage note outside remembered data; disabled wake is u
 ## What remains research-only
 
 Everything under `research/` is preserved research evidence unless a later brief explicitly promotes a bounded part. The six dossiers, refinements, prototypes, peer work, fictional lab receipts and visual explainer are not production extensions. There is no claim of a general category-theory engine, universal ontology, measured superiority, or automatic model use.
+
+Current `src/extensions.ts` exposes only the `views` boolean. A generalized plugin loader is not implemented. If a second extension is added later, it should add only the smallest independently disabled and fallback-preserving contract rather than broadening this one into an extension framework.
 
 ## Six original proposals: status and next action
 
@@ -69,4 +77,4 @@ What fell short: experimentation sprawled, scope drifted, and the operator/agent
 - Lab contract: `research/lab/AGENTS.md`
 - Operational receipts: `research/session-close/delivery-report.md`, `research/session-close/review-report.md`, `research/session-close/codex-discovery-receipt.json`, `research/session-close/operational-metadata.md`
 
-No fresh experiments are required to resume. Start with P1 observation in real use.
+No fresh experiments are required to resume. After tooling repair, sanctioned landing and pull, start with P1 observation in real use.
