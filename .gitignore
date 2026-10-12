@@ -6,6 +6,10 @@
 # each user's machine.
 mind/
 
+# Per-install optional capabilities; never part of the shared mind.
+/extensions.json
+/extensions.json.*.tmp
+
 # runtime logs (launchd stdout/stderr + event ledgers)
 logs/*.log
 logs/*.jsonl

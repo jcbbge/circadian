@@ -115,7 +115,10 @@ export function archaeologyMain(args: string[]): void {
 }
 
 if (import.meta.main) {
-  if (process.argv[2] === "erase") {
+  if (["extensions", "view", "expand"].includes(process.argv[2])) {
+    const { viewsMain } = await import("./views-cli.ts");
+    await viewsMain(process.env.CIRCADIAN_HOME || path.join(homedir(), "circadian"), process.argv.slice(2));
+  } else if (process.argv[2] === "erase") {
     const { erase } = await import("./erase.ts");
     const args = process.argv.slice(3);
     const m = args.indexOf("--mind"), r = args.indexOf("--reason");

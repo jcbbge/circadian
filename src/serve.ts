@@ -17,6 +17,7 @@ import { collectEpisodes, matchEpisodes, parseQuery, selfLinesForDate, taughtLin
 import { statusSnapshot } from "./status.ts";
 import { recallScope } from "./scopes.ts";
 import { ok, idle, degraded, correlation } from "./obs.ts";
+import { readExtensions, requireViews } from "./extensions.ts";
 
 const tools = [
   { name: "memory_search", description: "Search provenance-pinned mind evidence; depth >= 0 includes deeper and below-floor atoms via dig (0 searches all atoms).", inputSchema: { type: "object", properties: { query: { type: "string" }, k: { type: "integer", minimum: 1, maximum: 50 }, depth: { type: "integer", minimum: 0 } }, required: ["query"], additionalProperties: false } },
@@ -25,6 +26,12 @@ const tools = [
   { name: "memory_recall", description: "Full-resolution read of a named scope (same path as wake and CLI).", inputSchema: { type: "object", properties: { scope: { type: "string" }, since: { type: "string" }, depth: { type: "string" } }, required: ["scope"], additionalProperties: false } },
   { name: "memory_status", description: "Read the mind vitals from circadian status.", inputSchema: { type: "object", properties: {}, additionalProperties: false } },
   { name: "memory_request_change", description: "Suggest a change to the stacker. Records an intent only; never edits or publishes an atom.", inputSchema: { type: "object", properties: { change: { type: "string", description: "Proposed change and why" }, source: { type: "string", description: "Optional provenance for the stacker to verify" } }, required: ["change"], additionalProperties: false } },
+] as const;
+
+const viewOptions = { chars: { type: "integer", minimum: 0, maximum: 128000 }, scanCap: { type: "integer", minimum: 0, maximum: 10000 } };
+const viewTools = [
+  { name: "memory_view", description: "Optional scoped, whole-atom view with a serialized character budget, omission counts and revision-pinned expansion references. Reads current files only.", inputSchema: { type: "object", properties: { scope: { type: "string", pattern: "^[a-z0-9][a-z0-9_-]*$", maxLength: 80 }, ...viewOptions, maxRecords: { type: "integer", minimum: 0, maximum: 100 } }, required: ["scope"], additionalProperties: false } },
+  { name: "memory_expand", description: "Expand references from memory_view after checking fresh eligibility and observed file revisions; returns explicit changed/ineligible/unavailable statuses without substituting other content.", inputSchema: { type: "object", properties: { refs: { type: "array", minItems: 1, maxItems: 10000, items: { type: "object", properties: { id: { type: "string", pattern: "^[a-f0-9]{12}$" }, revision: { type: "string", pattern: "^[a-f0-9]{64}$" } }, required: ["id", "revision"], additionalProperties: false } }, ...viewOptions }, required: ["refs"], additionalProperties: false } },
 ] as const;
 
 type Args = Record<string, unknown>;
@@ -45,10 +52,19 @@ function safeId(id: string): boolean {
 /** Tool dispatcher exported for deterministic tests; server calls it without a write-capable publication path. */
 export async function callTool(home: string, name: string, args: Args): Promise<unknown> {
   const mind = path.join(home, "mind");
-  if (!tools.some(t => t.name === name)) throw new Error(`unknown tool: ${name}`);
+  const optional = viewTools.some(t => t.name === name);
+  if (optional) requireViews(home);
+  else if (!tools.some(t => t.name === name)) throw new Error(`unknown tool: ${name}`);
   if (!args || typeof args !== "object" || Array.isArray(args)) throw new Error("arguments must be an object");
-  const allowed: Record<string, string[]> = { memory_search: ["query", "k", "depth"], memory_read: ["id"], memory_history: ["query"], memory_status: [], memory_recall: ["scope", "since", "depth"], memory_request_change: ["change", "source"] };
+  const allowed: Record<string, string[]> = { memory_search: ["query", "k", "depth"], memory_read: ["id"], memory_history: ["query"], memory_status: [], memory_recall: ["scope", "since", "depth"], memory_request_change: ["change", "source"], memory_view: ["scope", "chars", "maxRecords", "scanCap"], memory_expand: ["refs", "chars", "scanCap"] };
   if (Object.keys(args).some(k => !allowed[name].includes(k))) throw new Error("unknown argument");
+  if (optional) {
+    const { memoryView, memoryExpand } = await import("./views.ts");
+    const options = { chars: count(args.chars, name === "memory_view" ? 6000 : 32000, 128000), scanCap: count(args.scanCap, name === "memory_view" ? 500 : 12, 10000) };
+    if (name === "memory_view") return memoryView(mind, text(args, "scope", 80), { ...options, maxRecords: count(args.maxRecords, 12, 100) });
+    if (!Array.isArray(args.refs) || !args.refs.length || args.refs.length > 10000 || args.refs.some(ref => !ref || typeof ref !== "object" || Array.isArray(ref) || Object.keys(ref).some(key => !["id", "revision"].includes(key)) || typeof ref.id !== "string" || !/^[a-f0-9]{12}$/.test(ref.id) || typeof ref.revision !== "string" || !/^[a-f0-9]{64}$/.test(ref.revision))) throw new Error("refs must contain 1 to 10000 objects with only a 12-hex id and 64-hex revision");
+    return memoryExpand(mind, args.refs, options);
+  }
   if (name === "memory_search") {
     const query = text(args, "query");
     const k = count(args.k, 5, 50);
@@ -133,16 +149,22 @@ export async function handle(home: string, request: Request): Promise<object | n
     let result: unknown;
     if (request.method === "initialize") result = { protocolVersion: "2024-11-05", capabilities: { tools: {} }, serverInfo: { name: "circadian", version: "0.1.0" } };
     else if (request.method === "ping") result = {};
-    else if (request.method === "tools/list") result = { tools };
+    else if (request.method === "tools/list") result = { tools: readExtensions(home).views ? [...tools, ...viewTools] : tools };
     else if (request.method === "tools/call") {
       const name = request.params?.name;
       const start = performance.now();
       try {
         const data = await callTool(home, name, request.params?.arguments ?? {});
+        const optional = viewTools.some(t => t.name === name);
+        const view = optional ? data as { kind: string; reason?: string; coverage?: { complete: boolean; inspected: number; included: number; omitted: number; unresolved: number }; complete?: boolean; inspected?: number; entries?: { status: string; sources?: { status: string }[] }[] } : undefined;
+        const rejected = !!view && !["view", "expansion"].includes(view.kind);
+        const partial = view?.coverage?.complete === false || view?.complete === false || view?.entries?.some(entry => entry.status !== "available" || entry.sources?.some(source => source.status !== "available"));
         const count = Array.isArray(data) ? data.length : 1;
-        const event = { process: "ops" as const, phase: `mcp-${name}`, correlation_id: correlation("serve"), summary: `${name} returned ${count} result(s)`, context: { count, ms: Math.round(performance.now() - start) } };
-        if (count === 0) idle(event); else ok(event);
-        result = { content: [{ type: "text", text: JSON.stringify(data) }] };
+        const counts = view?.coverage ? view.coverage : view?.entries ? { inspected: view.inspected, entries: view.entries.length, available: view.entries.filter(entry => entry.status === "available").length } : {};
+        const event = { process: "ops" as const, phase: `mcp-${name}`, correlation_id: correlation("serve"), summary: rejected ? "optional memory request rejected" : partial ? "optional memory request returned partial coverage" : `${name} returned ${count} result(s)`, context: { count, ...counts, ...(partial ? { complete: false } : {}), ms: Math.round(performance.now() - start) } };
+        if (rejected) degraded({ ...event, cause: view?.reason || "invalid request", next_action: "check extension status and tool arguments" });
+        else if (count === 0) idle(event); else ok(event);
+        result = { ...(rejected ? { isError: true } : {}), content: [{ type: "text", text: JSON.stringify(data) }] };
       } catch (e) {
         degraded({ process: "ops", phase: "mcp-tool", summary: "tool request failed", context: { name }, cause: (e as Error).message, next_action: "check tool arguments and mind index, then retry" });
         result = { isError: true, content: [{ type: "text", text: (e as Error).message }] };

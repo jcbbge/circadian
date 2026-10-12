@@ -54,7 +54,10 @@ if (import.meta.main) {
   const [command, arg, ...flags] = process.argv.slice(2);
   const home = process.env.CIRCADIAN_HOME || path.join(homedir(), "circadian");
   try {
-    if (command === "status" && arg === "--line") console.log(healthLine(home));
+    if (["extensions", "view", "expand"].includes(command)) {
+      const { viewsMain } = await import("../src/views-cli.ts");
+      await viewsMain(home, process.argv.slice(2));
+    } else if (command === "status" && arg === "--line") console.log(healthLine(home));
     else if (command === "recall" && arg && /^[a-z0-9][a-z0-9_-]*$/.test(arg)) {
       const since = flags.indexOf("--since");
       const depth = flags.indexOf("--depth");
