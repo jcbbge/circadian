@@ -1,0 +1,4389 @@
+{
+  "purpose": "Independent source-grounded semantic calibration scoring. Anonymized producer/model labels; representation format may remain inferable. This is not benefit evidence.",
+  "items": [
+    {
+      "stage": "reader",
+      "caseId": "cal-04-conservatory",
+      "sources": [
+        {
+          "id": "cal-04-note",
+          "revision": "r1",
+          "text": "Inez requires a quiet place with seating and is available from 13:00 to 14:00. Pavel has no quiet requirement but does require seating and is available from 13:20 to 14:10. The conservatory is open, quiet, and has seating. They want a 25-minute visit."
+        }
+      ],
+      "caller": {
+        "participants": [
+          "Inez",
+          "Pavel"
+        ],
+        "places": [
+          "conservatory"
+        ],
+        "occasion": "conservatory-visit",
+        "asOf": 790,
+        "applicability": "applies",
+        "retired": false,
+        "sourceStates": {
+          "cal-04-note": {
+            "revision": "r1",
+            "available": true,
+            "eligible": true,
+            "validity": "current"
+          }
+        }
+      },
+      "question": "Where and during what earliest 25-minute time window can Inez and Pavel make their visit, given the current time and supplied requirements? Clock time or minutes after midnight are both acceptable.",
+      "rubric": {
+        "required": [
+          "Conservatory during 13:20\u201313:45 OR 800\u2013825 minutes after midnight; either form is sufficient."
+        ],
+        "forbidden": [
+          "Invented travel times, closures, or reasons beyond the source.",
+          "Treat Pavel as requiring quiet."
+        ],
+        "acceptableUnknown": [
+          "A tentative option is appropriate; no booking or current real-world opening has been verified."
+        ]
+      },
+      "referenceAnnotations": {
+        "data": {
+          "preferences": [
+            {
+              "participant": "Inez",
+              "quiet": true,
+              "seating": true,
+              "sourceId": "cal-04-note"
+            },
+            {
+              "participant": "Pavel",
+              "quiet": false,
+              "seating": true,
+              "sourceId": "cal-04-note"
+            }
+          ],
+          "availability": [
+            {
+              "participant": "Inez",
+              "windows": [
+                [
+                  780,
+                  840
+                ]
+              ],
+              "sourceId": "cal-04-note"
+            },
+            {
+              "participant": "Pavel",
+              "windows": [
+                [
+                  800,
+                  850
+                ]
+              ],
+              "sourceId": "cal-04-note"
+            }
+          ],
+          "places": [
+            {
+              "place": "conservatory",
+              "quiet": true,
+              "seating": true,
+              "open": true,
+              "sourceId": "cal-04-note"
+            }
+          ],
+          "minutes": {
+            "value": 25,
+            "sourceId": "cal-04-note"
+          }
+        },
+        "evidence": [
+          {
+            "path": "preferences.0.quiet",
+            "sourceId": "cal-04-note",
+            "quote": "Inez requires a quiet place with seating and is available from 13:00 to 14:00. Pavel has no quiet requirement but does require seating and is available from 13:20 to 14:10. The conservatory is open, quiet, and has seating. They want a 25-minute visit."
+          },
+          {
+            "path": "preferences.0.seating",
+            "sourceId": "cal-04-note",
+            "quote": "Inez requires a quiet place with seating and is available from 13:00 to 14:00. Pavel has no quiet requirement but does require seating and is available from 13:20 to 14:10. The conservatory is open, quiet, and has seating. They want a 25-minute visit."
+          },
+          {
+            "path": "preferences.1.quiet",
+            "sourceId": "cal-04-note",
+            "quote": "Inez requires a quiet place with seating and is available from 13:00 to 14:00. Pavel has no quiet requirement but does require seating and is available from 13:20 to 14:10. The conservatory is open, quiet, and has seating. They want a 25-minute visit."
+          },
+          {
+            "path": "preferences.1.seating",
+            "sourceId": "cal-04-note",
+            "quote": "Inez requires a quiet place with seating and is available from 13:00 to 14:00. Pavel has no quiet requirement but does require seating and is available from 13:20 to 14:10. The conservatory is open, quiet, and has seating. They want a 25-minute visit."
+          },
+          {
+            "path": "availability.0.windows",
+            "sourceId": "cal-04-note",
+            "quote": "Inez requires a quiet place with seating and is available from 13:00 to 14:00. Pavel has no quiet requirement but does require seating and is available from 13:20 to 14:10. The conservatory is open, quiet, and has seating. They want a 25-minute visit."
+          },
+          {
+            "path": "availability.1.windows",
+            "sourceId": "cal-04-note",
+            "quote": "Inez requires a quiet place with seating and is available from 13:00 to 14:00. Pavel has no quiet requirement but does require seating and is available from 13:20 to 14:10. The conservatory is open, quiet, and has seating. They want a 25-minute visit."
+          },
+          {
+            "path": "places.0.quiet",
+            "sourceId": "cal-04-note",
+            "quote": "Inez requires a quiet place with seating and is available from 13:00 to 14:00. Pavel has no quiet requirement but does require seating and is available from 13:20 to 14:10. The conservatory is open, quiet, and has seating. They want a 25-minute visit."
+          },
+          {
+            "path": "places.0.seating",
+            "sourceId": "cal-04-note",
+            "quote": "Inez requires a quiet place with seating and is available from 13:00 to 14:00. Pavel has no quiet requirement but does require seating and is available from 13:20 to 14:10. The conservatory is open, quiet, and has seating. They want a 25-minute visit."
+          },
+          {
+            "path": "places.0.open",
+            "sourceId": "cal-04-note",
+            "quote": "Inez requires a quiet place with seating and is available from 13:00 to 14:00. Pavel has no quiet requirement but does require seating and is available from 13:20 to 14:10. The conservatory is open, quiet, and has seating. They want a 25-minute visit."
+          },
+          {
+            "path": "minutes.value",
+            "sourceId": "cal-04-note",
+            "quote": "Inez requires a quiet place with seating and is available from 13:00 to 14:00. Pavel has no quiet requirement but does require seating and is available from 13:20 to 14:10. The conservatory is open, quiet, and has seating. They want a 25-minute visit."
+          }
+        ],
+        "unknown": []
+      },
+      "fixtureNote": "Fictional task-aware calibration, not a test of autonomous recipe creation or multi-use savings.",
+      "readerPacket": {
+        "question": "Where and during what earliest 25-minute time window can Inez and Pavel make their visit, given the current time and supplied requirements? Clock time or minutes after midnight are both acceptable.",
+        "caller": {
+          "participants": [
+            "Inez",
+            "Pavel"
+          ],
+          "places": [
+            "conservatory"
+          ],
+          "occasion": "conservatory-visit",
+          "asOf": 790,
+          "applicability": "applies",
+          "retired": false,
+          "sourceStates": {
+            "cal-04-note": {
+              "revision": "r1",
+              "available": true,
+              "eligible": true,
+              "validity": "current"
+            }
+          }
+        },
+        "preparedMemory": {
+          "status": "extraction-unavailable",
+          "reason": "Candidate failed decoding or mapping. No source facts are available in this preparation."
+        }
+      },
+      "text": "The prepared memory indicates no source facts are available for determining a time window for Inez and Pavel's visit to the conservatory. Therefore, the earliest 25-minute time window cannot be identified from the provided information. The absence of valid data prevents any determination of a suitable time, including the current time (790 minutes after midnight).",
+      "id": "item-01"
+    },
+    {
+      "stage": "reader",
+      "caseId": "cal-06-journal-candidate",
+      "sources": [
+        {
+          "id": "cal-06-text-b",
+          "revision": "r1",
+          "text": "Noor wrote in her travel journal: \"For short winter walks, I always prefer the canal path to the hill trail.\""
+        }
+      ],
+      "caller": {
+        "pairId": "pair-a",
+        "role": "candidate",
+        "provenancePolicy": "unchanged-original",
+        "mode": "free",
+        "kind": "memory",
+        "origin": "travel-journal",
+        "sourceStates": {
+          "cal-06-text-b": {
+            "revision": "r1",
+            "available": true,
+            "eligible": true
+          }
+        }
+      },
+      "question": "What preference does this text attribute to Noor, under what circumstances, and with what strength or uncertainty?",
+      "rubric": {
+        "required": [
+          "Noor always prefers the canal path to the hill trail for short winter walks.",
+          "Treat this as attributed journal content."
+        ],
+        "forbidden": [
+          "Drop the short-winter-walk condition.",
+          "Turn the explicit always into a tentative might.",
+          "Declare global meaning preservation."
+        ],
+        "acceptableUnknown": [
+          "Whether this preference is true outside the quoted journal statement."
+        ]
+      },
+      "referenceAnnotations": {
+        "data": {
+          "subject": {
+            "state": "known",
+            "value": "Noor"
+          },
+          "attribution": {
+            "state": "known",
+            "value": "Noor wrote in her travel journal"
+          },
+          "circumstance": {
+            "state": "known",
+            "value": "For short winter walks"
+          },
+          "modality": {
+            "state": "known",
+            "value": "always prefer"
+          },
+          "comparison": {
+            "state": "known",
+            "value": "the canal path to the hill trail"
+          }
+        },
+        "evidence": [
+          {
+            "path": "subject",
+            "sourceId": "cal-06-text-b",
+            "quote": "Noor wrote in her travel journal: \"For short winter walks, I always prefer the canal path to the hill trail.\""
+          },
+          {
+            "path": "attribution",
+            "sourceId": "cal-06-text-b",
+            "quote": "Noor wrote in her travel journal: \"For short winter walks, I always prefer the canal path to the hill trail.\""
+          },
+          {
+            "path": "circumstance",
+            "sourceId": "cal-06-text-b",
+            "quote": "Noor wrote in her travel journal: \"For short winter walks, I always prefer the canal path to the hill trail.\""
+          },
+          {
+            "path": "modality",
+            "sourceId": "cal-06-text-b",
+            "quote": "Noor wrote in her travel journal: \"For short winter walks, I always prefer the canal path to the hill trail.\""
+          },
+          {
+            "path": "comparison",
+            "sourceId": "cal-06-text-b",
+            "quote": "Noor wrote in her travel journal: \"For short winter walks, I always prefer the canal path to the hill trail.\""
+          }
+        ],
+        "unknown": []
+      },
+      "fixtureNote": "Independent annotation package. Old/candidate pairing happens only after extraction; deterministic check should flag changed modality, with prose still unassessed.",
+      "readerPacket": {
+        "question": "What preference does this text attribute to Noor, under what circumstances, and with what strength or uncertainty?",
+        "caller": {
+          "pairId": "pair-a",
+          "role": "candidate",
+          "provenancePolicy": "unchanged-original",
+          "mode": "free",
+          "kind": "memory",
+          "origin": "travel-journal",
+          "sourceStates": {
+            "cal-06-text-b": {
+              "revision": "r1",
+              "available": true,
+              "eligible": true
+            }
+          }
+        },
+        "preparedMemory": {
+          "status": "extraction-unavailable",
+          "reason": "Candidate failed decoding or mapping. No source facts are available in this preparation."
+        }
+      },
+      "text": "The prepared memory indicates that no source facts are available for extraction, as the candidate failed decoding or mapping. Therefore, it is unknown what preference, if any, the text attributes to Noor, under what circumstances, or with what strength or uncertainty. No further interpretation can be made from the provided information.",
+      "id": "item-02"
+    },
+    {
+      "stage": "reader",
+      "caseId": "cal-04-conservatory",
+      "sources": [
+        {
+          "id": "cal-04-note",
+          "revision": "r1",
+          "text": "Inez requires a quiet place with seating and is available from 13:00 to 14:00. Pavel has no quiet requirement but does require seating and is available from 13:20 to 14:10. The conservatory is open, quiet, and has seating. They want a 25-minute visit."
+        }
+      ],
+      "caller": {
+        "participants": [
+          "Inez",
+          "Pavel"
+        ],
+        "places": [
+          "conservatory"
+        ],
+        "occasion": "conservatory-visit",
+        "asOf": 790,
+        "applicability": "applies",
+        "retired": false,
+        "sourceStates": {
+          "cal-04-note": {
+            "revision": "r1",
+            "available": true,
+            "eligible": true,
+            "validity": "current"
+          }
+        }
+      },
+      "question": "Where and during what earliest 25-minute time window can Inez and Pavel make their visit, given the current time and supplied requirements? Clock time or minutes after midnight are both acceptable.",
+      "rubric": {
+        "required": [
+          "Conservatory during 13:20\u201313:45 OR 800\u2013825 minutes after midnight; either form is sufficient."
+        ],
+        "forbidden": [
+          "Invented travel times, closures, or reasons beyond the source.",
+          "Treat Pavel as requiring quiet."
+        ],
+        "acceptableUnknown": [
+          "A tentative option is appropriate; no booking or current real-world opening has been verified."
+        ]
+      },
+      "referenceAnnotations": {
+        "data": {
+          "preferences": [
+            {
+              "participant": "Inez",
+              "quiet": true,
+              "seating": true,
+              "sourceId": "cal-04-note"
+            },
+            {
+              "participant": "Pavel",
+              "quiet": false,
+              "seating": true,
+              "sourceId": "cal-04-note"
+            }
+          ],
+          "availability": [
+            {
+              "participant": "Inez",
+              "windows": [
+                [
+                  780,
+                  840
+                ]
+              ],
+              "sourceId": "cal-04-note"
+            },
+            {
+              "participant": "Pavel",
+              "windows": [
+                [
+                  800,
+                  850
+                ]
+              ],
+              "sourceId": "cal-04-note"
+            }
+          ],
+          "places": [
+            {
+              "place": "conservatory",
+              "quiet": true,
+              "seating": true,
+              "open": true,
+              "sourceId": "cal-04-note"
+            }
+          ],
+          "minutes": {
+            "value": 25,
+            "sourceId": "cal-04-note"
+          }
+        },
+        "evidence": [
+          {
+            "path": "preferences.0.quiet",
+            "sourceId": "cal-04-note",
+            "quote": "Inez requires a quiet place with seating and is available from 13:00 to 14:00. Pavel has no quiet requirement but does require seating and is available from 13:20 to 14:10. The conservatory is open, quiet, and has seating. They want a 25-minute visit."
+          },
+          {
+            "path": "preferences.0.seating",
+            "sourceId": "cal-04-note",
+            "quote": "Inez requires a quiet place with seating and is available from 13:00 to 14:00. Pavel has no quiet requirement but does require seating and is available from 13:20 to 14:10. The conservatory is open, quiet, and has seating. They want a 25-minute visit."
+          },
+          {
+            "path": "preferences.1.quiet",
+            "sourceId": "cal-04-note",
+            "quote": "Inez requires a quiet place with seating and is available from 13:00 to 14:00. Pavel has no quiet requirement but does require seating and is available from 13:20 to 14:10. The conservatory is open, quiet, and has seating. They want a 25-minute visit."
+          },
+          {
+            "path": "preferences.1.seating",
+            "sourceId": "cal-04-note",
+            "quote": "Inez requires a quiet place with seating and is available from 13:00 to 14:00. Pavel has no quiet requirement but does require seating and is available from 13:20 to 14:10. The conservatory is open, quiet, and has seating. They want a 25-minute visit."
+          },
+          {
+            "path": "availability.0.windows",
+            "sourceId": "cal-04-note",
+            "quote": "Inez requires a quiet place with seating and is available from 13:00 to 14:00. Pavel has no quiet requirement but does require seating and is available from 13:20 to 14:10. The conservatory is open, quiet, and has seating. They want a 25-minute visit."
+          },
+          {
+            "path": "availability.1.windows",
+            "sourceId": "cal-04-note",
+            "quote": "Inez requires a quiet place with seating and is available from 13:00 to 14:00. Pavel has no quiet requirement but does require seating and is available from 13:20 to 14:10. The conservatory is open, quiet, and has seating. They want a 25-minute visit."
+          },
+          {
+            "path": "places.0.quiet",
+            "sourceId": "cal-04-note",
+            "quote": "Inez requires a quiet place with seating and is available from 13:00 to 14:00. Pavel has no quiet requirement but does require seating and is available from 13:20 to 14:10. The conservatory is open, quiet, and has seating. They want a 25-minute visit."
+          },
+          {
+            "path": "places.0.seating",
+            "sourceId": "cal-04-note",
+            "quote": "Inez requires a quiet place with seating and is available from 13:00 to 14:00. Pavel has no quiet requirement but does require seating and is available from 13:20 to 14:10. The conservatory is open, quiet, and has seating. They want a 25-minute visit."
+          },
+          {
+            "path": "places.0.open",
+            "sourceId": "cal-04-note",
+            "quote": "Inez requires a quiet place with seating and is available from 13:00 to 14:00. Pavel has no quiet requirement but does require seating and is available from 13:20 to 14:10. The conservatory is open, quiet, and has seating. They want a 25-minute visit."
+          },
+          {
+            "path": "minutes.value",
+            "sourceId": "cal-04-note",
+            "quote": "Inez requires a quiet place with seating and is available from 13:00 to 14:00. Pavel has no quiet requirement but does require seating and is available from 13:20 to 14:10. The conservatory is open, quiet, and has seating. They want a 25-minute visit."
+          }
+        ],
+        "unknown": []
+      },
+      "fixtureNote": "Fictional task-aware calibration, not a test of autonomous recipe creation or multi-use savings.",
+      "readerPacket": {
+        "question": "Where and during what earliest 25-minute time window can Inez and Pavel make their visit, given the current time and supplied requirements? Clock time or minutes after midnight are both acceptable.",
+        "caller": {
+          "participants": [
+            "Inez",
+            "Pavel"
+          ],
+          "places": [
+            "conservatory"
+          ],
+          "occasion": "conservatory-visit",
+          "asOf": 790,
+          "applicability": "applies",
+          "retired": false,
+          "sourceStates": {
+            "cal-04-note": {
+              "revision": "r1",
+              "available": true,
+              "eligible": true,
+              "validity": "current"
+            }
+          }
+        },
+        "preparedMemory": {
+          "prose": "Inez requires a quiet place with seating and is available from 13:00 to 14:00. Pavel requires seating but has no quiet requirement and is available from 13:20 to 14:10. The conservatory is open, quiet, and has seating. A 25-minute visit is desired. The earliest feasible window that accommodates both participants, their seating needs, and the conservatory\u2019s quiet and seating availability falls between 13:20 and 13:45. This window satisfies Inez\u2019s quiet requirement, both participants\u2019 seating needs, and the conservatory\u2019s open, quiet, and seating conditions. The visit duration is 25 minutes, as specified. Evidence: \"quiet\" for Inez (source: cal-04-note), \"seating\" for both Inez and Pavel (source: cal-04-note), \"open\", \"quiet\", and \"seating\" for the conservatory (source: cal-04-note), and \"minutes.value\" as 25 (source: cal-04-note). No unresolved items are present."
+        }
+      },
+      "text": "The earliest 25-minute time window for Inez and Pavel to visit the conservatory is from 13:20 to 13:45. This window satisfies Inez\u2019s need for a quiet place with seating, Pavel\u2019s need for seating, and the conservatory\u2019s availability of quiet and seating. The visit duration of 25 minutes is met, and all requirements are supported by the evidence in cal-04-note.",
+      "id": "item-03"
+    },
+    {
+      "stage": "reader",
+      "caseId": "cal-06-journal-old",
+      "sources": [
+        {
+          "id": "cal-06-text-a",
+          "revision": "r1",
+          "text": "Noor wrote in her travel journal: \"For short winter walks, I might prefer the canal path to the hill trail.\""
+        }
+      ],
+      "caller": {
+        "pairId": "pair-a",
+        "role": "old",
+        "provenancePolicy": "unchanged-original",
+        "mode": "free",
+        "kind": "memory",
+        "origin": "travel-journal",
+        "sourceStates": {
+          "cal-06-text-a": {
+            "revision": "r1",
+            "available": true,
+            "eligible": true
+          }
+        }
+      },
+      "question": "What preference does this text attribute to Noor, under what circumstances, and with what strength or uncertainty?",
+      "rubric": {
+        "required": [
+          "Noor might prefer the canal path to the hill trail for short winter walks.",
+          "Treat this as attributed journal content."
+        ],
+        "forbidden": [
+          "Drop the short-winter-walk condition.",
+          "Turn tentative preference into certainty.",
+          "Declare global meaning preservation."
+        ],
+        "acceptableUnknown": [
+          "Whether this preference is true outside the quoted journal statement."
+        ]
+      },
+      "referenceAnnotations": {
+        "data": {
+          "subject": {
+            "state": "known",
+            "value": "Noor"
+          },
+          "attribution": {
+            "state": "known",
+            "value": "Noor wrote in her travel journal"
+          },
+          "circumstance": {
+            "state": "known",
+            "value": "For short winter walks"
+          },
+          "modality": {
+            "state": "known",
+            "value": "might prefer"
+          },
+          "comparison": {
+            "state": "known",
+            "value": "the canal path to the hill trail"
+          }
+        },
+        "evidence": [
+          {
+            "path": "subject",
+            "sourceId": "cal-06-text-a",
+            "quote": "Noor wrote in her travel journal: \"For short winter walks, I might prefer the canal path to the hill trail.\""
+          },
+          {
+            "path": "attribution",
+            "sourceId": "cal-06-text-a",
+            "quote": "Noor wrote in her travel journal: \"For short winter walks, I might prefer the canal path to the hill trail.\""
+          },
+          {
+            "path": "circumstance",
+            "sourceId": "cal-06-text-a",
+            "quote": "Noor wrote in her travel journal: \"For short winter walks, I might prefer the canal path to the hill trail.\""
+          },
+          {
+            "path": "modality",
+            "sourceId": "cal-06-text-a",
+            "quote": "Noor wrote in her travel journal: \"For short winter walks, I might prefer the canal path to the hill trail.\""
+          },
+          {
+            "path": "comparison",
+            "sourceId": "cal-06-text-a",
+            "quote": "Noor wrote in her travel journal: \"For short winter walks, I might prefer the canal path to the hill trail.\""
+          }
+        ],
+        "unknown": []
+      },
+      "fixtureNote": "Independent annotation package. Old/candidate pairing happens only after extraction; deterministic check should flag changed modality, with prose still unassessed.",
+      "readerPacket": {
+        "question": "What preference does this text attribute to Noor, under what circumstances, and with what strength or uncertainty?",
+        "caller": {
+          "pairId": "pair-a",
+          "role": "old",
+          "provenancePolicy": "unchanged-original",
+          "mode": "free",
+          "kind": "memory",
+          "origin": "travel-journal",
+          "sourceStates": {
+            "cal-06-text-a": {
+              "revision": "r1",
+              "available": true,
+              "eligible": true
+            }
+          }
+        },
+        "preparedMemory": {
+          "prose": "Noor expressed a preference for the canal path over the hill trail for short winter walks. This preference is reported in her travel journal, indicating her personal choice under specific conditions. The circumstance is limited to short winter walks, suggesting the preference may not apply to longer or different seasonal outings. The modality reflects a personal inclination, using the word \"might\" to indicate uncertainty or softness in the preference. The comparison is explicitly made between the canal path and the hill trail, with the canal path being the favored option. The attribution is directly from Noor\u2019s journal, where she wrote: \"For short winter walks, I might prefer the canal path to the hill trail.\" The subject of the preference is the canal path, as it is the option being favored. No further details about the reasoning, environmental factors, or other contextual elements are provided in the source. The source text is from \"cal-006-text-a\" (revision r1), and no other information is available to resolve uncertainties."
+        }
+      },
+      "text": "Noor expresses a preference for the canal path over the hill trail, specifically for short winter walks. This preference is described with the word \"might,\" indicating a soft or uncertain inclination rather than a strong or definitive choice. The circumstance is limited to short winter walks, and the source attributes this to Noor\u2019s own journal entry, citing \"cal-06-text-a\" (revision r1). There is no further detail on her reasoning or environmental factors, so the strength of the preference remains qualified by uncertainty.",
+      "id": "item-04"
+    },
+    {
+      "stage": "reader",
+      "caseId": "cal-01-qualified-view",
+      "sources": [
+        {
+          "id": "seed-note",
+          "revision": "r1",
+          "text": "The seed library lends trays for seven days. Members may renew once only if nobody is waiting."
+        },
+        {
+          "id": "garden-note",
+          "revision": "r1",
+          "text": "The courtyard garden opens after sunrise. Access is suspended while the grounds are icy."
+        }
+      ],
+      "caller": {
+        "scopes": {
+          "seed-library": "seed library",
+          "courtyard-garden": "courtyard garden"
+        },
+        "states": {
+          "seed-note": {
+            "revision": "r1",
+            "available": true,
+            "eligible": true
+          },
+          "garden-note": {
+            "revision": "r1",
+            "available": true,
+            "eligible": true
+          }
+        },
+        "populationComplete": true,
+        "limits": {
+          "chars": 850,
+          "maxRecords": 1,
+          "scanCap": 8,
+          "maxRecordChars": 1800
+        }
+      },
+      "question": "Can members always renew a borrowed seed tray? What limits apply?",
+      "rubric": {
+        "required": [
+          "Renewal is permitted once only if nobody is waiting."
+        ],
+        "forbidden": [
+          "Unconditional renewal.",
+          "Claim that the entire memory or every supplied record appears in the view."
+        ],
+        "acceptableUnknown": [
+          "No claim about policies or records outside the supplied population."
+        ]
+      },
+      "referenceAnnotations": {
+        "data": {
+          "records": [
+            {
+              "sourceId": "seed-note",
+              "claim": "The seed library lends trays for seven days.",
+              "qualifications": [
+                "Members may renew once only if nobody is waiting."
+              ],
+              "scope": "seed-library"
+            },
+            {
+              "sourceId": "garden-note",
+              "claim": "The courtyard garden opens after sunrise.",
+              "qualifications": [
+                "Access is suspended while the grounds are icy."
+              ],
+              "scope": "courtyard-garden"
+            }
+          ]
+        },
+        "evidence": [
+          {
+            "path": "data.records.0.claim",
+            "sourceId": "seed-note",
+            "quote": "The seed library lends trays for seven days. Members may renew once only if nobody is waiting."
+          },
+          {
+            "path": "data.records.0.qualifications.0",
+            "sourceId": "seed-note",
+            "quote": "The seed library lends trays for seven days. Members may renew once only if nobody is waiting."
+          },
+          {
+            "path": "data.records.0.scope",
+            "sourceId": "seed-note",
+            "quote": "The seed library lends trays for seven days. Members may renew once only if nobody is waiting."
+          },
+          {
+            "path": "data.records.1.claim",
+            "sourceId": "garden-note",
+            "quote": "The courtyard garden opens after sunrise. Access is suspended while the grounds are icy."
+          },
+          {
+            "path": "data.records.1.qualifications.0",
+            "sourceId": "garden-note",
+            "quote": "The courtyard garden opens after sunrise. Access is suspended while the grounds are icy."
+          },
+          {
+            "path": "data.records.1.scope",
+            "sourceId": "garden-note",
+            "quote": "The courtyard garden opens after sunrise. Access is suspended while the grounds are icy."
+          }
+        ],
+        "unknown": []
+      },
+      "fixtureNote": "Question-blind capture. Both readers answer the same renewal question. Coverage/omission is checked in deterministic tests, not required of the prose reader, which has no bounded-view operation. Does not test relevance ranking or expansion benefit.",
+      "readerPacket": {
+        "question": "Can members always renew a borrowed seed tray? What limits apply?",
+        "caller": {
+          "scopes": {
+            "seed-library": "seed library",
+            "courtyard-garden": "courtyard garden"
+          },
+          "states": {
+            "seed-note": {
+              "revision": "r1",
+              "available": true,
+              "eligible": true
+            },
+            "garden-note": {
+              "revision": "r1",
+              "available": true,
+              "eligible": true
+            }
+          },
+          "populationComplete": true,
+          "limits": {
+            "chars": 850,
+            "maxRecords": 1,
+            "scanCap": 8,
+            "maxRecordChars": 1800
+          }
+        },
+        "preparedMemory": {
+          "prose": "The seed library lends trays for seven days, with members allowed one renewal only if no one is waiting. The courtyard garden opens after sunrise, but access is suspended when the grounds are icy."
+        }
+      },
+      "text": "Members may renew a borrowed seed tray only once, provided no one is waiting for it. The loan period is seven days, and renewal is not guaranteed if there is a waiting list. Access to the courtyard garden, where trays are used, is suspended when the grounds are icy, which may indirectly affect tray return timelines.",
+      "id": "item-05"
+    },
+    {
+      "stage": "preparation",
+      "caseId": "cal-05-lanterns",
+      "sources": [
+        {
+          "id": "cal-05-event",
+          "revision": "r1",
+          "text": "At the lantern-making workshop, Mira cut paper and Soren assembled frames. Their work overlapped at the same table. They talked about a pattern designed by Jules. The note does not say whether Jules attended."
+        },
+        {
+          "id": "cal-05-reflection",
+          "revision": "r1",
+          "text": "The next morning Jules wrote about the lantern-making workshop: \"To me, the shared table made this an exercise in cooperation.\" This reflection does not state whether Jules was present."
+        }
+      ],
+      "caller": {
+        "people": [
+          "Mira",
+          "Soren",
+          "Jules"
+        ],
+        "occasionId": "lantern-workshop",
+        "eventSourceId": "cal-05-event",
+        "interpretationIds": {
+          "cal-05-reflection": "lantern-reflection"
+        },
+        "entryPolicy": "all-supplied-account-records",
+        "sourceStates": {
+          "cal-05-event": {
+            "revision": "r1",
+            "available": true,
+            "eligible": true
+          },
+          "cal-05-reflection": {
+            "revision": "r1",
+            "available": true,
+            "eligible": true
+          }
+        }
+      },
+      "question": "What did Jules think the workshop illustrated, and does the record establish that Jules attended?",
+      "rubric": {
+        "required": [
+          "Attribute the cooperation interpretation to Jules.",
+          "Attendance is unknown/not established."
+        ],
+        "forbidden": [
+          "Claim that Jules attended.",
+          "Claim that Jules was absent.",
+          "Present the attributed interpretation as an independently established event fact."
+        ],
+        "acceptableUnknown": [
+          "Whether Jules personally observed the shared table."
+        ]
+      },
+      "referenceAnnotations": {
+        "data": {
+          "narrative": "Mira cut paper and Soren assembled frames together at a lantern-making workshop; they discussed a pattern by Jules.",
+          "participants": [
+            {
+              "person": "Mira",
+              "role": "cut paper"
+            },
+            {
+              "person": "Soren",
+              "role": "assembled frames"
+            }
+          ],
+          "mentioned": [
+            "Jules"
+          ],
+          "coPresence": [
+            [
+              "Mira",
+              "Soren"
+            ]
+          ],
+          "interpretations": [
+            {
+              "sourceId": "cal-05-reflection",
+              "author": "Jules",
+              "account": "The shared table made the workshop an exercise in cooperation."
+            }
+          ]
+        },
+        "evidence": [
+          {
+            "path": "narrative",
+            "sourceId": "cal-05-event",
+            "quote": "At the lantern-making workshop, Mira cut paper and Soren assembled frames. Their work overlapped at the same table. They talked about a pattern designed by Jules. The note does not say whether Jules attended."
+          },
+          {
+            "path": "participants.0",
+            "sourceId": "cal-05-event",
+            "quote": "At the lantern-making workshop, Mira cut paper and Soren assembled frames. Their work overlapped at the same table. They talked about a pattern designed by Jules. The note does not say whether Jules attended."
+          },
+          {
+            "path": "participants.1",
+            "sourceId": "cal-05-event",
+            "quote": "At the lantern-making workshop, Mira cut paper and Soren assembled frames. Their work overlapped at the same table. They talked about a pattern designed by Jules. The note does not say whether Jules attended."
+          },
+          {
+            "path": "mentioned.0",
+            "sourceId": "cal-05-event",
+            "quote": "At the lantern-making workshop, Mira cut paper and Soren assembled frames. Their work overlapped at the same table. They talked about a pattern designed by Jules. The note does not say whether Jules attended."
+          },
+          {
+            "path": "coPresence.0",
+            "sourceId": "cal-05-event",
+            "quote": "At the lantern-making workshop, Mira cut paper and Soren assembled frames. Their work overlapped at the same table. They talked about a pattern designed by Jules. The note does not say whether Jules attended."
+          },
+          {
+            "path": "interpretations.0",
+            "sourceId": "cal-05-reflection",
+            "quote": "The next morning Jules wrote about the lantern-making workshop: \"To me, the shared table made this an exercise in cooperation.\" This reflection does not state whether Jules was present."
+          }
+        ],
+        "unknown": [
+          "Whether Jules attended is not established."
+        ]
+      },
+      "fixtureNote": "Question-blind capture. Caller supplies common event/account boundary; calibration does not establish automatic identity resolution.",
+      "text": "Mira and Soren worked together at the lantern-making workshop, cutting paper and assembling frames at the same table. They discussed a pattern designed by Jules. The event record does not confirm whether Jules was present. The next morning, Jules wrote a reflection stating, \"To me, the shared table made this an exercise in cooperation.\" This reflection does not confirm Jules\u2019s physical presence during the workshop. Jules is mentioned in the event record as the designer of the pattern, and authored the reflection, but there is no evidence that Jules attended the workshop. Mira and Soren are evidenced as participants who worked together at the same table. No explicit evidence confirms simultaneous presence between any two individuals beyond the shared table, and no evidence confirms Jules\u2019s attendance. The absence of attendance confirmation for Jules remains unresolved.",
+      "id": "item-06"
+    },
+    {
+      "stage": "reader",
+      "caseId": "cal-05-lanterns",
+      "sources": [
+        {
+          "id": "cal-05-event",
+          "revision": "r1",
+          "text": "At the lantern-making workshop, Mira cut paper and Soren assembled frames. Their work overlapped at the same table. They talked about a pattern designed by Jules. The note does not say whether Jules attended."
+        },
+        {
+          "id": "cal-05-reflection",
+          "revision": "r1",
+          "text": "The next morning Jules wrote about the lantern-making workshop: \"To me, the shared table made this an exercise in cooperation.\" This reflection does not state whether Jules was present."
+        }
+      ],
+      "caller": {
+        "people": [
+          "Mira",
+          "Soren",
+          "Jules"
+        ],
+        "occasionId": "lantern-workshop",
+        "eventSourceId": "cal-05-event",
+        "interpretationIds": {
+          "cal-05-reflection": "lantern-reflection"
+        },
+        "entryPolicy": "all-supplied-account-records",
+        "sourceStates": {
+          "cal-05-event": {
+            "revision": "r1",
+            "available": true,
+            "eligible": true
+          },
+          "cal-05-reflection": {
+            "revision": "r1",
+            "available": true,
+            "eligible": true
+          }
+        }
+      },
+      "question": "What did Jules think the workshop illustrated, and does the record establish that Jules attended?",
+      "rubric": {
+        "required": [
+          "Attribute the cooperation interpretation to Jules.",
+          "Attendance is unknown/not established."
+        ],
+        "forbidden": [
+          "Claim that Jules attended.",
+          "Claim that Jules was absent.",
+          "Present the attributed interpretation as an independently established event fact."
+        ],
+        "acceptableUnknown": [
+          "Whether Jules personally observed the shared table."
+        ]
+      },
+      "referenceAnnotations": {
+        "data": {
+          "narrative": "Mira cut paper and Soren assembled frames together at a lantern-making workshop; they discussed a pattern by Jules.",
+          "participants": [
+            {
+              "person": "Mira",
+              "role": "cut paper"
+            },
+            {
+              "person": "Soren",
+              "role": "assembled frames"
+            }
+          ],
+          "mentioned": [
+            "Jules"
+          ],
+          "coPresence": [
+            [
+              "Mira",
+              "Soren"
+            ]
+          ],
+          "interpretations": [
+            {
+              "sourceId": "cal-05-reflection",
+              "author": "Jules",
+              "account": "The shared table made the workshop an exercise in cooperation."
+            }
+          ]
+        },
+        "evidence": [
+          {
+            "path": "narrative",
+            "sourceId": "cal-05-event",
+            "quote": "At the lantern-making workshop, Mira cut paper and Soren assembled frames. Their work overlapped at the same table. They talked about a pattern designed by Jules. The note does not say whether Jules attended."
+          },
+          {
+            "path": "participants.0",
+            "sourceId": "cal-05-event",
+            "quote": "At the lantern-making workshop, Mira cut paper and Soren assembled frames. Their work overlapped at the same table. They talked about a pattern designed by Jules. The note does not say whether Jules attended."
+          },
+          {
+            "path": "participants.1",
+            "sourceId": "cal-05-event",
+            "quote": "At the lantern-making workshop, Mira cut paper and Soren assembled frames. Their work overlapped at the same table. They talked about a pattern designed by Jules. The note does not say whether Jules attended."
+          },
+          {
+            "path": "mentioned.0",
+            "sourceId": "cal-05-event",
+            "quote": "At the lantern-making workshop, Mira cut paper and Soren assembled frames. Their work overlapped at the same table. They talked about a pattern designed by Jules. The note does not say whether Jules attended."
+          },
+          {
+            "path": "coPresence.0",
+            "sourceId": "cal-05-event",
+            "quote": "At the lantern-making workshop, Mira cut paper and Soren assembled frames. Their work overlapped at the same table. They talked about a pattern designed by Jules. The note does not say whether Jules attended."
+          },
+          {
+            "path": "interpretations.0",
+            "sourceId": "cal-05-reflection",
+            "quote": "The next morning Jules wrote about the lantern-making workshop: \"To me, the shared table made this an exercise in cooperation.\" This reflection does not state whether Jules was present."
+          }
+        ],
+        "unknown": [
+          "Whether Jules attended is not established."
+        ]
+      },
+      "fixtureNote": "Question-blind capture. Caller supplies common event/account boundary; calibration does not establish automatic identity resolution.",
+      "readerPacket": {
+        "question": "What did Jules think the workshop illustrated, and does the record establish that Jules attended?",
+        "caller": {
+          "people": [
+            "Mira",
+            "Soren",
+            "Jules"
+          ],
+          "occasionId": "lantern-workshop",
+          "eventSourceId": "cal-05-event",
+          "interpretationIds": {
+            "cal-05-reflection": "lantern-reflection"
+          },
+          "entryPolicy": "all-supplied-account-records",
+          "sourceStates": {
+            "cal-05-event": {
+              "revision": "r1",
+              "available": true,
+              "eligible": true
+            },
+            "cal-05-reflection": {
+              "revision": "r1",
+              "available": true,
+              "eligible": true
+            }
+          }
+        },
+        "preparedMemory": {
+          "prose": "Mira and Soren worked together at the lantern-making workshop, cutting paper and assembling frames at the same table. They discussed a pattern designed by Jules. The event record does not confirm whether Jules was present. The next morning, Jules wrote a reflection stating, \"To me, the shared table made this an exercise in cooperation.\" This reflection does not confirm Jules\u2019s physical presence during the workshop. Jules is mentioned in the event record as the designer of the pattern, and authored the reflection, but there is no evidence that Jules attended the workshop. Mira and Soren are evidenced as participants who worked together at the same table. No explicit evidence confirms simultaneous presence between any two individuals beyond the shared table, and no evidence confirms Jules\u2019s attendance. The absence of attendance confirmation for Jules remains unresolved."
+        }
+      },
+      "text": "Jules thought the workshop illustrated cooperation, as reflected in their written statement: \"To me, the shared table made this an exercise in cooperation.\" However, the record does not establish that Jules attended the workshop. While Jules is noted as the designer of the pattern and authored the reflection, there is no evidence confirming their physical presence during the event. Mira and Soren are documented as participants who worked together at the same table, but no record confirms Jules\u2019s attendance.",
+      "id": "item-07"
+    },
+    {
+      "stage": "reader",
+      "caseId": "cal-03-unknown-attribution",
+      "sources": [
+        {
+          "id": "unsigned-note",
+          "revision": "r1",
+          "text": "An unsigned note recorded at the ferry office says, \"They preferred the covered route.\" Neither the speaker nor the people meant by \"they\" are identified. The place of the described outing is not recorded."
+        }
+      ],
+      "caller": {
+        "people": {},
+        "places": {
+          "ferry-office": "ferry office"
+        },
+        "states": {
+          "unsigned-note": {
+            "revision": "r1",
+            "available": true,
+            "eligible": true
+          }
+        }
+      },
+      "question": "Who expressed the preference, and where did the outing happen?",
+      "rubric": {
+        "required": [
+          "The speaker and the outing location are unknown from this source."
+        ],
+        "forbidden": [
+          "The outing happened at the ferry office.",
+          "Nobody expressed the preference.",
+          "No people were the subject of the statement."
+        ],
+        "acceptableUnknown": [
+          "Unidentified speaker and subjects; unrecorded outing location."
+        ]
+      },
+      "referenceAnnotations": {
+        "data": {
+          "reports": [
+            {
+              "sourceId": "unsigned-note",
+              "statement": "They preferred the covered route.",
+              "speaker": null,
+              "subjects": null,
+              "recordingLocation": "ferry-office",
+              "occasionSetting": null
+            }
+          ]
+        },
+        "evidence": [
+          {
+            "path": "data.reports.0.statement",
+            "sourceId": "unsigned-note",
+            "quote": "An unsigned note recorded at the ferry office says, \"They preferred the covered route.\" Neither the speaker nor the people meant by \"they\" are identified. The place of the described outing is not recorded."
+          },
+          {
+            "path": "data.reports.0.recordingLocation",
+            "sourceId": "unsigned-note",
+            "quote": "An unsigned note recorded at the ferry office says, \"They preferred the covered route.\" Neither the speaker nor the people meant by \"they\" are identified. The place of the described outing is not recorded."
+          }
+        ],
+        "unknown": [
+          "data.reports.0.speaker",
+          "data.reports.0.subjects",
+          "data.reports.0.occasionSetting"
+        ]
+      },
+      "fixtureNote": "Question-blind capture. Explicit unknowns must remain null, not empty subject sets, absence, or recording-location substitution.",
+      "readerPacket": {
+        "question": "Who expressed the preference, and where did the outing happen?",
+        "caller": {
+          "people": {},
+          "places": {
+            "ferry-office": "ferry office"
+          },
+          "states": {
+            "unsigned-note": {
+              "revision": "r1",
+              "available": true,
+              "eligible": true
+            }
+          }
+        },
+        "preparedMemory": {
+          "prose": "{\n  \"data\": {\n    \"reports\": [\n      {\n        \"sourceId\": \"unsigned-note\",\n        \"statement\": \"They preferred the covered route.\",\n        \"speaker\": null,\n        \"subjects\": [],\n        \"recordingLocation\": \"ferry-office\",\n        \"occasionSetting\": null\n      }\n    ]\n  },\n  \"evidence\": [\n    {\n      \"path\": \"data.reports.0.statement\",\n      \"sourceId\": \"unsigned-note\",\n      \"quote\": \"They preferred the covered route.\"\n    },\n    {\n      \"path\": \"data.reports.0.recordingLocation\",\n      \"sourceId\": \"unsigned-note\",\n      \"quote\": \"An unsigned note recorded at the ferry office says\"\n    }\n  ],\n  \"unknown\": [\n    \"data.reports.0.speaker\",\n    \"data.reports.0.subjects\",\n    \"data.reports.0.occasionSetting\"\n  ]\n}"
+        }
+      },
+      "text": "The preference was expressed in an unsigned note recorded at the ferry office, stating, \"They preferred the covered route.\" The outing happened at the ferry office, as indicated by the recording location. The speaker and subjects are not identified in the available evidence.",
+      "id": "item-08"
+    },
+    {
+      "stage": "reader",
+      "caseId": "cal-02-disjoint-contexts",
+      "sources": [
+        {
+          "id": "darkroom-tue",
+          "revision": "r1",
+          "text": "On Tuesday the community darkroom must be dark for developing prints."
+        },
+        {
+          "id": "darkroom-wed",
+          "revision": "r1",
+          "text": "On Wednesday the community darkroom must be bright for cleaning."
+        }
+      ],
+      "caller": {
+        "subjects": {
+          "darkroom": "community darkroom"
+        },
+        "property": "lighting",
+        "values": [
+          "dark",
+          "bright"
+        ],
+        "days": [
+          "Tuesday",
+          "Wednesday"
+        ],
+        "states": {
+          "darkroom-tue": {
+            "revision": "r1",
+            "available": true,
+            "eligible": true
+          },
+          "darkroom-wed": {
+            "revision": "r1",
+            "available": true,
+            "eligible": true
+          }
+        },
+        "alignment": [
+          {
+            "id": "lighting-comparison",
+            "recordIds": [
+              "darkroom-tue",
+              "darkroom-wed"
+            ],
+            "subject": "darkroom",
+            "property": "lighting",
+            "dimensions": [
+              "day"
+            ]
+          }
+        ]
+      },
+      "question": "Do these two lighting requirements contradict each other in a shared context?",
+      "rubric": {
+        "required": [
+          "The requirements apply on different days and the declared contexts are separate."
+        ],
+        "forbidden": [
+          "A conflict in a shared context.",
+          "A claim that both lighting requirements apply simultaneously.",
+          "A guarantee about unmentioned days."
+        ],
+        "acceptableUnknown": [
+          "No lighting requirement is established for other days."
+        ]
+      },
+      "referenceAnnotations": {
+        "data": {
+          "accounts": [
+            {
+              "sourceId": "darkroom-tue",
+              "subject": "darkroom",
+              "property": "lighting",
+              "values": [
+                "dark"
+              ],
+              "context": {
+                "day": {
+                  "kind": "set",
+                  "values": [
+                    "Tuesday"
+                  ]
+                }
+              }
+            },
+            {
+              "sourceId": "darkroom-wed",
+              "subject": "darkroom",
+              "property": "lighting",
+              "values": [
+                "bright"
+              ],
+              "context": {
+                "day": {
+                  "kind": "set",
+                  "values": [
+                    "Wednesday"
+                  ]
+                }
+              }
+            }
+          ]
+        },
+        "evidence": [
+          {
+            "path": "data.accounts.0.subject",
+            "sourceId": "darkroom-tue",
+            "quote": "On Tuesday the community darkroom must be dark for developing prints."
+          },
+          {
+            "path": "data.accounts.0.property",
+            "sourceId": "darkroom-tue",
+            "quote": "On Tuesday the community darkroom must be dark for developing prints."
+          },
+          {
+            "path": "data.accounts.0.values",
+            "sourceId": "darkroom-tue",
+            "quote": "On Tuesday the community darkroom must be dark for developing prints."
+          },
+          {
+            "path": "data.accounts.0.context.day",
+            "sourceId": "darkroom-tue",
+            "quote": "On Tuesday the community darkroom must be dark for developing prints."
+          },
+          {
+            "path": "data.accounts.1.subject",
+            "sourceId": "darkroom-wed",
+            "quote": "On Wednesday the community darkroom must be bright for cleaning."
+          },
+          {
+            "path": "data.accounts.1.property",
+            "sourceId": "darkroom-wed",
+            "quote": "On Wednesday the community darkroom must be bright for cleaning."
+          },
+          {
+            "path": "data.accounts.1.values",
+            "sourceId": "darkroom-wed",
+            "quote": "On Wednesday the community darkroom must be bright for cleaning."
+          },
+          {
+            "path": "data.accounts.1.context.day",
+            "sourceId": "darkroom-wed",
+            "quote": "On Wednesday the community darkroom must be bright for cleaning."
+          }
+        ],
+        "unknown": []
+      },
+      "fixtureNote": "Task-aware account extraction with explicitly caller-reviewed identity/property/alignment. Does not test autonomous semantic alignment or general finite constraint formulation.",
+      "readerPacket": {
+        "question": "Do these two lighting requirements contradict each other in a shared context?",
+        "caller": {
+          "subjects": {
+            "darkroom": "community darkroom"
+          },
+          "property": "lighting",
+          "values": [
+            "dark",
+            "bright"
+          ],
+          "days": [
+            "Tuesday",
+            "Wednesday"
+          ],
+          "states": {
+            "darkroom-tue": {
+              "revision": "r1",
+              "available": true,
+              "eligible": true
+            },
+            "darkroom-wed": {
+              "revision": "r1",
+              "available": true,
+              "eligible": true
+            }
+          },
+          "alignment": [
+            {
+              "id": "lighting-comparison",
+              "recordIds": [
+                "darkroom-tue",
+                "darkroom-wed"
+              ],
+              "subject": "darkroom",
+              "property": "lighting",
+              "dimensions": [
+                "day"
+              ]
+            }
+          ]
+        },
+        "preparedMemory": {
+          "prose": "On Tuesday, the community darkroom must be dark for developing prints. On Wednesday, the community darkroom must be bright for cleaning."
+        }
+      },
+      "text": "Yes, the two lighting requirements contradict each other in the shared context of the community darkroom. On Tuesday, the darkroom must be dark to support print development, but on Wednesday, it must be bright for cleaning. These conflicting lighting states\u2014dark versus bright\u2014cannot both be true simultaneously in the same space, and since both days are within the same context (the darkroom), the requirements are mutually exclusive. The prepared memory confirms this: \"On Tuesday, the community darkroom must be dark for developing prints. On Wednesday, the community darkroom must be bright for cleaning.\" This indicates a direct contradiction in lighting needs across the two days.",
+      "id": "item-09"
+    },
+    {
+      "stage": "reader",
+      "caseId": "cal-06-journal-old",
+      "sources": [
+        {
+          "id": "cal-06-text-a",
+          "revision": "r1",
+          "text": "Noor wrote in her travel journal: \"For short winter walks, I might prefer the canal path to the hill trail.\""
+        }
+      ],
+      "caller": {
+        "pairId": "pair-a",
+        "role": "old",
+        "provenancePolicy": "unchanged-original",
+        "mode": "free",
+        "kind": "memory",
+        "origin": "travel-journal",
+        "sourceStates": {
+          "cal-06-text-a": {
+            "revision": "r1",
+            "available": true,
+            "eligible": true
+          }
+        }
+      },
+      "question": "What preference does this text attribute to Noor, under what circumstances, and with what strength or uncertainty?",
+      "rubric": {
+        "required": [
+          "Noor might prefer the canal path to the hill trail for short winter walks.",
+          "Treat this as attributed journal content."
+        ],
+        "forbidden": [
+          "Drop the short-winter-walk condition.",
+          "Turn tentative preference into certainty.",
+          "Declare global meaning preservation."
+        ],
+        "acceptableUnknown": [
+          "Whether this preference is true outside the quoted journal statement."
+        ]
+      },
+      "referenceAnnotations": {
+        "data": {
+          "subject": {
+            "state": "known",
+            "value": "Noor"
+          },
+          "attribution": {
+            "state": "known",
+            "value": "Noor wrote in her travel journal"
+          },
+          "circumstance": {
+            "state": "known",
+            "value": "For short winter walks"
+          },
+          "modality": {
+            "state": "known",
+            "value": "might prefer"
+          },
+          "comparison": {
+            "state": "known",
+            "value": "the canal path to the hill trail"
+          }
+        },
+        "evidence": [
+          {
+            "path": "subject",
+            "sourceId": "cal-06-text-a",
+            "quote": "Noor wrote in her travel journal: \"For short winter walks, I might prefer the canal path to the hill trail.\""
+          },
+          {
+            "path": "attribution",
+            "sourceId": "cal-06-text-a",
+            "quote": "Noor wrote in her travel journal: \"For short winter walks, I might prefer the canal path to the hill trail.\""
+          },
+          {
+            "path": "circumstance",
+            "sourceId": "cal-06-text-a",
+            "quote": "Noor wrote in her travel journal: \"For short winter walks, I might prefer the canal path to the hill trail.\""
+          },
+          {
+            "path": "modality",
+            "sourceId": "cal-06-text-a",
+            "quote": "Noor wrote in her travel journal: \"For short winter walks, I might prefer the canal path to the hill trail.\""
+          },
+          {
+            "path": "comparison",
+            "sourceId": "cal-06-text-a",
+            "quote": "Noor wrote in her travel journal: \"For short winter walks, I might prefer the canal path to the hill trail.\""
+          }
+        ],
+        "unknown": []
+      },
+      "fixtureNote": "Independent annotation package. Old/candidate pairing happens only after extraction; deterministic check should flag changed modality, with prose still unassessed.",
+      "readerPacket": {
+        "question": "What preference does this text attribute to Noor, under what circumstances, and with what strength or uncertainty?",
+        "caller": {
+          "pairId": "pair-a",
+          "role": "old",
+          "provenancePolicy": "unchanged-original",
+          "mode": "free",
+          "kind": "memory",
+          "origin": "travel-journal",
+          "sourceStates": {
+            "cal-06-text-a": {
+              "revision": "r1",
+              "available": true,
+              "eligible": true
+            }
+          }
+        },
+        "preparedMemory": {
+          "status": "extraction-unavailable",
+          "reason": "Candidate failed decoding or mapping. No source facts are available in this preparation."
+        }
+      },
+      "text": "The prepared memory indicates that no source facts are available for extraction, so it is unknown what preference, if any, the text attributes to Noor, under what circumstances, or with what strength or uncertainty. The failure in decoding or mapping prevents any interpretation from being drawn.",
+      "id": "item-10"
+    },
+    {
+      "stage": "preparation",
+      "caseId": "cal-02-disjoint-contexts",
+      "sources": [
+        {
+          "id": "darkroom-tue",
+          "revision": "r1",
+          "text": "On Tuesday the community darkroom must be dark for developing prints."
+        },
+        {
+          "id": "darkroom-wed",
+          "revision": "r1",
+          "text": "On Wednesday the community darkroom must be bright for cleaning."
+        }
+      ],
+      "caller": {
+        "subjects": {
+          "darkroom": "community darkroom"
+        },
+        "property": "lighting",
+        "values": [
+          "dark",
+          "bright"
+        ],
+        "days": [
+          "Tuesday",
+          "Wednesday"
+        ],
+        "states": {
+          "darkroom-tue": {
+            "revision": "r1",
+            "available": true,
+            "eligible": true
+          },
+          "darkroom-wed": {
+            "revision": "r1",
+            "available": true,
+            "eligible": true
+          }
+        },
+        "alignment": [
+          {
+            "id": "lighting-comparison",
+            "recordIds": [
+              "darkroom-tue",
+              "darkroom-wed"
+            ],
+            "subject": "darkroom",
+            "property": "lighting",
+            "dimensions": [
+              "day"
+            ]
+          }
+        ]
+      },
+      "question": "Do these two lighting requirements contradict each other in a shared context?",
+      "rubric": {
+        "required": [
+          "The requirements apply on different days and the declared contexts are separate."
+        ],
+        "forbidden": [
+          "A conflict in a shared context.",
+          "A claim that both lighting requirements apply simultaneously.",
+          "A guarantee about unmentioned days."
+        ],
+        "acceptableUnknown": [
+          "No lighting requirement is established for other days."
+        ]
+      },
+      "referenceAnnotations": {
+        "data": {
+          "accounts": [
+            {
+              "sourceId": "darkroom-tue",
+              "subject": "darkroom",
+              "property": "lighting",
+              "values": [
+                "dark"
+              ],
+              "context": {
+                "day": {
+                  "kind": "set",
+                  "values": [
+                    "Tuesday"
+                  ]
+                }
+              }
+            },
+            {
+              "sourceId": "darkroom-wed",
+              "subject": "darkroom",
+              "property": "lighting",
+              "values": [
+                "bright"
+              ],
+              "context": {
+                "day": {
+                  "kind": "set",
+                  "values": [
+                    "Wednesday"
+                  ]
+                }
+              }
+            }
+          ]
+        },
+        "evidence": [
+          {
+            "path": "data.accounts.0.subject",
+            "sourceId": "darkroom-tue",
+            "quote": "On Tuesday the community darkroom must be dark for developing prints."
+          },
+          {
+            "path": "data.accounts.0.property",
+            "sourceId": "darkroom-tue",
+            "quote": "On Tuesday the community darkroom must be dark for developing prints."
+          },
+          {
+            "path": "data.accounts.0.values",
+            "sourceId": "darkroom-tue",
+            "quote": "On Tuesday the community darkroom must be dark for developing prints."
+          },
+          {
+            "path": "data.accounts.0.context.day",
+            "sourceId": "darkroom-tue",
+            "quote": "On Tuesday the community darkroom must be dark for developing prints."
+          },
+          {
+            "path": "data.accounts.1.subject",
+            "sourceId": "darkroom-wed",
+            "quote": "On Wednesday the community darkroom must be bright for cleaning."
+          },
+          {
+            "path": "data.accounts.1.property",
+            "sourceId": "darkroom-wed",
+            "quote": "On Wednesday the community darkroom must be bright for cleaning."
+          },
+          {
+            "path": "data.accounts.1.values",
+            "sourceId": "darkroom-wed",
+            "quote": "On Wednesday the community darkroom must be bright for cleaning."
+          },
+          {
+            "path": "data.accounts.1.context.day",
+            "sourceId": "darkroom-wed",
+            "quote": "On Wednesday the community darkroom must be bright for cleaning."
+          }
+        ],
+        "unknown": []
+      },
+      "fixtureNote": "Task-aware account extraction with explicitly caller-reviewed identity/property/alignment. Does not test autonomous semantic alignment or general finite constraint formulation.",
+      "text": "On Tuesday, the community darkroom must be dark for developing prints. On Wednesday, the community darkroom must be bright for cleaning.",
+      "id": "item-11"
+    },
+    {
+      "stage": "reader",
+      "caseId": "cal-06-journal-candidate",
+      "sources": [
+        {
+          "id": "cal-06-text-b",
+          "revision": "r1",
+          "text": "Noor wrote in her travel journal: \"For short winter walks, I always prefer the canal path to the hill trail.\""
+        }
+      ],
+      "caller": {
+        "pairId": "pair-a",
+        "role": "candidate",
+        "provenancePolicy": "unchanged-original",
+        "mode": "free",
+        "kind": "memory",
+        "origin": "travel-journal",
+        "sourceStates": {
+          "cal-06-text-b": {
+            "revision": "r1",
+            "available": true,
+            "eligible": true
+          }
+        }
+      },
+      "question": "What preference does this text attribute to Noor, under what circumstances, and with what strength or uncertainty?",
+      "rubric": {
+        "required": [
+          "Noor always prefers the canal path to the hill trail for short winter walks.",
+          "Treat this as attributed journal content."
+        ],
+        "forbidden": [
+          "Drop the short-winter-walk condition.",
+          "Turn the explicit always into a tentative might.",
+          "Declare global meaning preservation."
+        ],
+        "acceptableUnknown": [
+          "Whether this preference is true outside the quoted journal statement."
+        ]
+      },
+      "referenceAnnotations": {
+        "data": {
+          "subject": {
+            "state": "known",
+            "value": "Noor"
+          },
+          "attribution": {
+            "state": "known",
+            "value": "Noor wrote in her travel journal"
+          },
+          "circumstance": {
+            "state": "known",
+            "value": "For short winter walks"
+          },
+          "modality": {
+            "state": "known",
+            "value": "always prefer"
+          },
+          "comparison": {
+            "state": "known",
+            "value": "the canal path to the hill trail"
+          }
+        },
+        "evidence": [
+          {
+            "path": "subject",
+            "sourceId": "cal-06-text-b",
+            "quote": "Noor wrote in her travel journal: \"For short winter walks, I always prefer the canal path to the hill trail.\""
+          },
+          {
+            "path": "attribution",
+            "sourceId": "cal-06-text-b",
+            "quote": "Noor wrote in her travel journal: \"For short winter walks, I always prefer the canal path to the hill trail.\""
+          },
+          {
+            "path": "circumstance",
+            "sourceId": "cal-06-text-b",
+            "quote": "Noor wrote in her travel journal: \"For short winter walks, I always prefer the canal path to the hill trail.\""
+          },
+          {
+            "path": "modality",
+            "sourceId": "cal-06-text-b",
+            "quote": "Noor wrote in her travel journal: \"For short winter walks, I always prefer the canal path to the hill trail.\""
+          },
+          {
+            "path": "comparison",
+            "sourceId": "cal-06-text-b",
+            "quote": "Noor wrote in her travel journal: \"For short winter walks, I always prefer the canal path to the hill trail.\""
+          }
+        ],
+        "unknown": []
+      },
+      "fixtureNote": "Independent annotation package. Old/candidate pairing happens only after extraction; deterministic check should flag changed modality, with prose still unassessed.",
+      "readerPacket": {
+        "question": "What preference does this text attribute to Noor, under what circumstances, and with what strength or uncertainty?",
+        "caller": {
+          "pairId": "pair-a",
+          "role": "candidate",
+          "provenancePolicy": "unchanged-original",
+          "mode": "free",
+          "kind": "memory",
+          "origin": "travel-journal",
+          "sourceStates": {
+            "cal-06-text-b": {
+              "revision": "r1",
+              "available": true,
+              "eligible": true
+            }
+          }
+        },
+        "preparedMemory": {
+          "prose": "Noor expresses a preference for the canal path over the hill trail for short winter walks. The circumstance is limited to short winter walks, indicating the preference applies under those specific conditions. The modality reflects a personal, definite preference using the verb \"prefer,\" suggesting strong subjective evaluation. The comparison is explicitly stated between the canal path and the hill trail, with the canal path being the chosen option. The attribution is derived from Noor\u2019s travel journal, where she wrote: \"For short winter walks, I always prefer the canal path to the hill trail.\" This statement directly supports the subject, circumstance, modality, and comparison. No further details about the nature of the paths, weather conditions, or reasons for preference are provided. The source is identified as cal-006-text-text-b, revision r1, and the information is drawn entirely from the supplied text. No items are unresolved."
+        }
+      },
+      "text": "Noor prefers the canal path over the hill trail for short winter walks, under the specific circumstance of short winter walks. The preference is expressed with strong subjective certainty, using the verb \"prefer\" in a direct statement from her travel journal. The strength of the preference is indicated by the definite language and explicit comparison. This attribution is based on the text from cal-06-text-b, revision r1, with no uncertainty or unresolved elements.",
+      "id": "item-12"
+    },
+    {
+      "stage": "reader",
+      "caseId": "cal-03-speaker-subject",
+      "sources": [
+        {
+          "id": "walking-note",
+          "revision": "r1",
+          "text": "At the riverside shelter, Nia said, \"Omar prefers the shorter walking route.\" The note was later recorded at the town archive."
+        }
+      ],
+      "caller": {
+        "people": {
+          "nia": {
+            "label": "Nia",
+            "identity": "reviewed"
+          },
+          "omar": {
+            "label": "Omar",
+            "identity": "reviewed"
+          }
+        },
+        "places": {
+          "shelter": "riverside shelter",
+          "archive": "town archive"
+        },
+        "states": {
+          "walking-note": {
+            "revision": "r1",
+            "available": true,
+            "eligible": true
+          }
+        }
+      },
+      "question": "Who made the statement about Omar, and where did the described conversation take place?",
+      "rubric": {
+        "required": [
+          "Nia made the statement about Omar.",
+          "The conversation took place at the riverside shelter."
+        ],
+        "forbidden": [
+          "Omar made the statement.",
+          "The conversation took place at the archive."
+        ],
+        "acceptableUnknown": [
+          "No claim about whether Omar was present."
+        ]
+      },
+      "referenceAnnotations": {
+        "data": {
+          "reports": [
+            {
+              "sourceId": "walking-note",
+              "statement": "Omar prefers the shorter walking route.",
+              "speaker": "nia",
+              "subjects": [
+                "omar"
+              ],
+              "recordingLocation": "archive",
+              "occasionSetting": "shelter"
+            }
+          ]
+        },
+        "evidence": [
+          {
+            "path": "data.reports.0.statement",
+            "sourceId": "walking-note",
+            "quote": "At the riverside shelter, Nia said, \"Omar prefers the shorter walking route.\" The note was later recorded at the town archive."
+          },
+          {
+            "path": "data.reports.0.speaker",
+            "sourceId": "walking-note",
+            "quote": "At the riverside shelter, Nia said, \"Omar prefers the shorter walking route.\" The note was later recorded at the town archive."
+          },
+          {
+            "path": "data.reports.0.subjects.0",
+            "sourceId": "walking-note",
+            "quote": "At the riverside shelter, Nia said, \"Omar prefers the shorter walking route.\" The note was later recorded at the town archive."
+          },
+          {
+            "path": "data.reports.0.recordingLocation",
+            "sourceId": "walking-note",
+            "quote": "At the riverside shelter, Nia said, \"Omar prefers the shorter walking route.\" The note was later recorded at the town archive."
+          },
+          {
+            "path": "data.reports.0.occasionSetting",
+            "sourceId": "walking-note",
+            "quote": "At the riverside shelter, Nia said, \"Omar prefers the shorter walking route.\" The note was later recorded at the town archive."
+          }
+        ],
+        "unknown": []
+      },
+      "fixtureNote": "Question-blind capture; caller supplies reviewed vocabulary. Speaker, subject, event location and recording location are separate candidate claims.",
+      "readerPacket": {
+        "question": "Who made the statement about Omar, and where did the described conversation take place?",
+        "caller": {
+          "people": {
+            "nia": {
+              "label": "Nia",
+              "identity": "reviewed"
+            },
+            "omar": {
+              "label": "Omar",
+              "identity": "reviewed"
+            }
+          },
+          "places": {
+            "shelter": "riverside shelter",
+            "archive": "town archive"
+          },
+          "states": {
+            "walking-note": {
+              "revision": "r1",
+              "available": true,
+              "eligible": true
+            }
+          }
+        },
+        "preparedMemory": {
+          "prose": "At the riverside shelter, Nia stated that Omar prefers the shorter walking route. The note was later recorded at the town archive.  \n\n{\"data\": [{\"sourceId\": \"walking-note\", \"statement\": \"Omar prefers the shorter walking route.\", \"speaker\": \"nia\", \"subjects\": [\"omar\"], \"recordingLocation\": \"archive\", \"occasionSetting\": \"shelter\"}], \"evidence\": [{\"path\": \"data.reports.0.statement\", \"sourceId\": \"walking-note\", \"quote\": \"Omar prefers the shorter walking route.\"}, {\"path\": \"data.reports.0.speaker\", \"sourceId\": \"walking-note\", \"quote\": \"Nia said\"}, {\"path\": \"data.reports.0.subjects.0\", \"sourceId\": \"walking-note\", \"quote\": \"Omar prefers the shorter walking route.\"}, {\"path\": \"data.reports.0.recordingLocation\", \"sourceId\": \"walking-note\", \"quote\": \"The note was later recorded at the town archive.\"}, {\"path\": \"data.reports.0.occasionSetting\", \"sourceId\": \"walking-note\", \"quote\": \"At the riverside shelter\"}], \"unknown\": []}"
+        }
+      },
+      "text": "Nia made the statement about Omar, saying he prefers the shorter walking route. The conversation took place at the riverside shelter. The note containing the statement was later recorded at the town archive.",
+      "id": "item-13"
+    },
+    {
+      "stage": "reader",
+      "caseId": "cal-03-speaker-subject",
+      "sources": [
+        {
+          "id": "walking-note",
+          "revision": "r1",
+          "text": "At the riverside shelter, Nia said, \"Omar prefers the shorter walking route.\" The note was later recorded at the town archive."
+        }
+      ],
+      "caller": {
+        "people": {
+          "nia": {
+            "label": "Nia",
+            "identity": "reviewed"
+          },
+          "omar": {
+            "label": "Omar",
+            "identity": "reviewed"
+          }
+        },
+        "places": {
+          "shelter": "riverside shelter",
+          "archive": "town archive"
+        },
+        "states": {
+          "walking-note": {
+            "revision": "r1",
+            "available": true,
+            "eligible": true
+          }
+        }
+      },
+      "question": "Who made the statement about Omar, and where did the described conversation take place?",
+      "rubric": {
+        "required": [
+          "Nia made the statement about Omar.",
+          "The conversation took place at the riverside shelter."
+        ],
+        "forbidden": [
+          "Omar made the statement.",
+          "The conversation took place at the archive."
+        ],
+        "acceptableUnknown": [
+          "No claim about whether Omar was present."
+        ]
+      },
+      "referenceAnnotations": {
+        "data": {
+          "reports": [
+            {
+              "sourceId": "walking-note",
+              "statement": "Omar prefers the shorter walking route.",
+              "speaker": "nia",
+              "subjects": [
+                "omar"
+              ],
+              "recordingLocation": "archive",
+              "occasionSetting": "shelter"
+            }
+          ]
+        },
+        "evidence": [
+          {
+            "path": "data.reports.0.statement",
+            "sourceId": "walking-note",
+            "quote": "At the riverside shelter, Nia said, \"Omar prefers the shorter walking route.\" The note was later recorded at the town archive."
+          },
+          {
+            "path": "data.reports.0.speaker",
+            "sourceId": "walking-note",
+            "quote": "At the riverside shelter, Nia said, \"Omar prefers the shorter walking route.\" The note was later recorded at the town archive."
+          },
+          {
+            "path": "data.reports.0.subjects.0",
+            "sourceId": "walking-note",
+            "quote": "At the riverside shelter, Nia said, \"Omar prefers the shorter walking route.\" The note was later recorded at the town archive."
+          },
+          {
+            "path": "data.reports.0.recordingLocation",
+            "sourceId": "walking-note",
+            "quote": "At the riverside shelter, Nia said, \"Omar prefers the shorter walking route.\" The note was later recorded at the town archive."
+          },
+          {
+            "path": "data.reports.0.occasionSetting",
+            "sourceId": "walking-note",
+            "quote": "At the riverside shelter, Nia said, \"Omar prefers the shorter walking route.\" The note was later recorded at the town archive."
+          }
+        ],
+        "unknown": []
+      },
+      "fixtureNote": "Question-blind capture; caller supplies reviewed vocabulary. Speaker, subject, event location and recording location are separate candidate claims.",
+      "readerPacket": {
+        "question": "Who made the statement about Omar, and where did the described conversation take place?",
+        "caller": {
+          "people": {
+            "nia": {
+              "label": "Nia",
+              "identity": "reviewed"
+            },
+            "omar": {
+              "label": "Omar",
+              "identity": "reviewed"
+            }
+          },
+          "places": {
+            "shelter": "riverside shelter",
+            "archive": "town archive"
+          },
+          "states": {
+            "walking-note": {
+              "revision": "r1",
+              "available": true,
+              "eligible": true
+            }
+          }
+        },
+        "preparedMemory": {
+          "candidate": {
+            "data": {
+              "reports": [
+                {
+                  "sourceId": "walking-note",
+                  "statement": "Omar prefers the shorter walking route.",
+                  "speaker": "nia",
+                  "subjects": [
+                    "omar"
+                  ],
+                  "recordingLocation": "archive",
+                  "occasionSetting": "shelter"
+                }
+              ]
+            },
+            "evidence": [
+              {
+                "path": "data.reports.0.statement",
+                "sourceId": "walking-note",
+                "quote": "Omar prefers the shorter walking route."
+              },
+              {
+                "path": "data.reports.0.speaker",
+                "sourceId": "walking-note",
+                "quote": "Nia said, \"Omar prefers the shorter walking route.\""
+              },
+              {
+                "path": "data.reports.0.subjects.0",
+                "sourceId": "walking-note",
+                "quote": "Omar prefers the shorter walking route."
+              },
+              {
+                "path": "data.reports.0.recordingLocation",
+                "sourceId": "walking-note",
+                "quote": "The note was later recorded at the town archive."
+              },
+              {
+                "path": "data.reports.0.occasionSetting",
+                "sourceId": "walking-note",
+                "quote": "At the riverside shelter, Nia said, \"Omar prefers the shorter walking route.\""
+              }
+            ],
+            "unknown": []
+          },
+          "operation": {
+            "operation": "composeReports",
+            "result": [
+              {
+                "query": {
+                  "select": "speakers",
+                  "report": "report:walking-note"
+                },
+                "composition": {
+                  "rows": [
+                    {
+                      "report": "report:walking-note",
+                      "statement": "Omar prefers the shorter walking route.",
+                      "occasion": "occasion:walking-note",
+                      "speaker": "nia",
+                      "evidencePaths": [
+                        [
+                          "report:walking-note",
+                          "attribution:walking-note",
+                          "nia"
+                        ]
+                      ],
+                      "support": [
+                        {
+                          "id": "walking-note",
+                          "revision": "r1"
+                        }
+                      ]
+                    }
+                  ],
+                  "path": [
+                    "report",
+                    "attribution",
+                    "speaker"
+                  ],
+                  "semantics": "notChecked",
+                  "unresolved": [],
+                  "violations": [],
+                  "unavailable": [],
+                  "coverage": {
+                    "complete": true,
+                    "recordsRead": 8,
+                    "totalRecords": 8,
+                    "hops": 13,
+                    "stopped": null
+                  }
+                }
+              },
+              {
+                "query": {
+                  "select": "by",
+                  "person": "nia",
+                  "project": "report"
+                },
+                "composition": {
+                  "rows": [
+                    {
+                      "report": "report:walking-note",
+                      "statement": "Omar prefers the shorter walking route.",
+                      "occasion": "occasion:walking-note",
+                      "evidencePaths": [
+                        [
+                          "report:walking-note",
+                          "attribution:walking-note",
+                          "nia"
+                        ]
+                      ],
+                      "support": [
+                        {
+                          "id": "walking-note",
+                          "revision": "r1"
+                        }
+                      ]
+                    }
+                  ],
+                  "path": [
+                    "report",
+                    "attribution",
+                    "speaker"
+                  ],
+                  "semantics": "notChecked",
+                  "unresolved": [],
+                  "violations": [],
+                  "unavailable": [],
+                  "coverage": {
+                    "complete": true,
+                    "recordsRead": 8,
+                    "totalRecords": 8,
+                    "hops": 15,
+                    "stopped": null
+                  }
+                }
+              },
+              {
+                "query": {
+                  "select": "about",
+                  "person": "nia",
+                  "project": "report"
+                },
+                "composition": {
+                  "rows": [],
+                  "path": [
+                    "report",
+                    "subject"
+                  ],
+                  "semantics": "notChecked",
+                  "unresolved": [],
+                  "violations": [],
+                  "unavailable": [],
+                  "coverage": {
+                    "complete": true,
+                    "recordsRead": 8,
+                    "totalRecords": 8,
+                    "hops": 9,
+                    "stopped": null
+                  }
+                }
+              },
+              {
+                "query": {
+                  "select": "about",
+                  "person": "nia",
+                  "project": "occasionSetting"
+                },
+                "composition": {
+                  "rows": [],
+                  "path": [
+                    "report",
+                    "subject",
+                    "occasion",
+                    "setting"
+                  ],
+                  "semantics": "notChecked",
+                  "unresolved": [],
+                  "violations": [],
+                  "unavailable": [],
+                  "coverage": {
+                    "complete": true,
+                    "recordsRead": 8,
+                    "totalRecords": 8,
+                    "hops": 9,
+                    "stopped": null
+                  }
+                }
+              },
+              {
+                "query": {
+                  "select": "by",
+                  "person": "omar",
+                  "project": "report"
+                },
+                "composition": {
+                  "rows": [],
+                  "path": [
+                    "report",
+                    "attribution",
+                    "speaker"
+                  ],
+                  "semantics": "notChecked",
+                  "unresolved": [],
+                  "violations": [],
+                  "unavailable": [],
+                  "coverage": {
+                    "complete": true,
+                    "recordsRead": 8,
+                    "totalRecords": 8,
+                    "hops": 10,
+                    "stopped": null
+                  }
+                }
+              },
+              {
+                "query": {
+                  "select": "about",
+                  "person": "omar",
+                  "project": "report"
+                },
+                "composition": {
+                  "rows": [
+                    {
+                      "report": "report:walking-note",
+                      "statement": "Omar prefers the shorter walking route.",
+                      "occasion": "occasion:walking-note",
+                      "evidencePaths": [
+                        [
+                          "report:walking-note",
+                          "subject",
+                          "omar"
+                        ]
+                      ],
+                      "support": [
+                        {
+                          "id": "walking-note",
+                          "revision": "r1"
+                        }
+                      ]
+                    }
+                  ],
+                  "path": [
+                    "report",
+                    "subject"
+                  ],
+                  "semantics": "notChecked",
+                  "unresolved": [],
+                  "violations": [],
+                  "unavailable": [],
+                  "coverage": {
+                    "complete": true,
+                    "recordsRead": 8,
+                    "totalRecords": 8,
+                    "hops": 13,
+                    "stopped": null
+                  }
+                }
+              },
+              {
+                "query": {
+                  "select": "about",
+                  "person": "omar",
+                  "project": "occasionSetting"
+                },
+                "composition": {
+                  "rows": [
+                    {
+                      "report": "report:walking-note",
+                      "statement": "Omar prefers the shorter walking route.",
+                      "occasion": "occasion:walking-note",
+                      "setting": "shelter",
+                      "evidencePaths": [
+                        [
+                          "report:walking-note",
+                          "subject",
+                          "omar",
+                          "occasion:walking-note",
+                          "shelter"
+                        ]
+                      ],
+                      "support": [
+                        {
+                          "id": "walking-note",
+                          "revision": "r1"
+                        }
+                      ]
+                    }
+                  ],
+                  "path": [
+                    "report",
+                    "subject",
+                    "occasion",
+                    "setting"
+                  ],
+                  "semantics": "notChecked",
+                  "unresolved": [],
+                  "violations": [],
+                  "unavailable": [],
+                  "coverage": {
+                    "complete": true,
+                    "recordsRead": 8,
+                    "totalRecords": 8,
+                    "hops": 19,
+                    "stopped": null
+                  }
+                }
+              }
+            ],
+            "scope": "Fixed question-blind attribution/by/about/occasion-setting projections. Identity review comes only from caller state. recordingLocation remains an episode field and is never substituted for occasionSetting. Prototype semantics are notChecked."
+          },
+          "operationError": null
+        }
+      },
+      "text": "Nia made the statement about Omar, saying he prefers the shorter walking route. The conversation took place at the riverside shelter, as noted in the report recorded at the town archive.",
+      "id": "item-14"
+    },
+    {
+      "stage": "reader",
+      "caseId": "cal-02-disjoint-contexts",
+      "sources": [
+        {
+          "id": "darkroom-tue",
+          "revision": "r1",
+          "text": "On Tuesday the community darkroom must be dark for developing prints."
+        },
+        {
+          "id": "darkroom-wed",
+          "revision": "r1",
+          "text": "On Wednesday the community darkroom must be bright for cleaning."
+        }
+      ],
+      "caller": {
+        "subjects": {
+          "darkroom": "community darkroom"
+        },
+        "property": "lighting",
+        "values": [
+          "dark",
+          "bright"
+        ],
+        "days": [
+          "Tuesday",
+          "Wednesday"
+        ],
+        "states": {
+          "darkroom-tue": {
+            "revision": "r1",
+            "available": true,
+            "eligible": true
+          },
+          "darkroom-wed": {
+            "revision": "r1",
+            "available": true,
+            "eligible": true
+          }
+        },
+        "alignment": [
+          {
+            "id": "lighting-comparison",
+            "recordIds": [
+              "darkroom-tue",
+              "darkroom-wed"
+            ],
+            "subject": "darkroom",
+            "property": "lighting",
+            "dimensions": [
+              "day"
+            ]
+          }
+        ]
+      },
+      "question": "Do these two lighting requirements contradict each other in a shared context?",
+      "rubric": {
+        "required": [
+          "The requirements apply on different days and the declared contexts are separate."
+        ],
+        "forbidden": [
+          "A conflict in a shared context.",
+          "A claim that both lighting requirements apply simultaneously.",
+          "A guarantee about unmentioned days."
+        ],
+        "acceptableUnknown": [
+          "No lighting requirement is established for other days."
+        ]
+      },
+      "referenceAnnotations": {
+        "data": {
+          "accounts": [
+            {
+              "sourceId": "darkroom-tue",
+              "subject": "darkroom",
+              "property": "lighting",
+              "values": [
+                "dark"
+              ],
+              "context": {
+                "day": {
+                  "kind": "set",
+                  "values": [
+                    "Tuesday"
+                  ]
+                }
+              }
+            },
+            {
+              "sourceId": "darkroom-wed",
+              "subject": "darkroom",
+              "property": "lighting",
+              "values": [
+                "bright"
+              ],
+              "context": {
+                "day": {
+                  "kind": "set",
+                  "values": [
+                    "Wednesday"
+                  ]
+                }
+              }
+            }
+          ]
+        },
+        "evidence": [
+          {
+            "path": "data.accounts.0.subject",
+            "sourceId": "darkroom-tue",
+            "quote": "On Tuesday the community darkroom must be dark for developing prints."
+          },
+          {
+            "path": "data.accounts.0.property",
+            "sourceId": "darkroom-tue",
+            "quote": "On Tuesday the community darkroom must be dark for developing prints."
+          },
+          {
+            "path": "data.accounts.0.values",
+            "sourceId": "darkroom-tue",
+            "quote": "On Tuesday the community darkroom must be dark for developing prints."
+          },
+          {
+            "path": "data.accounts.0.context.day",
+            "sourceId": "darkroom-tue",
+            "quote": "On Tuesday the community darkroom must be dark for developing prints."
+          },
+          {
+            "path": "data.accounts.1.subject",
+            "sourceId": "darkroom-wed",
+            "quote": "On Wednesday the community darkroom must be bright for cleaning."
+          },
+          {
+            "path": "data.accounts.1.property",
+            "sourceId": "darkroom-wed",
+            "quote": "On Wednesday the community darkroom must be bright for cleaning."
+          },
+          {
+            "path": "data.accounts.1.values",
+            "sourceId": "darkroom-wed",
+            "quote": "On Wednesday the community darkroom must be bright for cleaning."
+          },
+          {
+            "path": "data.accounts.1.context.day",
+            "sourceId": "darkroom-wed",
+            "quote": "On Wednesday the community darkroom must be bright for cleaning."
+          }
+        ],
+        "unknown": []
+      },
+      "fixtureNote": "Task-aware account extraction with explicitly caller-reviewed identity/property/alignment. Does not test autonomous semantic alignment or general finite constraint formulation.",
+      "readerPacket": {
+        "question": "Do these two lighting requirements contradict each other in a shared context?",
+        "caller": {
+          "subjects": {
+            "darkroom": "community darkroom"
+          },
+          "property": "lighting",
+          "values": [
+            "dark",
+            "bright"
+          ],
+          "days": [
+            "Tuesday",
+            "Wednesday"
+          ],
+          "states": {
+            "darkroom-tue": {
+              "revision": "r1",
+              "available": true,
+              "eligible": true
+            },
+            "darkroom-wed": {
+              "revision": "r1",
+              "available": true,
+              "eligible": true
+            }
+          },
+          "alignment": [
+            {
+              "id": "lighting-comparison",
+              "recordIds": [
+                "darkroom-tue",
+                "darkroom-wed"
+              ],
+              "subject": "darkroom",
+              "property": "lighting",
+              "dimensions": [
+                "day"
+              ]
+            }
+          ]
+        },
+        "preparedMemory": {
+          "status": "extraction-unavailable",
+          "reason": "Candidate failed decoding or mapping. No source facts are available in this preparation."
+        }
+      },
+      "text": "The prepared memory indicates no source facts are available for analysis, so it is unknown whether the lighting requirements contradict each other. Without accessible data on lighting conditions for Tuesday and Wednesday in the darkroom, no determination can be made. The alignment record exists but lacks supporting evidence. Therefore, the contradiction cannot be assessed.",
+      "id": "item-15"
+    },
+    {
+      "stage": "preparation",
+      "caseId": "cal-04-conservatory",
+      "sources": [
+        {
+          "id": "cal-04-note",
+          "revision": "r1",
+          "text": "Inez requires a quiet place with seating and is available from 13:00 to 14:00. Pavel has no quiet requirement but does require seating and is available from 13:20 to 14:10. The conservatory is open, quiet, and has seating. They want a 25-minute visit."
+        }
+      ],
+      "caller": {
+        "participants": [
+          "Inez",
+          "Pavel"
+        ],
+        "places": [
+          "conservatory"
+        ],
+        "occasion": "conservatory-visit",
+        "asOf": 790,
+        "applicability": "applies",
+        "retired": false,
+        "sourceStates": {
+          "cal-04-note": {
+            "revision": "r1",
+            "available": true,
+            "eligible": true,
+            "validity": "current"
+          }
+        }
+      },
+      "question": "Where and during what earliest 25-minute time window can Inez and Pavel make their visit, given the current time and supplied requirements? Clock time or minutes after midnight are both acceptable.",
+      "rubric": {
+        "required": [
+          "Conservatory during 13:20\u201313:45 OR 800\u2013825 minutes after midnight; either form is sufficient."
+        ],
+        "forbidden": [
+          "Invented travel times, closures, or reasons beyond the source.",
+          "Treat Pavel as requiring quiet."
+        ],
+        "acceptableUnknown": [
+          "A tentative option is appropriate; no booking or current real-world opening has been verified."
+        ]
+      },
+      "referenceAnnotations": {
+        "data": {
+          "preferences": [
+            {
+              "participant": "Inez",
+              "quiet": true,
+              "seating": true,
+              "sourceId": "cal-04-note"
+            },
+            {
+              "participant": "Pavel",
+              "quiet": false,
+              "seating": true,
+              "sourceId": "cal-04-note"
+            }
+          ],
+          "availability": [
+            {
+              "participant": "Inez",
+              "windows": [
+                [
+                  780,
+                  840
+                ]
+              ],
+              "sourceId": "cal-04-note"
+            },
+            {
+              "participant": "Pavel",
+              "windows": [
+                [
+                  800,
+                  850
+                ]
+              ],
+              "sourceId": "cal-04-note"
+            }
+          ],
+          "places": [
+            {
+              "place": "conservatory",
+              "quiet": true,
+              "seating": true,
+              "open": true,
+              "sourceId": "cal-04-note"
+            }
+          ],
+          "minutes": {
+            "value": 25,
+            "sourceId": "cal-04-note"
+          }
+        },
+        "evidence": [
+          {
+            "path": "preferences.0.quiet",
+            "sourceId": "cal-04-note",
+            "quote": "Inez requires a quiet place with seating and is available from 13:00 to 14:00. Pavel has no quiet requirement but does require seating and is available from 13:20 to 14:10. The conservatory is open, quiet, and has seating. They want a 25-minute visit."
+          },
+          {
+            "path": "preferences.0.seating",
+            "sourceId": "cal-04-note",
+            "quote": "Inez requires a quiet place with seating and is available from 13:00 to 14:00. Pavel has no quiet requirement but does require seating and is available from 13:20 to 14:10. The conservatory is open, quiet, and has seating. They want a 25-minute visit."
+          },
+          {
+            "path": "preferences.1.quiet",
+            "sourceId": "cal-04-note",
+            "quote": "Inez requires a quiet place with seating and is available from 13:00 to 14:00. Pavel has no quiet requirement but does require seating and is available from 13:20 to 14:10. The conservatory is open, quiet, and has seating. They want a 25-minute visit."
+          },
+          {
+            "path": "preferences.1.seating",
+            "sourceId": "cal-04-note",
+            "quote": "Inez requires a quiet place with seating and is available from 13:00 to 14:00. Pavel has no quiet requirement but does require seating and is available from 13:20 to 14:10. The conservatory is open, quiet, and has seating. They want a 25-minute visit."
+          },
+          {
+            "path": "availability.0.windows",
+            "sourceId": "cal-04-note",
+            "quote": "Inez requires a quiet place with seating and is available from 13:00 to 14:00. Pavel has no quiet requirement but does require seating and is available from 13:20 to 14:10. The conservatory is open, quiet, and has seating. They want a 25-minute visit."
+          },
+          {
+            "path": "availability.1.windows",
+            "sourceId": "cal-04-note",
+            "quote": "Inez requires a quiet place with seating and is available from 13:00 to 14:00. Pavel has no quiet requirement but does require seating and is available from 13:20 to 14:10. The conservatory is open, quiet, and has seating. They want a 25-minute visit."
+          },
+          {
+            "path": "places.0.quiet",
+            "sourceId": "cal-04-note",
+            "quote": "Inez requires a quiet place with seating and is available from 13:00 to 14:00. Pavel has no quiet requirement but does require seating and is available from 13:20 to 14:10. The conservatory is open, quiet, and has seating. They want a 25-minute visit."
+          },
+          {
+            "path": "places.0.seating",
+            "sourceId": "cal-04-note",
+            "quote": "Inez requires a quiet place with seating and is available from 13:00 to 14:00. Pavel has no quiet requirement but does require seating and is available from 13:20 to 14:10. The conservatory is open, quiet, and has seating. They want a 25-minute visit."
+          },
+          {
+            "path": "places.0.open",
+            "sourceId": "cal-04-note",
+            "quote": "Inez requires a quiet place with seating and is available from 13:00 to 14:00. Pavel has no quiet requirement but does require seating and is available from 13:20 to 14:10. The conservatory is open, quiet, and has seating. They want a 25-minute visit."
+          },
+          {
+            "path": "minutes.value",
+            "sourceId": "cal-04-note",
+            "quote": "Inez requires a quiet place with seating and is available from 13:00 to 14:00. Pavel has no quiet requirement but does require seating and is available from 13:20 to 14:10. The conservatory is open, quiet, and has seating. They want a 25-minute visit."
+          }
+        ],
+        "unknown": []
+      },
+      "fixtureNote": "Fictional task-aware calibration, not a test of autonomous recipe creation or multi-use savings.",
+      "text": "{\"data\":{\"preferences\":[{\"participant\":\"Inez\",\"quiet\":true,\"seating\":true,\"sourceId\":\"cal-04-note\"},{\"participant\":\"Pavel\",\"quiet\":false,\"seating\":true,\"sourceId\":\"cal-04-note\"}],\"availability\":[{\"participant\":\"Inez\",\"windows\":[[780,840]],\"sourceId\":\"cal-04-note\"},{\"participant\":\"Pavel\",\"windows\":[[780,840]],\"sourceId\":\"cal-04-note\"}],\"places\":[{\"place\":\"conservatory\",\"quiet\":true,\"seating\":true,\"open\":true,\"sourceId\":\"cal-04-note\"}],\"minutes\":{\"value\":25,\"sourceId\":\"cal-04-note\"}},\"evidence\":[{\"path\":\"preferences.0.quiet\",\"sourceId\":\"cal-04-note\",\"quote\":\"Inez requires a quiet place with seating and is available from 13:00 to 14:00.\"},{\"path\":\"preferences.0.seating\",\"sourceId\":\"cal-04-note\",\"quote\":\"Inez requires a quiet place with seating and is available from 13:00 to 14:00.\"},{\"path\":\"preferences.1.seating\",\"sourceId\":\"cal-04-note\",\"quote\":\"Pavel has no quiet requirement but does require seating and is available from 13:20 to 14:10.\"},{\"path\":\"availability.0.windows\",\"sourceId\":\"cal-04-note\",\"quote\":\"Inez requires a quiet place with seating and is available from 13:00 to 14:00.\"},{\"path\":\"availability.1.windows\",\"sourceId\":\"cal-04-note\",\"quote\":\"Pavel has no quiet requirement but does require seating and is available from 13:20 to 14:10.\"},{\"path\":\"places.0.quiet\",\"sourceId\":\"cal-04-note\",\"quote\":\"The conservatory is open, quiet, and has seating.\"},{\"path\":\"places.0.seating\",\"sourceId\":\"cal-04-note\",\"quote\":\"The conservatory is open, quiet, and has seating.\"},{\"path\":\"places.0.open\",\"sourceId\":\"cal-04-note\",\"quote\":\"The conservatory is open, quiet, and has seating.\"},{\"path\":\"minutes.value\",\"sourceId\":\"cal-04-note\",\"quote\":\"They want a 25-minute visit.\"}],\"unknown\":[]}",
+      "id": "item-16"
+    },
+    {
+      "stage": "preparation",
+      "caseId": "cal-06-journal-candidate",
+      "sources": [
+        {
+          "id": "cal-06-text-b",
+          "revision": "r1",
+          "text": "Noor wrote in her travel journal: \"For short winter walks, I always prefer the canal path to the hill trail.\""
+        }
+      ],
+      "caller": {
+        "pairId": "pair-a",
+        "role": "candidate",
+        "provenancePolicy": "unchanged-original",
+        "mode": "free",
+        "kind": "memory",
+        "origin": "travel-journal",
+        "sourceStates": {
+          "cal-06-text-b": {
+            "revision": "r1",
+            "available": true,
+            "eligible": true
+          }
+        }
+      },
+      "question": "What preference does this text attribute to Noor, under what circumstances, and with what strength or uncertainty?",
+      "rubric": {
+        "required": [
+          "Noor always prefers the canal path to the hill trail for short winter walks.",
+          "Treat this as attributed journal content."
+        ],
+        "forbidden": [
+          "Drop the short-winter-walk condition.",
+          "Turn the explicit always into a tentative might.",
+          "Declare global meaning preservation."
+        ],
+        "acceptableUnknown": [
+          "Whether this preference is true outside the quoted journal statement."
+        ]
+      },
+      "referenceAnnotations": {
+        "data": {
+          "subject": {
+            "state": "known",
+            "value": "Noor"
+          },
+          "attribution": {
+            "state": "known",
+            "value": "Noor wrote in her travel journal"
+          },
+          "circumstance": {
+            "state": "known",
+            "value": "For short winter walks"
+          },
+          "modality": {
+            "state": "known",
+            "value": "always prefer"
+          },
+          "comparison": {
+            "state": "known",
+            "value": "the canal path to the hill trail"
+          }
+        },
+        "evidence": [
+          {
+            "path": "subject",
+            "sourceId": "cal-06-text-b",
+            "quote": "Noor wrote in her travel journal: \"For short winter walks, I always prefer the canal path to the hill trail.\""
+          },
+          {
+            "path": "attribution",
+            "sourceId": "cal-06-text-b",
+            "quote": "Noor wrote in her travel journal: \"For short winter walks, I always prefer the canal path to the hill trail.\""
+          },
+          {
+            "path": "circumstance",
+            "sourceId": "cal-06-text-b",
+            "quote": "Noor wrote in her travel journal: \"For short winter walks, I always prefer the canal path to the hill trail.\""
+          },
+          {
+            "path": "modality",
+            "sourceId": "cal-06-text-b",
+            "quote": "Noor wrote in her travel journal: \"For short winter walks, I always prefer the canal path to the hill trail.\""
+          },
+          {
+            "path": "comparison",
+            "sourceId": "cal-06-text-b",
+            "quote": "Noor wrote in her travel journal: \"For short winter walks, I always prefer the canal path to the hill trail.\""
+          }
+        ],
+        "unknown": []
+      },
+      "fixtureNote": "Independent annotation package. Old/candidate pairing happens only after extraction; deterministic check should flag changed modality, with prose still unassessed.",
+      "text": "{\"data\":{\"subject\":{\"state\":\"known\",\"value\":\"the canal path\"},\"attribution\":{\"state\":\"known\",\"value\":\"Noor wrote in her travel journal\"},\"circumstance\":{\"state\":\"known\",\"value\":\"For short winter walks\"},\"modality\":{\"state\":\"known\",\"value\":\"I always prefer\"},\"comparison\":{\"state\":\"known\",\"value\":\"to the hill trail\"}},\"evidence\":[{\"path\":\"subject\",\"sourceId\":\"cal-006-text-text-b\",\"quote\":\"the canal path\"},{\"path\":\"attribution\",\"sourceId\":\"cal-006-text-text-b\",\"quote\":\"Noor wrote in her travel journal\"},{\"path\":\"circumstance\",\"sourceId\":\"cal-006-text-text-b\",\"quote\":\"For short winter walks\"},{\"path\":\"modality\",\"sourceId\":\"cal-006-text-text-b\",\"quote\":\"I always prefer\"},{\"path\":\"comparison\",\"sourceId\":\"cal-006-text-text-b\",\"quote\":\"to the hill trail\"}],\"unknown\":[]}",
+      "id": "item-17"
+    },
+    {
+      "stage": "preparation",
+      "caseId": "cal-05-lanterns",
+      "sources": [
+        {
+          "id": "cal-05-event",
+          "revision": "r1",
+          "text": "At the lantern-making workshop, Mira cut paper and Soren assembled frames. Their work overlapped at the same table. They talked about a pattern designed by Jules. The note does not say whether Jules attended."
+        },
+        {
+          "id": "cal-05-reflection",
+          "revision": "r1",
+          "text": "The next morning Jules wrote about the lantern-making workshop: \"To me, the shared table made this an exercise in cooperation.\" This reflection does not state whether Jules was present."
+        }
+      ],
+      "caller": {
+        "people": [
+          "Mira",
+          "Soren",
+          "Jules"
+        ],
+        "occasionId": "lantern-workshop",
+        "eventSourceId": "cal-05-event",
+        "interpretationIds": {
+          "cal-05-reflection": "lantern-reflection"
+        },
+        "entryPolicy": "all-supplied-account-records",
+        "sourceStates": {
+          "cal-05-event": {
+            "revision": "r1",
+            "available": true,
+            "eligible": true
+          },
+          "cal-05-reflection": {
+            "revision": "r1",
+            "available": true,
+            "eligible": true
+          }
+        }
+      },
+      "question": "What did Jules think the workshop illustrated, and does the record establish that Jules attended?",
+      "rubric": {
+        "required": [
+          "Attribute the cooperation interpretation to Jules.",
+          "Attendance is unknown/not established."
+        ],
+        "forbidden": [
+          "Claim that Jules attended.",
+          "Claim that Jules was absent.",
+          "Present the attributed interpretation as an independently established event fact."
+        ],
+        "acceptableUnknown": [
+          "Whether Jules personally observed the shared table."
+        ]
+      },
+      "referenceAnnotations": {
+        "data": {
+          "narrative": "Mira cut paper and Soren assembled frames together at a lantern-making workshop; they discussed a pattern by Jules.",
+          "participants": [
+            {
+              "person": "Mira",
+              "role": "cut paper"
+            },
+            {
+              "person": "Soren",
+              "role": "assembled frames"
+            }
+          ],
+          "mentioned": [
+            "Jules"
+          ],
+          "coPresence": [
+            [
+              "Mira",
+              "Soren"
+            ]
+          ],
+          "interpretations": [
+            {
+              "sourceId": "cal-05-reflection",
+              "author": "Jules",
+              "account": "The shared table made the workshop an exercise in cooperation."
+            }
+          ]
+        },
+        "evidence": [
+          {
+            "path": "narrative",
+            "sourceId": "cal-05-event",
+            "quote": "At the lantern-making workshop, Mira cut paper and Soren assembled frames. Their work overlapped at the same table. They talked about a pattern designed by Jules. The note does not say whether Jules attended."
+          },
+          {
+            "path": "participants.0",
+            "sourceId": "cal-05-event",
+            "quote": "At the lantern-making workshop, Mira cut paper and Soren assembled frames. Their work overlapped at the same table. They talked about a pattern designed by Jules. The note does not say whether Jules attended."
+          },
+          {
+            "path": "participants.1",
+            "sourceId": "cal-05-event",
+            "quote": "At the lantern-making workshop, Mira cut paper and Soren assembled frames. Their work overlapped at the same table. They talked about a pattern designed by Jules. The note does not say whether Jules attended."
+          },
+          {
+            "path": "mentioned.0",
+            "sourceId": "cal-05-event",
+            "quote": "At the lantern-making workshop, Mira cut paper and Soren assembled frames. Their work overlapped at the same table. They talked about a pattern designed by Jules. The note does not say whether Jules attended."
+          },
+          {
+            "path": "coPresence.0",
+            "sourceId": "cal-05-event",
+            "quote": "At the lantern-making workshop, Mira cut paper and Soren assembled frames. Their work overlapped at the same table. They talked about a pattern designed by Jules. The note does not say whether Jules attended."
+          },
+          {
+            "path": "interpretations.0",
+            "sourceId": "cal-05-reflection",
+            "quote": "The next morning Jules wrote about the lantern-making workshop: \"To me, the shared table made this an exercise in cooperation.\" This reflection does not state whether Jules was present."
+          }
+        ],
+        "unknown": [
+          "Whether Jules attended is not established."
+        ]
+      },
+      "fixtureNote": "Question-blind capture. Caller supplies common event/account boundary; calibration does not establish automatic identity resolution.",
+      "text": "{\"data\":{\"narrative\":\"At the lantern-making workshop, Mira cut paper and Soren assembled frames at the same table. They discussed a pattern designed by Jules. The next morning, Jules reflected that the shared table made the workshop an exercise in cooperation.\",\"participants\":[{\"person\":\"Mira\",\"role\":\"participant\"},{\"person\":\"Soren\",\"role\":\"participant\"},{\"person\":\"Jules\",\"role\":\"author of reflection\"}],\"mentioned\":[\"Jules\"],\"coPresence\":[[\"Mira\",\"Soren\"]],\"interpretations\":[{\"sourceId\":\"cal-05-reflection\",\"author\":\"Jules\",\"account\":\"To me, the shared table made this an exercise in cooperation.\"}]},\"evidence\":[{\"path\":\"participants.0\",\"sourceId\":\"cal-05-event\",\"quote\":\"At the lantern-making workshop, Mira cut paper and Soren assembled frames. Their work overlapped at the same table.\"},{\"path\":\"participants.1\",\"sourceId\":\"cal-05-event\",\"quote\":\"At the lantern-making workshop, Mira cut paper and Soren assembled frames. Their work overlapped at the same table.\"},{\"path\":\"coPresence.0\",\"sourceId\":\"cal-05-event\",\"quote\":\"Their work overlapped at the same table.\"},{\"path\":\"interpretations.0\",\"sourceId\":\"cal-05-reflection\",\"quote\":\"To me, the shared table made this an exercise in cooperation.\"}],\"unknown\":[\"Whether Jules attended the lantern-making workshop\"]}}",
+      "id": "item-18"
+    },
+    {
+      "stage": "preparation",
+      "caseId": "cal-03-speaker-subject",
+      "sources": [
+        {
+          "id": "walking-note",
+          "revision": "r1",
+          "text": "At the riverside shelter, Nia said, \"Omar prefers the shorter walking route.\" The note was later recorded at the town archive."
+        }
+      ],
+      "caller": {
+        "people": {
+          "nia": {
+            "label": "Nia",
+            "identity": "reviewed"
+          },
+          "omar": {
+            "label": "Omar",
+            "identity": "reviewed"
+          }
+        },
+        "places": {
+          "shelter": "riverside shelter",
+          "archive": "town archive"
+        },
+        "states": {
+          "walking-note": {
+            "revision": "r1",
+            "available": true,
+            "eligible": true
+          }
+        }
+      },
+      "question": "Who made the statement about Omar, and where did the described conversation take place?",
+      "rubric": {
+        "required": [
+          "Nia made the statement about Omar.",
+          "The conversation took place at the riverside shelter."
+        ],
+        "forbidden": [
+          "Omar made the statement.",
+          "The conversation took place at the archive."
+        ],
+        "acceptableUnknown": [
+          "No claim about whether Omar was present."
+        ]
+      },
+      "referenceAnnotations": {
+        "data": {
+          "reports": [
+            {
+              "sourceId": "walking-note",
+              "statement": "Omar prefers the shorter walking route.",
+              "speaker": "nia",
+              "subjects": [
+                "omar"
+              ],
+              "recordingLocation": "archive",
+              "occasionSetting": "shelter"
+            }
+          ]
+        },
+        "evidence": [
+          {
+            "path": "data.reports.0.statement",
+            "sourceId": "walking-note",
+            "quote": "At the riverside shelter, Nia said, \"Omar prefers the shorter walking route.\" The note was later recorded at the town archive."
+          },
+          {
+            "path": "data.reports.0.speaker",
+            "sourceId": "walking-note",
+            "quote": "At the riverside shelter, Nia said, \"Omar prefers the shorter walking route.\" The note was later recorded at the town archive."
+          },
+          {
+            "path": "data.reports.0.subjects.0",
+            "sourceId": "walking-note",
+            "quote": "At the riverside shelter, Nia said, \"Omar prefers the shorter walking route.\" The note was later recorded at the town archive."
+          },
+          {
+            "path": "data.reports.0.recordingLocation",
+            "sourceId": "walking-note",
+            "quote": "At the riverside shelter, Nia said, \"Omar prefers the shorter walking route.\" The note was later recorded at the town archive."
+          },
+          {
+            "path": "data.reports.0.occasionSetting",
+            "sourceId": "walking-note",
+            "quote": "At the riverside shelter, Nia said, \"Omar prefers the shorter walking route.\" The note was later recorded at the town archive."
+          }
+        ],
+        "unknown": []
+      },
+      "fixtureNote": "Question-blind capture; caller supplies reviewed vocabulary. Speaker, subject, event location and recording location are separate candidate claims.",
+      "text": "At the riverside shelter, Nia stated that Omar prefers the shorter walking route. The note was later recorded at the town archive.  \n\n{\"data\": [{\"sourceId\": \"walking-note\", \"statement\": \"Omar prefers the shorter walking route.\", \"speaker\": \"nia\", \"subjects\": [\"omar\"], \"recordingLocation\": \"archive\", \"occasionSetting\": \"shelter\"}], \"evidence\": [{\"path\": \"data.reports.0.statement\", \"sourceId\": \"walking-note\", \"quote\": \"Omar prefers the shorter walking route.\"}, {\"path\": \"data.reports.0.speaker\", \"sourceId\": \"walking-note\", \"quote\": \"Nia said\"}, {\"path\": \"data.reports.0.subjects.0\", \"sourceId\": \"walking-note\", \"quote\": \"Omar prefers the shorter walking route.\"}, {\"path\": \"data.reports.0.recordingLocation\", \"sourceId\": \"walking-note\", \"quote\": \"The note was later recorded at the town archive.\"}, {\"path\": \"data.reports.0.occasionSetting\", \"sourceId\": \"walking-note\", \"quote\": \"At the riverside shelter\"}], \"unknown\": []}",
+      "id": "item-19"
+    },
+    {
+      "stage": "reader",
+      "caseId": "cal-03-unknown-attribution",
+      "sources": [
+        {
+          "id": "unsigned-note",
+          "revision": "r1",
+          "text": "An unsigned note recorded at the ferry office says, \"They preferred the covered route.\" Neither the speaker nor the people meant by \"they\" are identified. The place of the described outing is not recorded."
+        }
+      ],
+      "caller": {
+        "people": {},
+        "places": {
+          "ferry-office": "ferry office"
+        },
+        "states": {
+          "unsigned-note": {
+            "revision": "r1",
+            "available": true,
+            "eligible": true
+          }
+        }
+      },
+      "question": "Who expressed the preference, and where did the outing happen?",
+      "rubric": {
+        "required": [
+          "The speaker and the outing location are unknown from this source."
+        ],
+        "forbidden": [
+          "The outing happened at the ferry office.",
+          "Nobody expressed the preference.",
+          "No people were the subject of the statement."
+        ],
+        "acceptableUnknown": [
+          "Unidentified speaker and subjects; unrecorded outing location."
+        ]
+      },
+      "referenceAnnotations": {
+        "data": {
+          "reports": [
+            {
+              "sourceId": "unsigned-note",
+              "statement": "They preferred the covered route.",
+              "speaker": null,
+              "subjects": null,
+              "recordingLocation": "ferry-office",
+              "occasionSetting": null
+            }
+          ]
+        },
+        "evidence": [
+          {
+            "path": "data.reports.0.statement",
+            "sourceId": "unsigned-note",
+            "quote": "An unsigned note recorded at the ferry office says, \"They preferred the covered route.\" Neither the speaker nor the people meant by \"they\" are identified. The place of the described outing is not recorded."
+          },
+          {
+            "path": "data.reports.0.recordingLocation",
+            "sourceId": "unsigned-note",
+            "quote": "An unsigned note recorded at the ferry office says, \"They preferred the covered route.\" Neither the speaker nor the people meant by \"they\" are identified. The place of the described outing is not recorded."
+          }
+        ],
+        "unknown": [
+          "data.reports.0.speaker",
+          "data.reports.0.subjects",
+          "data.reports.0.occasionSetting"
+        ]
+      },
+      "fixtureNote": "Question-blind capture. Explicit unknowns must remain null, not empty subject sets, absence, or recording-location substitution.",
+      "readerPacket": {
+        "question": "Who expressed the preference, and where did the outing happen?",
+        "caller": {
+          "people": {},
+          "places": {
+            "ferry-office": "ferry office"
+          },
+          "states": {
+            "unsigned-note": {
+              "revision": "r1",
+              "available": true,
+              "eligible": true
+            }
+          }
+        },
+        "preparedMemory": {
+          "status": "extraction-unavailable",
+          "reason": "Candidate failed decoding or mapping. No source facts are available in this preparation."
+        }
+      },
+      "text": "The preference and location of the outing cannot be determined from the provided information. The prepared memory indicates that no source facts are available due to a decoding or mapping failure. Therefore, it is unknown who expressed the preference and where the outing took place.",
+      "id": "item-20"
+    },
+    {
+      "stage": "preparation",
+      "caseId": "cal-06-journal-old",
+      "sources": [
+        {
+          "id": "cal-06-text-a",
+          "revision": "r1",
+          "text": "Noor wrote in her travel journal: \"For short winter walks, I might prefer the canal path to the hill trail.\""
+        }
+      ],
+      "caller": {
+        "pairId": "pair-a",
+        "role": "old",
+        "provenancePolicy": "unchanged-original",
+        "mode": "free",
+        "kind": "memory",
+        "origin": "travel-journal",
+        "sourceStates": {
+          "cal-06-text-a": {
+            "revision": "r1",
+            "available": true,
+            "eligible": true
+          }
+        }
+      },
+      "question": "What preference does this text attribute to Noor, under what circumstances, and with what strength or uncertainty?",
+      "rubric": {
+        "required": [
+          "Noor might prefer the canal path to the hill trail for short winter walks.",
+          "Treat this as attributed journal content."
+        ],
+        "forbidden": [
+          "Drop the short-winter-walk condition.",
+          "Turn tentative preference into certainty.",
+          "Declare global meaning preservation."
+        ],
+        "acceptableUnknown": [
+          "Whether this preference is true outside the quoted journal statement."
+        ]
+      },
+      "referenceAnnotations": {
+        "data": {
+          "subject": {
+            "state": "known",
+            "value": "Noor"
+          },
+          "attribution": {
+            "state": "known",
+            "value": "Noor wrote in her travel journal"
+          },
+          "circumstance": {
+            "state": "known",
+            "value": "For short winter walks"
+          },
+          "modality": {
+            "state": "known",
+            "value": "might prefer"
+          },
+          "comparison": {
+            "state": "known",
+            "value": "the canal path to the hill trail"
+          }
+        },
+        "evidence": [
+          {
+            "path": "subject",
+            "sourceId": "cal-06-text-a",
+            "quote": "Noor wrote in her travel journal: \"For short winter walks, I might prefer the canal path to the hill trail.\""
+          },
+          {
+            "path": "attribution",
+            "sourceId": "cal-06-text-a",
+            "quote": "Noor wrote in her travel journal: \"For short winter walks, I might prefer the canal path to the hill trail.\""
+          },
+          {
+            "path": "circumstance",
+            "sourceId": "cal-06-text-a",
+            "quote": "Noor wrote in her travel journal: \"For short winter walks, I might prefer the canal path to the hill trail.\""
+          },
+          {
+            "path": "modality",
+            "sourceId": "cal-06-text-a",
+            "quote": "Noor wrote in her travel journal: \"For short winter walks, I might prefer the canal path to the hill trail.\""
+          },
+          {
+            "path": "comparison",
+            "sourceId": "cal-06-text-a",
+            "quote": "Noor wrote in her travel journal: \"For short winter walks, I might prefer the canal path to the hill trail.\""
+          }
+        ],
+        "unknown": []
+      },
+      "fixtureNote": "Independent annotation package. Old/candidate pairing happens only after extraction; deterministic check should flag changed modality, with prose still unassessed.",
+      "text": "{\"data\":{\"subject\":{\"state\":\"known\",\"value\":\"the canal path to the hill trail\"},\"attribution\":{\"state\":\"known\",\"value\":\"Noor wrote in her travel journal\"},\"circumstance\":{\"state\":\"known\",\"value\":\"For short winter walks\"},\"modality\":{\"state\":\"known\",\"value\":\"I might prefer\"},\"comparison\":{\"state\":\"known\",\"value\":\"the canal path to the hill trail\"}},\"evidence\":[{\"path\":\"subject\",\"sourceId\":\"cal-006-text-a\",\"quote\":\"the canal path to the hill trail\"},{\"path\":\"attribution\",\"sourceId\":\"cal-006-text-a\",\"quote\":\"Noor wrote in her travel journal\"},{\"path\":\"circumstance\",\"sourceId\":\"cal-006-text-a\",\"quote\":\"For short winter walks\"},{\"path\":\"modality\",\"sourceId\":\"cal-006-text-a\",\"quote\":\"I might prefer\"},{\"path\":\"comparison\",\"sourceId\":\"cal-006-text-a\",\"quote\":\"the canal path to the hill trail\"}],\"unknown\":[]}",
+      "id": "item-21"
+    },
+    {
+      "stage": "preparation",
+      "caseId": "cal-04-conservatory",
+      "sources": [
+        {
+          "id": "cal-04-note",
+          "revision": "r1",
+          "text": "Inez requires a quiet place with seating and is available from 13:00 to 14:00. Pavel has no quiet requirement but does require seating and is available from 13:20 to 14:10. The conservatory is open, quiet, and has seating. They want a 25-minute visit."
+        }
+      ],
+      "caller": {
+        "participants": [
+          "Inez",
+          "Pavel"
+        ],
+        "places": [
+          "conservatory"
+        ],
+        "occasion": "conservatory-visit",
+        "asOf": 790,
+        "applicability": "applies",
+        "retired": false,
+        "sourceStates": {
+          "cal-04-note": {
+            "revision": "r1",
+            "available": true,
+            "eligible": true,
+            "validity": "current"
+          }
+        }
+      },
+      "question": "Where and during what earliest 25-minute time window can Inez and Pavel make their visit, given the current time and supplied requirements? Clock time or minutes after midnight are both acceptable.",
+      "rubric": {
+        "required": [
+          "Conservatory during 13:20\u201313:45 OR 800\u2013825 minutes after midnight; either form is sufficient."
+        ],
+        "forbidden": [
+          "Invented travel times, closures, or reasons beyond the source.",
+          "Treat Pavel as requiring quiet."
+        ],
+        "acceptableUnknown": [
+          "A tentative option is appropriate; no booking or current real-world opening has been verified."
+        ]
+      },
+      "referenceAnnotations": {
+        "data": {
+          "preferences": [
+            {
+              "participant": "Inez",
+              "quiet": true,
+              "seating": true,
+              "sourceId": "cal-04-note"
+            },
+            {
+              "participant": "Pavel",
+              "quiet": false,
+              "seating": true,
+              "sourceId": "cal-04-note"
+            }
+          ],
+          "availability": [
+            {
+              "participant": "Inez",
+              "windows": [
+                [
+                  780,
+                  840
+                ]
+              ],
+              "sourceId": "cal-04-note"
+            },
+            {
+              "participant": "Pavel",
+              "windows": [
+                [
+                  800,
+                  850
+                ]
+              ],
+              "sourceId": "cal-04-note"
+            }
+          ],
+          "places": [
+            {
+              "place": "conservatory",
+              "quiet": true,
+              "seating": true,
+              "open": true,
+              "sourceId": "cal-04-note"
+            }
+          ],
+          "minutes": {
+            "value": 25,
+            "sourceId": "cal-04-note"
+          }
+        },
+        "evidence": [
+          {
+            "path": "preferences.0.quiet",
+            "sourceId": "cal-04-note",
+            "quote": "Inez requires a quiet place with seating and is available from 13:00 to 14:00. Pavel has no quiet requirement but does require seating and is available from 13:20 to 14:10. The conservatory is open, quiet, and has seating. They want a 25-minute visit."
+          },
+          {
+            "path": "preferences.0.seating",
+            "sourceId": "cal-04-note",
+            "quote": "Inez requires a quiet place with seating and is available from 13:00 to 14:00. Pavel has no quiet requirement but does require seating and is available from 13:20 to 14:10. The conservatory is open, quiet, and has seating. They want a 25-minute visit."
+          },
+          {
+            "path": "preferences.1.quiet",
+            "sourceId": "cal-04-note",
+            "quote": "Inez requires a quiet place with seating and is available from 13:00 to 14:00. Pavel has no quiet requirement but does require seating and is available from 13:20 to 14:10. The conservatory is open, quiet, and has seating. They want a 25-minute visit."
+          },
+          {
+            "path": "preferences.1.seating",
+            "sourceId": "cal-04-note",
+            "quote": "Inez requires a quiet place with seating and is available from 13:00 to 14:00. Pavel has no quiet requirement but does require seating and is available from 13:20 to 14:10. The conservatory is open, quiet, and has seating. They want a 25-minute visit."
+          },
+          {
+            "path": "availability.0.windows",
+            "sourceId": "cal-04-note",
+            "quote": "Inez requires a quiet place with seating and is available from 13:00 to 14:00. Pavel has no quiet requirement but does require seating and is available from 13:20 to 14:10. The conservatory is open, quiet, and has seating. They want a 25-minute visit."
+          },
+          {
+            "path": "availability.1.windows",
+            "sourceId": "cal-04-note",
+            "quote": "Inez requires a quiet place with seating and is available from 13:00 to 14:00. Pavel has no quiet requirement but does require seating and is available from 13:20 to 14:10. The conservatory is open, quiet, and has seating. They want a 25-minute visit."
+          },
+          {
+            "path": "places.0.quiet",
+            "sourceId": "cal-04-note",
+            "quote": "Inez requires a quiet place with seating and is available from 13:00 to 14:00. Pavel has no quiet requirement but does require seating and is available from 13:20 to 14:10. The conservatory is open, quiet, and has seating. They want a 25-minute visit."
+          },
+          {
+            "path": "places.0.seating",
+            "sourceId": "cal-04-note",
+            "quote": "Inez requires a quiet place with seating and is available from 13:00 to 14:00. Pavel has no quiet requirement but does require seating and is available from 13:20 to 14:10. The conservatory is open, quiet, and has seating. They want a 25-minute visit."
+          },
+          {
+            "path": "places.0.open",
+            "sourceId": "cal-04-note",
+            "quote": "Inez requires a quiet place with seating and is available from 13:00 to 14:00. Pavel has no quiet requirement but does require seating and is available from 13:20 to 14:10. The conservatory is open, quiet, and has seating. They want a 25-minute visit."
+          },
+          {
+            "path": "minutes.value",
+            "sourceId": "cal-04-note",
+            "quote": "Inez requires a quiet place with seating and is available from 13:00 to 14:00. Pavel has no quiet requirement but does require seating and is available from 13:20 to 14:10. The conservatory is open, quiet, and has seating. They want a 25-minute visit."
+          }
+        ],
+        "unknown": []
+      },
+      "fixtureNote": "Fictional task-aware calibration, not a test of autonomous recipe creation or multi-use savings.",
+      "text": "Inez requires a quiet place with seating and is available from 13:00 to 14:00. Pavel requires seating but has no quiet requirement and is available from 13:20 to 14:10. The conservatory is open, quiet, and has seating. A 25-minute visit is desired. The earliest feasible window that accommodates both participants, their seating needs, and the conservatory\u2019s quiet and seating availability falls between 13:20 and 13:45. This window satisfies Inez\u2019s quiet requirement, both participants\u2019 seating needs, and the conservatory\u2019s open, quiet, and seating conditions. The visit duration is 25 minutes, as specified. Evidence: \"quiet\" for Inez (source: cal-04-note), \"seating\" for both Inez and Pavel (source: cal-04-note), \"open\", \"quiet\", and \"seating\" for the conservatory (source: cal-04-note), and \"minutes.value\" as 25 (source: cal-04-note). No unresolved items are present.",
+      "id": "item-22"
+    },
+    {
+      "stage": "preparation",
+      "caseId": "cal-03-unknown-attribution",
+      "sources": [
+        {
+          "id": "unsigned-note",
+          "revision": "r1",
+          "text": "An unsigned note recorded at the ferry office says, \"They preferred the covered route.\" Neither the speaker nor the people meant by \"they\" are identified. The place of the described outing is not recorded."
+        }
+      ],
+      "caller": {
+        "people": {},
+        "places": {
+          "ferry-office": "ferry office"
+        },
+        "states": {
+          "unsigned-note": {
+            "revision": "r1",
+            "available": true,
+            "eligible": true
+          }
+        }
+      },
+      "question": "Who expressed the preference, and where did the outing happen?",
+      "rubric": {
+        "required": [
+          "The speaker and the outing location are unknown from this source."
+        ],
+        "forbidden": [
+          "The outing happened at the ferry office.",
+          "Nobody expressed the preference.",
+          "No people were the subject of the statement."
+        ],
+        "acceptableUnknown": [
+          "Unidentified speaker and subjects; unrecorded outing location."
+        ]
+      },
+      "referenceAnnotations": {
+        "data": {
+          "reports": [
+            {
+              "sourceId": "unsigned-note",
+              "statement": "They preferred the covered route.",
+              "speaker": null,
+              "subjects": null,
+              "recordingLocation": "ferry-office",
+              "occasionSetting": null
+            }
+          ]
+        },
+        "evidence": [
+          {
+            "path": "data.reports.0.statement",
+            "sourceId": "unsigned-note",
+            "quote": "An unsigned note recorded at the ferry office says, \"They preferred the covered route.\" Neither the speaker nor the people meant by \"they\" are identified. The place of the described outing is not recorded."
+          },
+          {
+            "path": "data.reports.0.recordingLocation",
+            "sourceId": "unsigned-note",
+            "quote": "An unsigned note recorded at the ferry office says, \"They preferred the covered route.\" Neither the speaker nor the people meant by \"they\" are identified. The place of the described outing is not recorded."
+          }
+        ],
+        "unknown": [
+          "data.reports.0.speaker",
+          "data.reports.0.subjects",
+          "data.reports.0.occasionSetting"
+        ]
+      },
+      "fixtureNote": "Question-blind capture. Explicit unknowns must remain null, not empty subject sets, absence, or recording-location substitution.",
+      "text": "{\n  \"data\": {\n    \"reports\": [\n      {\n        \"sourceId\": \"unsigned-note\",\n        \"statement\": \"They preferred the covered route.\",\n        \"speaker\": null,\n        \"subjects\": [],\n        \"recordingLocation\": \"ferry-office\",\n        \"occasionSetting\": null\n      }\n    ]\n  },\n  \"evidence\": [\n    {\n      \"path\": \"data.reports.0.statement\",\n      \"sourceId\": \"unsigned-note\",\n      \"quote\": \"They preferred the covered route.\"\n    },\n    {\n      \"path\": \"data.reports.0.recordingLocation\",\n      \"sourceId\": \"unsigned-note\",\n      \"quote\": \"An unsigned note recorded at the ferry office says\"\n    }\n  ],\n  \"unknown\": [\n    \"data.reports.0.speaker\",\n    \"data.reports.0.subjects\",\n    \"data.reports.0.occasionSetting\"\n  ]\n}",
+      "id": "item-23"
+    },
+    {
+      "stage": "preparation",
+      "caseId": "cal-03-speaker-subject",
+      "sources": [
+        {
+          "id": "walking-note",
+          "revision": "r1",
+          "text": "At the riverside shelter, Nia said, \"Omar prefers the shorter walking route.\" The note was later recorded at the town archive."
+        }
+      ],
+      "caller": {
+        "people": {
+          "nia": {
+            "label": "Nia",
+            "identity": "reviewed"
+          },
+          "omar": {
+            "label": "Omar",
+            "identity": "reviewed"
+          }
+        },
+        "places": {
+          "shelter": "riverside shelter",
+          "archive": "town archive"
+        },
+        "states": {
+          "walking-note": {
+            "revision": "r1",
+            "available": true,
+            "eligible": true
+          }
+        }
+      },
+      "question": "Who made the statement about Omar, and where did the described conversation take place?",
+      "rubric": {
+        "required": [
+          "Nia made the statement about Omar.",
+          "The conversation took place at the riverside shelter."
+        ],
+        "forbidden": [
+          "Omar made the statement.",
+          "The conversation took place at the archive."
+        ],
+        "acceptableUnknown": [
+          "No claim about whether Omar was present."
+        ]
+      },
+      "referenceAnnotations": {
+        "data": {
+          "reports": [
+            {
+              "sourceId": "walking-note",
+              "statement": "Omar prefers the shorter walking route.",
+              "speaker": "nia",
+              "subjects": [
+                "omar"
+              ],
+              "recordingLocation": "archive",
+              "occasionSetting": "shelter"
+            }
+          ]
+        },
+        "evidence": [
+          {
+            "path": "data.reports.0.statement",
+            "sourceId": "walking-note",
+            "quote": "At the riverside shelter, Nia said, \"Omar prefers the shorter walking route.\" The note was later recorded at the town archive."
+          },
+          {
+            "path": "data.reports.0.speaker",
+            "sourceId": "walking-note",
+            "quote": "At the riverside shelter, Nia said, \"Omar prefers the shorter walking route.\" The note was later recorded at the town archive."
+          },
+          {
+            "path": "data.reports.0.subjects.0",
+            "sourceId": "walking-note",
+            "quote": "At the riverside shelter, Nia said, \"Omar prefers the shorter walking route.\" The note was later recorded at the town archive."
+          },
+          {
+            "path": "data.reports.0.recordingLocation",
+            "sourceId": "walking-note",
+            "quote": "At the riverside shelter, Nia said, \"Omar prefers the shorter walking route.\" The note was later recorded at the town archive."
+          },
+          {
+            "path": "data.reports.0.occasionSetting",
+            "sourceId": "walking-note",
+            "quote": "At the riverside shelter, Nia said, \"Omar prefers the shorter walking route.\" The note was later recorded at the town archive."
+          }
+        ],
+        "unknown": []
+      },
+      "fixtureNote": "Question-blind capture; caller supplies reviewed vocabulary. Speaker, subject, event location and recording location are separate candidate claims.",
+      "text": "{\"data\":{\"reports\":[{\"sourceId\":\"walking-note\",\"statement\":\"Omar prefers the shorter walking route.\",\"speaker\":\"nia\",\"subjects\":[\"omar\"],\"recordingLocation\":\"archive\",\"occasionSetting\":\"shelter\"}]},\"evidence\":[{\"path\":\"data.reports.0.statement\",\"sourceId\":\"walking-note\",\"quote\":\"Omar prefers the shorter walking route.\"},{\"path\":\"data.reports.0.speaker\",\"sourceId\":\"walking-note\",\"quote\":\"Nia said, \\\"Omar prefers the shorter walking route.\\\"\"},{\"path\":\"data.reports.0.subjects.0\",\"sourceId\":\"walking-note\",\"quote\":\"Omar prefers the shorter walking route.\"},{\"path\":\"data.reports.0.recordingLocation\",\"sourceId\":\"walking-note\",\"quote\":\"The note was later recorded at the town archive.\"},{\"path\":\"data.reports.0.occasionSetting\",\"sourceId\":\"walking-note\",\"quote\":\"At the riverside shelter, Nia said, \\\"Omar prefers the shorter walking route.\\\"\"}],\"unknown\":[]}",
+      "id": "item-24"
+    },
+    {
+      "stage": "preparation",
+      "caseId": "cal-06-journal-candidate",
+      "sources": [
+        {
+          "id": "cal-06-text-b",
+          "revision": "r1",
+          "text": "Noor wrote in her travel journal: \"For short winter walks, I always prefer the canal path to the hill trail.\""
+        }
+      ],
+      "caller": {
+        "pairId": "pair-a",
+        "role": "candidate",
+        "provenancePolicy": "unchanged-original",
+        "mode": "free",
+        "kind": "memory",
+        "origin": "travel-journal",
+        "sourceStates": {
+          "cal-06-text-b": {
+            "revision": "r1",
+            "available": true,
+            "eligible": true
+          }
+        }
+      },
+      "question": "What preference does this text attribute to Noor, under what circumstances, and with what strength or uncertainty?",
+      "rubric": {
+        "required": [
+          "Noor always prefers the canal path to the hill trail for short winter walks.",
+          "Treat this as attributed journal content."
+        ],
+        "forbidden": [
+          "Drop the short-winter-walk condition.",
+          "Turn the explicit always into a tentative might.",
+          "Declare global meaning preservation."
+        ],
+        "acceptableUnknown": [
+          "Whether this preference is true outside the quoted journal statement."
+        ]
+      },
+      "referenceAnnotations": {
+        "data": {
+          "subject": {
+            "state": "known",
+            "value": "Noor"
+          },
+          "attribution": {
+            "state": "known",
+            "value": "Noor wrote in her travel journal"
+          },
+          "circumstance": {
+            "state": "known",
+            "value": "For short winter walks"
+          },
+          "modality": {
+            "state": "known",
+            "value": "always prefer"
+          },
+          "comparison": {
+            "state": "known",
+            "value": "the canal path to the hill trail"
+          }
+        },
+        "evidence": [
+          {
+            "path": "subject",
+            "sourceId": "cal-06-text-b",
+            "quote": "Noor wrote in her travel journal: \"For short winter walks, I always prefer the canal path to the hill trail.\""
+          },
+          {
+            "path": "attribution",
+            "sourceId": "cal-06-text-b",
+            "quote": "Noor wrote in her travel journal: \"For short winter walks, I always prefer the canal path to the hill trail.\""
+          },
+          {
+            "path": "circumstance",
+            "sourceId": "cal-06-text-b",
+            "quote": "Noor wrote in her travel journal: \"For short winter walks, I always prefer the canal path to the hill trail.\""
+          },
+          {
+            "path": "modality",
+            "sourceId": "cal-06-text-b",
+            "quote": "Noor wrote in her travel journal: \"For short winter walks, I always prefer the canal path to the hill trail.\""
+          },
+          {
+            "path": "comparison",
+            "sourceId": "cal-06-text-b",
+            "quote": "Noor wrote in her travel journal: \"For short winter walks, I always prefer the canal path to the hill trail.\""
+          }
+        ],
+        "unknown": []
+      },
+      "fixtureNote": "Independent annotation package. Old/candidate pairing happens only after extraction; deterministic check should flag changed modality, with prose still unassessed.",
+      "text": "Noor expresses a preference for the canal path over the hill trail for short winter walks. The circumstance is limited to short winter walks, indicating the preference applies under those specific conditions. The modality reflects a personal, definite preference using the verb \"prefer,\" suggesting strong subjective evaluation. The comparison is explicitly stated between the canal path and the hill trail, with the canal path being the chosen option. The attribution is derived from Noor\u2019s travel journal, where she wrote: \"For short winter walks, I always prefer the canal path to the hill trail.\" This statement directly supports the subject, circumstance, modality, and comparison. No further details about the nature of the paths, weather conditions, or reasons for preference are provided. The source is identified as cal-006-text-text-b, revision r1, and the information is drawn entirely from the supplied text. No items are unresolved.",
+      "id": "item-25"
+    },
+    {
+      "stage": "reader",
+      "caseId": "cal-05-lanterns",
+      "sources": [
+        {
+          "id": "cal-05-event",
+          "revision": "r1",
+          "text": "At the lantern-making workshop, Mira cut paper and Soren assembled frames. Their work overlapped at the same table. They talked about a pattern designed by Jules. The note does not say whether Jules attended."
+        },
+        {
+          "id": "cal-05-reflection",
+          "revision": "r1",
+          "text": "The next morning Jules wrote about the lantern-making workshop: \"To me, the shared table made this an exercise in cooperation.\" This reflection does not state whether Jules was present."
+        }
+      ],
+      "caller": {
+        "people": [
+          "Mira",
+          "Soren",
+          "Jules"
+        ],
+        "occasionId": "lantern-workshop",
+        "eventSourceId": "cal-05-event",
+        "interpretationIds": {
+          "cal-05-reflection": "lantern-reflection"
+        },
+        "entryPolicy": "all-supplied-account-records",
+        "sourceStates": {
+          "cal-05-event": {
+            "revision": "r1",
+            "available": true,
+            "eligible": true
+          },
+          "cal-05-reflection": {
+            "revision": "r1",
+            "available": true,
+            "eligible": true
+          }
+        }
+      },
+      "question": "What did Jules think the workshop illustrated, and does the record establish that Jules attended?",
+      "rubric": {
+        "required": [
+          "Attribute the cooperation interpretation to Jules.",
+          "Attendance is unknown/not established."
+        ],
+        "forbidden": [
+          "Claim that Jules attended.",
+          "Claim that Jules was absent.",
+          "Present the attributed interpretation as an independently established event fact."
+        ],
+        "acceptableUnknown": [
+          "Whether Jules personally observed the shared table."
+        ]
+      },
+      "referenceAnnotations": {
+        "data": {
+          "narrative": "Mira cut paper and Soren assembled frames together at a lantern-making workshop; they discussed a pattern by Jules.",
+          "participants": [
+            {
+              "person": "Mira",
+              "role": "cut paper"
+            },
+            {
+              "person": "Soren",
+              "role": "assembled frames"
+            }
+          ],
+          "mentioned": [
+            "Jules"
+          ],
+          "coPresence": [
+            [
+              "Mira",
+              "Soren"
+            ]
+          ],
+          "interpretations": [
+            {
+              "sourceId": "cal-05-reflection",
+              "author": "Jules",
+              "account": "The shared table made the workshop an exercise in cooperation."
+            }
+          ]
+        },
+        "evidence": [
+          {
+            "path": "narrative",
+            "sourceId": "cal-05-event",
+            "quote": "At the lantern-making workshop, Mira cut paper and Soren assembled frames. Their work overlapped at the same table. They talked about a pattern designed by Jules. The note does not say whether Jules attended."
+          },
+          {
+            "path": "participants.0",
+            "sourceId": "cal-05-event",
+            "quote": "At the lantern-making workshop, Mira cut paper and Soren assembled frames. Their work overlapped at the same table. They talked about a pattern designed by Jules. The note does not say whether Jules attended."
+          },
+          {
+            "path": "participants.1",
+            "sourceId": "cal-05-event",
+            "quote": "At the lantern-making workshop, Mira cut paper and Soren assembled frames. Their work overlapped at the same table. They talked about a pattern designed by Jules. The note does not say whether Jules attended."
+          },
+          {
+            "path": "mentioned.0",
+            "sourceId": "cal-05-event",
+            "quote": "At the lantern-making workshop, Mira cut paper and Soren assembled frames. Their work overlapped at the same table. They talked about a pattern designed by Jules. The note does not say whether Jules attended."
+          },
+          {
+            "path": "coPresence.0",
+            "sourceId": "cal-05-event",
+            "quote": "At the lantern-making workshop, Mira cut paper and Soren assembled frames. Their work overlapped at the same table. They talked about a pattern designed by Jules. The note does not say whether Jules attended."
+          },
+          {
+            "path": "interpretations.0",
+            "sourceId": "cal-05-reflection",
+            "quote": "The next morning Jules wrote about the lantern-making workshop: \"To me, the shared table made this an exercise in cooperation.\" This reflection does not state whether Jules was present."
+          }
+        ],
+        "unknown": [
+          "Whether Jules attended is not established."
+        ]
+      },
+      "fixtureNote": "Question-blind capture. Caller supplies common event/account boundary; calibration does not establish automatic identity resolution.",
+      "readerPacket": {
+        "question": "What did Jules think the workshop illustrated, and does the record establish that Jules attended?",
+        "caller": {
+          "people": [
+            "Mira",
+            "Soren",
+            "Jules"
+          ],
+          "occasionId": "lantern-workshop",
+          "eventSourceId": "cal-05-event",
+          "interpretationIds": {
+            "cal-05-reflection": "lantern-reflection"
+          },
+          "entryPolicy": "all-supplied-account-records",
+          "sourceStates": {
+            "cal-05-event": {
+              "revision": "r1",
+              "available": true,
+              "eligible": true
+            },
+            "cal-05-reflection": {
+              "revision": "r1",
+              "available": true,
+              "eligible": true
+            }
+          }
+        },
+        "preparedMemory": {
+          "status": "extraction-unavailable",
+          "reason": "Candidate failed decoding or mapping. No source facts are available in this preparation."
+        }
+      },
+      "text": "The record does not establish that Jules attended the lantern workshop, as no source facts are available to confirm attendance. Consequently, there is no evidence to determine what Jules may have thought the workshop illustrated. The prepared memory indicates a failure in decoding or mapping source facts, leaving the interpretation unsupported.",
+      "id": "item-26"
+    },
+    {
+      "stage": "preparation",
+      "caseId": "cal-06-journal-old",
+      "sources": [
+        {
+          "id": "cal-06-text-a",
+          "revision": "r1",
+          "text": "Noor wrote in her travel journal: \"For short winter walks, I might prefer the canal path to the hill trail.\""
+        }
+      ],
+      "caller": {
+        "pairId": "pair-a",
+        "role": "old",
+        "provenancePolicy": "unchanged-original",
+        "mode": "free",
+        "kind": "memory",
+        "origin": "travel-journal",
+        "sourceStates": {
+          "cal-06-text-a": {
+            "revision": "r1",
+            "available": true,
+            "eligible": true
+          }
+        }
+      },
+      "question": "What preference does this text attribute to Noor, under what circumstances, and with what strength or uncertainty?",
+      "rubric": {
+        "required": [
+          "Noor might prefer the canal path to the hill trail for short winter walks.",
+          "Treat this as attributed journal content."
+        ],
+        "forbidden": [
+          "Drop the short-winter-walk condition.",
+          "Turn tentative preference into certainty.",
+          "Declare global meaning preservation."
+        ],
+        "acceptableUnknown": [
+          "Whether this preference is true outside the quoted journal statement."
+        ]
+      },
+      "referenceAnnotations": {
+        "data": {
+          "subject": {
+            "state": "known",
+            "value": "Noor"
+          },
+          "attribution": {
+            "state": "known",
+            "value": "Noor wrote in her travel journal"
+          },
+          "circumstance": {
+            "state": "known",
+            "value": "For short winter walks"
+          },
+          "modality": {
+            "state": "known",
+            "value": "might prefer"
+          },
+          "comparison": {
+            "state": "known",
+            "value": "the canal path to the hill trail"
+          }
+        },
+        "evidence": [
+          {
+            "path": "subject",
+            "sourceId": "cal-06-text-a",
+            "quote": "Noor wrote in her travel journal: \"For short winter walks, I might prefer the canal path to the hill trail.\""
+          },
+          {
+            "path": "attribution",
+            "sourceId": "cal-06-text-a",
+            "quote": "Noor wrote in her travel journal: \"For short winter walks, I might prefer the canal path to the hill trail.\""
+          },
+          {
+            "path": "circumstance",
+            "sourceId": "cal-06-text-a",
+            "quote": "Noor wrote in her travel journal: \"For short winter walks, I might prefer the canal path to the hill trail.\""
+          },
+          {
+            "path": "modality",
+            "sourceId": "cal-06-text-a",
+            "quote": "Noor wrote in her travel journal: \"For short winter walks, I might prefer the canal path to the hill trail.\""
+          },
+          {
+            "path": "comparison",
+            "sourceId": "cal-06-text-a",
+            "quote": "Noor wrote in her travel journal: \"For short winter walks, I might prefer the canal path to the hill trail.\""
+          }
+        ],
+        "unknown": []
+      },
+      "fixtureNote": "Independent annotation package. Old/candidate pairing happens only after extraction; deterministic check should flag changed modality, with prose still unassessed.",
+      "text": "Noor expressed a preference for the canal path over the hill trail for short winter walks. This preference is reported in her travel journal, indicating her personal choice under specific conditions. The circumstance is limited to short winter walks, suggesting the preference may not apply to longer or different seasonal outings. The modality reflects a personal inclination, using the word \"might\" to indicate uncertainty or softness in the preference. The comparison is explicitly made between the canal path and the hill trail, with the canal path being the favored option. The attribution is directly from Noor\u2019s journal, where she wrote: \"For short winter walks, I might prefer the canal path to the hill trail.\" The subject of the preference is the canal path, as it is the option being favored. No further details about the reasoning, environmental factors, or other contextual elements are provided in the source. The source text is from \"cal-006-text-a\" (revision r1), and no other information is available to resolve uncertainties.",
+      "id": "item-27"
+    },
+    {
+      "stage": "reader",
+      "caseId": "cal-01-qualified-view",
+      "sources": [
+        {
+          "id": "seed-note",
+          "revision": "r1",
+          "text": "The seed library lends trays for seven days. Members may renew once only if nobody is waiting."
+        },
+        {
+          "id": "garden-note",
+          "revision": "r1",
+          "text": "The courtyard garden opens after sunrise. Access is suspended while the grounds are icy."
+        }
+      ],
+      "caller": {
+        "scopes": {
+          "seed-library": "seed library",
+          "courtyard-garden": "courtyard garden"
+        },
+        "states": {
+          "seed-note": {
+            "revision": "r1",
+            "available": true,
+            "eligible": true
+          },
+          "garden-note": {
+            "revision": "r1",
+            "available": true,
+            "eligible": true
+          }
+        },
+        "populationComplete": true,
+        "limits": {
+          "chars": 850,
+          "maxRecords": 1,
+          "scanCap": 8,
+          "maxRecordChars": 1800
+        }
+      },
+      "question": "Can members always renew a borrowed seed tray? What limits apply?",
+      "rubric": {
+        "required": [
+          "Renewal is permitted once only if nobody is waiting."
+        ],
+        "forbidden": [
+          "Unconditional renewal.",
+          "Claim that the entire memory or every supplied record appears in the view."
+        ],
+        "acceptableUnknown": [
+          "No claim about policies or records outside the supplied population."
+        ]
+      },
+      "referenceAnnotations": {
+        "data": {
+          "records": [
+            {
+              "sourceId": "seed-note",
+              "claim": "The seed library lends trays for seven days.",
+              "qualifications": [
+                "Members may renew once only if nobody is waiting."
+              ],
+              "scope": "seed-library"
+            },
+            {
+              "sourceId": "garden-note",
+              "claim": "The courtyard garden opens after sunrise.",
+              "qualifications": [
+                "Access is suspended while the grounds are icy."
+              ],
+              "scope": "courtyard-garden"
+            }
+          ]
+        },
+        "evidence": [
+          {
+            "path": "data.records.0.claim",
+            "sourceId": "seed-note",
+            "quote": "The seed library lends trays for seven days. Members may renew once only if nobody is waiting."
+          },
+          {
+            "path": "data.records.0.qualifications.0",
+            "sourceId": "seed-note",
+            "quote": "The seed library lends trays for seven days. Members may renew once only if nobody is waiting."
+          },
+          {
+            "path": "data.records.0.scope",
+            "sourceId": "seed-note",
+            "quote": "The seed library lends trays for seven days. Members may renew once only if nobody is waiting."
+          },
+          {
+            "path": "data.records.1.claim",
+            "sourceId": "garden-note",
+            "quote": "The courtyard garden opens after sunrise. Access is suspended while the grounds are icy."
+          },
+          {
+            "path": "data.records.1.qualifications.0",
+            "sourceId": "garden-note",
+            "quote": "The courtyard garden opens after sunrise. Access is suspended while the grounds are icy."
+          },
+          {
+            "path": "data.records.1.scope",
+            "sourceId": "garden-note",
+            "quote": "The courtyard garden opens after sunrise. Access is suspended while the grounds are icy."
+          }
+        ],
+        "unknown": []
+      },
+      "fixtureNote": "Question-blind capture. Both readers answer the same renewal question. Coverage/omission is checked in deterministic tests, not required of the prose reader, which has no bounded-view operation. Does not test relevance ranking or expansion benefit.",
+      "readerPacket": {
+        "question": "Can members always renew a borrowed seed tray? What limits apply?",
+        "caller": {
+          "scopes": {
+            "seed-library": "seed library",
+            "courtyard-garden": "courtyard garden"
+          },
+          "states": {
+            "seed-note": {
+              "revision": "r1",
+              "available": true,
+              "eligible": true
+            },
+            "garden-note": {
+              "revision": "r1",
+              "available": true,
+              "eligible": true
+            }
+          },
+          "populationComplete": true,
+          "limits": {
+            "chars": 850,
+            "maxRecords": 1,
+            "scanCap": 8,
+            "maxRecordChars": 1800
+          }
+        },
+        "preparedMemory": {
+          "status": "extraction-unavailable",
+          "reason": "Candidate failed decoding or mapping. No source facts are available in this preparation."
+        }
+      },
+      "text": "The prepared memory indicates no source facts are available, so it is unknown whether members can always renew a borrowed seed tray or what limits apply. No information on renewal policies, borrowing terms, or restrictions is accessible from the provided data. Therefore, the answer cannot be determined from the current evidence.",
+      "id": "item-28"
+    },
+    {
+      "stage": "preparation",
+      "caseId": "cal-02-disjoint-contexts",
+      "sources": [
+        {
+          "id": "darkroom-tue",
+          "revision": "r1",
+          "text": "On Tuesday the community darkroom must be dark for developing prints."
+        },
+        {
+          "id": "darkroom-wed",
+          "revision": "r1",
+          "text": "On Wednesday the community darkroom must be bright for cleaning."
+        }
+      ],
+      "caller": {
+        "subjects": {
+          "darkroom": "community darkroom"
+        },
+        "property": "lighting",
+        "values": [
+          "dark",
+          "bright"
+        ],
+        "days": [
+          "Tuesday",
+          "Wednesday"
+        ],
+        "states": {
+          "darkroom-tue": {
+            "revision": "r1",
+            "available": true,
+            "eligible": true
+          },
+          "darkroom-wed": {
+            "revision": "r1",
+            "available": true,
+            "eligible": true
+          }
+        },
+        "alignment": [
+          {
+            "id": "lighting-comparison",
+            "recordIds": [
+              "darkroom-tue",
+              "darkroom-wed"
+            ],
+            "subject": "darkroom",
+            "property": "lighting",
+            "dimensions": [
+              "day"
+            ]
+          }
+        ]
+      },
+      "question": "Do these two lighting requirements contradict each other in a shared context?",
+      "rubric": {
+        "required": [
+          "The requirements apply on different days and the declared contexts are separate."
+        ],
+        "forbidden": [
+          "A conflict in a shared context.",
+          "A claim that both lighting requirements apply simultaneously.",
+          "A guarantee about unmentioned days."
+        ],
+        "acceptableUnknown": [
+          "No lighting requirement is established for other days."
+        ]
+      },
+      "referenceAnnotations": {
+        "data": {
+          "accounts": [
+            {
+              "sourceId": "darkroom-tue",
+              "subject": "darkroom",
+              "property": "lighting",
+              "values": [
+                "dark"
+              ],
+              "context": {
+                "day": {
+                  "kind": "set",
+                  "values": [
+                    "Tuesday"
+                  ]
+                }
+              }
+            },
+            {
+              "sourceId": "darkroom-wed",
+              "subject": "darkroom",
+              "property": "lighting",
+              "values": [
+                "bright"
+              ],
+              "context": {
+                "day": {
+                  "kind": "set",
+                  "values": [
+                    "Wednesday"
+                  ]
+                }
+              }
+            }
+          ]
+        },
+        "evidence": [
+          {
+            "path": "data.accounts.0.subject",
+            "sourceId": "darkroom-tue",
+            "quote": "On Tuesday the community darkroom must be dark for developing prints."
+          },
+          {
+            "path": "data.accounts.0.property",
+            "sourceId": "darkroom-tue",
+            "quote": "On Tuesday the community darkroom must be dark for developing prints."
+          },
+          {
+            "path": "data.accounts.0.values",
+            "sourceId": "darkroom-tue",
+            "quote": "On Tuesday the community darkroom must be dark for developing prints."
+          },
+          {
+            "path": "data.accounts.0.context.day",
+            "sourceId": "darkroom-tue",
+            "quote": "On Tuesday the community darkroom must be dark for developing prints."
+          },
+          {
+            "path": "data.accounts.1.subject",
+            "sourceId": "darkroom-wed",
+            "quote": "On Wednesday the community darkroom must be bright for cleaning."
+          },
+          {
+            "path": "data.accounts.1.property",
+            "sourceId": "darkroom-wed",
+            "quote": "On Wednesday the community darkroom must be bright for cleaning."
+          },
+          {
+            "path": "data.accounts.1.values",
+            "sourceId": "darkroom-wed",
+            "quote": "On Wednesday the community darkroom must be bright for cleaning."
+          },
+          {
+            "path": "data.accounts.1.context.day",
+            "sourceId": "darkroom-wed",
+            "quote": "On Wednesday the community darkroom must be bright for cleaning."
+          }
+        ],
+        "unknown": []
+      },
+      "fixtureNote": "Task-aware account extraction with explicitly caller-reviewed identity/property/alignment. Does not test autonomous semantic alignment or general finite constraint formulation.",
+      "text": "{\"data\":{\"accounts\":[{\"sourceId\":\"darkroom-tue\",\"subject\":\"darkroom\",\"property\":\"lighting\",\"values\":[\"dark\"],\"context\":{\"day\":{\"kind\":\"set\",\"values\":[\"Tuesday\"]}}},{\"sourceId\":\"darkroom-wed\",\"subject\":\"darkroom\",\"property\":\"lighting\",\"values\":[\"bright\"],\"context\":{\"day\":{\"kind\":\"set\",\"values\":[\"Wednesday\"]}}}]}},\"evidence\":[{\"path\":\"data.accounts.0.subject\",\"sourceId\":\"darkroom-tue\",\"quote\":\"community darkroom\"},{\"path\":\"data.accounts.0.property\",\"sourceId\":\"darkroom-tue\",\"quote\":\"lighting\"},{\"path\":\"data.accounts.0.values\",\"sourceId\":\"darkroom-tue\",\"quote\":\"dark\"},{\"path\":\"data.accounts.0.context.day\",\"sourceId\":\"darkroom-tue\",\"quote\":\"Tuesday\"},{\"path\":\"data.accounts.1.subject\",\"sourceId\":\"darkroom-wed\",\"quote\":\"community darkroom\"},{\"path\":\"data.accounts.1.property\",\"sourceId\":\"darkroom-wed\",\"quote\":\"lighting\"},{\"path\":\"data.accounts.1.values\",\"sourceId\":\"darkroom-wed\",\"quote\":\"bright\"},{\"path\":\"data.accounts.1.context.day\",\"sourceId\":\"darkroom-wed\",\"quote\":\"Wednesday\"}],\"unknown\":[]}",
+      "id": "item-29"
+    },
+    {
+      "stage": "preparation",
+      "caseId": "cal-03-unknown-attribution",
+      "sources": [
+        {
+          "id": "unsigned-note",
+          "revision": "r1",
+          "text": "An unsigned note recorded at the ferry office says, \"They preferred the covered route.\" Neither the speaker nor the people meant by \"they\" are identified. The place of the described outing is not recorded."
+        }
+      ],
+      "caller": {
+        "people": {},
+        "places": {
+          "ferry-office": "ferry office"
+        },
+        "states": {
+          "unsigned-note": {
+            "revision": "r1",
+            "available": true,
+            "eligible": true
+          }
+        }
+      },
+      "question": "Who expressed the preference, and where did the outing happen?",
+      "rubric": {
+        "required": [
+          "The speaker and the outing location are unknown from this source."
+        ],
+        "forbidden": [
+          "The outing happened at the ferry office.",
+          "Nobody expressed the preference.",
+          "No people were the subject of the statement."
+        ],
+        "acceptableUnknown": [
+          "Unidentified speaker and subjects; unrecorded outing location."
+        ]
+      },
+      "referenceAnnotations": {
+        "data": {
+          "reports": [
+            {
+              "sourceId": "unsigned-note",
+              "statement": "They preferred the covered route.",
+              "speaker": null,
+              "subjects": null,
+              "recordingLocation": "ferry-office",
+              "occasionSetting": null
+            }
+          ]
+        },
+        "evidence": [
+          {
+            "path": "data.reports.0.statement",
+            "sourceId": "unsigned-note",
+            "quote": "An unsigned note recorded at the ferry office says, \"They preferred the covered route.\" Neither the speaker nor the people meant by \"they\" are identified. The place of the described outing is not recorded."
+          },
+          {
+            "path": "data.reports.0.recordingLocation",
+            "sourceId": "unsigned-note",
+            "quote": "An unsigned note recorded at the ferry office says, \"They preferred the covered route.\" Neither the speaker nor the people meant by \"they\" are identified. The place of the described outing is not recorded."
+          }
+        ],
+        "unknown": [
+          "data.reports.0.speaker",
+          "data.reports.0.subjects",
+          "data.reports.0.occasionSetting"
+        ]
+      },
+      "fixtureNote": "Question-blind capture. Explicit unknowns must remain null, not empty subject sets, absence, or recording-location substitution.",
+      "text": "{\"data\":{\"reports\":[{\"sourceId\":\"unsigned-note\",\"statement\":\"They preferred the covered route.\",\"speaker\":null,\"subjects\":[],\"recordingLocation\":\"ferry-office\",\"occasionSetting\":null}]},\"evidence\":[{\"path\":\"data.reports.0.statement\",\"sourceId\":\"unsigned-note\",\"quote\":\"They preferred the covered route.\"},{\"path\":\"data.reports.0.recordingLocation\",\"sourceId\":\"unsigned-note\",\"quote\":\"ferry office\"}],\"unknown\":[\"data.reports.0.speaker\",\"data.reports.0.subjects\",\"data.reports.0.occasionSetting\"]}",
+      "id": "item-30"
+    },
+    {
+      "stage": "preparation",
+      "caseId": "cal-01-qualified-view",
+      "sources": [
+        {
+          "id": "seed-note",
+          "revision": "r1",
+          "text": "The seed library lends trays for seven days. Members may renew once only if nobody is waiting."
+        },
+        {
+          "id": "garden-note",
+          "revision": "r1",
+          "text": "The courtyard garden opens after sunrise. Access is suspended while the grounds are icy."
+        }
+      ],
+      "caller": {
+        "scopes": {
+          "seed-library": "seed library",
+          "courtyard-garden": "courtyard garden"
+        },
+        "states": {
+          "seed-note": {
+            "revision": "r1",
+            "available": true,
+            "eligible": true
+          },
+          "garden-note": {
+            "revision": "r1",
+            "available": true,
+            "eligible": true
+          }
+        },
+        "populationComplete": true,
+        "limits": {
+          "chars": 850,
+          "maxRecords": 1,
+          "scanCap": 8,
+          "maxRecordChars": 1800
+        }
+      },
+      "question": "Can members always renew a borrowed seed tray? What limits apply?",
+      "rubric": {
+        "required": [
+          "Renewal is permitted once only if nobody is waiting."
+        ],
+        "forbidden": [
+          "Unconditional renewal.",
+          "Claim that the entire memory or every supplied record appears in the view."
+        ],
+        "acceptableUnknown": [
+          "No claim about policies or records outside the supplied population."
+        ]
+      },
+      "referenceAnnotations": {
+        "data": {
+          "records": [
+            {
+              "sourceId": "seed-note",
+              "claim": "The seed library lends trays for seven days.",
+              "qualifications": [
+                "Members may renew once only if nobody is waiting."
+              ],
+              "scope": "seed-library"
+            },
+            {
+              "sourceId": "garden-note",
+              "claim": "The courtyard garden opens after sunrise.",
+              "qualifications": [
+                "Access is suspended while the grounds are icy."
+              ],
+              "scope": "courtyard-garden"
+            }
+          ]
+        },
+        "evidence": [
+          {
+            "path": "data.records.0.claim",
+            "sourceId": "seed-note",
+            "quote": "The seed library lends trays for seven days. Members may renew once only if nobody is waiting."
+          },
+          {
+            "path": "data.records.0.qualifications.0",
+            "sourceId": "seed-note",
+            "quote": "The seed library lends trays for seven days. Members may renew once only if nobody is waiting."
+          },
+          {
+            "path": "data.records.0.scope",
+            "sourceId": "seed-note",
+            "quote": "The seed library lends trays for seven days. Members may renew once only if nobody is waiting."
+          },
+          {
+            "path": "data.records.1.claim",
+            "sourceId": "garden-note",
+            "quote": "The courtyard garden opens after sunrise. Access is suspended while the grounds are icy."
+          },
+          {
+            "path": "data.records.1.qualifications.0",
+            "sourceId": "garden-note",
+            "quote": "The courtyard garden opens after sunrise. Access is suspended while the grounds are icy."
+          },
+          {
+            "path": "data.records.1.scope",
+            "sourceId": "garden-note",
+            "quote": "The courtyard garden opens after sunrise. Access is suspended while the grounds are icy."
+          }
+        ],
+        "unknown": []
+      },
+      "fixtureNote": "Question-blind capture. Both readers answer the same renewal question. Coverage/omission is checked in deterministic tests, not required of the prose reader, which has no bounded-view operation. Does not test relevance ranking or expansion benefit.",
+      "text": "{\"data\":{\"records\":[{\"sourceId\":\"seed-note\",\"claim\":\"The seed library lends trays for seven days with one renewal allowed if no one is waiting.\",\"qualifications\":[\"Members may renew once only if nobody is waiting.\"],\"scope\":\"seed-library\"},{\"sourceId\":\"garden-note\",\"claim\":\"The courtyard garden opens after sunrise and access is suspended while the grounds are icy.\",\"qualifications\":[\"Access is suspended while the grounds are icy.\"],\"scope\":\"courtyard-garden\"}]},\"evidence\":[{\"path\":\"data.records.0.claim\",\"sourceId\":\"seed-note\",\"quote\":\"The seed library lends trays for seven days. Members may renew once only if nobody is waiting.\"},{\"path\":\"data.records.0.qualifications.0\",\"sourceId\":\"seed-note\",\"quote\":\"Members may renew once only if nobody is waiting.\"},{\"path\":\"data.records.1.claim\",\"sourceId\":\"garden-note\",\"quote\":\"The courtyard garden opens after sunrise. Access is suspended while the grounds are icy.\"},{\"path\":\"data.records.1.qualifications.0\",\"sourceId\":\"garden-note\",\"quote\":\"Access is suspended while the grounds are icy.\"}],\"unknown\":[]}",
+      "id": "item-31"
+    },
+    {
+      "stage": "preparation",
+      "caseId": "cal-01-qualified-view",
+      "sources": [
+        {
+          "id": "seed-note",
+          "revision": "r1",
+          "text": "The seed library lends trays for seven days. Members may renew once only if nobody is waiting."
+        },
+        {
+          "id": "garden-note",
+          "revision": "r1",
+          "text": "The courtyard garden opens after sunrise. Access is suspended while the grounds are icy."
+        }
+      ],
+      "caller": {
+        "scopes": {
+          "seed-library": "seed library",
+          "courtyard-garden": "courtyard garden"
+        },
+        "states": {
+          "seed-note": {
+            "revision": "r1",
+            "available": true,
+            "eligible": true
+          },
+          "garden-note": {
+            "revision": "r1",
+            "available": true,
+            "eligible": true
+          }
+        },
+        "populationComplete": true,
+        "limits": {
+          "chars": 850,
+          "maxRecords": 1,
+          "scanCap": 8,
+          "maxRecordChars": 1800
+        }
+      },
+      "question": "Can members always renew a borrowed seed tray? What limits apply?",
+      "rubric": {
+        "required": [
+          "Renewal is permitted once only if nobody is waiting."
+        ],
+        "forbidden": [
+          "Unconditional renewal.",
+          "Claim that the entire memory or every supplied record appears in the view."
+        ],
+        "acceptableUnknown": [
+          "No claim about policies or records outside the supplied population."
+        ]
+      },
+      "referenceAnnotations": {
+        "data": {
+          "records": [
+            {
+              "sourceId": "seed-note",
+              "claim": "The seed library lends trays for seven days.",
+              "qualifications": [
+                "Members may renew once only if nobody is waiting."
+              ],
+              "scope": "seed-library"
+            },
+            {
+              "sourceId": "garden-note",
+              "claim": "The courtyard garden opens after sunrise.",
+              "qualifications": [
+                "Access is suspended while the grounds are icy."
+              ],
+              "scope": "courtyard-garden"
+            }
+          ]
+        },
+        "evidence": [
+          {
+            "path": "data.records.0.claim",
+            "sourceId": "seed-note",
+            "quote": "The seed library lends trays for seven days. Members may renew once only if nobody is waiting."
+          },
+          {
+            "path": "data.records.0.qualifications.0",
+            "sourceId": "seed-note",
+            "quote": "The seed library lends trays for seven days. Members may renew once only if nobody is waiting."
+          },
+          {
+            "path": "data.records.0.scope",
+            "sourceId": "seed-note",
+            "quote": "The seed library lends trays for seven days. Members may renew once only if nobody is waiting."
+          },
+          {
+            "path": "data.records.1.claim",
+            "sourceId": "garden-note",
+            "quote": "The courtyard garden opens after sunrise. Access is suspended while the grounds are icy."
+          },
+          {
+            "path": "data.records.1.qualifications.0",
+            "sourceId": "garden-note",
+            "quote": "The courtyard garden opens after sunrise. Access is suspended while the grounds are icy."
+          },
+          {
+            "path": "data.records.1.scope",
+            "sourceId": "garden-note",
+            "quote": "The courtyard garden opens after sunrise. Access is suspended while the grounds are icy."
+          }
+        ],
+        "unknown": []
+      },
+      "fixtureNote": "Question-blind capture. Both readers answer the same renewal question. Coverage/omission is checked in deterministic tests, not required of the prose reader, which has no bounded-view operation. Does not test relevance ranking or expansion benefit.",
+      "text": "The seed library lends trays for seven days, with members allowed one renewal only if no one is waiting. The courtyard garden opens after sunrise, but access is suspended when the grounds are icy.",
+      "id": "item-32"
+    }
+  ]
+}

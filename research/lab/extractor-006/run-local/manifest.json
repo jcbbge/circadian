@@ -1,0 +1,68 @@
+{
+  "study": "extractor-calibration-006",
+  "createdAt": "2026-10-12T04:27:29.676Z",
+  "config": {
+    "label": "local",
+    "extractor": {
+      "url": "http://127.0.0.1:10240/v1/chat/completions",
+      "model": "mlx-community/Qwen3-30B-A3B-Instruct-2507-4bit",
+      "settings": {
+        "temperature": 0.3,
+        "top_p": 0.95,
+        "max_tokens": 2048
+      }
+    },
+    "reader": {
+      "url": "http://127.0.0.1:10240/v1/chat/completions",
+      "model": "mlx-community/Qwen3-30B-A3B-Instruct-2507-4bit",
+      "settings": {
+        "temperature": 0.3,
+        "top_p": 0.95,
+        "max_tokens": 2048
+      }
+    },
+    "endpointEvidence": {
+      "file": "ENDPOINT-EVIDENCE.json",
+      "sha256": "f06723283a8f4875f580daa3e3b9c281f26e1a4a37cb2ff68a171db04ac9657d",
+      "completion_probe_passed": true,
+      "weight_revision": null,
+      "seed_control": null
+    }
+  },
+  "count": {
+    "bundles": 8,
+    "preparations": 16,
+    "readerProbes": 16,
+    "maxStudyCalls": 32
+  },
+  "retries": 0,
+  "ordering": "Fixture order; structured preparation, plain preparation, structured reader, plain reader. Same order per model; order/time remain confounded.",
+  "stopping": "Any transport/model-identity failure stops the run; no retry. Semantic/schema failures retained; promotion is decided after review.",
+  "futureQuestionPolicy": "No question/rubric/gold/checks in preparation packet. Explicit task only where fixture marks task-aware preparation.",
+  "hashes": {
+    "fixtures.json": "13de2e40925c61803c41796305f3849a1101632385a2b2e11bd4e17edb24aa77",
+    "preparations.json": "258d0e1f5c8c0c31bb64e02d5ccd727496918d92f8eda14cfa71388dcf6836da",
+    "config.json": "ebca28fd52c28d24f2795271486410effe3afd7ab259807ba244737a858349de"
+  },
+  "preRunReview": "123c6f4128c65777959bd0c1f70b39de59840ba3c3644035b50157ecabd85a19",
+  "codeHashes": {
+    "/Users/jrg/circadian/research/lab/extractor-006/PEER-PRE-RUN-BRIEF.md": "6d6da30c0b8c01f50b8a97115a35f7cef8fb50ed422e47ad9f4ccdefbdd36bac",
+    "/Users/jrg/circadian/research/lab/extractor-006/PEER-PRE-RUN.md": "d9aa007d9c47bf6d0871d5ee192685a86a0577da24f2618cd4dd3d47709f8c34",
+    "/Users/jrg/circadian/research/lab/extractor-006/PROTOCOL.md": "1ea3195e94825ce174a973117db9c45fea91aaf58adcb5276f3c45bb25b31229",
+    "/Users/jrg/circadian/research/lab/extractor-006/adapters_01_03.test.ts": "f911fb55eb63f6523aa8b3580bd490deae539f754a89a87831e47f122afe5107",
+    "/Users/jrg/circadian/research/lab/extractor-006/adapters_01_03.ts": "0ae3956bcbd4e48334b17f0db838d5751b00807f66c73ac5d068afa42f228530",
+    "/Users/jrg/circadian/research/lab/extractor-006/adapters_04_06.test.ts": "ac5a9d9475c426e4dd591d28a4c8a24824ebf6b487bafa10cbcf317be4f70972",
+    "/Users/jrg/circadian/research/lab/extractor-006/adapters_04_06.ts": "ba499a7f47f5da11349c8ee428e485f497907bdb23f048536e6fb8a269331f13",
+    "/Users/jrg/circadian/research/lab/extractor-006/contract.ts": "85ff2e03c1445966c8b2907f4ff62ef2b52c7bfe321e67f9ca63c98855bde5c6",
+    "/Users/jrg/circadian/research/lab/extractor-006/runner.test.ts": "baa1297d98adadc57c44923d54506a46f7c95fde471a2112c72df48a68123f6f",
+    "/Users/jrg/circadian/research/lab/extractor-006/runner.ts": "ffeaa033acb98ba3db96e3079d0c86897ce90e0651308d95804cfceba4cd2d41",
+    "/Users/jrg/circadian/research/lab/extractor-006/transport.test.ts": "f469362415f90a961b35ced2e0d3c6f9717526d87f90821f9a84e50fa6bff4a5",
+    "/Users/jrg/circadian/research/lab/extractor-006/transport.ts": "476e731ff962e06c2aa685612c6ceb1c0c037b67cd3b859571590273f84a5c8d",
+    "/Users/jrg/circadian/research/prototypes/01-views/index.ts": "872350d514d48cfcd5fba98166815f1fa3177714ab1218d86c8e0e12b06508a3",
+    "/Users/jrg/circadian/research/prototypes/02-compatibility/index.ts": "d27da24b8e56d2f9702ceb850af0544f203aca42a40f1c4964227f5a06ee16db",
+    "/Users/jrg/circadian/research/prototypes/03-relations/index.ts": "59a6563527175f901fe9363391bb5cb2811faae0067155d5c478cce477ca1354",
+    "/Users/jrg/circadian/research/prototypes/04-operations/index.ts": "c6e877f71fdd2fb7fbd06a3f07e1bd4c500e998e7193e758a3495b69a46ab82f",
+    "/Users/jrg/circadian/research/prototypes/05-experiences/index.ts": "8e9bab2f4a9a507d4ab8668d90f83f713aed40c42ab51837d98197f3191ae987",
+    "/Users/jrg/circadian/research/prototypes/06-transformations/index.ts": "6c82a84e7215cae4152b0f905dd9bdbf665c301dc495131de47453b0ed671bfc"
+  }
+}

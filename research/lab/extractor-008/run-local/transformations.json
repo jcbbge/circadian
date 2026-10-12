@@ -1,0 +1,26 @@
+[
+  {
+    "oldId": "cal-06-journal-old",
+    "candidateId": "cal-06-journal-candidate",
+    "expected": "changed",
+    "report": {
+      "status": "unavailable"
+    }
+  },
+  {
+    "oldId": "confirm-r15",
+    "candidateId": "confirm-b76",
+    "expected": "preserved",
+    "report": {
+      "status": "unavailable"
+    }
+  },
+  {
+    "oldId": "confirm-r15",
+    "candidateId": "confirm-n24",
+    "expected": "changed",
+    "report": {
+      "status": "unavailable"
+    }
+  }
+]

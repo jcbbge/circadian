@@ -1,0 +1,326 @@
+[
+  {
+    "id": "item-01",
+    "caseId": "confirm-v26",
+    "mechanism": "02",
+    "cohort": "exposed-development",
+    "form": "structured",
+    "stage": "preparation",
+    "callId": "confirm-v26/extract"
+  },
+  {
+    "id": "item-02",
+    "caseId": "cal-06-journal-old",
+    "mechanism": "06",
+    "cohort": "exposed-development",
+    "form": "structured",
+    "stage": "preparation",
+    "callId": "cal-06-journal-old/extract"
+  },
+  {
+    "id": "item-03",
+    "caseId": "confirm-r15",
+    "mechanism": "06",
+    "cohort": "exposed-development",
+    "form": "structured",
+    "stage": "reader",
+    "callId": "confirm-r15/read-structured"
+  },
+  {
+    "id": "item-04",
+    "caseId": "cal-01-qualified-view",
+    "mechanism": "01",
+    "cohort": "exposed-development",
+    "form": "structured",
+    "stage": "reader",
+    "callId": "cal-01-qualified-view/read-structured"
+  },
+  {
+    "id": "item-05",
+    "caseId": "confirm-m93",
+    "mechanism": "03",
+    "cohort": "exposed-development",
+    "form": "structured",
+    "stage": "preparation",
+    "callId": "confirm-m93/extract"
+  },
+  {
+    "id": "item-06",
+    "caseId": "confirm-d57",
+    "mechanism": "03",
+    "cohort": "exposed-development",
+    "form": "structured",
+    "stage": "reader",
+    "callId": "confirm-d57/read-structured"
+  },
+  {
+    "id": "item-07",
+    "caseId": "confirm-c42",
+    "mechanism": "05",
+    "cohort": "exposed-development",
+    "form": "structured",
+    "stage": "preparation",
+    "callId": "confirm-c42/extract"
+  },
+  {
+    "id": "item-08",
+    "caseId": "confirm-b76",
+    "mechanism": "06",
+    "cohort": "exposed-development",
+    "form": "structured",
+    "stage": "reader",
+    "callId": "confirm-b76/read-structured"
+  },
+  {
+    "id": "item-09",
+    "caseId": "cal-02-disjoint-contexts",
+    "mechanism": "02",
+    "cohort": "exposed-development",
+    "form": "structured",
+    "stage": "preparation",
+    "callId": "cal-02-disjoint-contexts/extract"
+  },
+  {
+    "id": "item-10",
+    "caseId": "confirm-h31",
+    "mechanism": "01",
+    "cohort": "exposed-development",
+    "form": "structured",
+    "stage": "reader",
+    "callId": "confirm-h31/read-structured"
+  },
+  {
+    "id": "item-11",
+    "caseId": "confirm-b76",
+    "mechanism": "06",
+    "cohort": "exposed-development",
+    "form": "structured",
+    "stage": "preparation",
+    "callId": "confirm-b76/extract"
+  },
+  {
+    "id": "item-12",
+    "caseId": "confirm-r15",
+    "mechanism": "06",
+    "cohort": "exposed-development",
+    "form": "structured",
+    "stage": "preparation",
+    "callId": "confirm-r15/extract"
+  },
+  {
+    "id": "item-13",
+    "caseId": "cal-06-journal-old",
+    "mechanism": "06",
+    "cohort": "exposed-development",
+    "form": "structured",
+    "stage": "reader",
+    "callId": "cal-06-journal-old/read-structured"
+  },
+  {
+    "id": "item-14",
+    "caseId": "cal-05-lanterns",
+    "mechanism": "05",
+    "cohort": "exposed-development",
+    "form": "structured",
+    "stage": "reader",
+    "callId": "cal-05-lanterns/read-structured"
+  },
+  {
+    "id": "item-15",
+    "caseId": "confirm-m93",
+    "mechanism": "03",
+    "cohort": "exposed-development",
+    "form": "structured",
+    "stage": "reader",
+    "callId": "confirm-m93/read-structured"
+  },
+  {
+    "id": "item-16",
+    "caseId": "cal-06-journal-candidate",
+    "mechanism": "06",
+    "cohort": "exposed-development",
+    "form": "structured",
+    "stage": "preparation",
+    "callId": "cal-06-journal-candidate/extract"
+  },
+  {
+    "id": "item-17",
+    "caseId": "cal-02-disjoint-contexts",
+    "mechanism": "02",
+    "cohort": "exposed-development",
+    "form": "structured",
+    "stage": "reader",
+    "callId": "cal-02-disjoint-contexts/read-structured"
+  },
+  {
+    "id": "item-18",
+    "caseId": "confirm-d57",
+    "mechanism": "03",
+    "cohort": "exposed-development",
+    "form": "structured",
+    "stage": "preparation",
+    "callId": "confirm-d57/extract"
+  },
+  {
+    "id": "item-19",
+    "caseId": "cal-03-speaker-subject",
+    "mechanism": "03",
+    "cohort": "exposed-development",
+    "form": "structured",
+    "stage": "preparation",
+    "callId": "cal-03-speaker-subject/extract"
+  },
+  {
+    "id": "item-20",
+    "caseId": "confirm-v26",
+    "mechanism": "02",
+    "cohort": "exposed-development",
+    "form": "structured",
+    "stage": "reader",
+    "callId": "confirm-v26/read-structured"
+  },
+  {
+    "id": "item-21",
+    "caseId": "confirm-p84",
+    "mechanism": "02",
+    "cohort": "exposed-development",
+    "form": "structured",
+    "stage": "preparation",
+    "callId": "confirm-p84/extract"
+  },
+  {
+    "id": "item-22",
+    "caseId": "confirm-t68",
+    "mechanism": "04",
+    "cohort": "exposed-development",
+    "form": "structured",
+    "stage": "reader",
+    "callId": "confirm-t68/read-structured"
+  },
+  {
+    "id": "item-23",
+    "caseId": "cal-05-lanterns",
+    "mechanism": "05",
+    "cohort": "exposed-development",
+    "form": "structured",
+    "stage": "preparation",
+    "callId": "cal-05-lanterns/extract"
+  },
+  {
+    "id": "item-24",
+    "caseId": "cal-04-conservatory",
+    "mechanism": "04",
+    "cohort": "exposed-development",
+    "form": "structured",
+    "stage": "preparation",
+    "callId": "cal-04-conservatory/extract"
+  },
+  {
+    "id": "item-25",
+    "caseId": "cal-04-conservatory",
+    "mechanism": "04",
+    "cohort": "exposed-development",
+    "form": "structured",
+    "stage": "reader",
+    "callId": "cal-04-conservatory/read-structured"
+  },
+  {
+    "id": "item-26",
+    "caseId": "cal-03-unknown-attribution",
+    "mechanism": "03",
+    "cohort": "exposed-development",
+    "form": "structured",
+    "stage": "reader",
+    "callId": "cal-03-unknown-attribution/read-structured"
+  },
+  {
+    "id": "item-27",
+    "caseId": "confirm-p84",
+    "mechanism": "02",
+    "cohort": "exposed-development",
+    "form": "structured",
+    "stage": "reader",
+    "callId": "confirm-p84/read-structured"
+  },
+  {
+    "id": "item-28",
+    "caseId": "cal-03-unknown-attribution",
+    "mechanism": "03",
+    "cohort": "exposed-development",
+    "form": "structured",
+    "stage": "preparation",
+    "callId": "cal-03-unknown-attribution/extract"
+  },
+  {
+    "id": "item-29",
+    "caseId": "confirm-t68",
+    "mechanism": "04",
+    "cohort": "exposed-development",
+    "form": "structured",
+    "stage": "preparation",
+    "callId": "confirm-t68/extract"
+  },
+  {
+    "id": "item-30",
+    "caseId": "cal-01-qualified-view",
+    "mechanism": "01",
+    "cohort": "exposed-development",
+    "form": "structured",
+    "stage": "preparation",
+    "callId": "cal-01-qualified-view/extract"
+  },
+  {
+    "id": "item-31",
+    "caseId": "confirm-n24",
+    "mechanism": "06",
+    "cohort": "exposed-development",
+    "form": "structured",
+    "stage": "preparation",
+    "callId": "confirm-n24/extract"
+  },
+  {
+    "id": "item-32",
+    "caseId": "confirm-h31",
+    "mechanism": "01",
+    "cohort": "exposed-development",
+    "form": "structured",
+    "stage": "preparation",
+    "callId": "confirm-h31/extract"
+  },
+  {
+    "id": "item-33",
+    "caseId": "cal-06-journal-candidate",
+    "mechanism": "06",
+    "cohort": "exposed-development",
+    "form": "structured",
+    "stage": "reader",
+    "callId": "cal-06-journal-candidate/read-structured"
+  },
+  {
+    "id": "item-34",
+    "caseId": "cal-03-speaker-subject",
+    "mechanism": "03",
+    "cohort": "exposed-development",
+    "form": "structured",
+    "stage": "reader",
+    "callId": "cal-03-speaker-subject/read-structured"
+  },
+  {
+    "id": "item-35",
+    "caseId": "confirm-n24",
+    "mechanism": "06",
+    "cohort": "exposed-development",
+    "form": "structured",
+    "stage": "reader",
+    "callId": "confirm-n24/read-structured"
+  },
+  {
+    "id": "item-36",
+    "caseId": "confirm-c42",
+    "mechanism": "05",
+    "cohort": "exposed-development",
+    "form": "structured",
+    "stage": "reader",
+    "callId": "confirm-c42/read-structured"
+  }
+]

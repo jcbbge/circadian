@@ -1,0 +1,50 @@
+{
+  "status": "accepted",
+  "verifiedAt": "2026-10-12T04:40:30.389760+00:00",
+  "frozenRun": "Frozen run verified",
+  "historical005ManifestVerified": true,
+  "historical005BoundHashesUnchanged": 157,
+  "trackedChanges": [],
+  "branch": "main",
+  "temporaryRemoteCredentialAbsent": true,
+  "credentialPatternMatches": [],
+  "inference": {
+    "dispatchIntents": 32,
+    "receipts": 32,
+    "localHttp200": 32,
+    "uniqueReceiptIds": 32,
+    "semanticScores": 32,
+    "scoresMatchBlindItems": true
+  },
+  "tests": {
+    "focused": {
+      "passed": 50,
+      "failed": 0,
+      "assertions": 365,
+      "scope": "final calibration code/fixture corrections"
+    },
+    "full_repository_before_final_fixture_corrections": {
+      "passed": 905,
+      "skipped": 21,
+      "failed": 0,
+      "assertions": 18799,
+      "log": "/Users/jrg/Library/Caches/circadian-research/extractor-006-z74ujy9d/full-tests.txt"
+    },
+    "historical_005_hashes_unchanged": 30,
+    "production_files_changed": false
+  },
+  "reviewAcceptance": {
+    "preRun": "PRE-RUN-REVIEW.json",
+    "semantic": "SEMANTIC-REVIEW.md",
+    "adjudication": "ADJUDICATION.md",
+    "parent": "Read and accepted independent reports; checked bound inputs, counts, aggregate and actual receipt state."
+  },
+  "artifactHashes": {
+    "README.md": "a67501c94dc462ec4e20c270da0e820c5e53a20fe3c208b97763c31c63199991",
+    "RESULTS.md": "02d8ee8dcabf187df2d003363acd671ca9c9919c5738aafb8fcd7c3a69612cde",
+    "SEMANTIC-REVIEW.md": "4dd69668b5ebe7538bc6aeca48b11f902e744eeffea6fb046a795e468a4d1634",
+    "ADJUDICATION.md": "caa32fdbde8fe5fe555125be5188f9414f05c14f881ca89137c7570c7297cabc",
+    "run-local/assessment.json": "063fd9a222211705aec9788a4e7550b29c301b26181ef19c0ac9ec713bdf3f0f",
+    "run-local/semantic-scores.json": "5a85cc1926ac572b9b8e4f26516f38ff32fdb2990eab0ef3cbb0dd9f803b47b3"
+  }
+}

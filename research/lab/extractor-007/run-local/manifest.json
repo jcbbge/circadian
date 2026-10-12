@@ -1,0 +1,55 @@
+{
+  "study": "extractor-007",
+  "createdAt": "2026-10-12T05:06:03.769Z",
+  "calls": 72,
+  "retries": 0,
+  "cohorts": {
+    "development": 8,
+    "confirmation": 10
+  },
+  "outputsPerBundle": 4,
+  "config": {
+    "endpoint": {
+      "url": "http://127.0.0.1:10240/v1/chat/completions",
+      "model": "mlx-community/Qwen3-30B-A3B-Instruct-2507-4bit",
+      "settings": {
+        "temperature": 0,
+        "top_p": 1,
+        "max_tokens": 2048
+      }
+    },
+    "structuredOutput": "json_schema",
+    "transportRetries": 0,
+    "formatRepairs": 0,
+    "sourceBinding": "caller-generated full-source provenance, not entailment certificate"
+  },
+  "reviewHash": "2f419e1edb6edf11da62a33d619dfb083f1e5762242241b28b4d396b713bd958",
+  "codeHashes": {
+    "/Users/jrg/circadian/research/lab/extractor-006/adapters_01_03.ts": "0ae3956bcbd4e48334b17f0db838d5751b00807f66c73ac5d068afa42f228530",
+    "/Users/jrg/circadian/research/lab/extractor-006/adapters_04_06.ts": "ba499a7f47f5da11349c8ee428e485f497907bdb23f048536e6fb8a269331f13",
+    "/Users/jrg/circadian/research/lab/extractor-006/contract.ts": "85ff2e03c1445966c8b2907f4ff62ef2b52c7bfe321e67f9ca63c98855bde5c6",
+    "/Users/jrg/circadian/research/lab/extractor-006/transport.ts": "476e731ff962e06c2aa685612c6ceb1c0c037b67cd3b859571590273f84a5c8d",
+    "/Users/jrg/circadian/research/lab/extractor-007/PROTOCOL.md": "37aeea24487fb4f50599d66497b4f2d6f20ad0ee1ffa8d05dd0c410a80b46090",
+    "/Users/jrg/circadian/research/lab/extractor-007/adapters_01_03.test.ts": "e7381fdc0c24bdd967936c0a7d680e292de57342da6b02a116282ce44ea3c8e4",
+    "/Users/jrg/circadian/research/lab/extractor-007/adapters_01_03.ts": "2792d4520dbf5b05750f18c81cc57159b9675aa115798531b99effa68c87a27f",
+    "/Users/jrg/circadian/research/lab/extractor-007/adapters_04_06.test.ts": "6338bae9c5a2ec159c54a8972650690943884f1ac5071756fa98c7c4eed5f51a",
+    "/Users/jrg/circadian/research/lab/extractor-007/adapters_04_06.ts": "739232785c4ca2cdc57acd76aad0afe7abe6be9bc7cbf69424cdbb62600fe305",
+    "/Users/jrg/circadian/research/lab/extractor-007/confirmation.test.ts": "272289a1d24a6310eb1fb667a925f6f9be0cff0ee5731b1d82bdc15c48a2eab7",
+    "/Users/jrg/circadian/research/lab/extractor-007/confirmation.ts": "928ab9e274faa1889e3854f82a7355746691310a906e0b176eae8e0d410c1212",
+    "/Users/jrg/circadian/research/lab/extractor-007/contract.ts": "1998334d057e8388f339ab881525f400b1da1c18a889118c912be4430f0b3a5b",
+    "/Users/jrg/circadian/research/lab/extractor-007/runner.test.ts": "176e642e226cc6f37f5edaa098324fd2dc8e67576e51462d632e3325e72a4c62",
+    "/Users/jrg/circadian/research/lab/extractor-007/runner.ts": "8db08cc145b5230ad24166581cfeda4e0bbb65ca55e7e7f84468fe3fa3446546",
+    "/Users/jrg/circadian/research/prototypes/01-views/index.ts": "872350d514d48cfcd5fba98166815f1fa3177714ab1218d86c8e0e12b06508a3",
+    "/Users/jrg/circadian/research/prototypes/02-compatibility/index.ts": "d27da24b8e56d2f9702ceb850af0544f203aca42a40f1c4964227f5a06ee16db",
+    "/Users/jrg/circadian/research/prototypes/03-relations/index.ts": "59a6563527175f901fe9363391bb5cb2811faae0067155d5c478cce477ca1354",
+    "/Users/jrg/circadian/research/prototypes/04-operations/index.ts": "c6e877f71fdd2fb7fbd06a3f07e1bd4c500e998e7193e758a3495b69a46ab82f",
+    "/Users/jrg/circadian/research/prototypes/05-experiences/index.ts": "8e9bab2f4a9a507d4ab8668d90f83f713aed40c42ab51837d98197f3191ae987",
+    "/Users/jrg/circadian/research/prototypes/06-transformations/index.ts": "6c82a84e7215cae4152b0f905dd9bdbf665c301dc495131de47453b0ed671bfc"
+  },
+  "inputs": {
+    "fixtures.json": "42f597f6ac77083463ca97ba52e342e433aafd0ef3c7b0bd5596041952c7a406",
+    "jobs.json": "3d1b8a812c13ebfc88a68692a60322a7ea19bf480fdc119621546335a734dae1",
+    "config.json": "dacdff21e2e3ca544bdcbcf5c849cc1b4fc1700bf17aec3a7531072cad21077c",
+    "pairs.json": "b365fd5876c77167969a3169e4978cb1367b8e6ef8bdfe1b488314a7443e680e"
+  }
+}

@@ -1,0 +1,68 @@
+{
+  "at": "2026-10-12T05:35:37.132609+00:00",
+  "accepted": true,
+  "calls": 36,
+  "dispatchReceiptsMatch": true,
+  "completedCases": 18,
+  "independentScores": 36,
+  "scoreCoverageExact": true,
+  "allHttp200": true,
+  "expectedServedModel": true,
+  "noTokenCapExhaustion": true,
+  "frozenDependencyVerification": "Frozen serving ablation verified",
+  "sameSourceConfigPairs": true,
+  "studyReadinessPassed": false,
+  "preservedPriorResearchFiles": 113,
+  "preservationSnapshot": "/Users/jrg/Library/Caches/circadian-research/extractor-007-cb3pwuv2/preservation.json",
+  "preservationSnapshotSha256": "64ce11755d30bd276d6b5ca83607a0ec9ce35278888561a8f11a5f43353d266c",
+  "branch": "main",
+  "trackedDiff": [],
+  "stagedPaths": [],
+  "productionFilesEdited": false,
+  "serviceRecovery": "Existing registered service restarted once after007compilerblocked; no configuration/package changes.",
+  "finalDiscovery": {
+    "status": 200,
+    "body": {
+      "object": "list",
+      "data": [
+        {
+          "id": "mlx-community/Qwen3-30B-A3B-Instruct-2507-4bit",
+          "object": "model",
+          "created": 1785138564,
+          "owned_by": "mlx-community"
+        },
+        {
+          "id": "mlx-community/Qwen3-Embedding-4B-4bit-DWQ",
+          "object": "model",
+          "created": 1776560770,
+          "owned_by": "mlx-community"
+        },
+        {
+          "id": "lightonai/LateOn-Code-edge",
+          "object": "model",
+          "created": 1785982154,
+          "owned_by": "lightonai"
+        },
+        {
+          "id": "mlx-community/Qwen3-4B-Instruct-2507-4bit",
+          "object": "model",
+          "created": 1784357731,
+          "owned_by": "mlx-community"
+        }
+      ]
+    },
+    "at": "2026-10-12T05:35:37.100496+00:00"
+  },
+  "credentialPatternScan": "No credential-shaped strings in007/008/009",
+  "runOutputSeal": {
+    "path": "run-local/OUTPUTS.sha256.json",
+    "sha256": "76993ac204e22a50ce985056d48949267f1c4b81793e6717239664e85221124f"
+  },
+  "testSummary": "TESTS.json",
+  "finalIndependentAudit": {
+    "path": "FINAL-AUDIT.md",
+    "sha256": "21620e8932f5c2df31a4d7772f841af9877b63980ac541c337af1888f46de8e1",
+    "parentAccepted": true,
+    "caveat": "Incidental pronouns graded unevenly across runs; disclosed in009results, no headline count change."
+  }
+}

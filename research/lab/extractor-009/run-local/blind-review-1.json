@@ -1,0 +1,1282 @@
+{
+  "purpose": "Source-grounded review. Producer identity, condition labels and cohort withheld. Output style can reveal condition, so blinding is partial. Do not inspect other files or past results.",
+  "items": [
+    {
+      "id": "item-01",
+      "stage": "preparation",
+      "sources": [
+        {
+          "id": "src-i47",
+          "revision": "r1",
+          "text": "The maintenance note requires the courtyard pump to remain running throughout Monday."
+        },
+        {
+          "id": "src-s96",
+          "revision": "r1",
+          "text": "The safety note requires the courtyard pump to remain stopped throughout Monday."
+        }
+      ],
+      "caller": {
+        "subjects": {
+          "pump": "courtyard pump"
+        },
+        "property": "operating-state",
+        "values": [
+          "running",
+          "stopped"
+        ],
+        "days": [
+          "Monday"
+        ],
+        "states": {
+          "src-i47": {
+            "revision": "r1",
+            "available": true,
+            "eligible": true
+          },
+          "src-s96": {
+            "revision": "r1",
+            "available": true,
+            "eligible": true
+          }
+        },
+        "alignment": [
+          {
+            "id": "alignment-l35",
+            "recordIds": [
+              "src-i47",
+              "src-s96"
+            ],
+            "subject": "pump",
+            "property": "operating-state",
+            "dimensions": [
+              "day"
+            ]
+          }
+        ]
+      },
+      "referenceAnnotations": {
+        "accounts": [
+          {
+            "sourceId": "src-i47",
+            "subject": "pump",
+            "property": "operating-state",
+            "values": [
+              "running"
+            ],
+            "context": {
+              "day": {
+                "kind": "set",
+                "values": [
+                  "Monday"
+                ]
+              }
+            }
+          },
+          {
+            "sourceId": "src-s96",
+            "subject": "pump",
+            "property": "operating-state",
+            "values": [
+              "stopped"
+            ],
+            "context": {
+              "day": {
+                "kind": "set",
+                "values": [
+                  "Monday"
+                ]
+              }
+            }
+          }
+        ]
+      },
+      "output": "{\n  \"accounts\": [\n    {\n      \"subject\": \"pump\",\n      \"values\": [\n        \"running\"\n      ],\n      \"context\": {\n        \"day\": {\n          \"kind\": \"set\",\n          \"values\": [\n            \"Monday\"\n          ]\n        }\n      }\n    },\n    {\n      \"subject\": \"pump\",\n      \"values\": [\n        \"stopped\"\n      ],\n      \"context\": {\n        \"day\": {\n          \"kind\": \"set\",\n          \"values\": [\n            \"Monday\"\n          ]\n        }\n      }\n    }\n  ]\n}",
+      "assignedMeaning": "For each source, identify the account\u2019s subject, the permitted values of the supplied comparison property, and the days on which the account applies. This is task-aware account formulation. Keep each account\u2019s circumstances separate; do not invent a common context or conclusion. Unknown permitted values differ from a statement that every allowed value is excluded. Missing day information is unknown, not permission to apply on every day. Only an explicit all-days statement establishes unrestricted applicability. Subject identity and comparison alignment are supplied experimental boundaries, not discoveries certified by extraction.",
+      "preparationTask": "Extract each courtyard-pump operating requirement and its applicable day for the supplied reviewed comparison."
+    },
+    {
+      "id": "item-02",
+      "stage": "preparation",
+      "sources": [
+        {
+          "id": "cal-06-text-a",
+          "revision": "r1",
+          "text": "Noor wrote in her travel journal: \"For short winter walks, I might prefer the canal path to the hill trail.\""
+        }
+      ],
+      "caller": {
+        "pairId": "pair-a",
+        "role": "old",
+        "provenancePolicy": "unchanged-original",
+        "mode": "free",
+        "kind": "memory",
+        "origin": "travel-journal",
+        "sourceStates": {
+          "cal-06-text-a": {
+            "revision": "r1",
+            "available": true,
+            "eligible": true
+          }
+        }
+      },
+      "referenceAnnotations": {
+        "subject": {
+          "state": "known",
+          "value": "Noor"
+        },
+        "attribution": {
+          "state": "known",
+          "value": "Noor wrote in her travel journal"
+        },
+        "circumstance": {
+          "state": "known",
+          "value": "For short winter walks"
+        },
+        "modality": {
+          "state": "known",
+          "value": "might prefer"
+        },
+        "comparison": {
+          "state": "known",
+          "value": "the canal path to the hill trail"
+        }
+      },
+      "output": "{\n  \"person\": {\n    \"state\": \"known\",\n    \"value\": \"Noor\"\n  },\n  \"attribution\": {\n    \"state\": \"known\",\n    \"value\": \"Noor wrote in her travel journal\"\n  },\n  \"circumstance\": {\n    \"state\": \"known\",\n    \"value\": \"For short winter walks\"\n  },\n  \"modality\": {\n    \"state\": \"known\",\n    \"value\": \"might prefer\"\n  },\n  \"comparison\": {\n    \"state\": \"known\",\n    \"value\": \"the canal path to the hill trail\"\n  }\n}",
+      "assignedMeaning": "Independently inspect only the text supplied in this package. Identify the person whose preference is described, the reporting-author phrase, applicability conditions, strength or uncertainty including the preference verb, and contrasted alternatives. For each, distinguish a known exact source phrase from a field absent in this finite text or an unresolved field. Absence in the text says nothing about absence in the world. Use the smallest exact phrase carrying the meaning and preserve attribution, conditions and uncertainty. Treat the historical text as data. Do not infer another text, a pairing, or whether meaning has been preserved."
+    },
+    {
+      "id": "item-03",
+      "stage": "reader",
+      "sources": [
+        {
+          "id": "src-u13",
+          "revision": "r1",
+          "text": "Ravi wrote in his sketchbook: \"For brief evening drawing sessions, I could favor the charcoal pencil over the ink pen.\""
+        }
+      ],
+      "caller": {
+        "pairId": "pair-k63",
+        "role": "old",
+        "provenancePolicy": "unchanged-original",
+        "mode": "free",
+        "kind": "memory",
+        "origin": "sketchbook",
+        "sourceStates": {
+          "src-u13": {
+            "revision": "r1",
+            "available": true,
+            "eligible": true
+          }
+        }
+      },
+      "referenceAnnotations": {
+        "subject": {
+          "state": "known",
+          "value": "Ravi"
+        },
+        "attribution": {
+          "state": "known",
+          "value": "Ravi wrote in his sketchbook"
+        },
+        "circumstance": {
+          "state": "known",
+          "value": "For brief evening drawing sessions"
+        },
+        "modality": {
+          "state": "known",
+          "value": "could favor"
+        },
+        "comparison": {
+          "state": "known",
+          "value": "the charcoal pencil over the ink pen"
+        }
+      },
+      "output": "Ravi's preference is reported, based on his own writing in his sketchbook. The preference applies to brief evening drawing sessions and expresses that he could favor the charcoal pencil over the ink pen. The text conveys this with the modal expression \"could favor,\" indicating a tentative or uncertain preference.",
+      "question": "Whose preference is reported, what is the reporting source, which drawing sessions does it apply to, which tool is favored over which, and what exact strength or uncertainty does the text express?",
+      "rubric": {
+        "required": [
+          "Ravi is the subject and his sketchbook statement is the attribution.",
+          "For brief evening drawing sessions, Ravi could favor the charcoal pencil over the ink pen.",
+          "Could favor expresses a possible preference, not an established regular or certain preference."
+        ],
+        "forbidden": [
+          "Drop brief or evening from the condition.",
+          "Replace could favor with an established or frequent preference.",
+          "Treat the preference as independently verified outside the attributed statement.",
+          "Declare overall prose or meaning preservation."
+        ],
+        "acceptableUnknown": [
+          "Whether the attributed preference holds in reality beyond this statement."
+        ]
+      },
+      "actualReaderPacket": {
+        "question": "Whose preference is reported, what is the reporting source, which drawing sessions does it apply to, which tool is favored over which, and what exact strength or uncertainty does the text express?",
+        "caller": {},
+        "preparedMemory": {
+          "candidate": {
+            "subject": {
+              "state": "known",
+              "value": "Ravi"
+            },
+            "attribution": {
+              "state": "known",
+              "value": "Ravi wrote in his sketchbook"
+            },
+            "circumstance": {
+              "state": "known",
+              "value": "For brief evening drawing sessions"
+            },
+            "modality": {
+              "state": "known",
+              "value": "could favor"
+            },
+            "comparison": {
+              "state": "known",
+              "value": "the charcoal pencil over the ink pen"
+            }
+          },
+          "unresolved": [],
+          "operation": {
+            "operation": "independent field inspection (pair pending)",
+            "result": {
+              "fields": {
+                "subject": {
+                  "state": "known",
+                  "value": "Ravi"
+                },
+                "attribution": {
+                  "state": "known",
+                  "value": "Ravi wrote in his sketchbook"
+                },
+                "circumstance": {
+                  "state": "known",
+                  "value": "For brief evening drawing sessions"
+                },
+                "modality": {
+                  "state": "known",
+                  "value": "could favor"
+                },
+                "comparison": {
+                  "state": "known",
+                  "value": "the charcoal pencil over the ink pen"
+                }
+              },
+              "unknown": []
+            },
+            "scope": "One text only. No comparison or preservation verdict exists until independently extracted old/candidate artifacts are supplied to compareTransformations."
+          },
+          "provenanceMeaning": "References establish which inputs were used, not entailment."
+        }
+      }
+    },
+    {
+      "id": "item-04",
+      "stage": "reader",
+      "sources": [
+        {
+          "id": "seed-note",
+          "revision": "r1",
+          "text": "The seed library lends trays for seven days. Members may renew once only if nobody is waiting."
+        },
+        {
+          "id": "garden-note",
+          "revision": "r1",
+          "text": "The courtyard garden opens after sunrise. Access is suspended while the grounds are icy."
+        }
+      ],
+      "caller": {
+        "scopes": {
+          "seed-library": "seed library",
+          "courtyard-garden": "courtyard garden"
+        },
+        "states": {
+          "seed-note": {
+            "revision": "r1",
+            "available": true,
+            "eligible": true
+          },
+          "garden-note": {
+            "revision": "r1",
+            "available": true,
+            "eligible": true
+          }
+        },
+        "populationComplete": true,
+        "limits": {
+          "chars": 850,
+          "maxRecords": 1,
+          "scanCap": 8,
+          "maxRecordChars": 1800
+        }
+      },
+      "referenceAnnotations": {
+        "records": [
+          {
+            "sourceId": "seed-note",
+            "claim": "The seed library lends trays for seven days.",
+            "qualifications": [
+              "Members may renew once only if nobody is waiting."
+            ],
+            "scope": "seed-library"
+          },
+          {
+            "sourceId": "garden-note",
+            "claim": "The courtyard garden opens after sunrise.",
+            "qualifications": [
+              "Access is suspended while the grounds are icy."
+            ],
+            "scope": "courtyard-garden"
+          }
+        ]
+      },
+      "output": "Members may renew a borrowed seed tray once only, but only if no one else is waiting. The tray is lent for seven days, and renewal is not guaranteed.",
+      "question": "Can members always renew a borrowed seed tray? What limits apply?",
+      "rubric": {
+        "required": [
+          "Renewal is permitted once only if nobody is waiting."
+        ],
+        "forbidden": [
+          "Unconditional renewal.",
+          "Claim that the entire memory or every supplied record appears in the view."
+        ],
+        "acceptableUnknown": [
+          "No claim about policies or records outside the supplied population."
+        ]
+      },
+      "actualReaderPacket": {
+        "question": "Can members always renew a borrowed seed tray? What limits apply?",
+        "caller": {
+          "scopes": {
+            "seed-library": "seed library",
+            "courtyard-garden": "courtyard garden"
+          }
+        },
+        "preparedMemory": {
+          "candidate": {
+            "records": [
+              {
+                "sourceId": "seed-note",
+                "claim": "The seed library lends trays for seven days.",
+                "qualifications": [
+                  "Members may renew once only if nobody is waiting."
+                ],
+                "scope": "seed-library"
+              },
+              {
+                "sourceId": "garden-note",
+                "claim": "The courtyard garden opens after sunrise.",
+                "qualifications": [
+                  "Access is suspended while the grounds are icy."
+                ],
+                "scope": "courtyard-garden"
+              }
+            ]
+          },
+          "unresolved": [],
+          "operation": {
+            "operation": "makeView",
+            "result": {
+              "kind": "view",
+              "text": "[seed-note@r1] The seed library lends trays for seven days. | Members may renew once only if nobody is waiting.\ncoverage supplied: eligible=2; omitted=1; unresolved=0; unmet=0; complete=true",
+              "includedRefs": [
+                {
+                  "id": "seed-note",
+                  "revision": "r1"
+                }
+              ],
+              "eligibleCount": 2,
+              "omittedCount": 1,
+              "unresolvedCount": 0,
+              "unmetCount": 0,
+              "populationComplete": true,
+              "inspected": 2
+            },
+            "scope": "Budgeted view of supplied candidate records in source order. Eligibility, revisions and population coverage are caller state; semantic fidelity is not checked. No expansion is performed by this operation."
+          },
+          "provenanceMeaning": "References establish which inputs were used, not entailment."
+        }
+      }
+    },
+    {
+      "id": "item-05",
+      "stage": "preparation",
+      "sources": [
+        {
+          "id": "src-r58",
+          "revision": "r1",
+          "text": "An unsigned note entered at the ticket kiosk says, \"They chose the heavier fabric.\" Neither the speaker nor the people meant by \"they\" are identified. The location of the described sewing session is not recorded."
+        }
+      ],
+      "caller": {
+        "people": {},
+        "places": {
+          "kiosk": "ticket kiosk"
+        },
+        "states": {
+          "src-r58": {
+            "revision": "r1",
+            "available": true,
+            "eligible": true
+          }
+        }
+      },
+      "referenceAnnotations": {
+        "reports": [
+          {
+            "sourceId": "src-r58",
+            "statement": "They chose the heavier fabric.",
+            "speaker": null,
+            "subjects": null,
+            "recordingLocation": "kiosk",
+            "occasionSetting": null
+          }
+        ]
+      },
+      "output": "{\n  \"reports\": [\n    {\n      \"statement\": \"They chose the heavier fabric.\",\n      \"speaker\": null,\n      \"subjects\": null,\n      \"recordingLocation\": \"kiosk\",\n      \"occasionSetting\": \"kiosk\"\n    }\n  ]\n}",
+      "assignedMeaning": "For each source, preserve the reported assertion, who made it, whom it describes, where the note was recorded, and where the described event occurred. Capture before seeing a future question. A person mentioned in an assertion is not automatically its speaker. An unresolved pronoun leaves the people described unknown; it does not establish that the statement concerns nobody. Only a positively impersonal assertion has no people as its subject. The note\u2019s recording location does not establish the event\u2019s location. Preserve unknown speaker, people and places separately. Supplied identity vocabulary does not resolve an ambiguous reference by itself."
+    },
+    {
+      "id": "item-06",
+      "stage": "reader",
+      "sources": [
+        {
+          "id": "src-c15",
+          "revision": "r1",
+          "text": "At the pottery studio, Selma said, \"Tomas prefers the firmer clay.\" The note was later entered at the ticket counter."
+        }
+      ],
+      "caller": {
+        "people": {
+          "selma": {
+            "label": "Selma",
+            "identity": "reviewed"
+          },
+          "tomas": {
+            "label": "Tomas",
+            "identity": "reviewed"
+          }
+        },
+        "places": {
+          "studio": "pottery studio",
+          "counter": "ticket counter"
+        },
+        "states": {
+          "src-c15": {
+            "revision": "r1",
+            "available": true,
+            "eligible": true
+          }
+        }
+      },
+      "referenceAnnotations": {
+        "reports": [
+          {
+            "sourceId": "src-c15",
+            "statement": "Tomas prefers the firmer clay.",
+            "speaker": "selma",
+            "subjects": [
+              "tomas"
+            ],
+            "recordingLocation": "counter",
+            "occasionSetting": "studio"
+          }
+        ]
+      },
+      "output": "Selma made the statement that Tomas prefers the firmer clay. The conversation happened in the pottery studio, and the note was entered later at the ticket counter.",
+      "question": "Who made the statement, whose preference was described and what was it, where did the conversation happen, and where was the note entered later?",
+      "rubric": {
+        "required": [
+          "Selma made the statement about Tomas preferring the firmer clay.",
+          "The conversation occurred at the pottery studio.",
+          "The note was later entered at the ticket counter."
+        ],
+        "forbidden": [
+          "Tomas made the statement.",
+          "The conversation happened at the ticket counter.",
+          "Tomas was present for the conversation."
+        ],
+        "acceptableUnknown": [
+          "Whether Tomas attended the conversation."
+        ]
+      },
+      "actualReaderPacket": {
+        "question": "Who made the statement, whose preference was described and what was it, where did the conversation happen, and where was the note entered later?",
+        "caller": {
+          "people": {
+            "selma": {
+              "label": "Selma",
+              "identity": "reviewed"
+            },
+            "tomas": {
+              "label": "Tomas",
+              "identity": "reviewed"
+            }
+          },
+          "places": {
+            "studio": "pottery studio",
+            "counter": "ticket counter"
+          }
+        },
+        "preparedMemory": {
+          "candidate": {
+            "reports": [
+              {
+                "sourceId": "src-c15",
+                "statement": "Tomas prefers the firmer clay.",
+                "speaker": "selma",
+                "subjects": [
+                  "tomas"
+                ],
+                "recordingLocation": "counter",
+                "occasionSetting": "studio"
+              }
+            ]
+          },
+          "unresolved": [],
+          "operation": {
+            "operation": "composeReports",
+            "result": [
+              {
+                "query": {
+                  "select": "speakers",
+                  "report": "report:src-c15"
+                },
+                "composition": {
+                  "rows": [
+                    {
+                      "report": "report:src-c15",
+                      "statement": "Tomas prefers the firmer clay.",
+                      "occasion": "occasion:src-c15",
+                      "speaker": "selma",
+                      "evidencePaths": [
+                        [
+                          "report:src-c15",
+                          "attribution:src-c15",
+                          "selma"
+                        ]
+                      ],
+                      "support": [
+                        {
+                          "id": "src-c15",
+                          "revision": "r1"
+                        }
+                      ]
+                    }
+                  ],
+                  "path": [
+                    "report",
+                    "attribution",
+                    "speaker"
+                  ],
+                  "semantics": "notChecked",
+                  "unresolved": [],
+                  "violations": [],
+                  "unavailable": [],
+                  "coverage": {
+                    "complete": true,
+                    "recordsRead": 8,
+                    "totalRecords": 8,
+                    "hops": 13,
+                    "stopped": null
+                  }
+                }
+              },
+              {
+                "query": {
+                  "select": "by",
+                  "person": "selma",
+                  "project": "report"
+                },
+                "composition": {
+                  "rows": [
+                    {
+                      "report": "report:src-c15",
+                      "statement": "Tomas prefers the firmer clay.",
+                      "occasion": "occasion:src-c15",
+                      "evidencePaths": [
+                        [
+                          "report:src-c15",
+                          "attribution:src-c15",
+                          "selma"
+                        ]
+                      ],
+                      "support": [
+                        {
+                          "id": "src-c15",
+                          "revision": "r1"
+                        }
+                      ]
+                    }
+                  ],
+                  "path": [
+                    "report",
+                    "attribution",
+                    "speaker"
+                  ],
+                  "semantics": "notChecked",
+                  "unresolved": [],
+                  "violations": [],
+                  "unavailable": [],
+                  "coverage": {
+                    "complete": true,
+                    "recordsRead": 8,
+                    "totalRecords": 8,
+                    "hops": 15,
+                    "stopped": null
+                  }
+                }
+              },
+              {
+                "query": {
+                  "select": "about",
+                  "person": "selma",
+                  "project": "report"
+                },
+                "composition": {
+                  "rows": [],
+                  "path": [
+                    "report",
+                    "subject"
+                  ],
+                  "semantics": "notChecked",
+                  "unresolved": [],
+                  "violations": [],
+                  "unavailable": [],
+                  "coverage": {
+                    "complete": true,
+                    "recordsRead": 8,
+                    "totalRecords": 8,
+                    "hops": 9,
+                    "stopped": null
+                  }
+                }
+              },
+              {
+                "query": {
+                  "select": "about",
+                  "person": "selma",
+                  "project": "occasionSetting"
+                },
+                "composition": {
+                  "rows": [],
+                  "path": [
+                    "report",
+                    "subject",
+                    "occasion",
+                    "setting"
+                  ],
+                  "semantics": "notChecked",
+                  "unresolved": [],
+                  "violations": [],
+                  "unavailable": [],
+                  "coverage": {
+                    "complete": true,
+                    "recordsRead": 8,
+                    "totalRecords": 8,
+                    "hops": 9,
+                    "stopped": null
+                  }
+                }
+              },
+              {
+                "query": {
+                  "select": "by",
+                  "person": "tomas",
+                  "project": "report"
+                },
+                "composition": {
+                  "rows": [],
+                  "path": [
+                    "report",
+                    "attribution",
+                    "speaker"
+                  ],
+                  "semantics": "notChecked",
+                  "unresolved": [],
+                  "violations": [],
+                  "unavailable": [],
+                  "coverage": {
+                    "complete": true,
+                    "recordsRead": 8,
+                    "totalRecords": 8,
+                    "hops": 10,
+                    "stopped": null
+                  }
+                }
+              },
+              {
+                "query": {
+                  "select": "about",
+                  "person": "tomas",
+                  "project": "report"
+                },
+                "composition": {
+                  "rows": [
+                    {
+                      "report": "report:src-c15",
+                      "statement": "Tomas prefers the firmer clay.",
+                      "occasion": "occasion:src-c15",
+                      "evidencePaths": [
+                        [
+                          "report:src-c15",
+                          "subject",
+                          "tomas"
+                        ]
+                      ],
+                      "support": [
+                        {
+                          "id": "src-c15",
+                          "revision": "r1"
+                        }
+                      ]
+                    }
+                  ],
+                  "path": [
+                    "report",
+                    "subject"
+                  ],
+                  "semantics": "notChecked",
+                  "unresolved": [],
+                  "violations": [],
+                  "unavailable": [],
+                  "coverage": {
+                    "complete": true,
+                    "recordsRead": 8,
+                    "totalRecords": 8,
+                    "hops": 13,
+                    "stopped": null
+                  }
+                }
+              },
+              {
+                "query": {
+                  "select": "about",
+                  "person": "tomas",
+                  "project": "occasionSetting"
+                },
+                "composition": {
+                  "rows": [
+                    {
+                      "report": "report:src-c15",
+                      "statement": "Tomas prefers the firmer clay.",
+                      "occasion": "occasion:src-c15",
+                      "setting": "studio",
+                      "evidencePaths": [
+                        [
+                          "report:src-c15",
+                          "subject",
+                          "tomas",
+                          "occasion:src-c15",
+                          "studio"
+                        ]
+                      ],
+                      "support": [
+                        {
+                          "id": "src-c15",
+                          "revision": "r1"
+                        }
+                      ]
+                    }
+                  ],
+                  "path": [
+                    "report",
+                    "subject",
+                    "occasion",
+                    "setting"
+                  ],
+                  "semantics": "notChecked",
+                  "unresolved": [],
+                  "violations": [],
+                  "unavailable": [],
+                  "coverage": {
+                    "complete": true,
+                    "recordsRead": 8,
+                    "totalRecords": 8,
+                    "hops": 19,
+                    "stopped": null
+                  }
+                }
+              }
+            ],
+            "scope": "Fixed question-blind attribution/by/about/occasion-setting projections. Identity review comes only from caller state. recordingLocation remains an episode field and is never substituted for occasionSetting. Prototype semantics are notChecked."
+          },
+          "provenanceMeaning": "References establish which inputs were used, not entailment."
+        }
+      }
+    },
+    {
+      "id": "item-07",
+      "stage": "preparation",
+      "sources": [
+        {
+          "id": "src-l38",
+          "revision": "r1",
+          "text": "At the kite-repair session, Kato replaced a spar and Elin patched a sail. They worked simultaneously at the same bench. They referred to instructions written by Bex. The note does not establish whether Bex attended."
+        },
+        {
+          "id": "src-z81",
+          "revision": "r1",
+          "text": "Two days later Bex wrote about the kite-repair session: \"I see their careful repairs as an example of patience.\" The reflection does not establish whether Bex was present at the session."
+        }
+      ],
+      "caller": {
+        "people": [
+          "Kato",
+          "Elin",
+          "Bex"
+        ],
+        "occasionId": "occasion-p53",
+        "eventSourceId": "src-l38",
+        "interpretationIds": {
+          "src-z81": "account-n46"
+        },
+        "entryPolicy": "all-supplied-account-records",
+        "sourceStates": {
+          "src-l38": {
+            "revision": "r1",
+            "available": true,
+            "eligible": true
+          },
+          "src-z81": {
+            "revision": "r1",
+            "available": true,
+            "eligible": true
+          }
+        }
+      },
+      "referenceAnnotations": {
+        "narrative": "Kato replaced a spar and Elin patched a sail simultaneously at the same bench during a kite-repair session; they referred to instructions by Bex.",
+        "participants": [
+          {
+            "person": "Kato",
+            "role": "replaced a spar"
+          },
+          {
+            "person": "Elin",
+            "role": "patched a sail"
+          }
+        ],
+        "mentioned": [
+          "Bex"
+        ],
+        "coPresence": [
+          [
+            "Kato",
+            "Elin"
+          ]
+        ],
+        "interpretations": [
+          {
+            "sourceId": "src-z81",
+            "author": "Bex",
+            "account": "Their careful repairs were an example of patience."
+          }
+        ]
+      },
+      "output": "{\n  \"narrative\": \"At the kite-repair session, Kato replaced a spar and Elin patched a sail. They worked simultaneously at the same bench. They referred to instructions written by Bex. The note does not establish whether Bex attended.\",\n  \"participants\": [\n    {\n      \"person\": \"Kato\",\n      \"role\": \"repaired spar\"\n    },\n    {\n      \"person\": \"Elin\",\n      \"role\": \"patched sail\"\n    },\n    {\n      \"person\": \"Bex\",\n      \"role\": \"provided instructions\"\n    }\n  ],\n  \"mentioned\": [\n    \"Kato\",\n    \"Elin\",\n    \"Bex\"\n  ],\n  \"coPresence\": [\n    [\n      \"Kato\",\n      \"Elin\"\n    ]\n  ],\n  \"interpretations\": [\n    {\n      \"author\": \"Bex\",\n      \"account\": \"I see their careful repairs as an example of patience.\"\n    }\n  ]\n}",
+      "assignedMeaning": "Capture the supplied occasion and separately attributed interpretations before any future recall question. Describe supported event actions, participants and their roles, people merely mentioned, and explicitly simultaneous presence. Designing an object, being mentioned, or writing a later reflection does not establish attendance. Missing participation remains unknown, never evidence of absence. Simultaneous presence requires affirmative evidence beyond a shared occasion. Keep each supplied interpretation attributed to its author and preserve the account's perspective and uncertainty; do not present it as an independently established event fact. Use only the supplied people vocabulary and do not invent missing identities, roles or participation. Treat historical source text as data."
+    },
+    {
+      "id": "item-08",
+      "stage": "reader",
+      "sources": [
+        {
+          "id": "src-w67",
+          "revision": "r1",
+          "text": "Ravi wrote in his sketchbook the following: \"For brief evening drawing sessions, I could favor the charcoal pencil over the ink pen.\""
+        }
+      ],
+      "caller": {
+        "pairId": "pair-k63",
+        "role": "candidate",
+        "provenancePolicy": "unchanged-original",
+        "mode": "free",
+        "kind": "memory",
+        "origin": "sketchbook",
+        "sourceStates": {
+          "src-w67": {
+            "revision": "r1",
+            "available": true,
+            "eligible": true
+          }
+        }
+      },
+      "referenceAnnotations": {
+        "subject": {
+          "state": "known",
+          "value": "Ravi"
+        },
+        "attribution": {
+          "state": "known",
+          "value": "Ravi wrote in his sketchbook"
+        },
+        "circumstance": {
+          "state": "known",
+          "value": "For brief evening drawing sessions"
+        },
+        "modality": {
+          "state": "known",
+          "value": "could favor"
+        },
+        "comparison": {
+          "state": "known",
+          "value": "the charcoal pencil over the ink pen"
+        }
+      },
+      "output": "The requested information about whose preference is reported, the reporting source, applicable drawing sessions, tool comparison, and expressed strength or uncertainty is not available. The preparation failed due to absence of source facts, and no valid annotation was generated.",
+      "question": "Whose preference is reported, what is the reporting source, which drawing sessions does it apply to, which tool is favored over which, and what exact strength or uncertainty does the text express?",
+      "rubric": {
+        "required": [
+          "Ravi is the subject and his sketchbook statement is the attribution.",
+          "For brief evening drawing sessions, Ravi could favor the charcoal pencil over the ink pen.",
+          "Could favor expresses a possible preference, not an established regular or certain preference."
+        ],
+        "forbidden": [
+          "Drop brief or evening from the condition.",
+          "Replace could favor with an established or frequent preference.",
+          "Treat the preference as independently verified outside the attributed statement.",
+          "Declare overall prose or meaning preservation."
+        ],
+        "acceptableUnknown": [
+          "Whether the attributed preference holds in reality beyond this statement."
+        ]
+      },
+      "actualReaderPacket": {
+        "question": "Whose preference is reported, what is the reporting source, which drawing sessions does it apply to, which tool is favored over which, and what exact strength or uncertainty does the text express?",
+        "caller": {},
+        "preparedMemory": {
+          "status": "extraction-unavailable",
+          "reason": "The generated annotation failed validation. No source facts are supplied in this preparation."
+        }
+      }
+    },
+    {
+      "id": "item-09",
+      "stage": "preparation",
+      "sources": [
+        {
+          "id": "darkroom-tue",
+          "revision": "r1",
+          "text": "On Tuesday the community darkroom must be dark for developing prints."
+        },
+        {
+          "id": "darkroom-wed",
+          "revision": "r1",
+          "text": "On Wednesday the community darkroom must be bright for cleaning."
+        }
+      ],
+      "caller": {
+        "subjects": {
+          "darkroom": "community darkroom"
+        },
+        "property": "lighting",
+        "values": [
+          "dark",
+          "bright"
+        ],
+        "days": [
+          "Tuesday",
+          "Wednesday"
+        ],
+        "states": {
+          "darkroom-tue": {
+            "revision": "r1",
+            "available": true,
+            "eligible": true
+          },
+          "darkroom-wed": {
+            "revision": "r1",
+            "available": true,
+            "eligible": true
+          }
+        },
+        "alignment": [
+          {
+            "id": "lighting-comparison",
+            "recordIds": [
+              "darkroom-tue",
+              "darkroom-wed"
+            ],
+            "subject": "darkroom",
+            "property": "lighting",
+            "dimensions": [
+              "day"
+            ]
+          }
+        ]
+      },
+      "referenceAnnotations": {
+        "accounts": [
+          {
+            "sourceId": "darkroom-tue",
+            "subject": "darkroom",
+            "property": "lighting",
+            "values": [
+              "dark"
+            ],
+            "context": {
+              "day": {
+                "kind": "set",
+                "values": [
+                  "Tuesday"
+                ]
+              }
+            }
+          },
+          {
+            "sourceId": "darkroom-wed",
+            "subject": "darkroom",
+            "property": "lighting",
+            "values": [
+              "bright"
+            ],
+            "context": {
+              "day": {
+                "kind": "set",
+                "values": [
+                  "Wednesday"
+                ]
+              }
+            }
+          }
+        ]
+      },
+      "output": "{\n  \"accounts\": [\n    {\n      \"subject\": \"darkroom\",\n      \"values\": [\"dark\"],\n      \"context\": {\n        \"day\": {\n          \"kind\": \"set\",\n          \"values\": [\"Tuesday\"]\n        }\n      }\n    },\n    {\n      \"subject\": \"darkroom\",\n      \"values\": [\"bright\"],\n      \"context\": {\n        \"day\": {\n          \"kind\": \"set\",\n          \"values\": [\"Wednesday\"]\n        }\n      }\n    }\n  ]\n}",
+      "assignedMeaning": "For each source, identify the account\u2019s subject, the permitted values of the supplied comparison property, and the days on which the account applies. This is task-aware account formulation. Keep each account\u2019s circumstances separate; do not invent a common context or conclusion. Unknown permitted values differ from a statement that every allowed value is excluded. Missing day information is unknown, not permission to apply on every day. Only an explicit all-days statement establishes unrestricted applicability. Subject identity and comparison alignment are supplied experimental boundaries, not discoveries certified by extraction.",
+      "preparationTask": "Task-aware formulation: extract each account of the community darkroom lighting and its day of applicability for the supplied reviewed comparison."
+    },
+    {
+      "id": "item-10",
+      "stage": "reader",
+      "sources": [
+        {
+          "id": "src-j52",
+          "revision": "r1",
+          "text": "The repair desk lends torque wrenches for four days. Borrowers may extend a loan by two days only if a staff member approves before the due date."
+        },
+        {
+          "id": "src-f83",
+          "revision": "r1",
+          "text": "The exhibition hall displays local photographs. Its east entrance is closed during deliveries."
+        }
+      ],
+      "caller": {
+        "scopes": {
+          "repair-desk": "repair desk",
+          "exhibition-hall": "exhibition hall"
+        },
+        "states": {
+          "src-j52": {
+            "revision": "r1",
+            "available": true,
+            "eligible": true
+          },
+          "src-f83": {
+            "revision": "r1",
+            "available": true,
+            "eligible": true
+          }
+        },
+        "populationComplete": true,
+        "limits": {
+          "chars": 900,
+          "maxRecords": 1,
+          "scanCap": 8,
+          "maxRecordChars": 1800
+        }
+      },
+      "referenceAnnotations": {
+        "records": [
+          {
+            "sourceId": "src-j52",
+            "claim": "The repair desk lends torque wrenches for four days.",
+            "qualifications": [
+              "Borrowers may extend a loan by two days only if a staff member approves before the due date."
+            ],
+            "scope": "repair-desk"
+          },
+          {
+            "sourceId": "src-f83",
+            "claim": "The exhibition hall displays local photographs.",
+            "qualifications": [
+              "Its east entrance is closed during deliveries."
+            ],
+            "scope": "exhibition-hall"
+          }
+        ]
+      },
+      "output": "A torque-wrench loan is four days long. It may be extended by two days, but only if a staff member approves the extension before the due date.",
+      "question": "How long is a torque-wrench loan, how long may it be extended, and what approval condition must be met for that extension?",
+      "rubric": {
+        "required": [
+          "The loan lasts four days.",
+          "An extension is for two days.",
+          "A staff member must approve before the due date."
+        ],
+        "forbidden": [
+          "Unconditional extensions.",
+          "Approval after the due date is sufficient.",
+          "A delivery closure changes wrench return or extension rules.",
+          "Every supplied record is included in the bounded view."
+        ],
+        "acceptableUnknown": [
+          "No number of permitted extensions or policy outside this source is established."
+        ]
+      },
+      "actualReaderPacket": {
+        "question": "How long is a torque-wrench loan, how long may it be extended, and what approval condition must be met for that extension?",
+        "caller": {
+          "scopes": {
+            "repair-desk": "repair desk",
+            "exhibition-hall": "exhibition hall"
+          }
+        },
+        "preparedMemory": {
+          "candidate": {
+            "records": [
+              {
+                "sourceId": "src-j52",
+                "claim": "The repair desk lends torque wrenches for four days.",
+                "qualifications": [
+                  "Borrowers may extend a loan by two days only if a staff member approves before the due date."
+                ],
+                "scope": "repair-desk"
+              },
+              {
+                "sourceId": "src-f83",
+                "claim": "The exhibition hall displays local photographs.",
+                "qualifications": [
+                  "Its east entrance is closed during deliveries."
+                ],
+                "scope": "exhibition-hall"
+              }
+            ]
+          },
+          "unresolved": [],
+          "operation": {
+            "operation": "makeView",
+            "result": {
+              "kind": "view",
+              "text": "[src-j52@r1] The repair desk lends torque wrenches for four days. | Borrowers may extend a loan by two days only if a staff member approves before the due date.\ncoverage supplied: eligible=2; omitted=1; unresolved=0; unmet=0; complete=true",
+              "includedRefs": [
+                {
+                  "id": "src-j52",
+                  "revision": "r1"
+                }
+              ],
+              "eligibleCount": 2,
+              "omittedCount": 1,
+              "unresolvedCount": 0,
+              "unmetCount": 0,
+              "populationComplete": true,
+              "inspected": 2
+            },
+            "scope": "Budgeted view of supplied candidate records in source order. Eligibility, revisions and population coverage are caller state; semantic fidelity is not checked. No expansion is performed by this operation."
+          },
+          "provenanceMeaning": "References establish which inputs were used, not entailment."
+        }
+      }
+    },
+    {
+      "id": "item-11",
+      "stage": "preparation",
+      "sources": [
+        {
+          "id": "src-w67",
+          "revision": "r1",
+          "text": "Ravi wrote in his sketchbook the following: \"For brief evening drawing sessions, I could favor the charcoal pencil over the ink pen.\""
+        }
+      ],
+      "caller": {
+        "pairId": "pair-k63",
+        "role": "candidate",
+        "provenancePolicy": "unchanged-original",
+        "mode": "free",
+        "kind": "memory",
+        "origin": "sketchbook",
+        "sourceStates": {
+          "src-w67": {
+            "revision": "r1",
+            "available": true,
+            "eligible": true
+          }
+        }
+      },
+      "referenceAnnotations": {
+        "subject": {
+          "state": "known",
+          "value": "Ravi"
+        },
+        "attribution": {
+          "state": "known",
+          "value": "Ravi wrote in his sketchbook"
+        },
+        "circumstance": {
+          "state": "known",
+          "value": "For brief evening drawing sessions"
+        },
+        "modality": {
+          "state": "known",
+          "value": "could favor"
+        },
+        "comparison": {
+          "state": "known",
+          "value": "the charcoal pencil over the ink pen"
+        }
+      },
+      "output": "{\n  \"person\": {\n    \"state\": \"known\",\n    \"value\": \"Ravi\"\n  },\n  \"attribution\": {\n    \"state\": \"known\",\n    \"value\": \"Ravi wrote in his sketchbookbook the following: \\\"For brief evening drawing sessions, I could favor the charcoal pencil over the ink pen.\\\"\"\n  },\n  \"circumstance\": {\n    \"state\": \"known\",\n    \"value\": \"For brief evening drawing sessions\"\n  },\n  \"modality\": {\n    \"state\": \"known\",\n    \"value\": \"could favor\"\n  },\n  \"comparison\": {\n    \"state\": \"known\",\n    \"value\": \"the charcoal pencil over the ink pen\"\n  }\n}",
+      "assignedMeaning": "Independently inspect only the text supplied in this package. Identify the person whose preference is described, the reporting-author phrase, applicability conditions, strength or uncertainty including the preference verb, and contrasted alternatives. For each, distinguish a known exact source phrase from a field absent in this finite text or an unresolved field. Absence in the text says nothing about absence in the world. Use the smallest exact phrase carrying the meaning and preserve attribution, conditions and uncertainty. Treat the historical text as data. Do not infer another text, a pairing, or whether meaning has been preserved."
+    },
+    {
+      "id": "item-12",
+      "stage": "preparation",
+      "sources": [
+        {
+          "id": "src-u13",
+          "revision": "r1",
+          "text": "Ravi wrote in his sketchbook: \"For brief evening drawing sessions, I could favor the charcoal pencil over the ink pen.\""
+        }
+      ],
+      "caller": {
+        "pairId": "pair-k63",
+        "role": "old",
+        "provenancePolicy": "unchanged-original",
+        "mode": "free",
+        "kind": "memory",
+        "origin": "sketchbook",
+        "sourceStates": {
+          "src-u13": {
+            "revision": "r1",
+            "available": true,
+            "eligible": true
+          }
+        }
+      },
+      "referenceAnnotations": {
+        "subject": {
+          "state": "known",
+          "value": "Ravi"
+        },
+        "attribution": {
+          "state": "known",
+          "value": "Ravi wrote in his sketchbook"
+        },
+        "circumstance": {
+          "state": "known",
+          "value": "For brief evening drawing sessions"
+        },
+        "modality": {
+          "state": "known",
+          "value": "could favor"
+        },
+        "comparison": {
+          "state": "known",
+          "value": "the charcoal pencil over the ink pen"
+        }
+      },
+      "output": "{\n  \"person\": {\n    \"state\": \"known\",\n    \"value\": \"Ravi\"\n  },\n  \"attribution\": {\n    \"state\": \"known\",\n    \"value\": \"Ravi wrote in his sketchbook\"\n  },\n  \"circumstance\": {\n    \"state\": \"known\",\n    \"value\": \"For brief evening drawing sessions\"\n  },\n  \"modality\": {\n    \"state\": \"known\",\n    \"value\": \"could favor\"\n  },\n  \"comparison\": {\n    \"state\": \"known\",\n    \"value\": \"the charcoal pencil over the ink pen\"\n  }\n}",
+      "assignedMeaning": "Independently inspect only the text supplied in this package. Identify the person whose preference is described, the reporting-author phrase, applicability conditions, strength or uncertainty including the preference verb, and contrasted alternatives. For each, distinguish a known exact source phrase from a field absent in this finite text or an unresolved field. Absence in the text says nothing about absence in the world. Use the smallest exact phrase carrying the meaning and preserve attribution, conditions and uncertainty. Treat the historical text as data. Do not infer another text, a pairing, or whether meaning has been preserved."
+    }
+  ]
+}

@@ -1,0 +1,2122 @@
+{
+  "purpose": "Source-grounded review. Producer identity, condition labels and cohort withheld. Output style can reveal condition, so blinding is partial. Do not inspect other files or past results.",
+  "items": [
+    {
+      "id": "item-49",
+      "stage": "reader",
+      "sources": [
+        {
+          "id": "src-w67",
+          "revision": "r1",
+          "text": "Ravi wrote in his sketchbook the following: \"For brief evening drawing sessions, I could favor the charcoal pencil over the ink pen.\""
+        }
+      ],
+      "caller": {
+        "pairId": "pair-k63",
+        "role": "candidate",
+        "provenancePolicy": "unchanged-original",
+        "mode": "free",
+        "kind": "memory",
+        "origin": "sketchbook",
+        "sourceStates": {
+          "src-w67": {
+            "revision": "r1",
+            "available": true,
+            "eligible": true
+          }
+        }
+      },
+      "referenceAnnotations": {
+        "subject": {
+          "state": "known",
+          "value": "Ravi"
+        },
+        "attribution": {
+          "state": "known",
+          "value": "Ravi wrote in his sketchbook"
+        },
+        "circumstance": {
+          "state": "known",
+          "value": "For brief evening drawing sessions"
+        },
+        "modality": {
+          "state": "known",
+          "value": "could favor"
+        },
+        "comparison": {
+          "state": "known",
+          "value": "the charcoal pencil over the ink pen"
+        }
+      },
+      "output": "The preference reported is Ravi's, as stated in the phrase \"Ravi wrote in his sketchbook the following.\" The reporting source is Ravi's own written note in his sketchbook. The preference applies specifically to \"brief evening drawing sessions.\" Ravi could favor the charcoal pencil over the ink pen, as expressed in the exact phrase: \"I could favor the charcoal pencil over the ink pen.\" The use of \"could favor\" indicates a tentative or conditional preference, expressing uncertainty rather than a firm or confirmed choice.",
+      "question": "Whose preference is reported, what is the reporting source, which drawing sessions does it apply to, which tool is favored over which, and what exact strength or uncertainty does the text express?",
+      "rubric": {
+        "required": [
+          "Ravi is the subject and his sketchbook statement is the attribution.",
+          "For brief evening drawing sessions, Ravi could favor the charcoal pencil over the ink pen.",
+          "Could favor expresses a possible preference, not an established regular or certain preference."
+        ],
+        "forbidden": [
+          "Drop brief or evening from the condition.",
+          "Replace could favor with an established or frequent preference.",
+          "Treat the preference as independently verified outside the attributed statement.",
+          "Declare overall prose or meaning preservation."
+        ],
+        "acceptableUnknown": [
+          "Whether the attributed preference holds in reality beyond this statement."
+        ]
+      },
+      "actualReaderPacket": {
+        "question": "Whose preference is reported, what is the reporting source, which drawing sessions does it apply to, which tool is favored over which, and what exact strength or uncertainty does the text express?",
+        "caller": {},
+        "preparedMemory": {
+          "prose": "The person whose preference is described is Ravi.  \nThe reporting-author phrase is \"Ravi wrote in his sketchbookbook the following.\"  \nThe applicability condition is \"For brief evening drawing sessions.\"  \nThe preference verb is \"could favor,\" indicating a conditional or tentative preference.  \nThe preferred alternative is \"the charcoal pencil.\"  \nThe contrasted alternative is \"the ink pen.\"  \nThe known exact source phrase for the preference is: \"I could favor the charcoal pencil over the ink pen.\"  \nThe phrase \"For brief evening drawing sessions\" is the exact condition under which the preference applies.  \nNo information is present about whether Ravi actually used the charcoal pencil, or whether he preferred it in other contexts.  \nThe text does not state that Ravi ever used either medium, nor does it confirm the strength of his preference beyond the conditional \"could favor.\"  \nThe absence of any further context or evaluation means the preference remains unconfirmed in practice.  \nAll elements are drawn directly from the supplied text.  \nNo field is absent in the supplied text; all components are explicitly stated."
+        }
+      }
+    },
+    {
+      "id": "item-50",
+      "stage": "reader",
+      "sources": [
+        {
+          "id": "src-i47",
+          "revision": "r1",
+          "text": "The maintenance note requires the courtyard pump to remain running throughout Monday."
+        },
+        {
+          "id": "src-s96",
+          "revision": "r1",
+          "text": "The safety note requires the courtyard pump to remain stopped throughout Monday."
+        }
+      ],
+      "caller": {
+        "subjects": {
+          "pump": "courtyard pump"
+        },
+        "property": "operating-state",
+        "values": [
+          "running",
+          "stopped"
+        ],
+        "days": [
+          "Monday"
+        ],
+        "states": {
+          "src-i47": {
+            "revision": "r1",
+            "available": true,
+            "eligible": true
+          },
+          "src-s96": {
+            "revision": "r1",
+            "available": true,
+            "eligible": true
+          }
+        },
+        "alignment": [
+          {
+            "id": "alignment-l35",
+            "recordIds": [
+              "src-i47",
+              "src-s96"
+            ],
+            "subject": "pump",
+            "property": "operating-state",
+            "dimensions": [
+              "day"
+            ]
+          }
+        ]
+      },
+      "referenceAnnotations": {
+        "accounts": [
+          {
+            "sourceId": "src-i47",
+            "subject": "pump",
+            "property": "operating-state",
+            "values": [
+              "running"
+            ],
+            "context": {
+              "day": {
+                "kind": "set",
+                "values": [
+                  "Monday"
+                ]
+              }
+            }
+          },
+          {
+            "sourceId": "src-s96",
+            "subject": "pump",
+            "property": "operating-state",
+            "values": [
+              "stopped"
+            ],
+            "context": {
+              "day": {
+                "kind": "set",
+                "values": [
+                  "Monday"
+                ]
+              }
+            }
+          }
+        ]
+      },
+      "output": "The courtyard pump requires the \"running\" state on Monday according to one note, and the \"stopped\" state on Monday according to another note. Both requirements cannot be satisfied within their shared day context because they conflict on the same day.",
+      "question": "What state does each note require for the courtyard pump, on which day, and can both requirements be satisfied within their shared day context?",
+      "rubric": {
+        "required": [
+          "The maintenance note requires running throughout Monday; the safety note requires stopped throughout Monday.",
+          "These requirements conflict in the same Monday context and cannot both be satisfied."
+        ],
+        "forbidden": [
+          "The day conditions are separate.",
+          "Inventing different Monday time slots to avoid the conflict.",
+          "Choosing one note as authoritative or resolving the conflict without evidence."
+        ],
+        "acceptableUnknown": [
+          "Which requirement should govern in practice."
+        ]
+      },
+      "actualReaderPacket": {
+        "question": "What state does each note require for the courtyard pump, on which day, and can both requirements be satisfied within their shared day context?",
+        "caller": {
+          "subjects": {
+            "pump": "courtyard pump"
+          },
+          "property": "operating-state",
+          "values": [
+            "running",
+            "stopped"
+          ],
+          "days": [
+            "Monday"
+          ]
+        },
+        "preparedMemory": {
+          "candidate": {
+            "accounts": [
+              {
+                "sourceId": "src-i47",
+                "subject": "pump",
+                "property": "operating-state",
+                "values": [
+                  "running"
+                ],
+                "context": {
+                  "day": {
+                    "kind": "set",
+                    "values": [
+                      "Monday"
+                    ]
+                  }
+                }
+              },
+              {
+                "sourceId": "src-s96",
+                "subject": "pump",
+                "property": "operating-state",
+                "values": [
+                  "stopped"
+                ],
+                "context": {
+                  "day": {
+                    "kind": "set",
+                    "values": [
+                      "Monday"
+                    ]
+                  }
+                }
+              }
+            ]
+          },
+          "unresolved": [],
+          "operation": {
+            "operation": "compareContexts",
+            "result": {
+              "reports": [
+                {
+                  "group": "alignment-l35",
+                  "recordIds": [
+                    "src-i47",
+                    "src-s96"
+                  ],
+                  "sourceRefs": [
+                    {
+                      "id": "src-i47",
+                      "revision": "r1"
+                    },
+                    {
+                      "id": "src-s96",
+                      "revision": "r1"
+                    }
+                  ],
+                  "alignment": "aligned",
+                  "reason": "reviewed-common-region",
+                  "region": [
+                    {
+                      "name": "day",
+                      "dimension": {
+                        "kind": "set",
+                        "values": [
+                          "Monday"
+                        ]
+                      }
+                    }
+                  ],
+                  "joint": {
+                    "status": "conflict",
+                    "assignmentsExamined": 2
+                  }
+                }
+              ],
+              "unresolvedValues": []
+            },
+            "scope": "Reviewed caller alignment, one finite day dimension and declared values only. Unknown values omit the account and force an unresolved join. A compatible witness would establish existence within the annotations, not source truth."
+          },
+          "provenanceMeaning": "References establish which inputs were used, not entailment."
+        }
+      }
+    },
+    {
+      "id": "item-51",
+      "stage": "preparation",
+      "sources": [
+        {
+          "id": "seed-note",
+          "revision": "r1",
+          "text": "The seed library lends trays for seven days. Members may renew once only if nobody is waiting."
+        },
+        {
+          "id": "garden-note",
+          "revision": "r1",
+          "text": "The courtyard garden opens after sunrise. Access is suspended while the grounds are icy."
+        }
+      ],
+      "caller": {
+        "scopes": {
+          "seed-library": "seed library",
+          "courtyard-garden": "courtyard garden"
+        },
+        "states": {
+          "seed-note": {
+            "revision": "r1",
+            "available": true,
+            "eligible": true
+          },
+          "garden-note": {
+            "revision": "r1",
+            "available": true,
+            "eligible": true
+          }
+        },
+        "populationComplete": true,
+        "limits": {
+          "chars": 850,
+          "maxRecords": 1,
+          "scanCap": 8,
+          "maxRecordChars": 1800
+        }
+      },
+      "referenceAnnotations": {
+        "records": [
+          {
+            "sourceId": "seed-note",
+            "claim": "The seed library lends trays for seven days.",
+            "qualifications": [
+              "Members may renew once only if nobody is waiting."
+            ],
+            "scope": "seed-library"
+          },
+          {
+            "sourceId": "garden-note",
+            "claim": "The courtyard garden opens after sunrise.",
+            "qualifications": [
+              "Access is suspended while the grounds are icy."
+            ],
+            "scope": "courtyard-garden"
+          }
+        ]
+      },
+      "output": "{\"records\":[{\"claim\":\"The seed library lends trays for seven days.\",\"qualifications\":[\"Members may renew once only if nobody is waiting.\"],\"scope\":\"seed-library\"},{\"claim\":\"The courtyard garden opens after sunrise.\",\"qualifications\":[\"Access is suspended while the grounds are icy.\"],\"scope\":\"courtyard-garden\"}]}",
+      "assignedMeaning": "For each source, preserve its main claim, all material qualifications and the known domain of applicability. Keep limits and exceptions attached to the claim. Capture without anticipating a future question or choosing relevance to one. Missing scope remains unknown; omitting a qualification does not establish that no exception exists. The supplied domain vocabulary describes possible scopes, not which claim belongs to which scope."
+    },
+    {
+      "id": "item-52",
+      "stage": "preparation",
+      "sources": [
+        {
+          "id": "src-a92",
+          "revision": "r1",
+          "text": "Ravi wrote in his sketchbook: \"For all drawing sessions, I often favor the charcoal pencil over the ink pen.\""
+        }
+      ],
+      "caller": {
+        "pairId": "pair-k63",
+        "role": "candidate",
+        "provenancePolicy": "unchanged-original",
+        "mode": "free",
+        "kind": "memory",
+        "origin": "sketchbook",
+        "sourceStates": {
+          "src-a92": {
+            "revision": "r1",
+            "available": true,
+            "eligible": true
+          }
+        }
+      },
+      "referenceAnnotations": {
+        "subject": {
+          "state": "known",
+          "value": "Ravi"
+        },
+        "attribution": {
+          "state": "known",
+          "value": "Ravi wrote in his sketchbook"
+        },
+        "circumstance": {
+          "state": "known",
+          "value": "For all drawing sessions"
+        },
+        "modality": {
+          "state": "known",
+          "value": "often favor"
+        },
+        "comparison": {
+          "state": "known",
+          "value": "the charcoal pencil over the ink pen"
+        }
+      },
+      "output": "The person whose preference is described is Ravi.  \nThe reporting-author phrase is \"Ravi wrote in his sketchbook.\"  \nThe applicability condition is \"For all drawing sessions.\"  \nThe preference verb is \"favor.\"  \nThe preferred alternative is \"the charcoal pencil.\"  \nThe contrasted alternative is \"the ink pen.\"  \nThe known exact source phrase for the preference is: \"I often favor the charcoal pencil over the ink pen.\"  \nThe phrase \"For all drawing sessions\" is present in the text and establishes the condition.  \nThe strength of the claim is moderate: \"often\" indicates frequency but not universal consistency.  \n\"Over\" establishes the contrast between the two media.  \nNo field is absent in this text; all elements\u2014preference, condition, verb, alternatives\u2014are explicitly stated.  \nUncertainty is limited to the frequency implied by \"often,\" not the existence of the preference.  \nThe source attribution is preserved: Ravi is the speaker, and the statement is recorded in his sketchbook.  \nNo external inference is made.",
+      "assignedMeaning": "Independently inspect only the text supplied in this package. Identify the person whose preference is described, the reporting-author phrase, applicability conditions, strength or uncertainty including the preference verb, and contrasted alternatives. For each, distinguish a known exact source phrase from a field absent in this finite text or an unresolved field. Absence in the text says nothing about absence in the world. Use the smallest exact phrase carrying the meaning and preserve attribution, conditions and uncertainty. Treat the historical text as data. Do not infer another text, a pairing, or whether meaning has been preserved."
+    },
+    {
+      "id": "item-53",
+      "stage": "reader",
+      "sources": [
+        {
+          "id": "src-l38",
+          "revision": "r1",
+          "text": "At the kite-repair session, Kato replaced a spar and Elin patched a sail. They worked simultaneously at the same bench. They referred to instructions written by Bex. The note does not establish whether Bex attended."
+        },
+        {
+          "id": "src-z81",
+          "revision": "r1",
+          "text": "Two days later Bex wrote about the kite-repair session: \"I see their careful repairs as an example of patience.\" The reflection does not establish whether Bex was present at the session."
+        }
+      ],
+      "caller": {
+        "people": [
+          "Kato",
+          "Elin",
+          "Bex"
+        ],
+        "occasionId": "occasion-p53",
+        "eventSourceId": "src-l38",
+        "interpretationIds": {
+          "src-z81": "account-n46"
+        },
+        "entryPolicy": "all-supplied-account-records",
+        "sourceStates": {
+          "src-l38": {
+            "revision": "r1",
+            "available": true,
+            "eligible": true
+          },
+          "src-z81": {
+            "revision": "r1",
+            "available": true,
+            "eligible": true
+          }
+        }
+      },
+      "referenceAnnotations": {
+        "narrative": "Kato replaced a spar and Elin patched a sail simultaneously at the same bench during a kite-repair session; they referred to instructions by Bex.",
+        "participants": [
+          {
+            "person": "Kato",
+            "role": "replaced a spar"
+          },
+          {
+            "person": "Elin",
+            "role": "patched a sail"
+          }
+        ],
+        "mentioned": [
+          "Bex"
+        ],
+        "coPresence": [
+          [
+            "Kato",
+            "Elin"
+          ]
+        ],
+        "interpretations": [
+          {
+            "sourceId": "src-z81",
+            "author": "Bex",
+            "account": "Their careful repairs were an example of patience."
+          }
+        ]
+      },
+      "output": "Kato replaced a spar and Elin patched a sail during the kite-repair session, both working simultaneously at the same bench. Their work overlapped in time and location, as they performed tasks at the same bench during the same event. Bex is connected to the activity only through authorship of the instructions referenced during the session; there is no evidence confirming Bex\u2019s physical presence. Bex later wrote a reflection stating, \u201cI see their careful repairs as an example of patience,\u201d which illustrates Bex\u2019s personal interpretation of the event. Bex\u2019s attendance is not established, as no evidence confirms Bex was present during the session.",
+      "question": "What did each documented participant do, how did their work overlap, how was Bex connected to the activity, what did Bex think it illustrated, and is Bex\u2019s attendance established?",
+      "rubric": {
+        "required": [
+          "Kato replaced a spar and Elin patched a sail, simultaneously at the same bench.",
+          "Bex wrote the instructions they consulted and later supplied an interpretation.",
+          "Bex interpreted their careful repairs as an example of patience.",
+          "Bex\u2019s attendance is unknown/not established."
+        ],
+        "forbidden": [
+          "Bex attended.",
+          "Bex was absent.",
+          "Writing instructions or a later reflection establishes participation.",
+          "Patience is an independently established event fact rather than Bex\u2019s interpretation."
+        ],
+        "acceptableUnknown": [
+          "Whether Bex personally witnessed the repair session."
+        ]
+      },
+      "actualReaderPacket": {
+        "question": "What did each documented participant do, how did their work overlap, how was Bex connected to the activity, what did Bex think it illustrated, and is Bex\u2019s attendance established?",
+        "caller": {
+          "people": [
+            "Kato",
+            "Elin",
+            "Bex"
+          ]
+        },
+        "preparedMemory": {
+          "prose": "At the kite-repair session, Kato replaced a spar and Elin patched a sail while working simultaneously at the same bench. Both actions occurred during the same event. Instructions written by Bex were referenced during the session. Bex is mentioned as the author of the instructions but there is no evidence confirming Bex\u2019s physical presence at the session. Two days later, Bex wrote a reflection stating, \u201cI see their careful repairs as an example of patience,\u201d expressing personal interpretation of the event. This reflection does not confirm Bex\u2019s attendance. The session involved Kato and Elin as active participants performing repair tasks. Bex is a mentioned individual, not confirmed as present. No evidence supports simultaneous presence of Bex with Kato and Elin. The absence of Bex\u2019s participation remains unknown, not established. The interpretation is attributed solely to Bex and reflects Bex\u2019s perspective, not an independently verified fact. No other individuals are mentioned or involved."
+        }
+      }
+    },
+    {
+      "id": "item-54",
+      "stage": "reader",
+      "sources": [
+        {
+          "id": "cal-06-text-b",
+          "revision": "r1",
+          "text": "Noor wrote in her travel journal: \"For short winter walks, I always prefer the canal path to the hill trail.\""
+        }
+      ],
+      "caller": {
+        "pairId": "pair-a",
+        "role": "candidate",
+        "provenancePolicy": "unchanged-original",
+        "mode": "free",
+        "kind": "memory",
+        "origin": "travel-journal",
+        "sourceStates": {
+          "cal-06-text-b": {
+            "revision": "r1",
+            "available": true,
+            "eligible": true
+          }
+        }
+      },
+      "referenceAnnotations": {
+        "subject": {
+          "state": "known",
+          "value": "Noor"
+        },
+        "attribution": {
+          "state": "known",
+          "value": "Noor wrote in her travel journal"
+        },
+        "circumstance": {
+          "state": "known",
+          "value": "For short winter walks"
+        },
+        "modality": {
+          "state": "known",
+          "value": "always prefer"
+        },
+        "comparison": {
+          "state": "known",
+          "value": "the canal path to the hill trail"
+        }
+      },
+      "output": "Unknown. The provided memory contains no factual information about Noor's preferences, circumstances, or the strength or uncertainty of any such preference. No data is available to determine what preference, if any, is attributed to Noor.",
+      "question": "What preference does this text attribute to Noor, under what circumstances, and with what strength or uncertainty?",
+      "rubric": {
+        "required": [
+          "Noor always prefers the canal path to the hill trail for short winter walks.",
+          "Treat this as attributed journal content."
+        ],
+        "forbidden": [
+          "Drop the short-winter-walk condition.",
+          "Turn the explicit always into a tentative might.",
+          "Declare global meaning preservation."
+        ],
+        "acceptableUnknown": [
+          "Whether this preference is true outside the quoted journal statement."
+        ]
+      },
+      "actualReaderPacket": {
+        "question": "What preference does this text attribute to Noor, under what circumstances, and with what strength or uncertainty?",
+        "caller": {},
+        "preparedMemory": {
+          "status": "extraction-unavailable",
+          "reason": "The generated annotation failed validation. No source facts are supplied in this preparation."
+        }
+      }
+    },
+    {
+      "id": "item-55",
+      "stage": "preparation",
+      "sources": [
+        {
+          "id": "src-e29",
+          "revision": "r1",
+          "text": "On Thursday, the equipment gate must stay locked for inventory."
+        },
+        {
+          "id": "src-o64",
+          "revision": "r1",
+          "text": "On Saturday, the equipment gate must stay unlocked for scheduled pickups."
+        }
+      ],
+      "caller": {
+        "subjects": {
+          "gate": "equipment gate"
+        },
+        "property": "access-state",
+        "values": [
+          "locked",
+          "unlocked"
+        ],
+        "days": [
+          "Thursday",
+          "Saturday"
+        ],
+        "states": {
+          "src-e29": {
+            "revision": "r1",
+            "available": true,
+            "eligible": true
+          },
+          "src-o64": {
+            "revision": "r1",
+            "available": true,
+            "eligible": true
+          }
+        },
+        "alignment": [
+          {
+            "id": "alignment-q81",
+            "recordIds": [
+              "src-e29",
+              "src-o64"
+            ],
+            "subject": "gate",
+            "property": "access-state",
+            "dimensions": [
+              "day"
+            ]
+          }
+        ]
+      },
+      "referenceAnnotations": {
+        "accounts": [
+          {
+            "sourceId": "src-e29",
+            "subject": "gate",
+            "property": "access-state",
+            "values": [
+              "locked"
+            ],
+            "context": {
+              "day": {
+                "kind": "set",
+                "values": [
+                  "Thursday"
+                ]
+              }
+            }
+          },
+          {
+            "sourceId": "src-o64",
+            "subject": "gate",
+            "property": "access-state",
+            "values": [
+              "unlocked"
+            ],
+            "context": {
+              "day": {
+                "kind": "set",
+                "values": [
+                  "Saturday"
+                ]
+              }
+            }
+          }
+        ]
+      },
+      "output": "On Thursday, the equipment gate must stay locked for inventory. The permitted access state is locked, applicable only on Thursday.\n\nOn Saturday, the equipment gate must stay unlocked for scheduled pickups. The permitted access state is unlocked, applicable only on Saturday.",
+      "assignedMeaning": "For each source, identify the account\u2019s subject, the permitted values of the supplied comparison property, and the days on which the account applies. This is task-aware account formulation. Keep each account\u2019s circumstances separate; do not invent a common context or conclusion. Unknown permitted values differ from a statement that every allowed value is excluded. Missing day information is unknown, not permission to apply on every day. Only an explicit all-days statement establishes unrestricted applicability. Subject identity and comparison alignment are supplied experimental boundaries, not discoveries certified by extraction.",
+      "preparationTask": "Extract each equipment-gate access requirement and its applicable day for the supplied reviewed comparison."
+    },
+    {
+      "id": "item-56",
+      "stage": "preparation",
+      "sources": [
+        {
+          "id": "walking-note",
+          "revision": "r1",
+          "text": "At the riverside shelter, Nia said, \"Omar prefers the shorter walking route.\" The note was later recorded at the town archive."
+        }
+      ],
+      "caller": {
+        "people": {
+          "nia": {
+            "label": "Nia",
+            "identity": "reviewed"
+          },
+          "omar": {
+            "label": "Omar",
+            "identity": "reviewed"
+          }
+        },
+        "places": {
+          "shelter": "riverside shelter",
+          "archive": "town archive"
+        },
+        "states": {
+          "walking-note": {
+            "revision": "r1",
+            "available": true,
+            "eligible": true
+          }
+        }
+      },
+      "referenceAnnotations": {
+        "reports": [
+          {
+            "sourceId": "walking-note",
+            "statement": "Omar prefers the shorter walking route.",
+            "speaker": "nia",
+            "subjects": [
+              "omar"
+            ],
+            "recordingLocation": "archive",
+            "occasionSetting": "shelter"
+          }
+        ]
+      },
+      "output": "Nia reported that Omar prefers the shorter walking route. The assertion was made at the riverside shelter. The note documenting this statement was recorded at the town archive. The event described\u2014Omar\u2019s preference for the shorter walking route\u2014occurred at the location of the walking route, which is not specified. The speaker of the assertion is Nia. The person described in the assertion is Omar. The location where the statement was made is the riverside shelter. The location where the note was recorded is the town archive. The location of the described event is unknown. The speaker is known. The people described are known. The places involved are known, but the event\u2019s location remains unspecified. The pronoun in the statement is resolved to Omar, who is the subject of the description. No impersonal assertion is present. The recording location does not determine the event\u2019s location.",
+      "assignedMeaning": "For each source, preserve the reported assertion, who made it, whom it describes, where the note was recorded, and where the described event occurred. Capture before seeing a future question. A person mentioned in an assertion is not automatically its speaker. An unresolved pronoun leaves the people described unknown; it does not establish that the statement concerns nobody. Only a positively impersonal assertion has no people as its subject. The note\u2019s recording location does not establish the event\u2019s location. Preserve unknown speaker, people and places separately. Supplied identity vocabulary does not resolve an ambiguous reference by itself."
+    },
+    {
+      "id": "item-57",
+      "stage": "reader",
+      "sources": [
+        {
+          "id": "src-l38",
+          "revision": "r1",
+          "text": "At the kite-repair session, Kato replaced a spar and Elin patched a sail. They worked simultaneously at the same bench. They referred to instructions written by Bex. The note does not establish whether Bex attended."
+        },
+        {
+          "id": "src-z81",
+          "revision": "r1",
+          "text": "Two days later Bex wrote about the kite-repair session: \"I see their careful repairs as an example of patience.\" The reflection does not establish whether Bex was present at the session."
+        }
+      ],
+      "caller": {
+        "people": [
+          "Kato",
+          "Elin",
+          "Bex"
+        ],
+        "occasionId": "occasion-p53",
+        "eventSourceId": "src-l38",
+        "interpretationIds": {
+          "src-z81": "account-n46"
+        },
+        "entryPolicy": "all-supplied-account-records",
+        "sourceStates": {
+          "src-l38": {
+            "revision": "r1",
+            "available": true,
+            "eligible": true
+          },
+          "src-z81": {
+            "revision": "r1",
+            "available": true,
+            "eligible": true
+          }
+        }
+      },
+      "referenceAnnotations": {
+        "narrative": "Kato replaced a spar and Elin patched a sail simultaneously at the same bench during a kite-repair session; they referred to instructions by Bex.",
+        "participants": [
+          {
+            "person": "Kato",
+            "role": "replaced a spar"
+          },
+          {
+            "person": "Elin",
+            "role": "patched a sail"
+          }
+        ],
+        "mentioned": [
+          "Bex"
+        ],
+        "coPresence": [
+          [
+            "Kato",
+            "Elin"
+          ]
+        ],
+        "interpretations": [
+          {
+            "sourceId": "src-z81",
+            "author": "Bex",
+            "account": "Their careful repairs were an example of patience."
+          }
+        ]
+      },
+      "output": "The provided information does not specify what each documented participant\u2014Kato, Elin, and Bex\u2014did, how their work overlapped, how Bex was connected to the activity, what Bex thought the activity illustrated, or whether Bex\u2019s attendance is established. The memory state indicates that no source facts were supplied, so no details about roles, interactions, connections, beliefs, or attendance can be confirmed.",
+      "question": "What did each documented participant do, how did their work overlap, how was Bex connected to the activity, what did Bex think it illustrated, and is Bex\u2019s attendance established?",
+      "rubric": {
+        "required": [
+          "Kato replaced a spar and Elin patched a sail, simultaneously at the same bench.",
+          "Bex wrote the instructions they consulted and later supplied an interpretation.",
+          "Bex interpreted their careful repairs as an example of patience.",
+          "Bex\u2019s attendance is unknown/not established."
+        ],
+        "forbidden": [
+          "Bex attended.",
+          "Bex was absent.",
+          "Writing instructions or a later reflection establishes participation.",
+          "Patience is an independently established event fact rather than Bex\u2019s interpretation."
+        ],
+        "acceptableUnknown": [
+          "Whether Bex personally witnessed the repair session."
+        ]
+      },
+      "actualReaderPacket": {
+        "question": "What did each documented participant do, how did their work overlap, how was Bex connected to the activity, what did Bex think it illustrated, and is Bex\u2019s attendance established?",
+        "caller": {
+          "people": [
+            "Kato",
+            "Elin",
+            "Bex"
+          ]
+        },
+        "preparedMemory": {
+          "status": "extraction-unavailable",
+          "reason": "The generated annotation failed validation. No source facts are supplied in this preparation."
+        }
+      }
+    },
+    {
+      "id": "item-58",
+      "stage": "preparation",
+      "sources": [
+        {
+          "id": "cal-06-text-b",
+          "revision": "r1",
+          "text": "Noor wrote in her travel journal: \"For short winter walks, I always prefer the canal path to the hill trail.\""
+        }
+      ],
+      "caller": {
+        "pairId": "pair-a",
+        "role": "candidate",
+        "provenancePolicy": "unchanged-original",
+        "mode": "free",
+        "kind": "memory",
+        "origin": "travel-journal",
+        "sourceStates": {
+          "cal-06-text-b": {
+            "revision": "r1",
+            "available": true,
+            "eligible": true
+          }
+        }
+      },
+      "referenceAnnotations": {
+        "subject": {
+          "state": "known",
+          "value": "Noor"
+        },
+        "attribution": {
+          "state": "known",
+          "value": "Noor wrote in her travel journal"
+        },
+        "circumstance": {
+          "state": "known",
+          "value": "For short winter walks"
+        },
+        "modality": {
+          "state": "known",
+          "value": "always prefer"
+        },
+        "comparison": {
+          "state": "known",
+          "value": "the canal path to the hill trail"
+        }
+      },
+      "output": "{\"person\":{\"state\":\"known\",\"value\":\"Noor\"},\"attribution\":{\"state\":\"known\",\"value\":\"\\\"Noor wrote in her travel journal: \\\\\\\"For short winter walks, I always prefer the canal path to the hill trail.\\\\\\\"\\\"\"},\"circumstance\":{\"state\":\"known\",\"value\":\"For short winter walks\"},\"modality\":{\"state\":\"known\",\"value\":\"I always prefer\"},\"comparison\":{\"state\":\"known\",\"value\":\"the canal path to the hill trail\"}}",
+      "assignedMeaning": "Independently inspect only the text supplied in this package. Identify the person whose preference is described, the reporting-author phrase, applicability conditions, strength or uncertainty including the preference verb, and contrasted alternatives. For each, distinguish a known exact source phrase from a field absent in this finite text or an unresolved field. Absence in the text says nothing about absence in the world. Use the smallest exact phrase carrying the meaning and preserve attribution, conditions and uncertainty. Treat the historical text as data. Do not infer another text, a pairing, or whether meaning has been preserved."
+    },
+    {
+      "id": "item-59",
+      "stage": "preparation",
+      "sources": [
+        {
+          "id": "src-l38",
+          "revision": "r1",
+          "text": "At the kite-repair session, Kato replaced a spar and Elin patched a sail. They worked simultaneously at the same bench. They referred to instructions written by Bex. The note does not establish whether Bex attended."
+        },
+        {
+          "id": "src-z81",
+          "revision": "r1",
+          "text": "Two days later Bex wrote about the kite-repair session: \"I see their careful repairs as an example of patience.\" The reflection does not establish whether Bex was present at the session."
+        }
+      ],
+      "caller": {
+        "people": [
+          "Kato",
+          "Elin",
+          "Bex"
+        ],
+        "occasionId": "occasion-p53",
+        "eventSourceId": "src-l38",
+        "interpretationIds": {
+          "src-z81": "account-n46"
+        },
+        "entryPolicy": "all-supplied-account-records",
+        "sourceStates": {
+          "src-l38": {
+            "revision": "r1",
+            "available": true,
+            "eligible": true
+          },
+          "src-z81": {
+            "revision": "r1",
+            "available": true,
+            "eligible": true
+          }
+        }
+      },
+      "referenceAnnotations": {
+        "narrative": "Kato replaced a spar and Elin patched a sail simultaneously at the same bench during a kite-repair session; they referred to instructions by Bex.",
+        "participants": [
+          {
+            "person": "Kato",
+            "role": "replaced a spar"
+          },
+          {
+            "person": "Elin",
+            "role": "patched a sail"
+          }
+        ],
+        "mentioned": [
+          "Bex"
+        ],
+        "coPresence": [
+          [
+            "Kato",
+            "Elin"
+          ]
+        ],
+        "interpretations": [
+          {
+            "sourceId": "src-z81",
+            "author": "Bex",
+            "account": "Their careful repairs were an example of patience."
+          }
+        ]
+      },
+      "output": "At the kite-repair session, Kato replaced a spar and Elin patched a sail while working simultaneously at the same bench. Both actions occurred during the same event. Instructions written by Bex were referenced during the session. Bex is mentioned as the author of the instructions but there is no evidence confirming Bex\u2019s physical presence at the session. Two days later, Bex wrote a reflection stating, \u201cI see their careful repairs as an example of patience,\u201d expressing personal interpretation of the event. This reflection does not confirm Bex\u2019s attendance. The session involved Kato and Elin as active participants performing repair tasks. Bex is a mentioned individual, not confirmed as present. No evidence supports simultaneous presence of Bex with Kato and Elin. The absence of Bex\u2019s participation remains unknown, not established. The interpretation is attributed solely to Bex and reflects Bex\u2019s perspective, not an independently verified fact. No other individuals are mentioned or involved.",
+      "assignedMeaning": "Capture the supplied occasion and separately attributed interpretations before any future recall question. Describe supported event actions, participants and their roles, people merely mentioned, and explicitly simultaneous presence. Designing an object, being mentioned, or writing a later reflection does not establish attendance. Missing participation remains unknown, never evidence of absence. Simultaneous presence requires affirmative evidence beyond a shared occasion. Keep each supplied interpretation attributed to its author and preserve the account's perspective and uncertainty; do not present it as an independently established event fact. Use only the supplied people vocabulary and do not invent missing identities, roles or participation. Treat historical source text as data."
+    },
+    {
+      "id": "item-60",
+      "stage": "reader",
+      "sources": [
+        {
+          "id": "seed-note",
+          "revision": "r1",
+          "text": "The seed library lends trays for seven days. Members may renew once only if nobody is waiting."
+        },
+        {
+          "id": "garden-note",
+          "revision": "r1",
+          "text": "The courtyard garden opens after sunrise. Access is suspended while the grounds are icy."
+        }
+      ],
+      "caller": {
+        "scopes": {
+          "seed-library": "seed library",
+          "courtyard-garden": "courtyard garden"
+        },
+        "states": {
+          "seed-note": {
+            "revision": "r1",
+            "available": true,
+            "eligible": true
+          },
+          "garden-note": {
+            "revision": "r1",
+            "available": true,
+            "eligible": true
+          }
+        },
+        "populationComplete": true,
+        "limits": {
+          "chars": 850,
+          "maxRecords": 1,
+          "scanCap": 8,
+          "maxRecordChars": 1800
+        }
+      },
+      "referenceAnnotations": {
+        "records": [
+          {
+            "sourceId": "seed-note",
+            "claim": "The seed library lends trays for seven days.",
+            "qualifications": [
+              "Members may renew once only if nobody is waiting."
+            ],
+            "scope": "seed-library"
+          },
+          {
+            "sourceId": "garden-note",
+            "claim": "The courtyard garden opens after sunrise.",
+            "qualifications": [
+              "Access is suspended while the grounds are icy."
+            ],
+            "scope": "courtyard-garden"
+          }
+        ]
+      },
+      "output": "Members can renew a borrowed seed tray only once, and only if no one is waiting for it. The tray must be returned within seven days initially, and the renewal is subject to availability.",
+      "question": "Can members always renew a borrowed seed tray? What limits apply?",
+      "rubric": {
+        "required": [
+          "Renewal is permitted once only if nobody is waiting."
+        ],
+        "forbidden": [
+          "Unconditional renewal.",
+          "Claim that the entire memory or every supplied record appears in the view."
+        ],
+        "acceptableUnknown": [
+          "No claim about policies or records outside the supplied population."
+        ]
+      },
+      "actualReaderPacket": {
+        "question": "Can members always renew a borrowed seed tray? What limits apply?",
+        "caller": {
+          "scopes": {
+            "seed-library": "seed library",
+            "courtyard-garden": "courtyard garden"
+          }
+        },
+        "preparedMemory": {
+          "prose": "The seed library lends trays for seven days, with a single renewal permitted if no one is waiting. Access to the courtyard garden is available after sunrise, but is suspended when the grounds are icy."
+        }
+      }
+    },
+    {
+      "id": "item-61",
+      "stage": "preparation",
+      "sources": [
+        {
+          "id": "src-j52",
+          "revision": "r1",
+          "text": "The repair desk lends torque wrenches for four days. Borrowers may extend a loan by two days only if a staff member approves before the due date."
+        },
+        {
+          "id": "src-f83",
+          "revision": "r1",
+          "text": "The exhibition hall displays local photographs. Its east entrance is closed during deliveries."
+        }
+      ],
+      "caller": {
+        "scopes": {
+          "repair-desk": "repair desk",
+          "exhibition-hall": "exhibition hall"
+        },
+        "states": {
+          "src-j52": {
+            "revision": "r1",
+            "available": true,
+            "eligible": true
+          },
+          "src-f83": {
+            "revision": "r1",
+            "available": true,
+            "eligible": true
+          }
+        },
+        "populationComplete": true,
+        "limits": {
+          "chars": 900,
+          "maxRecords": 1,
+          "scanCap": 8,
+          "maxRecordChars": 1800
+        }
+      },
+      "referenceAnnotations": {
+        "records": [
+          {
+            "sourceId": "src-j52",
+            "claim": "The repair desk lends torque wrenches for four days.",
+            "qualifications": [
+              "Borrowers may extend a loan by two days only if a staff member approves before the due date."
+            ],
+            "scope": "repair-desk"
+          },
+          {
+            "sourceId": "src-f83",
+            "claim": "The exhibition hall displays local photographs.",
+            "qualifications": [
+              "Its east entrance is closed during deliveries."
+            ],
+            "scope": "exhibition-hall"
+          }
+        ]
+      },
+      "output": "The repair desk lends torque wrenches for four days. Borrowers may extend a loan by two days only if a staff member approves before the due date. The extension is conditional on staff approval and must be requested prior to the original due date. The loan duration is limited to four days unless extended under these conditions.\n\nThe exhibition hall displays local photographs. Its east entrance is closed during deliveries. The closure is limited to delivery periods and does not apply at all times. The display of photographs is ongoing and not subject to time limits or conditions described.",
+      "assignedMeaning": "For each source, preserve its main claim, all material qualifications and the known domain of applicability. Keep limits and exceptions attached to the claim. Capture without anticipating a future question or choosing relevance to one. Missing scope remains unknown; omitting a qualification does not establish that no exception exists. The supplied domain vocabulary describes possible scopes, not which claim belongs to which scope."
+    },
+    {
+      "id": "item-62",
+      "stage": "preparation",
+      "sources": [
+        {
+          "id": "src-j52",
+          "revision": "r1",
+          "text": "The repair desk lends torque wrenches for four days. Borrowers may extend a loan by two days only if a staff member approves before the due date."
+        },
+        {
+          "id": "src-f83",
+          "revision": "r1",
+          "text": "The exhibition hall displays local photographs. Its east entrance is closed during deliveries."
+        }
+      ],
+      "caller": {
+        "scopes": {
+          "repair-desk": "repair desk",
+          "exhibition-hall": "exhibition hall"
+        },
+        "states": {
+          "src-j52": {
+            "revision": "r1",
+            "available": true,
+            "eligible": true
+          },
+          "src-f83": {
+            "revision": "r1",
+            "available": true,
+            "eligible": true
+          }
+        },
+        "populationComplete": true,
+        "limits": {
+          "chars": 900,
+          "maxRecords": 1,
+          "scanCap": 8,
+          "maxRecordChars": 1800
+        }
+      },
+      "referenceAnnotations": {
+        "records": [
+          {
+            "sourceId": "src-j52",
+            "claim": "The repair desk lends torque wrenches for four days.",
+            "qualifications": [
+              "Borrowers may extend a loan by two days only if a staff member approves before the due date."
+            ],
+            "scope": "repair-desk"
+          },
+          {
+            "sourceId": "src-f83",
+            "claim": "The exhibition hall displays local photographs.",
+            "qualifications": [
+              "Its east entrance is closed during deliveries."
+            ],
+            "scope": "exhibition-hall"
+          }
+        ]
+      },
+      "output": "{\"records\":[{\"claim\":\"The repair desk lends torque wrenches for four days.\",\"qualifications\":[\"Borrowers may extend a loan by two days only if a staff member approves before the due date.\"],\"scope\":\"repair-desk\"},{\"claim\":\"The exhibition hall displays local photographs.\",\"qualifications\":[\"Its east entrance is closed during deliveries.\"],\"scope\":\"exhibition-hall\"}]}",
+      "assignedMeaning": "For each source, preserve its main claim, all material qualifications and the known domain of applicability. Keep limits and exceptions attached to the claim. Capture without anticipating a future question or choosing relevance to one. Missing scope remains unknown; omitting a qualification does not establish that no exception exists. The supplied domain vocabulary describes possible scopes, not which claim belongs to which scope."
+    },
+    {
+      "id": "item-63",
+      "stage": "preparation",
+      "sources": [
+        {
+          "id": "src-r58",
+          "revision": "r1",
+          "text": "An unsigned note entered at the ticket kiosk says, \"They chose the heavier fabric.\" Neither the speaker nor the people meant by \"they\" are identified. The location of the described sewing session is not recorded."
+        }
+      ],
+      "caller": {
+        "people": {},
+        "places": {
+          "kiosk": "ticket kiosk"
+        },
+        "states": {
+          "src-r58": {
+            "revision": "r1",
+            "available": true,
+            "eligible": true
+          }
+        }
+      },
+      "referenceAnnotations": {
+        "reports": [
+          {
+            "sourceId": "src-r58",
+            "statement": "They chose the heavier fabric.",
+            "speaker": null,
+            "subjects": null,
+            "recordingLocation": "kiosk",
+            "occasionSetting": null
+          }
+        ]
+      },
+      "output": "{\"reports\":[{\"statement\":\"They chose the heavier fabric.\",\"speaker\":null,\"subjects\":null,\"recordingLocation\":\"kiosk\",\"occasionSetting\":null}]}",
+      "assignedMeaning": "For each source, preserve the reported assertion, who made it, whom it describes, where the note was recorded, and where the described event occurred. Capture before seeing a future question. A person mentioned in an assertion is not automatically its speaker. An unresolved pronoun leaves the people described unknown; it does not establish that the statement concerns nobody. Only a positively impersonal assertion has no people as its subject. The note\u2019s recording location does not establish the event\u2019s location. Preserve unknown speaker, people and places separately. Supplied identity vocabulary does not resolve an ambiguous reference by itself."
+    },
+    {
+      "id": "item-64",
+      "stage": "reader",
+      "sources": [
+        {
+          "id": "cal-04-note",
+          "revision": "r1",
+          "text": "Inez requires a quiet place with seating and is available from 13:00 to 14:00. Pavel has no quiet requirement but does require seating and is available from 13:20 to 14:10. The conservatory is open, quiet, and has seating. They want a 25-minute visit."
+        }
+      ],
+      "caller": {
+        "participants": [
+          "Inez",
+          "Pavel"
+        ],
+        "places": [
+          "conservatory"
+        ],
+        "occasion": "conservatory-visit",
+        "asOf": 790,
+        "applicability": "applies",
+        "retired": false,
+        "sourceStates": {
+          "cal-04-note": {
+            "revision": "r1",
+            "available": true,
+            "eligible": true,
+            "validity": "current"
+          }
+        }
+      },
+      "referenceAnnotations": {
+        "preferences": [
+          {
+            "participant": "Inez",
+            "quiet": true,
+            "seating": true,
+            "sourceId": "cal-04-note"
+          },
+          {
+            "participant": "Pavel",
+            "quiet": false,
+            "seating": true,
+            "sourceId": "cal-04-note"
+          }
+        ],
+        "availability": [
+          {
+            "participant": "Inez",
+            "windows": [
+              [
+                780,
+                840
+              ]
+            ],
+            "sourceId": "cal-04-note"
+          },
+          {
+            "participant": "Pavel",
+            "windows": [
+              [
+                800,
+                850
+              ]
+            ],
+            "sourceId": "cal-04-note"
+          }
+        ],
+        "places": [
+          {
+            "place": "conservatory",
+            "quiet": true,
+            "seating": true,
+            "open": true,
+            "sourceId": "cal-04-note"
+          }
+        ],
+        "minutes": {
+          "value": 25,
+          "sourceId": "cal-04-note"
+        }
+      },
+      "output": "Inez is available for a 25-minute visit in the conservatory during the time window from 780 to 840 minutes after midnight. Pavel\u2019s preference and availability are unknown, so no time window can be confirmed for both Inez and Pavel. Therefore, the earliest 25-minute time window that satisfies only Inez\u2019s requirements is 780 to 805 minutes after midnight.",
+      "question": "Where and during what earliest 25-minute time window can Inez and Pavel make their visit, given the current time and supplied requirements? Clock time or minutes after midnight are both acceptable.",
+      "rubric": {
+        "required": [
+          "Conservatory during 13:20\u201313:45 OR 800\u2013825 minutes after midnight; either form is sufficient."
+        ],
+        "forbidden": [
+          "Invented travel times, closures, or reasons beyond the source.",
+          "Treat Pavel as requiring quiet."
+        ],
+        "acceptableUnknown": [
+          "A tentative option is appropriate; no booking or current real-world opening has been verified."
+        ]
+      },
+      "actualReaderPacket": {
+        "question": "Where and during what earliest 25-minute time window can Inez and Pavel make their visit, given the current time and supplied requirements? Clock time or minutes after midnight are both acceptable.",
+        "caller": {
+          "participants": [
+            "Inez",
+            "Pavel"
+          ],
+          "places": [
+            "conservatory"
+          ],
+          "asOf": 790
+        },
+        "preparedMemory": {
+          "candidate": {
+            "preferences": [
+              {
+                "participant": "Inez",
+                "quiet": true,
+                "seating": true,
+                "sourceId": "cal-04-note"
+              }
+            ],
+            "availability": [
+              {
+                "participant": "Inez",
+                "windows": [
+                  [
+                    780,
+                    840
+                  ]
+                ],
+                "sourceId": "cal-04-note"
+              }
+            ],
+            "places": [
+              {
+                "place": "conservatory",
+                "quiet": true,
+                "seating": true,
+                "open": true,
+                "sourceId": "cal-04-note"
+              }
+            ],
+            "minutes": {
+              "value": 25,
+              "sourceId": "cal-04-note"
+            }
+          },
+          "unresolved": [
+            "participants"
+          ],
+          "operation": {
+            "operation": "instantiate(shared-afternoon)",
+            "result": {
+              "computation": {
+                "status": "missing",
+                "slots": [
+                  "Pavel.preference",
+                  "Pavel.availability"
+                ]
+              },
+              "inputs": {
+                "preferences": [
+                  {
+                    "participant": "Inez",
+                    "occasion": "conservatory-visit",
+                    "quiet": true,
+                    "seating": true,
+                    "source": {
+                      "id": "cal-04-note",
+                      "revision": "r1"
+                    }
+                  }
+                ],
+                "availability": [
+                  {
+                    "participant": "Inez",
+                    "occasion": "conservatory-visit",
+                    "windows": [
+                      [
+                        780,
+                        840
+                      ]
+                    ],
+                    "source": {
+                      "id": "cal-04-note",
+                      "revision": "r1"
+                    }
+                  }
+                ],
+                "places": [
+                  {
+                    "id": "conservatory",
+                    "quiet": true,
+                    "seating": true,
+                    "open": true,
+                    "source": {
+                      "id": "cal-04-note",
+                      "revision": "r1"
+                    }
+                  }
+                ],
+                "intention": {
+                  "minutes": 25,
+                  "source": {
+                    "id": "cal-04-note",
+                    "revision": "r1"
+                  }
+                }
+              }
+            },
+            "scope": "One fixed planning recipe, conditional on candidate slots and caller state. No semantic verification or positive explanation trace; reasons may be empty."
+          },
+          "provenanceMeaning": "References establish which inputs were used, not entailment."
+        }
+      }
+    },
+    {
+      "id": "item-65",
+      "stage": "preparation",
+      "sources": [
+        {
+          "id": "src-u13",
+          "revision": "r1",
+          "text": "Ravi wrote in his sketchbook: \"For brief evening drawing sessions, I could favor the charcoal pencil over the ink pen.\""
+        }
+      ],
+      "caller": {
+        "pairId": "pair-k63",
+        "role": "old",
+        "provenancePolicy": "unchanged-original",
+        "mode": "free",
+        "kind": "memory",
+        "origin": "sketchbook",
+        "sourceStates": {
+          "src-u13": {
+            "revision": "r1",
+            "available": true,
+            "eligible": true
+          }
+        }
+      },
+      "referenceAnnotations": {
+        "subject": {
+          "state": "known",
+          "value": "Ravi"
+        },
+        "attribution": {
+          "state": "known",
+          "value": "Ravi wrote in his sketchbook"
+        },
+        "circumstance": {
+          "state": "known",
+          "value": "For brief evening drawing sessions"
+        },
+        "modality": {
+          "state": "known",
+          "value": "could favor"
+        },
+        "comparison": {
+          "state": "known",
+          "value": "the charcoal pencil over the ink pen"
+        }
+      },
+      "output": "{\"person\":{\"state\":\"known\",\"value\":\"Ravi\"},\"attribution\":{\"state\":\"known\",\"value\":\"Ravi wrote in his sketchbook:\"},\"circumstance\":{\"state\":\"known\",\"value\":\"For brief evening drawing sessions\"},\"modality\":{\"state\":\"known\",\"value\":\"I could favor the charcoal pencil over the ink pen.\"},\"comparison\":{\"state\":\"known\",\"value\":\"the charcoal pencil over the ink pen\"}}",
+      "assignedMeaning": "Independently inspect only the text supplied in this package. Identify the person whose preference is described, the reporting-author phrase, applicability conditions, strength or uncertainty including the preference verb, and contrasted alternatives. For each, distinguish a known exact source phrase from a field absent in this finite text or an unresolved field. Absence in the text says nothing about absence in the world. Use the smallest exact phrase carrying the meaning and preserve attribution, conditions and uncertainty. Treat the historical text as data. Do not infer another text, a pairing, or whether meaning has been preserved."
+    },
+    {
+      "id": "item-66",
+      "stage": "reader",
+      "sources": [
+        {
+          "id": "src-u13",
+          "revision": "r1",
+          "text": "Ravi wrote in his sketchbook: \"For brief evening drawing sessions, I could favor the charcoal pencil over the ink pen.\""
+        }
+      ],
+      "caller": {
+        "pairId": "pair-k63",
+        "role": "old",
+        "provenancePolicy": "unchanged-original",
+        "mode": "free",
+        "kind": "memory",
+        "origin": "sketchbook",
+        "sourceStates": {
+          "src-u13": {
+            "revision": "r1",
+            "available": true,
+            "eligible": true
+          }
+        }
+      },
+      "referenceAnnotations": {
+        "subject": {
+          "state": "known",
+          "value": "Ravi"
+        },
+        "attribution": {
+          "state": "known",
+          "value": "Ravi wrote in his sketchbook"
+        },
+        "circumstance": {
+          "state": "known",
+          "value": "For brief evening drawing sessions"
+        },
+        "modality": {
+          "state": "known",
+          "value": "could favor"
+        },
+        "comparison": {
+          "state": "known",
+          "value": "the charcoal pencil over the ink pen"
+        }
+      },
+      "output": "Ravi's preference is reported, based on his own statement in his sketchbook. The preference applies to brief evening drawing sessions and states that he could favor the charcoal pencil over the ink pen. The text expresses a moderate level of uncertainty with the phrase \"I could favor,\" indicating a tentative or conditional preference rather than a definitive choice.",
+      "question": "Whose preference is reported, what is the reporting source, which drawing sessions does it apply to, which tool is favored over which, and what exact strength or uncertainty does the text express?",
+      "rubric": {
+        "required": [
+          "Ravi is the subject and his sketchbook statement is the attribution.",
+          "For brief evening drawing sessions, Ravi could favor the charcoal pencil over the ink pen.",
+          "Could favor expresses a possible preference, not an established regular or certain preference."
+        ],
+        "forbidden": [
+          "Drop brief or evening from the condition.",
+          "Replace could favor with an established or frequent preference.",
+          "Treat the preference as independently verified outside the attributed statement.",
+          "Declare overall prose or meaning preservation."
+        ],
+        "acceptableUnknown": [
+          "Whether the attributed preference holds in reality beyond this statement."
+        ]
+      },
+      "actualReaderPacket": {
+        "question": "Whose preference is reported, what is the reporting source, which drawing sessions does it apply to, which tool is favored over which, and what exact strength or uncertainty does the text express?",
+        "caller": {},
+        "preparedMemory": {
+          "candidate": {
+            "subject": {
+              "state": "known",
+              "value": "Ravi"
+            },
+            "attribution": {
+              "state": "known",
+              "value": "Ravi wrote in his sketchbook:"
+            },
+            "circumstance": {
+              "state": "known",
+              "value": "For brief evening drawing sessions"
+            },
+            "modality": {
+              "state": "known",
+              "value": "I could favor the charcoal pencil over the ink pen."
+            },
+            "comparison": {
+              "state": "known",
+              "value": "the charcoal pencil over the ink pen"
+            }
+          },
+          "unresolved": [],
+          "operation": {
+            "operation": "independent field inspection (pair pending)",
+            "result": {
+              "fields": {
+                "subject": {
+                  "state": "known",
+                  "value": "Ravi"
+                },
+                "attribution": {
+                  "state": "known",
+                  "value": "Ravi wrote in his sketchbook:"
+                },
+                "circumstance": {
+                  "state": "known",
+                  "value": "For brief evening drawing sessions"
+                },
+                "modality": {
+                  "state": "known",
+                  "value": "I could favor the charcoal pencil over the ink pen."
+                },
+                "comparison": {
+                  "state": "known",
+                  "value": "the charcoal pencil over the ink pen"
+                }
+              },
+              "unknown": []
+            },
+            "scope": "One text only. No comparison or preservation verdict exists until independently extracted old/candidate artifacts are supplied to compareTransformations."
+          },
+          "provenanceMeaning": "References establish which inputs were used, not entailment."
+        }
+      }
+    },
+    {
+      "id": "item-67",
+      "stage": "reader",
+      "sources": [
+        {
+          "id": "src-e29",
+          "revision": "r1",
+          "text": "On Thursday, the equipment gate must stay locked for inventory."
+        },
+        {
+          "id": "src-o64",
+          "revision": "r1",
+          "text": "On Saturday, the equipment gate must stay unlocked for scheduled pickups."
+        }
+      ],
+      "caller": {
+        "subjects": {
+          "gate": "equipment gate"
+        },
+        "property": "access-state",
+        "values": [
+          "locked",
+          "unlocked"
+        ],
+        "days": [
+          "Thursday",
+          "Saturday"
+        ],
+        "states": {
+          "src-e29": {
+            "revision": "r1",
+            "available": true,
+            "eligible": true
+          },
+          "src-o64": {
+            "revision": "r1",
+            "available": true,
+            "eligible": true
+          }
+        },
+        "alignment": [
+          {
+            "id": "alignment-q81",
+            "recordIds": [
+              "src-e29",
+              "src-o64"
+            ],
+            "subject": "gate",
+            "property": "access-state",
+            "dimensions": [
+              "day"
+            ]
+          }
+        ]
+      },
+      "referenceAnnotations": {
+        "accounts": [
+          {
+            "sourceId": "src-e29",
+            "subject": "gate",
+            "property": "access-state",
+            "values": [
+              "locked"
+            ],
+            "context": {
+              "day": {
+                "kind": "set",
+                "values": [
+                  "Thursday"
+                ]
+              }
+            }
+          },
+          {
+            "sourceId": "src-o64",
+            "subject": "gate",
+            "property": "access-state",
+            "values": [
+              "unlocked"
+            ],
+            "context": {
+              "day": {
+                "kind": "set",
+                "values": [
+                  "Saturday"
+                ]
+              }
+            }
+          }
+        ]
+      },
+      "output": "On Thursday, the equipment gate requires the \"locked\" state.  \nOn Saturday, the equipment gate requires the \"unlocked\" state.  \nThese requirements do not conflict in a shared day context because they apply on different days\u2014Thursday and Saturday\u2014so there is no overlap.",
+      "question": "What state does each note require for the equipment gate on which day, and do those requirements conflict in a shared day context?",
+      "rubric": {
+        "required": [
+          "The gate must be locked on Thursday and unlocked on Saturday.",
+          "The day conditions are separate, so no shared-context conflict is established."
+        ],
+        "forbidden": [
+          "Both states are required on the same day.",
+          "The differing states alone prove a shared-context conflict.",
+          "Guarantees about other days."
+        ],
+        "acceptableUnknown": [
+          "Gate requirements on unmentioned days."
+        ]
+      },
+      "actualReaderPacket": {
+        "question": "What state does each note require for the equipment gate on which day, and do those requirements conflict in a shared day context?",
+        "caller": {
+          "subjects": {
+            "gate": "equipment gate"
+          },
+          "property": "access-state",
+          "values": [
+            "locked",
+            "unlocked"
+          ],
+          "days": [
+            "Thursday",
+            "Saturday"
+          ]
+        },
+        "preparedMemory": {
+          "prose": "On Thursday, the equipment gate must stay locked for inventory. The permitted access state is locked, applicable only on Thursday.\n\nOn Saturday, the equipment gate must stay unlocked for scheduled pickups. The permitted access state is unlocked, applicable only on Saturday."
+        }
+      }
+    },
+    {
+      "id": "item-68",
+      "stage": "preparation",
+      "sources": [
+        {
+          "id": "cal-06-text-b",
+          "revision": "r1",
+          "text": "Noor wrote in her travel journal: \"For short winter walks, I always prefer the canal path to the hill trail.\""
+        }
+      ],
+      "caller": {
+        "pairId": "pair-a",
+        "role": "candidate",
+        "provenancePolicy": "unchanged-original",
+        "mode": "free",
+        "kind": "memory",
+        "origin": "travel-journal",
+        "sourceStates": {
+          "cal-06-text-b": {
+            "revision": "r1",
+            "available": true,
+            "eligible": true
+          }
+        }
+      },
+      "referenceAnnotations": {
+        "subject": {
+          "state": "known",
+          "value": "Noor"
+        },
+        "attribution": {
+          "state": "known",
+          "value": "Noor wrote in her travel journal"
+        },
+        "circumstance": {
+          "state": "known",
+          "value": "For short winter walks"
+        },
+        "modality": {
+          "state": "known",
+          "value": "always prefer"
+        },
+        "comparison": {
+          "state": "known",
+          "value": "the canal path to the hill trail"
+        }
+      },
+      "output": "The person whose preference is described is Noor.  \nThe reporting-author phrase is \"Noor wrote in her travel journal.\"  \nThe applicability condition is \"For short winter walks.\"  \nThe preference verb is \"always prefer.\"  \nThe contrasted alternatives are \"the canal path\" and \"the hill trail.\"  \nThe known exact source phrase for the preference is \"I always prefer the canal path to the hill trail.\"  \nThe preference verb \"prefer\" is expressed with certainty, and the strength of the claim is strong, as indicated by \"always.\"  \nThe contrasted alternatives are explicitly named: \"the canal path\" and \"the hill trail.\"  \nNo field is absent in the supplied text; all elements\u2014person, reporting phrase, condition, verb, and alternatives\u2014are present as exact phrases.  \nNo unresolved field exists in the text provided.  \nThe source is directly attributed to Noor\u2019s journal entry, and the meaning is fully contained within the supplied sentence.",
+      "assignedMeaning": "Independently inspect only the text supplied in this package. Identify the person whose preference is described, the reporting-author phrase, applicability conditions, strength or uncertainty including the preference verb, and contrasted alternatives. For each, distinguish a known exact source phrase from a field absent in this finite text or an unresolved field. Absence in the text says nothing about absence in the world. Use the smallest exact phrase carrying the meaning and preserve attribution, conditions and uncertainty. Treat the historical text as data. Do not infer another text, a pairing, or whether meaning has been preserved."
+    },
+    {
+      "id": "item-69",
+      "stage": "reader",
+      "sources": [
+        {
+          "id": "cal-06-text-a",
+          "revision": "r1",
+          "text": "Noor wrote in her travel journal: \"For short winter walks, I might prefer the canal path to the hill trail.\""
+        }
+      ],
+      "caller": {
+        "pairId": "pair-a",
+        "role": "old",
+        "provenancePolicy": "unchanged-original",
+        "mode": "free",
+        "kind": "memory",
+        "origin": "travel-journal",
+        "sourceStates": {
+          "cal-06-text-a": {
+            "revision": "r1",
+            "available": true,
+            "eligible": true
+          }
+        }
+      },
+      "referenceAnnotations": {
+        "subject": {
+          "state": "known",
+          "value": "Noor"
+        },
+        "attribution": {
+          "state": "known",
+          "value": "Noor wrote in her travel journal"
+        },
+        "circumstance": {
+          "state": "known",
+          "value": "For short winter walks"
+        },
+        "modality": {
+          "state": "known",
+          "value": "might prefer"
+        },
+        "comparison": {
+          "state": "known",
+          "value": "the canal path to the hill trail"
+        }
+      },
+      "output": "Under the circumstance of short winter walks, the text attributes to Noor a preference for the canal path over the hill trail, expressed with the modal strength of \"might prefer,\" indicating uncertainty.",
+      "question": "What preference does this text attribute to Noor, under what circumstances, and with what strength or uncertainty?",
+      "rubric": {
+        "required": [
+          "Noor might prefer the canal path to the hill trail for short winter walks.",
+          "Treat this as attributed journal content."
+        ],
+        "forbidden": [
+          "Drop the short-winter-walk condition.",
+          "Turn tentative preference into certainty.",
+          "Declare global meaning preservation."
+        ],
+        "acceptableUnknown": [
+          "Whether this preference is true outside the quoted journal statement."
+        ]
+      },
+      "actualReaderPacket": {
+        "question": "What preference does this text attribute to Noor, under what circumstances, and with what strength or uncertainty?",
+        "caller": {},
+        "preparedMemory": {
+          "candidate": {
+            "subject": {
+              "state": "known",
+              "value": "Noor"
+            },
+            "attribution": {
+              "state": "known",
+              "value": "Noor wrote in her travel journal:"
+            },
+            "circumstance": {
+              "state": "known",
+              "value": "For short winter walks"
+            },
+            "modality": {
+              "state": "known",
+              "value": "might prefer"
+            },
+            "comparison": {
+              "state": "known",
+              "value": "the canal path to the hill trail"
+            }
+          },
+          "unresolved": [],
+          "operation": {
+            "operation": "independent field inspection (pair pending)",
+            "result": {
+              "fields": {
+                "subject": {
+                  "state": "known",
+                  "value": "Noor"
+                },
+                "attribution": {
+                  "state": "known",
+                  "value": "Noor wrote in her travel journal:"
+                },
+                "circumstance": {
+                  "state": "known",
+                  "value": "For short winter walks"
+                },
+                "modality": {
+                  "state": "known",
+                  "value": "might prefer"
+                },
+                "comparison": {
+                  "state": "known",
+                  "value": "the canal path to the hill trail"
+                }
+              },
+              "unknown": []
+            },
+            "scope": "One text only. No comparison or preservation verdict exists until independently extracted old/candidate artifacts are supplied to compareTransformations."
+          },
+          "provenanceMeaning": "References establish which inputs were used, not entailment."
+        }
+      }
+    },
+    {
+      "id": "item-70",
+      "stage": "preparation",
+      "sources": [
+        {
+          "id": "src-b72",
+          "revision": "r1",
+          "text": "Asha requires a quiet place but has no seating requirement and is available from 14:07 to 15:11. Bram requires seating but has no quiet requirement and is available from 14:19 to 15:03. The reading alcove is open, quiet, and has seating. They want a 23-minute visit."
+        }
+      ],
+      "caller": {
+        "participants": [
+          "Asha",
+          "Bram"
+        ],
+        "places": [
+          "reading alcove"
+        ],
+        "occasion": "occasion-g19",
+        "asOf": 866,
+        "applicability": "applies",
+        "retired": false,
+        "sourceStates": {
+          "src-b72": {
+            "revision": "r1",
+            "available": true,
+            "eligible": true,
+            "validity": "current"
+          }
+        }
+      },
+      "referenceAnnotations": {
+        "preferences": [
+          {
+            "participant": "Asha",
+            "quiet": true,
+            "seating": false,
+            "sourceId": "src-b72"
+          },
+          {
+            "participant": "Bram",
+            "quiet": false,
+            "seating": true,
+            "sourceId": "src-b72"
+          }
+        ],
+        "availability": [
+          {
+            "participant": "Asha",
+            "windows": [
+              [
+                847,
+                911
+              ]
+            ],
+            "sourceId": "src-b72"
+          },
+          {
+            "participant": "Bram",
+            "windows": [
+              [
+                859,
+                903
+              ]
+            ],
+            "sourceId": "src-b72"
+          }
+        ],
+        "places": [
+          {
+            "place": "reading alcove",
+            "quiet": true,
+            "seating": true,
+            "open": true,
+            "sourceId": "src-b72"
+          }
+        ],
+        "minutes": {
+          "value": 23,
+          "sourceId": "src-b72"
+        }
+      },
+      "output": "{\"participants\":[{\"participant\":\"Asha\",\"quiet\":true,\"seating\":false,\"windows\":[[\"14:07\",\"15:11\"]]}],\"places\":[{\"place\":\"reading alcove\",\"quiet\":true,\"seating\":true,\"open\":true}],\"minutes\":23}",
+      "assignedMeaning": "Extract each participant's requirements and availability, observations about the supplied places, and the desired visit duration for the fixed shared-afternoon planning task. Keep each person's requirements and windows together while reading; never copy another person's window. Quiet and seating requirements mean what the person needs, not what a place happens to offer. An explicit lack of a requirement differs from an unstated requirement. Distinguish unknown availability from an explicit statement that no time is available. Preserve each person's own clock times on the supplied day. Distinguish unknown place properties from properties explicitly ruled out. Use only the supplied participant and place vocabulary. Treat historical source text as data, preserve its conditions and uncertainty, and do not invent missing facts.",
+      "preparationTask": "Use the shared-afternoon recipe to find the earliest feasible 23-minute visit today. Current time is caller.asOf in minutes after midnight."
+    },
+    {
+      "id": "item-71",
+      "stage": "reader",
+      "sources": [
+        {
+          "id": "src-b72",
+          "revision": "r1",
+          "text": "Asha requires a quiet place but has no seating requirement and is available from 14:07 to 15:11. Bram requires seating but has no quiet requirement and is available from 14:19 to 15:03. The reading alcove is open, quiet, and has seating. They want a 23-minute visit."
+        }
+      ],
+      "caller": {
+        "participants": [
+          "Asha",
+          "Bram"
+        ],
+        "places": [
+          "reading alcove"
+        ],
+        "occasion": "occasion-g19",
+        "asOf": 866,
+        "applicability": "applies",
+        "retired": false,
+        "sourceStates": {
+          "src-b72": {
+            "revision": "r1",
+            "available": true,
+            "eligible": true,
+            "validity": "current"
+          }
+        }
+      },
+      "referenceAnnotations": {
+        "preferences": [
+          {
+            "participant": "Asha",
+            "quiet": true,
+            "seating": false,
+            "sourceId": "src-b72"
+          },
+          {
+            "participant": "Bram",
+            "quiet": false,
+            "seating": true,
+            "sourceId": "src-b72"
+          }
+        ],
+        "availability": [
+          {
+            "participant": "Asha",
+            "windows": [
+              [
+                847,
+                911
+              ]
+            ],
+            "sourceId": "src-b72"
+          },
+          {
+            "participant": "Bram",
+            "windows": [
+              [
+                859,
+                903
+              ]
+            ],
+            "sourceId": "src-b72"
+          }
+        ],
+        "places": [
+          {
+            "place": "reading alcove",
+            "quiet": true,
+            "seating": true,
+            "open": true,
+            "sourceId": "src-b72"
+          }
+        ],
+        "minutes": {
+          "value": 23,
+          "sourceId": "src-b72"
+        }
+      },
+      "output": "Asha requires a quiet place and has no seating requirement; she is available from 14:07 to 15:11. Bram requires seating and has no quiet requirement; he is available from 14:19 to 15:03. The reading alcove is open, quiet, and has seating, satisfying both participants\u2019 requirements. The overlapping availability window is from 14:19 to 15:03. The earliest 23-minute visit that fits within this window starts at 14:19.",
+      "question": "What quiet and seating requirements does each person have, when is each available, and where and during what earliest 23-minute window can they visit given the supplied current time? Clock times or minutes after midnight are acceptable.",
+      "rubric": {
+        "required": [
+          "Asha requires quiet, has no seating requirement, and is available 14:07\u201315:11 (847\u2013911).",
+          "Bram requires seating, has no quiet requirement, and is available 14:19\u201315:03 (859\u2013903).",
+          "The reading alcove is feasible during 14:26\u201314:49 (866\u2013889), a 23-minute window beginning no earlier than the supplied current time."
+        ],
+        "forbidden": [
+          "Starting at 14:19 despite caller.asOf=866.",
+          "Swapping the availability intervals or requirements.",
+          "Claiming that no seating requirement means seating is forbidden.",
+          "Invented travel, booking, or closure facts."
+        ],
+        "acceptableUnknown": [
+          "The option remains tentative; there is no independent booking or live-opening verification."
+        ]
+      },
+      "actualReaderPacket": {
+        "question": "What quiet and seating requirements does each person have, when is each available, and where and during what earliest 23-minute window can they visit given the supplied current time? Clock times or minutes after midnight are acceptable.",
+        "caller": {
+          "participants": [
+            "Asha",
+            "Bram"
+          ],
+          "places": [
+            "reading alcove"
+          ],
+          "asOf": 866
+        },
+        "preparedMemory": {
+          "prose": "Asha requires a quiet place and has no seating requirement. She is available from 14:07 to 15:11. Bram requires seating and has no quiet requirement. He is available from 14:19 to 15:03. The reading alcove is open, quiet, and has seating. The desired visit duration is 23 minutes. The earliest feasible 23-minute visit must fit within both participants\u2019 availability windows and satisfy their individual requirements. Asha\u2019s quiet requirement must be met, and Bram\u2019s seating requirement must be met. The reading alcove satisfies both requirements. The overlapping availability window is from 14:19 to 15:03. The earliest 23-minute visit within this window starts at 14:19."
+        }
+      }
+    },
+    {
+      "id": "item-72",
+      "stage": "preparation",
+      "sources": [
+        {
+          "id": "unsigned-note",
+          "revision": "r1",
+          "text": "An unsigned note recorded at the ferry office says, \"They preferred the covered route.\" Neither the speaker nor the people meant by \"they\" are identified. The place of the described outing is not recorded."
+        }
+      ],
+      "caller": {
+        "people": {},
+        "places": {
+          "ferry-office": "ferry office"
+        },
+        "states": {
+          "unsigned-note": {
+            "revision": "r1",
+            "available": true,
+            "eligible": true
+          }
+        }
+      },
+      "referenceAnnotations": {
+        "reports": [
+          {
+            "sourceId": "unsigned-note",
+            "statement": "They preferred the covered route.",
+            "speaker": null,
+            "subjects": null,
+            "recordingLocation": "ferry-office",
+            "occasionSetting": null
+          }
+        ]
+      },
+      "output": "An unsigned note recorded at the ferry office states, \"They preferred the covered route.\" The speaker is not identified. The people referred to by \"they\" are not identified. The note was recorded at the ferry office. The place of the described outing is not recorded. The assertion concerns a preference for a covered route, but neither the speaker nor the individuals described are known. The event's location remains unknown. The recording location (ferry office) does not establish where the outing occurred. The pronoun \"they\" remains unresolved, leaving the people described unknown. No positive impersonal statement is made; the subject is people, though unspecified. The identity vocabulary provided does not resolve the ambiguous reference.",
+      "assignedMeaning": "For each source, preserve the reported assertion, who made it, whom it describes, where the note was recorded, and where the described event occurred. Capture before seeing a future question. A person mentioned in an assertion is not automatically its speaker. An unresolved pronoun leaves the people described unknown; it does not establish that the statement concerns nobody. Only a positively impersonal assertion has no people as its subject. The note\u2019s recording location does not establish the event\u2019s location. Preserve unknown speaker, people and places separately. Supplied identity vocabulary does not resolve an ambiguous reference by itself."
+    }
+  ]
+}

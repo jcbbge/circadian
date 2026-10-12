@@ -1,0 +1,126 @@
+{
+  "baseline": {
+    "trials": 72,
+    "correct": 72,
+    "groundedCorrect": 72,
+    "errors": 0,
+    "requests": 120,
+    "readerRequests": 120,
+    "gateRequests": 0,
+    "gateCorrect": 0,
+    "expansions": {
+      "none": 24,
+      "reader": 48
+    },
+    "sumTrialMs": 57327,
+    "meanMs": 796,
+    "medianMs": 841,
+    "p95Ms": 1021,
+    "usage": {
+      "readerInput": 37750,
+      "readerOutput": 2822,
+      "gateInput": 0,
+      "gateOutput": 0
+    },
+    "missingUsage": false,
+    "models": [
+      "mlx-community/Qwen3-30B-A3B-Instruct-2507-4bit"
+    ],
+    "domainCorrect": {
+      "creative": {
+        "correct": 12,
+        "trials": 12
+      },
+      "learning": {
+        "correct": 12,
+        "trials": 12
+      },
+      "planning": {
+        "correct": 12,
+        "trials": 12
+      },
+      "reflection": {
+        "correct": 12,
+        "trials": 12
+      },
+      "relationships": {
+        "correct": 12,
+        "trials": 12
+      },
+      "travel": {
+        "correct": 12,
+        "trials": 12
+      }
+    },
+    "repeatCorrect": {
+      "1": 36,
+      "2": 36
+    }
+  },
+  "jev": {
+    "trials": 72,
+    "correct": 72,
+    "groundedCorrect": 72,
+    "errors": 0,
+    "requests": 176,
+    "readerRequests": 104,
+    "gateRequests": 72,
+    "gateCorrect": 72,
+    "expansions": {
+      "none": 24,
+      "reader": 32,
+      "gate": 16
+    },
+    "sumTrialMs": 64434,
+    "meanMs": 895,
+    "medianMs": 850,
+    "p95Ms": 1215,
+    "usage": {
+      "readerInput": 33570,
+      "readerOutput": 2714,
+      "gateInput": 51850,
+      "gateOutput": 3336
+    },
+    "missingUsage": false,
+    "models": [
+      "jev-1.13.0",
+      "mlx-community/Qwen3-30B-A3B-Instruct-2507-4bit"
+    ],
+    "domainCorrect": {
+      "creative": {
+        "correct": 12,
+        "trials": 12
+      },
+      "learning": {
+        "correct": 12,
+        "trials": 12
+      },
+      "planning": {
+        "correct": 12,
+        "trials": 12
+      },
+      "reflection": {
+        "correct": 12,
+        "trials": 12
+      },
+      "relationships": {
+        "correct": 12,
+        "trials": 12
+      },
+      "travel": {
+        "correct": 12,
+        "trials": 12
+      }
+    },
+    "repeatCorrect": {
+      "1": 36,
+      "2": 36
+    }
+  },
+  "paired": {
+    "improvedChoices": 0,
+    "regressedChoices": 0,
+    "meanLatencyDeltaMs": 99,
+    "allCompactUltimatelyExpanded": true
+  }
+}

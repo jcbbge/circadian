@@ -1,0 +1,22 @@
+{
+  "study": "extractor-008",
+  "at": "2026-10-12T05:18:53.457Z",
+  "calls": 72,
+  "parentManifest": "67c76031098fc87c3fd4f00d0652375497d579466c89a8fe202571fc98d950b4",
+  "reviewHash": "7ce06839dd4ffdb51b4995e02b41b3581636c7c63c4d7c64d0d4056e4420f93e",
+  "sourceHashes": {
+    "/Users/jrg/circadian/research/lab/extractor-008/serving-schema.ts": "6c15a05aa6c0b014afa399835b6df13123ec32c44e8edba1ca1407ed722c5725",
+    "/Users/jrg/circadian/research/lab/extractor-008/serving-schema.test.ts": "316e8fc3bbc49979b8f0b534ad6ba1466f72775eb1ebc59131ff57bfa8c6c838",
+    "/Users/jrg/circadian/research/lab/extractor-008/runner.ts": "b2b4553a5cfe62def4ed5ef6e40b1e1628ed86463139827e77f13be053f7982e",
+    "/Users/jrg/circadian/research/lab/extractor-008/PROTOCOL.md": "ef7adbc9eb53781fb0e16771b0e0cf7c0971950b9da6983f6ad494950093cfbe",
+    "/Users/jrg/circadian/research/lab/extractor-008/local-config.json": "dacdff21e2e3ca544bdcbcf5c849cc1b4fc1700bf17aec3a7531072cad21077c",
+    "/Users/jrg/circadian/research/lab/extractor-008/ENDPOINT-EVIDENCE.json": "4f42c27b02ae1b022f3beb603bfb80472a80d81aa96592cc341ce506644c9d06"
+  },
+  "inputs": {
+    "fixtures.json": "42f597f6ac77083463ca97ba52e342e433aafd0ef3c7b0bd5596041952c7a406",
+    "jobs.json": "3d1b8a812c13ebfc88a68692a60322a7ea19bf480fdc119621546335a734dae1",
+    "config.json": "dacdff21e2e3ca544bdcbcf5c849cc1b4fc1700bf17aec3a7531072cad21077c",
+    "pairs.json": "b365fd5876c77167969a3169e4978cb1367b8e6ef8bdfe1b488314a7443e680e"
+  },
+  "servingChange": "Omit maxLength only in server grammar; full local validation and semantic experiment unchanged."
+}

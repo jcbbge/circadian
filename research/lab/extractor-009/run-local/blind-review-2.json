@@ -1,0 +1,1506 @@
+{
+  "purpose": "Source-grounded review. Producer identity, condition labels and cohort withheld. Output style can reveal condition, so blinding is partial. Do not inspect other files or past results.",
+  "items": [
+    {
+      "id": "item-13",
+      "stage": "reader",
+      "sources": [
+        {
+          "id": "cal-06-text-a",
+          "revision": "r1",
+          "text": "Noor wrote in her travel journal: \"For short winter walks, I might prefer the canal path to the hill trail.\""
+        }
+      ],
+      "caller": {
+        "pairId": "pair-a",
+        "role": "old",
+        "provenancePolicy": "unchanged-original",
+        "mode": "free",
+        "kind": "memory",
+        "origin": "travel-journal",
+        "sourceStates": {
+          "cal-06-text-a": {
+            "revision": "r1",
+            "available": true,
+            "eligible": true
+          }
+        }
+      },
+      "referenceAnnotations": {
+        "subject": {
+          "state": "known",
+          "value": "Noor"
+        },
+        "attribution": {
+          "state": "known",
+          "value": "Noor wrote in her travel journal"
+        },
+        "circumstance": {
+          "state": "known",
+          "value": "For short winter walks"
+        },
+        "modality": {
+          "state": "known",
+          "value": "might prefer"
+        },
+        "comparison": {
+          "state": "known",
+          "value": "the canal path to the hill trail"
+        }
+      },
+      "output": "Under the circumstance of short winter walks, the text attributes to Noor a preference for the canal path over the hill trail, expressed with the modal strength of \"might prefer,\" indicating uncertainty.",
+      "question": "What preference does this text attribute to Noor, under what circumstances, and with what strength or uncertainty?",
+      "rubric": {
+        "required": [
+          "Noor might prefer the canal path to the hill trail for short winter walks.",
+          "Treat this as attributed journal content."
+        ],
+        "forbidden": [
+          "Drop the short-winter-walk condition.",
+          "Turn tentative preference into certainty.",
+          "Declare global meaning preservation."
+        ],
+        "acceptableUnknown": [
+          "Whether this preference is true outside the quoted journal statement."
+        ]
+      },
+      "actualReaderPacket": {
+        "question": "What preference does this text attribute to Noor, under what circumstances, and with what strength or uncertainty?",
+        "caller": {},
+        "preparedMemory": {
+          "candidate": {
+            "subject": {
+              "state": "known",
+              "value": "Noor"
+            },
+            "attribution": {
+              "state": "known",
+              "value": "Noor wrote in her travel journal"
+            },
+            "circumstance": {
+              "state": "known",
+              "value": "For short winter walks"
+            },
+            "modality": {
+              "state": "known",
+              "value": "might prefer"
+            },
+            "comparison": {
+              "state": "known",
+              "value": "the canal path to the hill trail"
+            }
+          },
+          "unresolved": [],
+          "operation": {
+            "operation": "independent field inspection (pair pending)",
+            "result": {
+              "fields": {
+                "subject": {
+                  "state": "known",
+                  "value": "Noor"
+                },
+                "attribution": {
+                  "state": "known",
+                  "value": "Noor wrote in her travel journal"
+                },
+                "circumstance": {
+                  "state": "known",
+                  "value": "For short winter walks"
+                },
+                "modality": {
+                  "state": "known",
+                  "value": "might prefer"
+                },
+                "comparison": {
+                  "state": "known",
+                  "value": "the canal path to the hill trail"
+                }
+              },
+              "unknown": []
+            },
+            "scope": "One text only. No comparison or preservation verdict exists until independently extracted old/candidate artifacts are supplied to compareTransformations."
+          },
+          "provenanceMeaning": "References establish which inputs were used, not entailment."
+        }
+      }
+    },
+    {
+      "id": "item-14",
+      "stage": "reader",
+      "sources": [
+        {
+          "id": "cal-05-event",
+          "revision": "r1",
+          "text": "At the lantern-making workshop, Mira cut paper and Soren assembled frames. Their work overlapped at the same table. They talked about a pattern designed by Jules. The note does not say whether Jules attended."
+        },
+        {
+          "id": "cal-05-reflection",
+          "revision": "r1",
+          "text": "The next morning Jules wrote about the lantern-making workshop: \"To me, the shared table made this an exercise in cooperation.\" This reflection does not state whether Jules was present."
+        }
+      ],
+      "caller": {
+        "people": [
+          "Mira",
+          "Soren",
+          "Jules"
+        ],
+        "occasionId": "lantern-workshop",
+        "eventSourceId": "cal-05-event",
+        "interpretationIds": {
+          "cal-05-reflection": "lantern-reflection"
+        },
+        "entryPolicy": "all-supplied-account-records",
+        "sourceStates": {
+          "cal-05-event": {
+            "revision": "r1",
+            "available": true,
+            "eligible": true
+          },
+          "cal-05-reflection": {
+            "revision": "r1",
+            "available": true,
+            "eligible": true
+          }
+        }
+      },
+      "referenceAnnotations": {
+        "narrative": "Mira cut paper and Soren assembled frames together at a lantern-making workshop; they discussed a pattern by Jules.",
+        "participants": [
+          {
+            "person": "Mira",
+            "role": "cut paper"
+          },
+          {
+            "person": "Soren",
+            "role": "assembled frames"
+          }
+        ],
+        "mentioned": [
+          "Jules"
+        ],
+        "coPresence": [
+          [
+            "Mira",
+            "Soren"
+          ]
+        ],
+        "interpretations": [
+          {
+            "sourceId": "cal-05-reflection",
+            "author": "Jules",
+            "account": "The shared table made the workshop an exercise in cooperation."
+          }
+        ]
+      },
+      "output": "Jules thought the workshop illustrated cooperation, as reflected in their account that the shared table made it an exercise in cooperation. The record does not establish that Jules attended, as the note does not confirm Jules' presence, and the operation result explicitly lists attendance as unknown.",
+      "question": "What did Jules think the workshop illustrated, and does the record establish that Jules attended?",
+      "rubric": {
+        "required": [
+          "Attribute the cooperation interpretation to Jules.",
+          "Attendance is unknown/not established."
+        ],
+        "forbidden": [
+          "Claim that Jules attended.",
+          "Claim that Jules was absent.",
+          "Present the attributed interpretation as an independently established event fact."
+        ],
+        "acceptableUnknown": [
+          "Whether Jules personally observed the shared table."
+        ]
+      },
+      "actualReaderPacket": {
+        "question": "What did Jules think the workshop illustrated, and does the record establish that Jules attended?",
+        "caller": {
+          "people": [
+            "Mira",
+            "Soren",
+            "Jules"
+          ]
+        },
+        "preparedMemory": {
+          "candidate": {
+            "narrative": "At the lantern-making workshop, Mira cut paper and Soren assembled frames. Their work occurred at the same table, and they discussed a pattern designed by Jules. The note does not confirm whether Jules was present.",
+            "participants": [
+              {
+                "person": "Mira",
+                "role": "cut paper"
+              },
+              {
+                "person": "Soren",
+                "role": "assembled frames"
+              }
+            ],
+            "mentioned": [
+              "Jules"
+            ],
+            "coPresence": [
+              [
+                "Mira",
+                "Soren"
+              ]
+            ],
+            "interpretations": [
+              {
+                "sourceId": "cal-05-reflection",
+                "author": "Jules",
+                "account": "To me, the shared table made this an exercise in cooperation."
+              }
+            ]
+          },
+          "unresolved": [
+            "participants"
+          ],
+          "operation": {
+            "operation": "recallOccasion + jointOccasions",
+            "result": {
+              "recall": {
+                "status": "ok",
+                "occasion": {
+                  "id": "lantern-workshop",
+                  "state": "eligible",
+                  "narrative": {
+                    "text": "At the lantern-making workshop, Mira cut paper and Soren assembled frames. Their work occurred at the same table, and they discussed a pattern designed by Jules. The note does not confirm whether Jules was present.",
+                    "ref": {
+                      "source": "cal-05-event",
+                      "revision": "r1"
+                    }
+                  }
+                },
+                "accounts": [
+                  {
+                    "id": "lantern-reflection",
+                    "author": "Jules",
+                    "account": "To me, the shared table made this an exercise in cooperation.",
+                    "ref": {
+                      "source": "cal-05-reflection",
+                      "revision": "r1"
+                    },
+                    "attendance": "unknown"
+                  }
+                ],
+                "unresolved": [],
+                "cycles": [],
+                "coverage": {
+                  "complete": true,
+                  "inspected": 2
+                },
+                "outputChars": 654
+              },
+              "participation": {
+                "status": "ok",
+                "matches": [],
+                "unresolved": [
+                  {
+                    "id": "lantern-workshop",
+                    "reason": "participation-unknown"
+                  }
+                ],
+                "coverage": {
+                  "complete": true,
+                  "inspected": 1,
+                  "rejected": 0
+                },
+                "outputChars": 176
+              },
+              "unknown": [
+                "participants"
+              ]
+            },
+            "scope": "Caller supplies accepted occasion/account identity; all supplied accounts are entry seeds. Missing participation is unknown, not absent. This calibration does not test revisit discovery or longitudinal benefit."
+          },
+          "provenanceMeaning": "References establish which inputs were used, not entailment."
+        }
+      }
+    },
+    {
+      "id": "item-15",
+      "stage": "reader",
+      "sources": [
+        {
+          "id": "src-r58",
+          "revision": "r1",
+          "text": "An unsigned note entered at the ticket kiosk says, \"They chose the heavier fabric.\" Neither the speaker nor the people meant by \"they\" are identified. The location of the described sewing session is not recorded."
+        }
+      ],
+      "caller": {
+        "people": {},
+        "places": {
+          "kiosk": "ticket kiosk"
+        },
+        "states": {
+          "src-r58": {
+            "revision": "r1",
+            "available": true,
+            "eligible": true
+          }
+        }
+      },
+      "referenceAnnotations": {
+        "reports": [
+          {
+            "sourceId": "src-r58",
+            "statement": "They chose the heavier fabric.",
+            "speaker": null,
+            "subjects": null,
+            "recordingLocation": "kiosk",
+            "occasionSetting": null
+          }
+        ]
+      },
+      "output": "The choice reported is that they chose the heavier fabric. The speaker is not identified. The report is about the choice of fabric, but the subject is not specified. The sewing session took place at the kiosk, as indicated by the occasion setting. The note was entered at the kiosk, which is also the recording location.",
+      "question": "What choice is reported, who voiced it and who is it about, where did the sewing session take place, and where was the note entered?",
+      "rubric": {
+        "required": [
+          "The note reports that unidentified people chose the heavier fabric.",
+          "The speaker and the people denoted by they are unidentified.",
+          "The sewing-session location is unknown.",
+          "The note was entered at the ticket kiosk."
+        ],
+        "forbidden": [
+          "No people made the choice.",
+          "Nobody voiced the statement.",
+          "An empty subject set means unidentified subjects.",
+          "The sewing session occurred at the ticket kiosk."
+        ],
+        "acceptableUnknown": [
+          "Unknown identity or location does not establish absence."
+        ]
+      },
+      "actualReaderPacket": {
+        "question": "What choice is reported, who voiced it and who is it about, where did the sewing session take place, and where was the note entered?",
+        "caller": {
+          "people": {},
+          "places": {
+            "kiosk": "ticket kiosk"
+          }
+        },
+        "preparedMemory": {
+          "candidate": {
+            "reports": [
+              {
+                "sourceId": "src-r58",
+                "statement": "They chose the heavier fabric.",
+                "speaker": null,
+                "subjects": null,
+                "recordingLocation": "kiosk",
+                "occasionSetting": "kiosk"
+              }
+            ]
+          },
+          "unresolved": [
+            "data.reports.0.speaker",
+            "data.reports.0.subjects"
+          ],
+          "operation": {
+            "operation": "composeReports",
+            "result": [
+              {
+                "query": {
+                  "select": "speakers",
+                  "report": "report:src-r58"
+                },
+                "composition": {
+                  "rows": [],
+                  "path": [
+                    "report",
+                    "attribution",
+                    "speaker"
+                  ],
+                  "semantics": "notChecked",
+                  "unresolved": [
+                    {
+                      "record": "report:src-r58",
+                      "reason": "personUnknown"
+                    }
+                  ],
+                  "violations": [],
+                  "unavailable": [],
+                  "coverage": {
+                    "complete": false,
+                    "recordsRead": 5,
+                    "totalRecords": 5,
+                    "hops": 7,
+                    "stopped": null
+                  }
+                }
+              }
+            ],
+            "scope": "Fixed question-blind attribution/by/about/occasion-setting projections. Identity review comes only from caller state. recordingLocation remains an episode field and is never substituted for occasionSetting. Prototype semantics are notChecked."
+          },
+          "provenanceMeaning": "References establish which inputs were used, not entailment."
+        }
+      }
+    },
+    {
+      "id": "item-16",
+      "stage": "preparation",
+      "sources": [
+        {
+          "id": "cal-06-text-b",
+          "revision": "r1",
+          "text": "Noor wrote in her travel journal: \"For short winter walks, I always prefer the canal path to the hill trail.\""
+        }
+      ],
+      "caller": {
+        "pairId": "pair-a",
+        "role": "candidate",
+        "provenancePolicy": "unchanged-original",
+        "mode": "free",
+        "kind": "memory",
+        "origin": "travel-journal",
+        "sourceStates": {
+          "cal-06-text-b": {
+            "revision": "r1",
+            "available": true,
+            "eligible": true
+          }
+        }
+      },
+      "referenceAnnotations": {
+        "subject": {
+          "state": "known",
+          "value": "Noor"
+        },
+        "attribution": {
+          "state": "known",
+          "value": "Noor wrote in her travel journal"
+        },
+        "circumstance": {
+          "state": "known",
+          "value": "For short winter walks"
+        },
+        "modality": {
+          "state": "known",
+          "value": "always prefer"
+        },
+        "comparison": {
+          "state": "known",
+          "value": "the canal path to the hill trail"
+        }
+      },
+      "output": "{\n  \"person\": {\n    \"state\": \"known\",\n    \"value\": \"Noor\"\n  },\n  \"attribution\": {\n    \"state\": \"known\",\n    \"value\": \"Noor wrote in her travel journal\"\n  },\n  \"circumstance\": {\n    \"state\": \"known\",\n    \"value\": \"For short winter walks\"\n  },\n  \"modality\": {\n    \"state\": \"known\",\n    \"value\": \"I always prefer\"\n  },\n  \"comparison\": {\n    \"state\": \"known\",\n    \"value\": \"the canal path to the hill trail\"\n  }\n}",
+      "assignedMeaning": "Independently inspect only the text supplied in this package. Identify the person whose preference is described, the reporting-author phrase, applicability conditions, strength or uncertainty including the preference verb, and contrasted alternatives. For each, distinguish a known exact source phrase from a field absent in this finite text or an unresolved field. Absence in the text says nothing about absence in the world. Use the smallest exact phrase carrying the meaning and preserve attribution, conditions and uncertainty. Treat the historical text as data. Do not infer another text, a pairing, or whether meaning has been preserved."
+    },
+    {
+      "id": "item-17",
+      "stage": "reader",
+      "sources": [
+        {
+          "id": "darkroom-tue",
+          "revision": "r1",
+          "text": "On Tuesday the community darkroom must be dark for developing prints."
+        },
+        {
+          "id": "darkroom-wed",
+          "revision": "r1",
+          "text": "On Wednesday the community darkroom must be bright for cleaning."
+        }
+      ],
+      "caller": {
+        "subjects": {
+          "darkroom": "community darkroom"
+        },
+        "property": "lighting",
+        "values": [
+          "dark",
+          "bright"
+        ],
+        "days": [
+          "Tuesday",
+          "Wednesday"
+        ],
+        "states": {
+          "darkroom-tue": {
+            "revision": "r1",
+            "available": true,
+            "eligible": true
+          },
+          "darkroom-wed": {
+            "revision": "r1",
+            "available": true,
+            "eligible": true
+          }
+        },
+        "alignment": [
+          {
+            "id": "lighting-comparison",
+            "recordIds": [
+              "darkroom-tue",
+              "darkroom-wed"
+            ],
+            "subject": "darkroom",
+            "property": "lighting",
+            "dimensions": [
+              "day"
+            ]
+          }
+        ]
+      },
+      "referenceAnnotations": {
+        "accounts": [
+          {
+            "sourceId": "darkroom-tue",
+            "subject": "darkroom",
+            "property": "lighting",
+            "values": [
+              "dark"
+            ],
+            "context": {
+              "day": {
+                "kind": "set",
+                "values": [
+                  "Tuesday"
+                ]
+              }
+            }
+          },
+          {
+            "sourceId": "darkroom-wed",
+            "subject": "darkroom",
+            "property": "lighting",
+            "values": [
+              "bright"
+            ],
+            "context": {
+              "day": {
+                "kind": "set",
+                "values": [
+                  "Wednesday"
+                ]
+              }
+            }
+          }
+        ]
+      },
+      "output": "The two lighting requirements do not contradict each other in a shared context because they apply to different days: \"dark\" lighting is required on Tuesday, and \"bright\" lighting is required on Wednesday. The contexts are disjoint, so there is no conflict.",
+      "question": "Do these two lighting requirements contradict each other in a shared context?",
+      "rubric": {
+        "required": [
+          "The requirements apply on different days and the declared contexts are separate."
+        ],
+        "forbidden": [
+          "A conflict in a shared context.",
+          "A claim that both lighting requirements apply simultaneously.",
+          "A guarantee about unmentioned days."
+        ],
+        "acceptableUnknown": [
+          "No lighting requirement is established for other days."
+        ]
+      },
+      "actualReaderPacket": {
+        "question": "Do these two lighting requirements contradict each other in a shared context?",
+        "caller": {
+          "subjects": {
+            "darkroom": "community darkroom"
+          },
+          "property": "lighting",
+          "values": [
+            "dark",
+            "bright"
+          ],
+          "days": [
+            "Tuesday",
+            "Wednesday"
+          ]
+        },
+        "preparedMemory": {
+          "candidate": {
+            "accounts": [
+              {
+                "sourceId": "darkroom-tue",
+                "subject": "darkroom",
+                "property": "lighting",
+                "values": [
+                  "dark"
+                ],
+                "context": {
+                  "day": {
+                    "kind": "set",
+                    "values": [
+                      "Tuesday"
+                    ]
+                  }
+                }
+              },
+              {
+                "sourceId": "darkroom-wed",
+                "subject": "darkroom",
+                "property": "lighting",
+                "values": [
+                  "bright"
+                ],
+                "context": {
+                  "day": {
+                    "kind": "set",
+                    "values": [
+                      "Wednesday"
+                    ]
+                  }
+                }
+              }
+            ]
+          },
+          "unresolved": [],
+          "operation": {
+            "operation": "compareContexts",
+            "result": {
+              "reports": [
+                {
+                  "group": "lighting-comparison",
+                  "recordIds": [
+                    "darkroom-tue",
+                    "darkroom-wed"
+                  ],
+                  "sourceRefs": [
+                    {
+                      "id": "darkroom-tue",
+                      "revision": "r1"
+                    },
+                    {
+                      "id": "darkroom-wed",
+                      "revision": "r1"
+                    }
+                  ],
+                  "alignment": "separate",
+                  "reason": "disjoint-applicability"
+                }
+              ],
+              "unresolvedValues": []
+            },
+            "scope": "Reviewed caller alignment, one finite day dimension and declared values only. Unknown values omit the account and force an unresolved join. A compatible witness would establish existence within the annotations, not source truth."
+          },
+          "provenanceMeaning": "References establish which inputs were used, not entailment."
+        }
+      }
+    },
+    {
+      "id": "item-18",
+      "stage": "preparation",
+      "sources": [
+        {
+          "id": "src-c15",
+          "revision": "r1",
+          "text": "At the pottery studio, Selma said, \"Tomas prefers the firmer clay.\" The note was later entered at the ticket counter."
+        }
+      ],
+      "caller": {
+        "people": {
+          "selma": {
+            "label": "Selma",
+            "identity": "reviewed"
+          },
+          "tomas": {
+            "label": "Tomas",
+            "identity": "reviewed"
+          }
+        },
+        "places": {
+          "studio": "pottery studio",
+          "counter": "ticket counter"
+        },
+        "states": {
+          "src-c15": {
+            "revision": "r1",
+            "available": true,
+            "eligible": true
+          }
+        }
+      },
+      "referenceAnnotations": {
+        "reports": [
+          {
+            "sourceId": "src-c15",
+            "statement": "Tomas prefers the firmer clay.",
+            "speaker": "selma",
+            "subjects": [
+              "tomas"
+            ],
+            "recordingLocation": "counter",
+            "occasionSetting": "studio"
+          }
+        ]
+      },
+      "output": "{\n  \"reports\": [\n    {\n      \"statement\": \"Tomas prefers the firmer clay.\",\n      \"speaker\": \"selma\",\n      \"subjects\": [\n        \"tomas\"\n      ],\n      \"recordingLocation\": \"counter\",\n      \"occasionSetting\": \"studio\"\n    }\n  ]\n}",
+      "assignedMeaning": "For each source, preserve the reported assertion, who made it, whom it describes, where the note was recorded, and where the described event occurred. Capture before seeing a future question. A person mentioned in an assertion is not automatically its speaker. An unresolved pronoun leaves the people described unknown; it does not establish that the statement concerns nobody. Only a positively impersonal assertion has no people as its subject. The note\u2019s recording location does not establish the event\u2019s location. Preserve unknown speaker, people and places separately. Supplied identity vocabulary does not resolve an ambiguous reference by itself."
+    },
+    {
+      "id": "item-19",
+      "stage": "preparation",
+      "sources": [
+        {
+          "id": "walking-note",
+          "revision": "r1",
+          "text": "At the riverside shelter, Nia said, \"Omar prefers the shorter walking route.\" The note was later recorded at the town archive."
+        }
+      ],
+      "caller": {
+        "people": {
+          "nia": {
+            "label": "Nia",
+            "identity": "reviewed"
+          },
+          "omar": {
+            "label": "Omar",
+            "identity": "reviewed"
+          }
+        },
+        "places": {
+          "shelter": "riverside shelter",
+          "archive": "town archive"
+        },
+        "states": {
+          "walking-note": {
+            "revision": "r1",
+            "available": true,
+            "eligible": true
+          }
+        }
+      },
+      "referenceAnnotations": {
+        "reports": [
+          {
+            "sourceId": "walking-note",
+            "statement": "Omar prefers the shorter walking route.",
+            "speaker": "nia",
+            "subjects": [
+              "omar"
+            ],
+            "recordingLocation": "archive",
+            "occasionSetting": "shelter"
+          }
+        ]
+      },
+      "output": "{\n  \"reports\": [\n    {\n      \"statement\": \"Omar prefers the shorter walking route.\",\n      \"speaker\": \"nia\",\n      \"subjects\": [\n        \"omar\"\n      ],\n      \"recordingLocation\": \"archive\",\n      \"occasionSetting\": \"shelter\"\n    }\n  ]\n}",
+      "assignedMeaning": "For each source, preserve the reported assertion, who made it, whom it describes, where the note was recorded, and where the described event occurred. Capture before seeing a future question. A person mentioned in an assertion is not automatically its speaker. An unresolved pronoun leaves the people described unknown; it does not establish that the statement concerns nobody. Only a positively impersonal assertion has no people as its subject. The note\u2019s recording location does not establish the event\u2019s location. Preserve unknown speaker, people and places separately. Supplied identity vocabulary does not resolve an ambiguous reference by itself."
+    },
+    {
+      "id": "item-20",
+      "stage": "reader",
+      "sources": [
+        {
+          "id": "src-i47",
+          "revision": "r1",
+          "text": "The maintenance note requires the courtyard pump to remain running throughout Monday."
+        },
+        {
+          "id": "src-s96",
+          "revision": "r1",
+          "text": "The safety note requires the courtyard pump to remain stopped throughout Monday."
+        }
+      ],
+      "caller": {
+        "subjects": {
+          "pump": "courtyard pump"
+        },
+        "property": "operating-state",
+        "values": [
+          "running",
+          "stopped"
+        ],
+        "days": [
+          "Monday"
+        ],
+        "states": {
+          "src-i47": {
+            "revision": "r1",
+            "available": true,
+            "eligible": true
+          },
+          "src-s96": {
+            "revision": "r1",
+            "available": true,
+            "eligible": true
+          }
+        },
+        "alignment": [
+          {
+            "id": "alignment-l35",
+            "recordIds": [
+              "src-i47",
+              "src-s96"
+            ],
+            "subject": "pump",
+            "property": "operating-state",
+            "dimensions": [
+              "day"
+            ]
+          }
+        ]
+      },
+      "referenceAnnotations": {
+        "accounts": [
+          {
+            "sourceId": "src-i47",
+            "subject": "pump",
+            "property": "operating-state",
+            "values": [
+              "running"
+            ],
+            "context": {
+              "day": {
+                "kind": "set",
+                "values": [
+                  "Monday"
+                ]
+              }
+            }
+          },
+          {
+            "sourceId": "src-s96",
+            "subject": "pump",
+            "property": "operating-state",
+            "values": [
+              "stopped"
+            ],
+            "context": {
+              "day": {
+                "kind": "set",
+                "values": [
+                  "Monday"
+                ]
+              }
+            }
+          }
+        ]
+      },
+      "output": "The courtyard pump is required to be running on Monday according to one note, and stopped on Monday according to another note. Both requirements refer to the same day, Monday, but they conflict on the operating state: one demands \"running\" and the other \"stopped\". Since the two requirements cannot both be true simultaneously for the same state on the same day, they cannot be satisfied within their shared day context.",
+      "question": "What state does each note require for the courtyard pump, on which day, and can both requirements be satisfied within their shared day context?",
+      "rubric": {
+        "required": [
+          "The maintenance note requires running throughout Monday; the safety note requires stopped throughout Monday.",
+          "These requirements conflict in the same Monday context and cannot both be satisfied."
+        ],
+        "forbidden": [
+          "The day conditions are separate.",
+          "Inventing different Monday time slots to avoid the conflict.",
+          "Choosing one note as authoritative or resolving the conflict without evidence."
+        ],
+        "acceptableUnknown": [
+          "Which requirement should govern in practice."
+        ]
+      },
+      "actualReaderPacket": {
+        "question": "What state does each note require for the courtyard pump, on which day, and can both requirements be satisfied within their shared day context?",
+        "caller": {
+          "subjects": {
+            "pump": "courtyard pump"
+          },
+          "property": "operating-state",
+          "values": [
+            "running",
+            "stopped"
+          ],
+          "days": [
+            "Monday"
+          ]
+        },
+        "preparedMemory": {
+          "candidate": {
+            "accounts": [
+              {
+                "sourceId": "src-i47",
+                "subject": "pump",
+                "property": "operating-state",
+                "values": [
+                  "running"
+                ],
+                "context": {
+                  "day": {
+                    "kind": "set",
+                    "values": [
+                      "Monday"
+                    ]
+                  }
+                }
+              },
+              {
+                "sourceId": "src-s96",
+                "subject": "pump",
+                "property": "operating-state",
+                "values": [
+                  "stopped"
+                ],
+                "context": {
+                  "day": {
+                    "kind": "set",
+                    "values": [
+                      "Monday"
+                    ]
+                  }
+                }
+              }
+            ]
+          },
+          "unresolved": [],
+          "operation": {
+            "operation": "compareContexts",
+            "result": {
+              "reports": [
+                {
+                  "group": "alignment-l35",
+                  "recordIds": [
+                    "src-i47",
+                    "src-s96"
+                  ],
+                  "sourceRefs": [
+                    {
+                      "id": "src-i47",
+                      "revision": "r1"
+                    },
+                    {
+                      "id": "src-s96",
+                      "revision": "r1"
+                    }
+                  ],
+                  "alignment": "aligned",
+                  "reason": "reviewed-common-region",
+                  "region": [
+                    {
+                      "name": "day",
+                      "dimension": {
+                        "kind": "set",
+                        "values": [
+                          "Monday"
+                        ]
+                      }
+                    }
+                  ],
+                  "joint": {
+                    "status": "conflict",
+                    "assignmentsExamined": 2
+                  }
+                }
+              ],
+              "unresolvedValues": []
+            },
+            "scope": "Reviewed caller alignment, one finite day dimension and declared values only. Unknown values omit the account and force an unresolved join. A compatible witness would establish existence within the annotations, not source truth."
+          },
+          "provenanceMeaning": "References establish which inputs were used, not entailment."
+        }
+      }
+    },
+    {
+      "id": "item-21",
+      "stage": "preparation",
+      "sources": [
+        {
+          "id": "src-e29",
+          "revision": "r1",
+          "text": "On Thursday, the equipment gate must stay locked for inventory."
+        },
+        {
+          "id": "src-o64",
+          "revision": "r1",
+          "text": "On Saturday, the equipment gate must stay unlocked for scheduled pickups."
+        }
+      ],
+      "caller": {
+        "subjects": {
+          "gate": "equipment gate"
+        },
+        "property": "access-state",
+        "values": [
+          "locked",
+          "unlocked"
+        ],
+        "days": [
+          "Thursday",
+          "Saturday"
+        ],
+        "states": {
+          "src-e29": {
+            "revision": "r1",
+            "available": true,
+            "eligible": true
+          },
+          "src-o64": {
+            "revision": "r1",
+            "available": true,
+            "eligible": true
+          }
+        },
+        "alignment": [
+          {
+            "id": "alignment-q81",
+            "recordIds": [
+              "src-e29",
+              "src-o64"
+            ],
+            "subject": "gate",
+            "property": "access-state",
+            "dimensions": [
+              "day"
+            ]
+          }
+        ]
+      },
+      "referenceAnnotations": {
+        "accounts": [
+          {
+            "sourceId": "src-e29",
+            "subject": "gate",
+            "property": "access-state",
+            "values": [
+              "locked"
+            ],
+            "context": {
+              "day": {
+                "kind": "set",
+                "values": [
+                  "Thursday"
+                ]
+              }
+            }
+          },
+          {
+            "sourceId": "src-o64",
+            "subject": "gate",
+            "property": "access-state",
+            "values": [
+              "unlocked"
+            ],
+            "context": {
+              "day": {
+                "kind": "set",
+                "values": [
+                  "Saturday"
+                ]
+              }
+            }
+          }
+        ]
+      },
+      "output": "{\n  \"accounts\": [\n    {\n      \"subject\": \"gate\",\n      \"values\": [\n        \"locked\"\n      ],\n      \"context\": {\n        \"day\": {\n          \"kind\": \"set\",\n          \"values\": [\n            \"Thursday\"\n          ]\n        }\n      }\n    },\n    {\n      \"subject\": \"gate\",\n      \"values\": [\n        \"unlocked\"\n      ],\n      \"context\": {\n        \"day\": {\n          \"kind\": \"set\",\n          \"values\": [\n            \"Saturday\"\n          ]\n        }\n      }\n    }\n  ]\n}",
+      "assignedMeaning": "For each source, identify the account\u2019s subject, the permitted values of the supplied comparison property, and the days on which the account applies. This is task-aware account formulation. Keep each account\u2019s circumstances separate; do not invent a common context or conclusion. Unknown permitted values differ from a statement that every allowed value is excluded. Missing day information is unknown, not permission to apply on every day. Only an explicit all-days statement establishes unrestricted applicability. Subject identity and comparison alignment are supplied experimental boundaries, not discoveries certified by extraction.",
+      "preparationTask": "Extract each equipment-gate access requirement and its applicable day for the supplied reviewed comparison."
+    },
+    {
+      "id": "item-22",
+      "stage": "reader",
+      "sources": [
+        {
+          "id": "src-b72",
+          "revision": "r1",
+          "text": "Asha requires a quiet place but has no seating requirement and is available from 14:07 to 15:11. Bram requires seating but has no quiet requirement and is available from 14:19 to 15:03. The reading alcove is open, quiet, and has seating. They want a 23-minute visit."
+        }
+      ],
+      "caller": {
+        "participants": [
+          "Asha",
+          "Bram"
+        ],
+        "places": [
+          "reading alcove"
+        ],
+        "occasion": "occasion-g19",
+        "asOf": 866,
+        "applicability": "applies",
+        "retired": false,
+        "sourceStates": {
+          "src-b72": {
+            "revision": "r1",
+            "available": true,
+            "eligible": true,
+            "validity": "current"
+          }
+        }
+      },
+      "referenceAnnotations": {
+        "preferences": [
+          {
+            "participant": "Asha",
+            "quiet": true,
+            "seating": false,
+            "sourceId": "src-b72"
+          },
+          {
+            "participant": "Bram",
+            "quiet": false,
+            "seating": true,
+            "sourceId": "src-b72"
+          }
+        ],
+        "availability": [
+          {
+            "participant": "Asha",
+            "windows": [
+              [
+                847,
+                911
+              ]
+            ],
+            "sourceId": "src-b72"
+          },
+          {
+            "participant": "Bram",
+            "windows": [
+              [
+                859,
+                903
+              ]
+            ],
+            "sourceId": "src-b72"
+          }
+        ],
+        "places": [
+          {
+            "place": "reading alcove",
+            "quiet": true,
+            "seating": true,
+            "open": true,
+            "sourceId": "src-b72"
+          }
+        ],
+        "minutes": {
+          "value": 23,
+          "sourceId": "src-b72"
+        }
+      },
+      "output": "Asha requires quiet and does not require seating; she is available during [847, 911]. Bram does not require quiet but requires seating; he is available during [859, 903]. The earliest 23-minute window when both can visit the reading alcove, which is quiet and has seating, is [866, 889], starting from the current time of 866.",
+      "question": "What quiet and seating requirements does each person have, when is each available, and where and during what earliest 23-minute window can they visit given the supplied current time? Clock times or minutes after midnight are acceptable.",
+      "rubric": {
+        "required": [
+          "Asha requires quiet, has no seating requirement, and is available 14:07\u201315:11 (847\u2013911).",
+          "Bram requires seating, has no quiet requirement, and is available 14:19\u201315:03 (859\u2013903).",
+          "The reading alcove is feasible during 14:26\u201314:49 (866\u2013889), a 23-minute window beginning no earlier than the supplied current time."
+        ],
+        "forbidden": [
+          "Starting at 14:19 despite caller.asOf=866.",
+          "Swapping the availability intervals or requirements.",
+          "Claiming that no seating requirement means seating is forbidden.",
+          "Invented travel, booking, or closure facts."
+        ],
+        "acceptableUnknown": [
+          "The option remains tentative; there is no independent booking or live-opening verification."
+        ]
+      },
+      "actualReaderPacket": {
+        "question": "What quiet and seating requirements does each person have, when is each available, and where and during what earliest 23-minute window can they visit given the supplied current time? Clock times or minutes after midnight are acceptable.",
+        "caller": {
+          "participants": [
+            "Asha",
+            "Bram"
+          ],
+          "places": [
+            "reading alcove"
+          ],
+          "asOf": 866
+        },
+        "preparedMemory": {
+          "candidate": {
+            "preferences": [
+              {
+                "participant": "Asha",
+                "quiet": true,
+                "seating": false,
+                "sourceId": "src-b72"
+              },
+              {
+                "participant": "Bram",
+                "quiet": false,
+                "seating": true,
+                "sourceId": "src-b72"
+              }
+            ],
+            "availability": [
+              {
+                "participant": "Asha",
+                "windows": [
+                  [
+                    847,
+                    911
+                  ]
+                ],
+                "sourceId": "src-b72"
+              },
+              {
+                "participant": "Bram",
+                "windows": [
+                  [
+                    859,
+                    903
+                  ]
+                ],
+                "sourceId": "src-b72"
+              }
+            ],
+            "places": [
+              {
+                "place": "reading alcove",
+                "quiet": true,
+                "seating": true,
+                "open": true,
+                "sourceId": "src-b72"
+              }
+            ],
+            "minutes": {
+              "value": 23,
+              "sourceId": "src-b72"
+            }
+          },
+          "unresolved": [],
+          "operation": {
+            "operation": "instantiate(shared-afternoon)",
+            "result": {
+              "computation": {
+                "status": "result",
+                "options": [
+                  {
+                    "place": "reading alcove",
+                    "window": [
+                      866,
+                      889
+                    ],
+                    "tentative": true
+                  }
+                ],
+                "evidence": [
+                  {
+                    "id": "src-b72",
+                    "revision": "r1"
+                  }
+                ],
+                "reasons": [],
+                "asOf": 866
+              },
+              "inputs": {
+                "preferences": [
+                  {
+                    "participant": "Asha",
+                    "occasion": "occasion-g19",
+                    "quiet": true,
+                    "seating": false,
+                    "source": {
+                      "id": "src-b72",
+                      "revision": "r1"
+                    }
+                  },
+                  {
+                    "participant": "Bram",
+                    "occasion": "occasion-g19",
+                    "quiet": false,
+                    "seating": true,
+                    "source": {
+                      "id": "src-b72",
+                      "revision": "r1"
+                    }
+                  }
+                ],
+                "availability": [
+                  {
+                    "participant": "Asha",
+                    "occasion": "occasion-g19",
+                    "windows": [
+                      [
+                        847,
+                        911
+                      ]
+                    ],
+                    "source": {
+                      "id": "src-b72",
+                      "revision": "r1"
+                    }
+                  },
+                  {
+                    "participant": "Bram",
+                    "occasion": "occasion-g19",
+                    "windows": [
+                      [
+                        859,
+                        903
+                      ]
+                    ],
+                    "source": {
+                      "id": "src-b72",
+                      "revision": "r1"
+                    }
+                  }
+                ],
+                "places": [
+                  {
+                    "id": "reading alcove",
+                    "quiet": true,
+                    "seating": true,
+                    "open": true,
+                    "source": {
+                      "id": "src-b72",
+                      "revision": "r1"
+                    }
+                  }
+                ],
+                "intention": {
+                  "minutes": 23,
+                  "source": {
+                    "id": "src-b72",
+                    "revision": "r1"
+                  }
+                }
+              }
+            },
+            "scope": "One fixed planning recipe, conditional on candidate slots and caller state. No semantic verification or positive explanation trace; reasons may be empty."
+          },
+          "provenanceMeaning": "References establish which inputs were used, not entailment."
+        }
+      }
+    },
+    {
+      "id": "item-23",
+      "stage": "preparation",
+      "sources": [
+        {
+          "id": "cal-05-event",
+          "revision": "r1",
+          "text": "At the lantern-making workshop, Mira cut paper and Soren assembled frames. Their work overlapped at the same table. They talked about a pattern designed by Jules. The note does not say whether Jules attended."
+        },
+        {
+          "id": "cal-05-reflection",
+          "revision": "r1",
+          "text": "The next morning Jules wrote about the lantern-making workshop: \"To me, the shared table made this an exercise in cooperation.\" This reflection does not state whether Jules was present."
+        }
+      ],
+      "caller": {
+        "people": [
+          "Mira",
+          "Soren",
+          "Jules"
+        ],
+        "occasionId": "lantern-workshop",
+        "eventSourceId": "cal-05-event",
+        "interpretationIds": {
+          "cal-05-reflection": "lantern-reflection"
+        },
+        "entryPolicy": "all-supplied-account-records",
+        "sourceStates": {
+          "cal-05-event": {
+            "revision": "r1",
+            "available": true,
+            "eligible": true
+          },
+          "cal-05-reflection": {
+            "revision": "r1",
+            "available": true,
+            "eligible": true
+          }
+        }
+      },
+      "referenceAnnotations": {
+        "narrative": "Mira cut paper and Soren assembled frames together at a lantern-making workshop; they discussed a pattern by Jules.",
+        "participants": [
+          {
+            "person": "Mira",
+            "role": "cut paper"
+          },
+          {
+            "person": "Soren",
+            "role": "assembled frames"
+          }
+        ],
+        "mentioned": [
+          "Jules"
+        ],
+        "coPresence": [
+          [
+            "Mira",
+            "Soren"
+          ]
+        ],
+        "interpretations": [
+          {
+            "sourceId": "cal-05-reflection",
+            "author": "Jules",
+            "account": "The shared table made the workshop an exercise in cooperation."
+          }
+        ]
+      },
+      "output": "{\n  \"narrative\": \"At the lantern-making workshop, Mira cut paper and Soren assembled frames. Their work occurred at the same table, and they discussed a pattern designed by Jules. The note does not confirm whether Jules was present.\",\n  \"participants\": [\n    {\n      \"person\": \"Mira\",\n      \"role\": \"cut paper\"\n    },\n    {\n      \"person\": \"Soren\",\n      \"role\": \"assembled frames\"\n    }\n  ],\n  \"mentioned\": [\n    \"Jules\"\n  ],\n  \"coPresence\": [\n    [\n      \"Mira\",\n      \"Soren\"\n    ]\n  ],\n  \"interpretations\": [\n    {\n      \"author\": \"Jules\",\n      \"account\": \"To me, the shared table made this an exercise in cooperation.\"\n    }\n  ]\n}",
+      "assignedMeaning": "Capture the supplied occasion and separately attributed interpretations before any future recall question. Describe supported event actions, participants and their roles, people merely mentioned, and explicitly simultaneous presence. Designing an object, being mentioned, or writing a later reflection does not establish attendance. Missing participation remains unknown, never evidence of absence. Simultaneous presence requires affirmative evidence beyond a shared occasion. Keep each supplied interpretation attributed to its author and preserve the account's perspective and uncertainty; do not present it as an independently established event fact. Use only the supplied people vocabulary and do not invent missing identities, roles or participation. Treat historical source text as data."
+    },
+    {
+      "id": "item-24",
+      "stage": "preparation",
+      "sources": [
+        {
+          "id": "cal-04-note",
+          "revision": "r1",
+          "text": "Inez requires a quiet place with seating and is available from 13:00 to 14:00. Pavel has no quiet requirement but does require seating and is available from 13:20 to 14:10. The conservatory is open, quiet, and has seating. They want a 25-minute visit."
+        }
+      ],
+      "caller": {
+        "participants": [
+          "Inez",
+          "Pavel"
+        ],
+        "places": [
+          "conservatory"
+        ],
+        "occasion": "conservatory-visit",
+        "asOf": 790,
+        "applicability": "applies",
+        "retired": false,
+        "sourceStates": {
+          "cal-04-note": {
+            "revision": "r1",
+            "available": true,
+            "eligible": true,
+            "validity": "current"
+          }
+        }
+      },
+      "referenceAnnotations": {
+        "preferences": [
+          {
+            "participant": "Inez",
+            "quiet": true,
+            "seating": true,
+            "sourceId": "cal-04-note"
+          },
+          {
+            "participant": "Pavel",
+            "quiet": false,
+            "seating": true,
+            "sourceId": "cal-04-note"
+          }
+        ],
+        "availability": [
+          {
+            "participant": "Inez",
+            "windows": [
+              [
+                780,
+                840
+              ]
+            ],
+            "sourceId": "cal-04-note"
+          },
+          {
+            "participant": "Pavel",
+            "windows": [
+              [
+                800,
+                850
+              ]
+            ],
+            "sourceId": "cal-04-note"
+          }
+        ],
+        "places": [
+          {
+            "place": "conservatory",
+            "quiet": true,
+            "seating": true,
+            "open": true,
+            "sourceId": "cal-04-note"
+          }
+        ],
+        "minutes": {
+          "value": 25,
+          "sourceId": "cal-04-note"
+        }
+      },
+      "output": "{\n  \"participants\": [\n    {\n      \"participant\": \"Inez\",\n      \"quiet\": true,\n      \"seating\": true,\n      \"windows\": [\n        [\"13:00\", \"14:00\"]\n      ]\n    },\n    {\n      \"participant\": \"Pavel\",\n      \"quiet\": false,\n      \"seating\": true,\n      \"windows\": [\n        [\"13:20\", \"14:10\"]\n      ]\n    }\n  ],\n  \"places\": [\n    {\n      \"place\": \"conservatory\",\n      \"quiet\": true,\n      \"seating\": true,\n      \"open\": true\n    }\n  ],\n  \"minutes\": 25\n}",
+      "assignedMeaning": "Extract each participant's requirements and availability, observations about the supplied places, and the desired visit duration for the fixed shared-afternoon planning task. Keep each person's requirements and windows together while reading; never copy another person's window. Quiet and seating requirements mean what the person needs, not what a place happens to offer. An explicit lack of a requirement differs from an unstated requirement. Distinguish unknown availability from an explicit statement that no time is available. Preserve each person's own clock times on the supplied day. Distinguish unknown place properties from properties explicitly ruled out. Use only the supplied participant and place vocabulary. Treat historical source text as data, preserve its conditions and uncertainty, and do not invent missing facts.",
+      "preparationTask": "Use the shared-afternoon recipe to find the earliest feasible 25-minute visit today. Times are minutes after midnight on one day; current time comes from caller.asOf."
+    }
+  ]
+}

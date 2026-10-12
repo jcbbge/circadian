@@ -1,0 +1,115 @@
+{
+  "allCompiled": true,
+  "compiler": "existing local outlines_core.fsm.json_schema.build_regex_from_schema",
+  "schemas": [
+    {
+      "id": "cal-01-qualified-view",
+      "compiled": true,
+      "schemaSha256": "54e821ccb79b4173881f0752ef7cb33e1aea5bdff192264845fc9570a057be4c",
+      "regexLength": 642
+    },
+    {
+      "id": "cal-02-disjoint-contexts",
+      "compiled": true,
+      "schemaSha256": "b9decea5729f78b88012a9b0672aab6325ce8b31965e2c33d4a181056e84b010",
+      "regexLength": 891
+    },
+    {
+      "id": "cal-03-speaker-subject",
+      "compiled": true,
+      "schemaSha256": "cb4d2004cbf94712b0bd2b84e16b4827f17c2c7d964794e48102b3ba9d568498",
+      "regexLength": 750
+    },
+    {
+      "id": "cal-03-unknown-attribution",
+      "compiled": true,
+      "schemaSha256": "24988255ca898338468e314cfb669584dc39e765823ddaa94a6a9629ea5f3866",
+      "regexLength": 598
+    },
+    {
+      "id": "cal-04-conservatory",
+      "compiled": true,
+      "schemaSha256": "65b637e61354e5f2890d3f133e19a1cacf90bd154af29fa7ab436efbf5b58048",
+      "regexLength": 1418
+    },
+    {
+      "id": "cal-05-lanterns",
+      "compiled": true,
+      "schemaSha256": "fe4883d765d03590437fd17bfccd0b1b7b48c5312cc5892fc0aeb5337d13dc2f",
+      "regexLength": 1035
+    },
+    {
+      "id": "cal-06-journal-old",
+      "compiled": true,
+      "schemaSha256": "e71f8806f6ef67a18b557b2ce12558efd61b4bd791b9ecc4f21d70cadb1f8ea9",
+      "regexLength": 1050
+    },
+    {
+      "id": "cal-06-journal-candidate",
+      "compiled": true,
+      "schemaSha256": "e71f8806f6ef67a18b557b2ce12558efd61b4bd791b9ecc4f21d70cadb1f8ea9",
+      "regexLength": 1050
+    },
+    {
+      "id": "confirm-h31",
+      "compiled": true,
+      "schemaSha256": "25efc1d88eef392622b3871f7d97e25b5b0c232b728f065fe47964b050028d69",
+      "regexLength": 638
+    },
+    {
+      "id": "confirm-p84",
+      "compiled": true,
+      "schemaSha256": "d4f9c6cdff457a6350f69fb4485f39cbcc106ce749b17106864d312bf0217886",
+      "regexLength": 899
+    },
+    {
+      "id": "confirm-v26",
+      "compiled": true,
+      "schemaSha256": "660564cc5d4756880e1e164b22851861ae5a7f8a5d84630fc59c7d3faf01da9e",
+      "regexLength": 847
+    },
+    {
+      "id": "confirm-d57",
+      "compiled": true,
+      "schemaSha256": "2aa9f65bf29a2b11617bd770ea054f18c8774c0ee5dc3ade0f29fd1253479044",
+      "regexLength": 764
+    },
+    {
+      "id": "confirm-m93",
+      "compiled": true,
+      "schemaSha256": "d2a9fafdcff096a602e099d322b3926e865c360dfb57168bdadca6d2d2733076",
+      "regexLength": 566
+    },
+    {
+      "id": "confirm-t68",
+      "compiled": true,
+      "schemaSha256": "d01ee6afbf8a35430f1c500f3400d08ac3de16755112005440c6e2ccbb9b729f",
+      "regexLength": 1420
+    },
+    {
+      "id": "confirm-c42",
+      "compiled": true,
+      "schemaSha256": "95dbc0e5bb800eda1b983952ec4e36c28433227ec0bb35f869ace125718e114b",
+      "regexLength": 1005
+    },
+    {
+      "id": "confirm-r15",
+      "compiled": true,
+      "schemaSha256": "e71f8806f6ef67a18b557b2ce12558efd61b4bd791b9ecc4f21d70cadb1f8ea9",
+      "regexLength": 1050
+    },
+    {
+      "id": "confirm-b76",
+      "compiled": true,
+      "schemaSha256": "e71f8806f6ef67a18b557b2ce12558efd61b4bd791b9ecc4f21d70cadb1f8ea9",
+      "regexLength": 1050
+    },
+    {
+      "id": "confirm-n24",
+      "compiled": true,
+      "schemaSha256": "e71f8806f6ef67a18b557b2ce12558efd61b4bd791b9ecc4f21d70cadb1f8ea9",
+      "regexLength": 1050
+    }
+  ],
+  "hashEncoding": "Python json.dumps(schema, sort_keys=True), defaults ensure_ascii=True and separators=(comma-space, colon-space), encoded UTF-8."
+}

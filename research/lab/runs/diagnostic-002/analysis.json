@@ -1,0 +1,179 @@
+{
+  "groups": {
+    "always-source": {
+      "trials": 16,
+      "correct": 16,
+      "strictSupported": 16,
+      "actionCorrect": 16,
+      "sourceDeliveries": 16,
+      "requestedExpansions": 0,
+      "readerCalls": 16,
+      "jevCalls": 0,
+      "meanMs": 496.66,
+      "medianMs": 545.12,
+      "sumMs": 7946.59,
+      "readerInput": 5576,
+      "readerOutput": 512,
+      "jevInput": 0,
+      "jevOutput": 0,
+      "errors": 0,
+      "missingUsage": false
+    },
+    "capability": {
+      "trials": 16,
+      "correct": 8,
+      "strictSupported": 8,
+      "actionCorrect": 16,
+      "sourceDeliveries": 0,
+      "requestedExpansions": 0,
+      "readerCalls": 16,
+      "jevCalls": 0,
+      "meanMs": 574.63,
+      "medianMs": 540.33,
+      "sumMs": 9194.01,
+      "readerInput": 3672,
+      "readerOutput": 467,
+      "jevInput": 0,
+      "jevOutput": 0,
+      "errors": 0,
+      "missingUsage": false
+    },
+    "jev-policy": {
+      "trials": 16,
+      "correct": 16,
+      "strictSupported": 16,
+      "actionCorrect": 16,
+      "sourceDeliveries": 8,
+      "requestedExpansions": 8,
+      "readerCalls": 16,
+      "jevCalls": 16,
+      "meanMs": 676.41,
+      "medianMs": 642.77,
+      "sumMs": 10822.5,
+      "readerInput": 4700,
+      "readerOutput": 512,
+      "jevInput": 12250,
+      "jevOutput": 728,
+      "errors": 0,
+      "missingUsage": false
+    },
+    "reader-policy": {
+      "trials": 16,
+      "correct": 13,
+      "strictSupported": 11,
+      "actionCorrect": 13,
+      "sourceDeliveries": 5,
+      "requestedExpansions": 5,
+      "readerCalls": 21,
+      "jevCalls": 0,
+      "meanMs": 664.05,
+      "medianMs": 581.25,
+      "sumMs": 10624.83,
+      "readerInput": 5798,
+      "readerOutput": 696,
+      "jevInput": 0,
+      "jevOutput": 0,
+      "errors": 0,
+      "missingUsage": false
+    },
+    "routing-absent": {
+      "trials": 16,
+      "correct": 8,
+      "strictSupported": 6,
+      "actionCorrect": 14,
+      "sourceDeliveries": 0,
+      "requestedExpansions": 6,
+      "readerCalls": 16,
+      "jevCalls": 0,
+      "meanMs": 539.69,
+      "medianMs": 542.29,
+      "sumMs": 8634.98,
+      "readerInput": 4056,
+      "readerOutput": 547,
+      "jevInput": 0,
+      "jevOutput": 0,
+      "errors": 0,
+      "missingUsage": false
+    },
+    "routing-false": {
+      "trials": 16,
+      "correct": 8,
+      "strictSupported": 6,
+      "actionCorrect": 16,
+      "sourceDeliveries": 0,
+      "requestedExpansions": 8,
+      "readerCalls": 16,
+      "jevCalls": 0,
+      "meanMs": 622.44,
+      "medianMs": 595.08,
+      "sumMs": 9959.09,
+      "readerInput": 4136,
+      "readerOutput": 664,
+      "jevInput": 0,
+      "jevOutput": 0,
+      "errors": 0,
+      "missingUsage": false
+    }
+  },
+  "totalTrials": 96,
+  "totalCalls": 117,
+  "selectorCorrect": 16,
+  "selectorTrials": 16,
+  "quoteFailures": [
+    {
+      "id": "anniversary-greeting-sufficient-2-routing-false",
+      "answerCorrect": true,
+      "quote": "Tessa specifically requested a short voicemail from Noor."
+    },
+    {
+      "id": "collage-title-missing-1-routing-absent",
+      "answerCorrect": false,
+      "quote": "This named one piece, not the whole display."
+    },
+    {
+      "id": "anniversary-greeting-sufficient-2-routing-absent",
+      "answerCorrect": true,
+      "quote": "Tessa specifically requested a short voicemail from Noor."
+    },
+    {
+      "id": "anniversary-greeting-sufficient-1-routing-absent",
+      "answerCorrect": true,
+      "quote": "Tessa specifically requested a short voicemail from Noor."
+    },
+    {
+      "id": "anniversary-greeting-sufficient-1-routing-false",
+      "answerCorrect": true,
+      "quote": "Tessa specifically requested a short voicemail from Noor."
+    },
+    {
+      "id": "anniversary-greeting-missing-2-routing-absent",
+      "answerCorrect": false,
+      "quote": "Noor recorded the request after lunch to keep it separate from another friend's birthday plans; they arranged no new hike."
+    },
+    {
+      "id": "anniversary-greeting-sufficient-2-reader-policy",
+      "answerCorrect": true,
+      "quote": "Tessa specifically requested a short voicemail from Noor."
+    },
+    {
+      "id": "anniversary-greeting-sufficient-1-reader-policy",
+      "answerCorrect": true,
+      "quote": "Tessa specifically requested a short voicemail from Noor."
+    },
+    {
+      "id": "anniversary-greeting-missing-2-reader-policy",
+      "answerCorrect": false,
+      "quote": "Noor recorded the request after lunch to keep it separate from another friend's birthday plans; they arranged no new hike."
+    },
+    {
+      "id": "collage-title-missing-2-reader-policy",
+      "answerCorrect": false,
+      "quote": "This named one piece, not the whole display."
+    },
+    {
+      "id": "anniversary-greeting-missing-1-reader-policy",
+      "answerCorrect": false,
+      "quote": "Noor recorded the request after lunch to keep it separate from another friend's birthday plans; they arranged no new hike."
+    }
+  ]
+}

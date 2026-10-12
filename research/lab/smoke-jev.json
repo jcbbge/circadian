@@ -1,0 +1,63 @@
+[
+  {
+    "purpose": "transport discovery/probe; excluded from pilot scoring",
+    "method": "GET",
+    "url": "https://api.typesafe.ai/v1/models",
+    "request": null,
+    "response": {
+      "models": [
+        {
+          "name": "jev-latest",
+          "description": "The latest iteration of TypeSafe's System One Model: Jev",
+          "release_date": "2026-09-10T18:38:01.391457+00:00"
+        },
+        {
+          "name": "jev-preview",
+          "description": "A preview version of `jev-latest`: should be better in most ways",
+          "release_date": "2026-09-10T18:39:06.057655+00:00"
+        }
+      ]
+    },
+    "elapsedMs": 169
+  },
+  {
+    "purpose": "transport discovery/probe; excluded from pilot scoring",
+    "method": "POST",
+    "url": "https://api.typesafe.ai/v1/systemone",
+    "request": {
+      "model": "jev-1.13.0",
+      "state": "A fictional note states: the marker is blue.",
+      "questions": {
+        "color": {
+          "type": "choice",
+          "instructions": "What color does the note explicitly state for the marker?",
+          "criteria": {
+            "blue": "Blue",
+            "red": "Red",
+            "unknown": "Not stated"
+          }
+        }
+      }
+    },
+    "response": {
+      "model": "jev-1.13.0",
+      "answers": {
+        "color": {
+          "type": "choice",
+          "choice": "blue",
+          "confidence": 1.0,
+          "probabilities": {
+            "blue": 1.0,
+            "red": 0.0,
+            "unknown": 0.0
+          }
+        }
+      },
+      "usage": {
+        "input_tokens": 334,
+        "output_tokens": 38
+      }
+    },
+    "elapsedMs": 238
+  }
+]

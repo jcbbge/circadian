@@ -1,0 +1,178 @@
+{
+  "checked_at": "2026-10-12T04:18:29.007043+00:00",
+  "discovery_gets": 2,
+  "completion_probes": 3,
+  "study_requests": 0,
+  "local": {
+    "base_url": "http://127.0.0.1:10240/v1",
+    "requested_model": "mlx-community/Qwen3-30B-A3B-Instruct-2507-4bit",
+    "kind": "endpoint_discovery_and_one_transport_probe",
+    "at": 1791778318.197668,
+    "models": {
+      "object": "list",
+      "data": [
+        {
+          "id": "mlx-community/Qwen3-Embedding-4B-4bit-DWQ",
+          "object": "model",
+          "created": 1776560770,
+          "owned_by": "mlx-community"
+        },
+        {
+          "id": "mlx-community/Qwen3-30B-A3B-Instruct-2507-4bit",
+          "object": "model",
+          "created": 1785138564,
+          "owned_by": "mlx-community"
+        },
+        {
+          "id": "lightonai/LateOn-Code-edge",
+          "object": "model",
+          "created": 1785982154,
+          "owned_by": "lightonai"
+        },
+        {
+          "id": "mlx-community/Qwen3-4B-Instruct-2507-4bit",
+          "object": "model",
+          "created": 1784357731,
+          "owned_by": "mlx-community"
+        }
+      ]
+    },
+    "request": {
+      "model": "mlx-community/Qwen3-30B-A3B-Instruct-2507-4bit",
+      "messages": [
+        {
+          "role": "system",
+          "content": "Return only the requested JSON object. Do not include any extra text."
+        },
+        {
+          "role": "user",
+          "content": "Return exactly {\"ready\":true}."
+        }
+      ],
+      "temperature": 0.3,
+      "top_p": 0.95,
+      "max_tokens": 2048,
+      "stream": false
+    },
+    "response": {
+      "id": "chatcmpl-05683ee234",
+      "object": "chat.completion",
+      "created": 1791778319,
+      "model": "mlx-community/Qwen3-30B-A3B-Instruct-2507-4bit",
+      "choices": [
+        {
+          "index": 0,
+          "message": {
+            "role": "assistant",
+            "content": "{\"ready\":true}"
+          },
+          "finish_reason": "stop"
+        }
+      ],
+      "usage": {
+        "prompt_tokens": 34,
+        "completion_tokens": 5,
+        "total_tokens": 39
+      }
+    },
+    "elapsed_ms": 1378
+  },
+  "kimi_initial": {
+    "base_url": "https://jcbbge--ep-kimi-k3-server.us-west.modal.direct/v1",
+    "requested_model": "moonshotai/Kimi-K3",
+    "kind": "endpoint_discovery_and_one_transport_probe",
+    "at": 1791778317.061227,
+    "models": {
+      "data": [
+        {
+          "base_model_id": "moonshotai/Kimi-K3",
+          "context_length": 1048576,
+          "created": 0,
+          "id": "moonshotai/Kimi-K3",
+          "input_modalities": [
+            "text",
+            "image"
+          ],
+          "interleaved": {
+            "field": "reasoning_content"
+          },
+          "max_output_length": 1048576,
+          "name": "MoonshotAI: Kimi K3",
+          "object": "model",
+          "output_modalities": [
+            "text"
+          ],
+          "owned_by": "modal",
+          "reasoning_options": [
+            {
+              "type": "effort",
+              "values": [
+                "low",
+                "high",
+                "max"
+              ]
+            }
+          ],
+          "supported_features": [
+            "tools",
+            "json_mode",
+            "structured_outputs",
+            "reasoning"
+          ],
+          "supported_sampling_parameters": [
+            "temperature",
+            "top_p",
+            "stop",
+            "max_tokens"
+          ]
+        }
+      ],
+      "object": "list"
+    },
+    "request": {
+      "model": "moonshotai/Kimi-K3",
+      "messages": [
+        {
+          "role": "system",
+          "content": "Return only the requested JSON object. Do not include any extra text."
+        },
+        {
+          "role": "user",
+          "content": "Return exactly {\"ready\":true}."
+        }
+      ],
+      "temperature": 0.3,
+      "top_p": 0.95,
+      "max_tokens": 2048,
+      "stream": false,
+      "reasoning_effort": "none"
+    },
+    "probe_error": "HTTPError",
+    "http_status": 400
+  },
+  "kimi_diagnostic": {
+    "kind": "one-parameter diagnostic; reasoning_effort omitted after HTTP 400",
+    "request": {
+      "model": "moonshotai/Kimi-K3",
+      "messages": [
+        {
+          "role": "system",
+          "content": "Return only the requested JSON object. Do not include any extra text."
+        },
+        {
+          "role": "user",
+          "content": "Return exactly {\"ready\":true}."
+        }
+      ],
+      "temperature": 0.3,
+      "top_p": 0.95,
+      "max_tokens": 2048,
+      "stream": false
+    },
+    "startedAt": 1791778456.179009,
+    "http_status": 429,
+    "error_body": "{\"error\":\"Plan credits cannot be applied to shared endpoint usage. Add a payment method or increase your spend limit\"}",
+    "elapsed_ms": 635
+  },
+  "kimi_status": "blocked_by_shared_endpoint_billing; no successful completion; reasoning_effort behavior not established"
+}

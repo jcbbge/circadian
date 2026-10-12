@@ -1,0 +1,63 @@
+{
+  "status": "accepted",
+  "accepted_at_utc": "2026-10-11T01:05:21.581943+00:00",
+  "accepting_role": "root reviewer",
+  "independent_audit": "audit.md",
+  "scope": "Completed diagnostic and whole-policy comparison; no production integration accepted.",
+  "checks": {
+    "lab_tests_passed": 36,
+    "lab_tests_failed": 0,
+    "measured_trials": 96,
+    "measured_calls": 117,
+    "measured_errors": 0,
+    "missing_usage": false,
+    "fixture_protocol_and_code_integrity": "verified",
+    "research_credential_format_scan": "no matches",
+    "full_repository_suite_run": false
+  },
+  "findings": {
+    "capability_sufficient_supported": "8/8",
+    "capability_missing_abstentions": "8/8",
+    "reader_policy_correct": "13/16",
+    "always_source_correct": "16/16",
+    "jev_policy_correct": "16/16",
+    "jev_labels_correct": "16/16"
+  },
+  "limits": [
+    "Four authored situations with repetitions; no held-out generalization",
+    "Whole policies differ in instructions and permitted actions; selector-specific causality not isolated",
+    "Baseline-first blocks confound timing",
+    "Six truthful shortened quotations fail strict sentence scoring; five other answers are unsupported and wrong across all phases",
+    "No production, lifecycle or mathematical-extension validation"
+  ],
+  "next_step": "Test cheaper local routing policies on independently authored cases before another selector comparison.",
+  "sha256": {
+    "research/lab/DIAGNOSTIC-RESULTS.md": "f3cea9cf390d17ea1e8b49e2dd6209863f345042c98b7a7f4b9eb9db1b56bd33",
+    "research/lab/DIAGNOSTIC.md": "7a440e9c97316b20b7a078aeac95ce06b3991d3a0e134fe8c6e5361c71ab5ecc",
+    "research/lab/diagnostic-fixtures.json": "69fbf81c370746ed5549f75fc2434c351cc483023f25f2aaa2927b609458a71a",
+    "research/lab/diagnostic.test.ts": "4717087324ecd33b2c43ce7be72626fdfd819881ca0ca11554218af2f4ae1d8a",
+    "research/lab/diagnostic.ts": "18d895b48bbcf09458f762b0dc828d73a55bb583e29baaf9fb09cb58bfbb4848",
+    "research/lab/runs/diagnostic-002/analysis.json": "75538754ed03257184e779f98daa5c400befda8cb6d719bdef20ff6d15799765",
+    "research/lab/runs/diagnostic-002/audit.md": "86c6a535ec8946b9b542484be327085776bcc177a8697c08030bb48a95b43e3b",
+    "research/lab/runs/diagnostic-002/baseline.calls.jsonl": "bfc7a3c19dac546d5d22d967aae0a3dc7b67aba39e69c4a9ed065f79471d8aab",
+    "research/lab/runs/diagnostic-002/baseline.complete.json": "b2e8fc36eef376e3420d094abb23f86e648d3fca20bfd1fb36942de13625114a",
+    "research/lab/runs/diagnostic-002/baseline.jsonl": "1345f8c9c9486da156aef6a8ed72eab488e5db66394390d3533218314a3eb37f",
+    "research/lab/runs/diagnostic-002/bundles.json": "1e8f023218eb1bb097bf3e7a15391c54b452f0353af90f830fde9b7848e4dd3f",
+    "research/lab/runs/diagnostic-002/comparison-acceptance.json": "bf7fab8377fbfec7c818e842ec3ba2ffac74b091441ed4152fe91910a11411df",
+    "research/lab/runs/diagnostic-002/diagnostic.calls.jsonl": "26723f313048349ffc42df74441147b5dd9d7307912d3db39fcc1924c7091084",
+    "research/lab/runs/diagnostic-002/diagnostic.complete.json": "d98e7f3ebc02fdb1360e9e83ee642fd166450450bdb8090d9d3ad5fc956e639b",
+    "research/lab/runs/diagnostic-002/diagnostic.jsonl": "8a23e7c7ca25b4b3e737c0b32de3dfee696ff50d7251c04d3fc359370ec39654",
+    "research/lab/runs/diagnostic-002/fixture-report.md": "33f4b4c1b54f48552c1828b6be119ff3d94e69b834690305d29ea7d9ca83078e",
+    "research/lab/runs/diagnostic-002/fixture-review.md": "fd51eb35b5c2bb24be6320e284082769c1f87e7cc1308d2a8d9a78e40ae36c24",
+    "research/lab/runs/diagnostic-002/gold.json": "69fbf81c370746ed5549f75fc2434c351cc483023f25f2aaa2927b609458a71a",
+    "research/lab/runs/diagnostic-002/jev.calls.jsonl": "96166e2fa6e0852bcf6b0f11852f07a916e6a9703b609c826f6fb5ec130723b7",
+    "research/lab/runs/diagnostic-002/jev.complete.json": "aedb9a618857082d9982b88eefb0bea74f16d64f985ff3fc97d5fd7eb7bc69f3",
+    "research/lab/runs/diagnostic-002/jev.jsonl": "cd6eecb99fee2fd312fcd1f5a856416e8d59b6572d9a9380667aa6a0ff3758a8",
+    "research/lab/runs/diagnostic-002/manifest.json": "91427aead5883d3f0c2952e7dfbffb934ecc48680a73e7a6adb1a6074d7f185a",
+    "research/lab/runs/diagnostic-002/manifest.sha256": "fec0c8ff9201cd1c80177841d15b1fdec283b32f7fdd88dff8c3d775adfca155",
+    "research/lab/runs/diagnostic-002/pre-run-acceptance.json": "f09ca00918c19473cf3ebef12286a558745fdd130d21f6afb7255834513ef048",
+    "research/lab/runs/diagnostic-002/protocol-review.md": "75a76bc00a588fd7035fc4272aad1ff95e7198466dd78a16e6bce7b524fcce43",
+    "research/lab/runs/diagnostic-002/summary.json": "bb8038d0258a9b5271d720b5f67a6fc296f52208da0b5c1ca98b9ff46b9eec51",
+    "research/lab/runs/diagnostic-002/test-report.md": "88b0f3d68004afa73658c6825d70fa4b0e942faea65fa02ee3a0f7880cc4dc65"
+  }
+}

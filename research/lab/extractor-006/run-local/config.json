@@ -1,0 +1,28 @@
+{
+  "label": "local",
+  "extractor": {
+    "url": "http://127.0.0.1:10240/v1/chat/completions",
+    "model": "mlx-community/Qwen3-30B-A3B-Instruct-2507-4bit",
+    "settings": {
+      "temperature": 0.3,
+      "top_p": 0.95,
+      "max_tokens": 2048
+    }
+  },
+  "reader": {
+    "url": "http://127.0.0.1:10240/v1/chat/completions",
+    "model": "mlx-community/Qwen3-30B-A3B-Instruct-2507-4bit",
+    "settings": {
+      "temperature": 0.3,
+      "top_p": 0.95,
+      "max_tokens": 2048
+    }
+  },
+  "endpointEvidence": {
+    "file": "ENDPOINT-EVIDENCE.json",
+    "sha256": "f06723283a8f4875f580daa3e3b9c281f26e1a4a37cb2ff68a171db04ac9657d",
+    "completion_probe_passed": true,
+    "weight_revision": null,
+    "seed_control": null
+  }
+}

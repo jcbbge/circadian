@@ -1,0 +1,23 @@
+{
+  "accepted": true,
+  "acceptedAt": "2026-10-12T04:27:29.616666+00:00",
+  "scope": "32-call local development calibration only",
+  "outside_peer": {
+    "model": "claude-fable-5-1",
+    "session": "3f7fb1c5-76d4-4306-aca6-3905d4575466",
+    "report": "PEER-PRE-RUN.md",
+    "initialVerdict": "blocked pending narrow corrections"
+  },
+  "correction_verifier_report": "/Users/jrg/Library/Caches/circadian-research/extractor-006-z74ujy9d/peer-corrections-review.md",
+  "instrument_verifier_report": "/Users/jrg/Library/Caches/circadian-research/extractor-006-z74ujy9d/instrument-recheck.md",
+  "parentAcceptance": "Read both independent reports, matched final hashes, executed focused tests, and accepted applied corrections. No inference outcomes observed.",
+  "hashes": {
+    "runner.ts": "ffeaa033acb98ba3db96e3079d0c86897ce90e0651308d95804cfceba4cd2d41",
+    "transport.ts": "476e731ff962e06c2aa685612c6ceb1c0c037b67cd3b859571590273f84a5c8d",
+    "contract.ts": "85ff2e03c1445966c8b2907f4ff62ef2b52c7bfe321e67f9ca63c98855bde5c6",
+    "adapters_01_03.ts": "0ae3956bcbd4e48334b17f0db838d5751b00807f66c73ac5d068afa42f228530",
+    "adapters_04_06.ts": "ba499a7f47f5da11349c8ee428e485f497907bdb23f048536e6fb8a269331f13",
+    "PROTOCOL.md": "1ea3195e94825ce174a973117db9c45fea91aaf58adcb5276f3c45bb25b31229",
+    "FIXTURES.json": "13de2e40925c61803c41796305f3849a1101632385a2b2e11bd4e17edb24aa77"
+  }
+}

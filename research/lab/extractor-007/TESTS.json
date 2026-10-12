@@ -1,0 +1,19 @@
+{
+  "focused": {
+    "pass": 65,
+    "fail": 0,
+    "assertions": 957
+  },
+  "repository": {
+    "pass": 970,
+    "skip": 21,
+    "fail": 0,
+    "assertions": 19772
+  },
+  "priorResearchFilesUnchanged": 113,
+  "schemaCompilationPassed": 18,
+  "logs": {
+    "focused": "/Users/jrg/Library/Caches/circadian-research/extractor-007-cb3pwuv2/focused-tests.txt",
+    "repository": "/Users/jrg/Library/Caches/circadian-research/extractor-007-cb3pwuv2/full-tests.txt"
+  }
+}

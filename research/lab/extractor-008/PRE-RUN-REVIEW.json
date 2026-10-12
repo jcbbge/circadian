@@ -1,0 +1,17 @@
+{
+  "accepted": true,
+  "at": "2026-10-12T05:18:53.399938+00:00",
+  "independentReview": "/Users/jrg/Library/Caches/circadian-research/extractor-007-cb3pwuv2/008-review.md",
+  "independentReviewHash": "2a11c41ff6c128caf6a18902804b38d53d51079494002320dd65debc0114abfb",
+  "parentAcceptance": "Inspected report, exact file hashes, probe request/response, full local validation, and 71 passing focused tests. Final fallback wording matches 007.",
+  "testReceipt": "/Users/jrg/Library/Caches/circadian-research/extractor-007-cb3pwuv2/008-focused-tests.txt",
+  "testReceiptHash": "b24cdf9a45f9f689332cbf7b32f42739dadf7e98eee30e8a01167ea708a69727",
+  "hashes": {
+    "/Users/jrg/circadian/research/lab/extractor-008/ENDPOINT-EVIDENCE.json": "4f42c27b02ae1b022f3beb603bfb80472a80d81aa96592cc341ce506644c9d06",
+    "/Users/jrg/circadian/research/lab/extractor-008/PROTOCOL.md": "ef7adbc9eb53781fb0e16771b0e0cf7c0971950b9da6983f6ad494950093cfbe",
+    "/Users/jrg/circadian/research/lab/extractor-008/local-config.json": "dacdff21e2e3ca544bdcbcf5c849cc1b4fc1700bf17aec3a7531072cad21077c",
+    "/Users/jrg/circadian/research/lab/extractor-008/runner.ts": "b2b4553a5cfe62def4ed5ef6e40b1e1628ed86463139827e77f13be053f7982e",
+    "/Users/jrg/circadian/research/lab/extractor-008/serving-schema.test.ts": "316e8fc3bbc49979b8f0b534ad6ba1466f72775eb1ebc59131ff57bfa8c6c838",
+    "/Users/jrg/circadian/research/lab/extractor-008/serving-schema.ts": "6c15a05aa6c0b014afa399835b6df13123ec32c44e8edba1ca1407ed722c5725"
+  }
+}

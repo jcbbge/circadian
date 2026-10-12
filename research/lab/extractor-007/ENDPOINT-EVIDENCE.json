@@ -1,0 +1,154 @@
+{
+  "discovery": {
+    "object": "list",
+    "data": [
+      {
+        "id": "mlx-community/Qwen3-Embedding-4B-4bit-DWQ",
+        "object": "model",
+        "created": 1776560770,
+        "owned_by": "mlx-community"
+      },
+      {
+        "id": "mlx-community/Qwen3-30B-A3B-Instruct-2507-4bit",
+        "object": "model",
+        "created": 1785138564,
+        "owned_by": "mlx-community"
+      },
+      {
+        "id": "lightonai/LateOn-Code-edge",
+        "object": "model",
+        "created": 1785982154,
+        "owned_by": "lightonai"
+      },
+      {
+        "id": "mlx-community/Qwen3-4B-Instruct-2507-4bit",
+        "object": "model",
+        "created": 1784357731,
+        "owned_by": "mlx-community"
+      }
+    ]
+  },
+  "openapiInfo": {
+    "title": "MLX Omni Server",
+    "version": "0.1.0"
+  },
+  "sourceHashes": {
+    "/Users/jrg/local-llm/venv/lib/python3.11/site-packages/mlx_omni_server/chat/openai/openai_adapter.py": "5665f062310daa71e715ed2b449873250be72c1bd54584ada4f2cfdd41882942",
+    "/Users/jrg/local-llm/venv/lib/python3.11/site-packages/mlx_omni_server/chat/mlx/chat_generator.py": "87809ee3acfd5b997f75e9b5ac39439d9dd1e5eed90cfa6be03befe614b6c9c8"
+  },
+  "codePath": "response_format.json_schema.schema passes to OutlinesLogitsProcessor in existing local server",
+  "probe": {
+    "id": "schema-capability-probe",
+    "startedAt": "2026-10-12T04:54:33.967Z",
+    "endpoint": "http://127.0.0.1:10240/v1/chat/completions",
+    "elapsedMs": 14447,
+    "status": 200,
+    "request": {
+      "model": "mlx-community/Qwen3-30B-A3B-Instruct-2507-4bit",
+      "messages": [
+        {
+          "role": "system",
+          "content": "Extract exactly the supplied facts. Return the object required by the response schema. Unknown attendance is null."
+        },
+        {
+          "role": "user",
+          "content": "Mica reserved a studio from 07:13 to 07:41. The record does not establish whether Mica attended."
+        }
+      ],
+      "temperature": 0,
+      "top_p": 1,
+      "max_tokens": 512,
+      "response_format": {
+        "type": "json_schema",
+        "json_schema": {
+          "name": "capability_probe",
+          "strict": true,
+          "schema": {
+            "type": "object",
+            "properties": {
+              "person": {
+                "type": "string",
+                "enum": [
+                  "Mica",
+                  "Dara"
+                ]
+              },
+              "attendance": {
+                "anyOf": [
+                  {
+                    "type": "boolean"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "window": {
+                "type": "array",
+                "prefixItems": [
+                  {
+                    "type": "string",
+                    "pattern": "^[0-2][0-9]:[0-5][0-9]$"
+                  },
+                  {
+                    "type": "string",
+                    "pattern": "^[0-2][0-9]:[0-5][0-9]$"
+                  }
+                ],
+                "minItems": 2,
+                "maxItems": 2
+              }
+            },
+            "required": [
+              "person",
+              "attendance",
+              "window"
+            ],
+            "additionalProperties": false
+          }
+        }
+      },
+      "stream": false
+    },
+    "response": {
+      "id": "chatcmpl-0fbd9fa6c5",
+      "object": "chat.completion",
+      "created": 1791780888,
+      "model": "mlx-community/Qwen3-30B-A3B-Instruct-2507-4bit",
+      "choices": [
+        {
+          "index": 0,
+          "message": {
+            "role": "assistant",
+            "content": "{ \"person\": \"Mica\", \"attendance\": null, \"window\": [ \"07:13\", \"07:41\" ] }"
+          },
+          "finish_reason": "stop"
+        }
+      ],
+      "usage": {
+        "prompt_tokens": 63,
+        "completion_tokens": 33,
+        "total_tokens": 96
+      }
+    },
+    "rawResponse": "{\"id\":\"chatcmpl-0fbd9fa6c5\",\"object\":\"chat.completion\",\"created\":1791780888,\"model\":\"mlx-community/Qwen3-30B-A3B-Instruct-2507-4bit\",\"choices\":[{\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":\"{ \\\"person\\\": \\\"Mica\\\", \\\"attendance\\\": null, \\\"window\\\": [ \\\"07:13\\\", \\\"07:41\\\" ] }\"},\"finish_reason\":\"stop\"}],\"usage\":{\"prompt_tokens\":63,\"completion_tokens\":33,\"total_tokens\":96}}",
+    "content": "{ \"person\": \"Mica\", \"attendance\": null, \"window\": [ \"07:13\", \"07:41\" ] }",
+    "servedModel": "mlx-community/Qwen3-30B-A3B-Instruct-2507-4bit",
+    "usage": {
+      "prompt_tokens": 63,
+      "completion_tokens": 33,
+      "total_tokens": 96
+    },
+    "error": null
+  },
+  "schemaProbeExpected": {
+    "person": "Mica",
+    "attendance": null,
+    "window": [
+      "07:13",
+      "07:41"
+    ]
+  },
+  "schemaProbePassed": true,
+  "scope": "Schema syntax and sampled fields verified; semantic correctness is not guaranteed. No server modifications or installations."
+}

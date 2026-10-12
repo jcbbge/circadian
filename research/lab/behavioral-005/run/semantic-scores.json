@@ -1,0 +1,1083 @@
+{
+  "reviewer": {
+    "role": "independent arm-blinded semantic reviewer",
+    "model": "gpt-6-astra",
+    "method": "source and frozen rubric comparison; one reviewer; no inter-rater reliability",
+    "fixtureAuthor": false,
+    "armMapReadBeforeScoring": false,
+    "modelCalls": 0
+  },
+  "sourceHashes": {
+    "blindAnswers": "f7efe3b8f60c256c79fe1798c52570b89cace50db796a7a69383b9deec045063",
+    "scoringContract": "aa2fae18478531b88b9522fa5743473775a3ab30797bff8d00c9e1b021fe165e"
+  },
+  "scores": [
+    {
+      "id": "answer-001",
+      "requiredMet": [
+        true
+      ],
+      "unsupported": [],
+      "attributionOrQualificationErrors": [],
+      "uncertaintyAppropriate": true,
+      "useful": true,
+      "semanticPass": true,
+      "rationale": "Gives the complete pantry shelf and basket location with the supporting V8 reference; no unsupported additions."
+    },
+    {
+      "id": "answer-002",
+      "requiredMet": [
+        false,
+        true
+      ],
+      "unsupported": [
+        "Calls a Green room meeting a supported tentative plan although O3-venue says it is loud during the entire feasible visit period.",
+        "Cites the nonexistent supplementlement as evidence."
+      ],
+      "attributionOrQualificationErrors": [],
+      "uncertaintyAppropriate": false,
+      "useful": false,
+      "semanticPass": false,
+      "rationale": "Identifies overlap and the loud room and recommends finding another venue, but still endorses a Green room plan and marks no meaningful unresolved part."
+    },
+    {
+      "id": "answer-003",
+      "requiredMet": [
+        true,
+        true
+      ],
+      "unsupported": [
+        "Calls the room open for the entire day although the report supports only 08:00 until noon.",
+        "Says Lina is unavailable before 09:40, omitting her 09:00–09:25 window.",
+        "Says Theo is unavailable at 09:40 although his first window runs 09:10–09:50.",
+        "Treats 10:35 as an availability boundary rather than the end of the proposed earliest 25-minute visit."
+      ],
+      "attributionOrQualificationErrors": [
+        "Overstates venue opening duration and participant unavailability."
+      ],
+      "uncertaintyAppropriate": false,
+      "useful": false,
+      "semanticPass": false,
+      "rationale": "Finds 10:10–10:35 and the suitable venue, but repeats false reasons and is truncated mid-JSON; it cannot pass as a complete useful answer."
+    },
+    {
+      "id": "answer-004",
+      "requiredMet": [
+        false,
+        false,
+        true
+      ],
+      "unsupported": [
+        "Asserts Inez played during the copied week despite the undated entry and the rubric's unresolved week membership."
+      ],
+      "attributionOrQualificationErrors": [
+        "Makes an unknown practice date/week membership certain; omits the reported enjoyment."
+      ],
+      "uncertaintyAppropriate": false,
+      "useful": false,
+      "semanticPass": false,
+      "rationale": "Preserves missing frequency and blank date but asserts the practice belongs to the week, the very point left unresolved."
+    },
+    {
+      "id": "answer-005",
+      "requiredMet": [
+        true,
+        true
+      ],
+      "unsupported": [
+        "Says 10:10–10:35 is the only feasible overlapping 25-minute window, although the common interval lasts until 10:40.",
+        "Says Theo has no availability before 10:10, contradicting 09:10–09:50.",
+        "Calls 10:10 the earliest overlap and rejects 09:40 because Theo is supposedly unavailable, rather than because that earlier overlap is too short."
+      ],
+      "attributionOrQualificationErrors": [
+        "Deletes Theo's first availability window from the explanation."
+      ],
+      "uncertaintyAppropriate": false,
+      "useful": false,
+      "semanticPass": false,
+      "rationale": "The first proposed time and venue are correct, but the supporting timing account is false and the response ends mid-JSON."
+    },
+    {
+      "id": "answer-006",
+      "requiredMet": [
+        false,
+        true
+      ],
+      "unsupported": [
+        "Initially says attribution to Leah matches the original, contradicting Owen's quoted self-report.",
+        "Cites the original as evidence that a fixture checker verified the draft's structural fidelity; that source contains no such verification."
+      ],
+      "attributionOrQualificationErrors": [
+        "Initially misattributes Owen's preference to Leah, then contradicts that claim with the correct attribution."
+      ],
+      "uncertaintyAppropriate": false,
+      "useful": false,
+      "semanticPass": false,
+      "rationale": "The later rejection and preserved qualifiers are correct, but the initial attribution error remains in the answer and repeated claims end in truncated JSON."
+    },
+    {
+      "id": "answer-007",
+      "requiredMet": [
+        true,
+        false
+      ],
+      "unsupported": [],
+      "attributionOrQualificationErrors": [],
+      "uncertaintyAppropriate": true,
+      "useful": true,
+      "semanticPass": false,
+      "rationale": "Correctly gives Alex's reported ferry time and the dock. The frozen second required proposition additionally asks for home as the later recording location, which this brief answer omits."
+    },
+    {
+      "id": "answer-008",
+      "requiredMet": [
+        false,
+        true
+      ],
+      "unsupported": [
+        "Selects 09:00–09:20 as a supported shared practice time despite Theo's unknown availability.",
+        "Says the session must occur before 09:20 to fit Lina's 09:00–10:00 window, which is false."
+      ],
+      "attributionOrQualificationErrors": [],
+      "uncertaintyAppropriate": false,
+      "useful": false,
+      "semanticPass": false,
+      "rationale": "Recognizes Theo's missing interval and the useful venue/Lina information, yet endorses a shared time and invents a deadline; response is truncated."
+    },
+    {
+      "id": "answer-009",
+      "requiredMet": [
+        true,
+        true
+      ],
+      "unsupported": [],
+      "attributionOrQualificationErrors": [],
+      "uncertaintyAppropriate": true,
+      "useful": false,
+      "semanticPass": false,
+      "rationale": "The visible content correctly favors Sabine's own coffee request over Omar's habitual account, but repeats until the JSON is cut off; unparseable answers cannot pass the frozen contract."
+    },
+    {
+      "id": "answer-010",
+      "requiredMet": [
+        true,
+        true
+      ],
+      "unsupported": [],
+      "attributionOrQualificationErrors": [],
+      "uncertaintyAppropriate": true,
+      "useful": true,
+      "semanticPass": true,
+      "rationale": "Correctly identifies Alex, the reported eight-o'clock departure, the dock conversation and later recording at home; no unsupported additions."
+    },
+    {
+      "id": "answer-011",
+      "requiredMet": [
+        false,
+        true
+      ],
+      "unsupported": [
+        "Calls a Green room meeting a supported scheduled plan despite the venue failing the quiet requirement.",
+        "The claimed two-hour deadline is attributed only to O3-intention, which states current time and duration but not that deadline."
+      ],
+      "attributionOrQualificationErrors": [],
+      "uncertaintyAppropriate": false,
+      "useful": false,
+      "semanticPass": false,
+      "rationale": "Recognizes the venue defect and next step, but contradicts that recognition by claiming a supported plan using that venue."
+    },
+    {
+      "id": "answer-012",
+      "requiredMet": [
+        true,
+        true
+      ],
+      "unsupported": [
+        "Says the two requests would contradict if intended for the same time period; that alone does not establish the same cup or exclude a changed request."
+      ],
+      "attributionOrQualificationErrors": [],
+      "uncertaintyAppropriate": true,
+      "useful": true,
+      "semanticPass": false,
+      "rationale": "Correctly leaves an actual contradiction unresolved, but overstates the sufficiency of time-period alignment in its conditional claim. Its answer status with nonempty unknown is a separate mechanical issue."
+    },
+    {
+      "id": "answer-013",
+      "requiredMet": [
+        false,
+        false,
+        true
+      ],
+      "unsupported": [],
+      "attributionOrQualificationErrors": [],
+      "uncertaintyAppropriate": false,
+      "useful": true,
+      "semanticPass": false,
+      "rationale": "Retains enjoyment and unknown frequency but does not convey the missing date or unresolved membership in the specified week."
+    },
+    {
+      "id": "answer-014",
+      "requiredMet": [
+        true,
+        true
+      ],
+      "unsupported": [],
+      "attributionOrQualificationErrors": [],
+      "uncertaintyAppropriate": true,
+      "useful": false,
+      "semanticPass": false,
+      "rationale": "Correctly recommends downstairs, retains the cello-carrying condition and normal stair use without the cello, but repeats until truncated mid-JSON."
+    },
+    {
+      "id": "answer-015",
+      "requiredMet": [
+        true,
+        true
+      ],
+      "unsupported": [],
+      "attributionOrQualificationErrors": [],
+      "uncertaintyAppropriate": true,
+      "useful": true,
+      "semanticPass": true,
+      "rationale": "Read in the question's suggestion context, the opening 'can have' frames the timing as a proposed arrangement. It gives 10:00–10:10 at the suitable bench despite acceptable noise; no completed booking is asserted."
+    },
+    {
+      "id": "answer-016",
+      "requiredMet": [
+        true,
+        false,
+        true
+      ],
+      "unsupported": [
+        "Says the initial relief was not tied to any emotional exchange and the silence was not interpreted as a result of Jo's actions; the diary does not establish those exclusions.",
+        "Concludes no interpretation of communication through silence is supported because there was no verbal exchange, despite Ari's later tentative trust interpretation."
+      ],
+      "attributionOrQualificationErrors": [
+        "Drops the tentative perhaps in the later causal interpretation and recasts it as a deeper recognition."
+      ],
+      "uncertaintyAppropriate": false,
+      "useful": false,
+      "semanticPass": false,
+      "rationale": "Preserves the two reflection times and Jo's unrecorded feelings but strengthens Ari's tentative account and invents exclusions before truncating."
+    },
+    {
+      "id": "answer-017",
+      "requiredMet": [
+        true,
+        true
+      ],
+      "unsupported": [],
+      "attributionOrQualificationErrors": [],
+      "uncertaintyAppropriate": true,
+      "useful": true,
+      "semanticPass": true,
+      "rationale": "Preserves Mira's attendance in the audience of a guest story and the unresolved Sam/Sami identity; makes no claim that Sam attended or was absent."
+    },
+    {
+      "id": "answer-018",
+      "requiredMet": [
+        true,
+        false
+      ],
+      "unsupported": [
+        "Claims Dana was not present, while E3-event says only that no presence is recorded."
+      ],
+      "attributionOrQualificationErrors": [
+        "Converts absence of attendance evidence into evidence of absence."
+      ],
+      "uncertaintyAppropriate": false,
+      "useful": false,
+      "semanticPass": false,
+      "rationale": "Correctly mentions the seed exchange and discussed garden, but answers the central attendance question with an unsupported negative."
+    },
+    {
+      "id": "answer-019",
+      "requiredMet": [
+        false
+      ],
+      "unsupported": [],
+      "attributionOrQualificationErrors": [],
+      "uncertaintyAppropriate": true,
+      "useful": true,
+      "semanticPass": false,
+      "rationale": "Correctly answers what Nia did and whom she worked beside. The frozen required proposition also includes Tari shaping handles; that additional detail is omitted, so the strict rubric is not fully met."
+    },
+    {
+      "id": "answer-020",
+      "requiredMet": [
+        false,
+        false,
+        false
+      ],
+      "unsupported": [
+        "Claims Ada=morning, Bea=morning, Chen=afternoon satisfies the Bea/Chen equality constraint.",
+        "Invents two valid assignments and says pairwise equality does not force transitive equality.",
+        "Alternately asserts consistency and impossibility without resolving the contradiction."
+      ],
+      "attributionOrQualificationErrors": [],
+      "uncertaintyAppropriate": false,
+      "useful": false,
+      "semanticPass": false,
+      "rationale": "Contains a correct equality-chain observation but contradicts it with invalid schedules and false mathematical reasoning; truncated before a coherent final answer."
+    },
+    {
+      "id": "answer-021",
+      "requiredMet": [
+        true,
+        true
+      ],
+      "unsupported": [],
+      "attributionOrQualificationErrors": [],
+      "uncertaintyAppropriate": true,
+      "useful": true,
+      "semanticPass": true,
+      "rationale": "Gives the earliest ten-minute bench suggestion and explicitly preserves both participants' acceptance of noise, with all relevant references."
+    },
+    {
+      "id": "answer-022",
+      "requiredMet": [
+        true,
+        true
+      ],
+      "unsupported": [
+        "The claim that the background noise is suitable cites availability, venue and intention records, but omits O4-p0/O4-p1, the sources establishing that both participants accept noise."
+      ],
+      "attributionOrQualificationErrors": [],
+      "uncertaintyAppropriate": true,
+      "useful": true,
+      "semanticPass": false,
+      "rationale": "The plan and noise conclusion are correct from the full sources, but its single claim's references do not support the noise-suitability clause."
+    },
+    {
+      "id": "answer-023",
+      "requiredMet": [
+        true,
+        true
+      ],
+      "unsupported": [
+        "Says Theo's quiet-seat requirement cannot be confirmed as met because his time is unknown; the venue's known quiet/seating properties satisfy that environmental requirement independently of scheduling."
+      ],
+      "attributionOrQualificationErrors": [],
+      "uncertaintyAppropriate": true,
+      "useful": false,
+      "semanticPass": false,
+      "rationale": "Correctly leaves joint timing unresolved and retains Lina's interval and the suitable room, but conflates environmental fit with availability and truncates."
+    },
+    {
+      "id": "answer-024",
+      "requiredMet": [
+        true
+      ],
+      "unsupported": [],
+      "attributionOrQualificationErrors": [],
+      "uncertaintyAppropriate": true,
+      "useful": true,
+      "semanticPass": true,
+      "rationale": "French is the supported common language for L7; the answer does not generalize Nia's capability or claim Spanish is established for her."
+    },
+    {
+      "id": "answer-025",
+      "requiredMet": [
+        true,
+        false,
+        false
+      ],
+      "unsupported": [],
+      "attributionOrQualificationErrors": [],
+      "uncertaintyAppropriate": true,
+      "useful": true,
+      "semanticPass": false,
+      "rationale": "Correctly returns Rosa's soup/market and peaches/pier recommendations, but omits the rubric's explicit separation of Malik's bakery remark and home's later-recording role."
+    },
+    {
+      "id": "answer-026",
+      "requiredMet": [
+        false,
+        true
+      ],
+      "unsupported": [
+        "Proposes 09:10–09:35 as feasible although Lina's first window ends at 09:25.",
+        "Explicitly claims 09:35 falls within a window ending 09:25."
+      ],
+      "attributionOrQualificationErrors": [],
+      "uncertaintyAppropriate": false,
+      "useful": false,
+      "semanticPass": false,
+      "rationale": "Venue suitability is supported, but the central scheduling answer violates the continuous availability requirement and the answer is truncated."
+    },
+    {
+      "id": "answer-027",
+      "requiredMet": [
+        true
+      ],
+      "unsupported": [],
+      "attributionOrQualificationErrors": [],
+      "uncertaintyAppropriate": true,
+      "useful": true,
+      "semanticPass": true,
+      "rationale": "French is the supported common language for L7; the answer does not generalize Nia's capability or claim Spanish is established for her."
+    },
+    {
+      "id": "answer-028",
+      "requiredMet": [
+        true,
+        true
+      ],
+      "unsupported": [
+        "Claims the ferry time appeared in no other conversation or record and was discussed only once; one supplied note cannot establish that global absence.",
+        "Says the conversation was explicitly in the morning; T11 gives the ferry's morning departure, not an explicit conversation time."
+      ],
+      "attributionOrQualificationErrors": [
+        "Promotes the ferry's morning time into the conversation's time."
+      ],
+      "uncertaintyAppropriate": false,
+      "useful": false,
+      "semanticPass": false,
+      "rationale": "Answers the original question but adds unjustified completeness and timing claims before truncating mid-JSON."
+    },
+    {
+      "id": "answer-029",
+      "requiredMet": [
+        true,
+        true
+      ],
+      "unsupported": [
+        "Describes Luis's memory of music playing as conflicting with Mara's preference, although presence of music does not itself contradict a preference for quiet."
+      ],
+      "attributionOrQualificationErrors": [],
+      "uncertaintyAppropriate": false,
+      "useful": true,
+      "semanticPass": false,
+      "rationale": "Retains both attributed reports, but clouds the explicit quiet preference by treating an observed event as opposing preference evidence; also includes an irrelevant yet supported bench fact."
+    },
+    {
+      "id": "answer-030",
+      "requiredMet": [
+        true,
+        true
+      ],
+      "unsupported": [
+        "Claims equal-fields/1 confirms semantic equivalence or faithful prose restatement; structural field equality does not certify prose meaning.",
+        "All comparisons about the candidate cite only T4-original, omitting the source containing the proposed replacement."
+      ],
+      "attributionOrQualificationErrors": [
+        "Elevates structural agreement into a semantic guarantee."
+      ],
+      "uncertaintyAppropriate": false,
+      "useful": false,
+      "semanticPass": false,
+      "rationale": "Correctly recognizes the faithful paraphrase and qualifiers, but provides an overstated machine-verification rationale and truncates."
+    },
+    {
+      "id": "answer-031",
+      "requiredMet": [
+        true,
+        true
+      ],
+      "unsupported": [],
+      "attributionOrQualificationErrors": [],
+      "uncertaintyAppropriate": false,
+      "useful": true,
+      "semanticPass": false,
+      "rationale": "Preserves both attributed statements but asks whether Mara's stated preference overrides a past music event. That confuses an unknown tolerance/change with the known preference relevant to the next room."
+    },
+    {
+      "id": "answer-032",
+      "requiredMet": [
+        false,
+        false,
+        false
+      ],
+      "unsupported": [],
+      "attributionOrQualificationErrors": [],
+      "uncertaintyAppropriate": false,
+      "useful": false,
+      "semanticPass": false,
+      "rationale": "Blanket abstention omits the known reason fidelity cannot be checked, the visible candidate's content and the need to recover reliable original evidence. What is needed is not wholly unknown."
+    },
+    {
+      "id": "answer-033",
+      "requiredMet": [
+        true
+      ],
+      "unsupported": [],
+      "attributionOrQualificationErrors": [],
+      "uncertaintyAppropriate": true,
+      "useful": true,
+      "semanticPass": true,
+      "rationale": "Gives the complete pantry shelf and basket location with the supporting V8 reference; no unsupported additions."
+    },
+    {
+      "id": "answer-034",
+      "requiredMet": [
+        false,
+        true
+      ],
+      "unsupported": [
+        "Initially claims that Leah as preference holder matches the original, although the original reports Owen's speech."
+      ],
+      "attributionOrQualificationErrors": [
+        "Conflicting attribution: the opening endorses Leah and later claims correctly identify Owen."
+      ],
+      "uncertaintyAppropriate": false,
+      "useful": false,
+      "semanticPass": false,
+      "rationale": "Eventually rejects the transfer to Leah and retains the other qualifications, but contradicts itself and ends mid-JSON."
+    },
+    {
+      "id": "answer-035",
+      "requiredMet": [
+        true,
+        true
+      ],
+      "unsupported": [
+        "Every original-versus-candidate comparison cites only T1-original; that source does not contain the proposed replacement whose always wording is being assessed."
+      ],
+      "attributionOrQualificationErrors": [],
+      "uncertaintyAppropriate": true,
+      "useful": true,
+      "semanticPass": false,
+      "rationale": "Correctly rejects often-to-always strengthening and retains the long-journey and solitude-versus-party conditions. Citation support is incomplete; its extra explanation field and partial status with no unknown are separate mechanical defects."
+    },
+    {
+      "id": "answer-036",
+      "requiredMet": [
+        true
+      ],
+      "unsupported": [],
+      "attributionOrQualificationErrors": [],
+      "uncertaintyAppropriate": true,
+      "useful": true,
+      "semanticPass": true,
+      "rationale": "Gives the complete pantry shelf and basket location with the supporting V8 reference; no unsupported additions."
+    },
+    {
+      "id": "answer-037",
+      "requiredMet": [
+        false,
+        false
+      ],
+      "unsupported": [
+        "Claims Dana did not participate; being mentioned without attendance evidence does not establish nonparticipation."
+      ],
+      "attributionOrQualificationErrors": [
+        "Converts missing participation evidence into definite nonparticipation."
+      ],
+      "uncertaintyAppropriate": false,
+      "useful": false,
+      "semanticPass": false,
+      "rationale": "Makes the forbidden absence inference and does not preserve the full Mira/Rowan exchange account."
+    },
+    {
+      "id": "answer-038",
+      "requiredMet": [
+        true,
+        true,
+        false
+      ],
+      "unsupported": [],
+      "attributionOrQualificationErrors": [],
+      "uncertaintyAppropriate": true,
+      "useful": true,
+      "semanticPass": false,
+      "rationale": "Correctly separates Rosa's two recommendations from Malik's bakery remark and gives the conversation locations, but never states that home was the later recording location required by the rubric."
+    },
+    {
+      "id": "answer-039",
+      "requiredMet": [
+        true,
+        true
+      ],
+      "unsupported": [],
+      "attributionOrQualificationErrors": [],
+      "uncertaintyAppropriate": true,
+      "useful": true,
+      "semanticPass": true,
+      "rationale": "Correctly retains Mina's water request and leaves the biscuit speaker unresolved instead of assigning it to either attendee."
+    },
+    {
+      "id": "answer-040",
+      "requiredMet": [
+        true,
+        false,
+        true
+      ],
+      "unsupported": [
+        "Claims Ari's change arose solely from reflection and had no external input; the sources do not establish what influenced the reflection."
+      ],
+      "attributionOrQualificationErrors": [
+        "Presents trust contributing to relief without retaining Ari's tentative perhaps."
+      ],
+      "uncertaintyAppropriate": false,
+      "useful": true,
+      "semanticPass": false,
+      "rationale": "The initial account and separation from Jo's recorded feelings are retained, but the later interpretation is overstated and its origin is invented."
+    },
+    {
+      "id": "answer-041",
+      "requiredMet": [
+        true,
+        true
+      ],
+      "unsupported": [],
+      "attributionOrQualificationErrors": [],
+      "uncertaintyAppropriate": true,
+      "useful": true,
+      "semanticPass": true,
+      "rationale": "Accurately distinguishes the known Tuesday-evening decaf request from the untimed caffeinated request and says contradiction remains unconfirmed."
+    },
+    {
+      "id": "answer-042",
+      "requiredMet": [
+        true,
+        true
+      ],
+      "unsupported": [
+        "Repeatedly calls the prior noise level disputed or the recollections conflicting although Mara has not disputed Luis's account.",
+        "Says room setup depends on resolving whether music played last time; the stated quiet preference already supports a quiet-room suggestion."
+      ],
+      "attributionOrQualificationErrors": [
+        "Turns an unanswered recollection into an affirmative dispute."
+      ],
+      "uncertaintyAppropriate": false,
+      "useful": false,
+      "semanticPass": false,
+      "rationale": "Keeps the key preference and attributed memory but adds unsupported dispute/necessity claims and ends mid-JSON."
+    },
+    {
+      "id": "answer-043",
+      "requiredMet": [
+        false
+      ],
+      "unsupported": [],
+      "attributionOrQualificationErrors": [],
+      "uncertaintyAppropriate": true,
+      "useful": true,
+      "semanticPass": false,
+      "rationale": "Correctly answers what Nia did and whom she worked beside. The frozen required proposition also includes Tari shaping handles; that additional detail is omitted, so the strict rubric is not fully met."
+    },
+    {
+      "id": "answer-044",
+      "requiredMet": [
+        true
+      ],
+      "unsupported": [],
+      "attributionOrQualificationErrors": [],
+      "uncertaintyAppropriate": true,
+      "useful": true,
+      "semanticPass": true,
+      "rationale": "French is the supported common language for L7; the answer does not generalize Nia's capability or claim Spanish is established for her."
+    },
+    {
+      "id": "answer-045",
+      "requiredMet": [
+        true,
+        true
+      ],
+      "unsupported": [],
+      "attributionOrQualificationErrors": [],
+      "uncertaintyAppropriate": true,
+      "useful": true,
+      "semanticPass": true,
+      "rationale": "Preserves Mira's attendance in the audience of a guest story and the unresolved Sam/Sami identity; makes no claim that Sam attended or was absent."
+    },
+    {
+      "id": "answer-046",
+      "requiredMet": [
+        true,
+        true
+      ],
+      "unsupported": [
+        "Candidate comparisons cite only T1-original rather than the candidate source containing always."
+      ],
+      "attributionOrQualificationErrors": [],
+      "uncertaintyAppropriate": false,
+      "useful": false,
+      "semanticPass": false,
+      "rationale": "Correctly identifies the modality change, but reopens acceptability under unspecified context and appends prose outside its JSON, making the complete response unparseable."
+    },
+    {
+      "id": "answer-047",
+      "requiredMet": [
+        false
+      ],
+      "unsupported": [],
+      "attributionOrQualificationErrors": [],
+      "uncertaintyAppropriate": true,
+      "useful": true,
+      "semanticPass": false,
+      "rationale": "Correctly answers what Nia did and whom she worked beside. The frozen required proposition also includes Tari shaping handles; that additional detail is omitted, so the strict rubric is not fully met."
+    },
+    {
+      "id": "answer-048",
+      "requiredMet": [
+        true,
+        true
+      ],
+      "unsupported": [
+        "All candidate-comparison claims cite only T4-original, which does not contain the proposed replacement.",
+        "Assertions about annotation bindings, checker results and reference metadata cite the original prose as if it reported those machine facts."
+      ],
+      "attributionOrQualificationErrors": [],
+      "uncertaintyAppropriate": true,
+      "useful": false,
+      "semanticPass": false,
+      "rationale": "The visible account recognizes the paraphrase and explicitly limits the checker to structure, but fails whole-claim citation support and ends mid-JSON."
+    },
+    {
+      "id": "answer-049",
+      "requiredMet": [
+        false,
+        false,
+        false
+      ],
+      "unsupported": [],
+      "attributionOrQualificationErrors": [],
+      "uncertaintyAppropriate": false,
+      "useful": false,
+      "semanticPass": false,
+      "rationale": "Abstains from a decidable finite consistency question instead of identifying the equality/separation contradiction and need to change a requirement; the JSON also omits required claims."
+    },
+    {
+      "id": "answer-050",
+      "requiredMet": [
+        true,
+        true,
+        false
+      ],
+      "unsupported": [
+        "Cites unavailable/non-supplied T2-original and supplement IDs as if they were supplied evidence records."
+      ],
+      "attributionOrQualificationErrors": [],
+      "uncertaintyAppropriate": true,
+      "useful": true,
+      "semanticPass": false,
+      "rationale": "Correctly presents the draft as draft and notes unavailable original wording, but omits an explicit recovery step and uses nonexistent evidence references."
+    },
+    {
+      "id": "answer-051",
+      "requiredMet": [
+        true,
+        true
+      ],
+      "unsupported": [],
+      "attributionOrQualificationErrors": [],
+      "uncertaintyAppropriate": true,
+      "useful": true,
+      "semanticPass": true,
+      "rationale": "Correctly attributes tea to Omar and coffee to Sabine, using the explicit occasion-specific request as the serving basis."
+    },
+    {
+      "id": "answer-052",
+      "requiredMet": [
+        true,
+        true
+      ],
+      "unsupported": [],
+      "attributionOrQualificationErrors": [],
+      "uncertaintyAppropriate": true,
+      "useful": true,
+      "semanticPass": true,
+      "rationale": "Preserves quiet-for-reading and lively-for-dancing and correctly explains why separate activity contexts do not conflict."
+    },
+    {
+      "id": "answer-053",
+      "requiredMet": [
+        true,
+        false,
+        true
+      ],
+      "unsupported": [],
+      "attributionOrQualificationErrors": [],
+      "uncertaintyAppropriate": false,
+      "useful": true,
+      "semanticPass": false,
+      "rationale": "Retains enjoyment, blank date, missing pages and unknown frequency, but does not preserve the explicit uncertainty about whether this practice belongs to the specified week."
+    },
+    {
+      "id": "answer-054",
+      "requiredMet": [
+        false,
+        true
+      ],
+      "unsupported": [
+        "Initially calls 09:00–09:20 a supported shared arrangement without Theo's availability.",
+        "Calls 09:00–09:20 the only supported interval for Lina despite her full 09:00–10:00 availability."
+      ],
+      "attributionOrQualificationErrors": [],
+      "uncertaintyAppropriate": false,
+      "useful": false,
+      "semanticPass": false,
+      "rationale": "Later caveats identify the missing Theo interval, but do not repair the opening supported-plan claim or invented uniqueness; response is truncated."
+    },
+    {
+      "id": "answer-055",
+      "requiredMet": [
+        true,
+        true
+      ],
+      "unsupported": [],
+      "attributionOrQualificationErrors": [],
+      "uncertaintyAppropriate": true,
+      "useful": true,
+      "semanticPass": true,
+      "rationale": "Preserves quiet-for-reading and lively-for-dancing and correctly explains why separate activity contexts do not conflict."
+    },
+    {
+      "id": "answer-056",
+      "requiredMet": [
+        true,
+        true
+      ],
+      "unsupported": [],
+      "attributionOrQualificationErrors": [],
+      "uncertaintyAppropriate": true,
+      "useful": false,
+      "semanticPass": false,
+      "rationale": "The visible content correctly favors Sabine's own coffee request over Omar's habitual account, but repeats until the JSON is cut off; unparseable answers cannot pass the frozen contract."
+    },
+    {
+      "id": "answer-057",
+      "requiredMet": [
+        false,
+        false,
+        true
+      ],
+      "unsupported": [
+        "Initially claims the draft preserves fields of the earlier memory, although those original fields are unavailable."
+      ],
+      "attributionOrQualificationErrors": [
+        "Transfers candidate annotations backward into claims about the missing original."
+      ],
+      "uncertaintyAppropriate": false,
+      "useful": false,
+      "semanticPass": false,
+      "rationale": "Later states the correct inability to verify and need for original evidence, but contradicts that with an initial preservation claim, omits the draft's substantive content and truncates."
+    },
+    {
+      "id": "answer-058",
+      "requiredMet": [
+        true,
+        true
+      ],
+      "unsupported": [
+        "Candidate comparisons cite only the original source.",
+        "Treats a first-person to third-person restatement retaining Ravi as the same preference holder as an additional attribution defect."
+      ],
+      "attributionOrQualificationErrors": [
+        "Conflates grammatical narration perspective with changing whose preference is reported."
+      ],
+      "uncertaintyAppropriate": false,
+      "useful": false,
+      "semanticPass": false,
+      "rationale": "The often-to-always rejection is correct, but adds an unjustified attribution error and unresolved hypothetical exception, then appends non-JSON commentary."
+    },
+    {
+      "id": "answer-059",
+      "requiredMet": [
+        true,
+        false,
+        false
+      ],
+      "unsupported": [],
+      "attributionOrQualificationErrors": [],
+      "uncertaintyAppropriate": true,
+      "useful": true,
+      "semanticPass": false,
+      "rationale": "Correctly returns Rosa's soup/market and peaches/pier recommendations, but omits the rubric's explicit separation of Malik's bakery remark and home's later-recording role."
+    },
+    {
+      "id": "answer-060",
+      "requiredMet": [
+        true,
+        true
+      ],
+      "unsupported": [
+        "All claims cite nonexistent E1 rather than the supplied E2-event source."
+      ],
+      "attributionOrQualificationErrors": [],
+      "uncertaintyAppropriate": true,
+      "useful": true,
+      "semanticPass": false,
+      "rationale": "The substantive account correctly leaves Sam's participation unresolved, but none of its references resolves to the supplied evidence."
+    },
+    {
+      "id": "answer-061",
+      "requiredMet": [
+        true,
+        true
+      ],
+      "unsupported": [],
+      "attributionOrQualificationErrors": [],
+      "uncertaintyAppropriate": true,
+      "useful": false,
+      "semanticPass": false,
+      "rationale": "Correctly recommends downstairs, retains the cello-carrying condition and normal stair use without the cello, but repeats until truncated mid-JSON."
+    },
+    {
+      "id": "answer-062",
+      "requiredMet": [
+        true,
+        false
+      ],
+      "unsupported": [
+        "Claims Dana did not participate and that the record states there was no arrival or presence; the record says no such presence was recorded."
+      ],
+      "attributionOrQualificationErrors": [
+        "Removes the 'records no' evidence qualification and asserts an event-level absence."
+      ],
+      "uncertaintyAppropriate": false,
+      "useful": false,
+      "semanticPass": false,
+      "rationale": "Preserves who exchanged seeds and what was discussed, but incorrectly settles Dana's participation as absent."
+    },
+    {
+      "id": "answer-063",
+      "requiredMet": [
+        true,
+        true
+      ],
+      "unsupported": [
+        "Says an evening target alone would establish contradiction, without establishing that both notes concern the same cup or exclude a changed request."
+      ],
+      "attributionOrQualificationErrors": [],
+      "uncertaintyAppropriate": true,
+      "useful": false,
+      "semanticPass": false,
+      "rationale": "Retains the substantive uncertainty but adds an overstrong conditional and repeats until the JSON is truncated."
+    },
+    {
+      "id": "answer-064",
+      "requiredMet": [
+        true,
+        true,
+        true
+      ],
+      "unsupported": [
+        "States Ari's later interpretation was not derived from Jo's perspective; lack of a recorded Jo account does not establish what informed Ari's reflection."
+      ],
+      "attributionOrQualificationErrors": [],
+      "uncertaintyAppropriate": false,
+      "useful": true,
+      "semanticPass": false,
+      "rationale": "Retains both accounts, six-week timing, explicit perhaps and Jo's unrecorded feelings, but makes an unsupported negative claim about the interpretation's origin."
+    },
+    {
+      "id": "answer-065",
+      "requiredMet": [
+        true,
+        true
+      ],
+      "unsupported": [],
+      "attributionOrQualificationErrors": [],
+      "uncertaintyAppropriate": true,
+      "useful": true,
+      "semanticPass": true,
+      "rationale": "Correctly retains Mina's water request and leaves the biscuit speaker unresolved instead of assigning it to either attendee."
+    },
+    {
+      "id": "answer-066",
+      "requiredMet": [
+        true,
+        true
+      ],
+      "unsupported": [
+        "Claims the draft fails a structural checker as confirmed by annotation, citing only T3-original; that source supports Owen's preference but does not report an annotation or machine check."
+      ],
+      "attributionOrQualificationErrors": [],
+      "uncertaintyAppropriate": true,
+      "useful": false,
+      "semanticPass": false,
+      "rationale": "Correctly distinguishes Owen's report through Leah and rejects the draft while retaining qualifiers; the unsupported checker assertion and truncated response prevent a pass."
+    },
+    {
+      "id": "answer-067",
+      "requiredMet": [
+        true,
+        true
+      ],
+      "unsupported": [],
+      "attributionOrQualificationErrors": [],
+      "uncertaintyAppropriate": true,
+      "useful": true,
+      "semanticPass": true,
+      "rationale": "Correctly retains Mina's water request and leaves the biscuit speaker unresolved instead of assigning it to either attendee."
+    },
+    {
+      "id": "answer-068",
+      "requiredMet": [
+        true,
+        true
+      ],
+      "unsupported": [],
+      "attributionOrQualificationErrors": [],
+      "uncertaintyAppropriate": true,
+      "useful": true,
+      "semanticPass": true,
+      "rationale": "The substantive claims correctly preserve both activity-scoped preferences and deny conflict. The final awkward lexical comment about the word reading does not say that lively applies to reading, so no contrary preference was inferred."
+    },
+    {
+      "id": "answer-069",
+      "requiredMet": [
+        true,
+        true
+      ],
+      "unsupported": [
+        "Claims preservation of sentence structure and intent was verified by the fixture checker, whose scope is named structural fields rather than prose meaning.",
+        "All candidate comparisons cite only the original source; annotation/checker verification claims also cite prose that contains no such report."
+      ],
+      "attributionOrQualificationErrors": [
+        "Promotes a structural check to verification of the restatement's intent."
+      ],
+      "uncertaintyAppropriate": false,
+      "useful": true,
+      "semanticPass": false,
+      "rationale": "The acceptance and retained qualifications are correct, but the supporting verification claims exceed the evidence and checker scope."
+    },
+    {
+      "id": "answer-070",
+      "requiredMet": [
+        true,
+        false
+      ],
+      "unsupported": [],
+      "attributionOrQualificationErrors": [],
+      "uncertaintyAppropriate": true,
+      "useful": false,
+      "semanticPass": false,
+      "rationale": "Correctly ties the downstairs recommendation to carrying the cello, but omits her normal stair use without it and ends mid-JSON."
+    },
+    {
+      "id": "answer-071",
+      "requiredMet": [
+        true,
+        true
+      ],
+      "unsupported": [
+        "Says the visit is scheduled at 13:00; O3-intention says only that it is now 13:00."
+      ],
+      "attributionOrQualificationErrors": [
+        "Converts current time into a scheduled visit time."
+      ],
+      "uncertaintyAppropriate": true,
+      "useful": true,
+      "semanticPass": false,
+      "rationale": "Correctly retains both availability windows, the duration, the unsuitable room and the need for an alternative, but invents a 13:00 scheduled visit."
+    },
+    {
+      "id": "answer-072",
+      "requiredMet": [
+        false,
+        false,
+        false
+      ],
+      "unsupported": [],
+      "attributionOrQualificationErrors": [],
+      "uncertaintyAppropriate": false,
+      "useful": false,
+      "semanticPass": false,
+      "rationale": "Abstains from a decidable finite consistency question instead of identifying the equality/separation contradiction and need to change a requirement; the JSON also omits required claims."
+    }
+  ]
+}
+

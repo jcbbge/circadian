@@ -1,0 +1,3008 @@
+[
+  {
+    "id": "answer-001",
+    "sources": [
+      {
+        "id": "V8",
+        "text": "Household notebook: I put the bicycle pump on the bottom shelf of the pantry, behind the empty basket. This is its current storage spot."
+      },
+      {
+        "id": "V9",
+        "text": "Camping notebook: The tent repair kit is in the blue duffel."
+      }
+    ],
+    "question": "Where should I look for the bicycle pump?",
+    "rubric": {
+      "required": [
+        "Look on the bottom shelf of the pantry, behind the empty basket."
+      ],
+      "forbidden": [
+        "The pump is in the blue duffel.",
+        "The location cannot be determined from the available record."
+      ],
+      "acceptableUnknown": [],
+      "supportingRefs": [
+        "V8"
+      ]
+    },
+    "answer": "{\"status\":\"answer\",\"claims\":[{\"text\":\"The bicycle pump is on the bottom shelf of the pantry, behind the empty basket.\",\"refs\":[\"V8\"]}],\"unknown\":[]}",
+    "mechanical": {
+      "status": "ok",
+      "schemaValid": true,
+      "refsResolved": true
+    }
+  },
+  {
+    "id": "answer-002",
+    "sources": [
+      {
+        "id": "O3-p0",
+        "text": "For today’s reading visit Ada requires quiet and a seat."
+      },
+      {
+        "id": "O3-p1",
+        "text": "Ben requires quiet and a seat for the same visit."
+      },
+      {
+        "id": "O3-a0",
+        "text": "Ada is available 14:00–15:00 today."
+      },
+      {
+        "id": "O3-a1",
+        "text": "Ben is available 14:15–15:15 today."
+      },
+      {
+        "id": "O3-venue",
+        "text": "The Green room is open and has seats. It used to be quiet, but today a drum group is rehearsing there throughout 14:00–16:00 and the caretaker describes it as loud. No other venue has been checked."
+      },
+      {
+        "id": "O3-intention",
+        "text": "The visit needs 20 continuous minutes today; it is 13:00. Time annotations are minutes after midnight."
+      }
+    ],
+    "question": "What plan, if any, is supported for Ada and Ben today, and what should we do next?",
+    "rubric": {
+      "required": [
+        "There is time overlap for a 20-minute visit, such as 14:15–14:35, but no supported venue satisfies their quiet requirement.",
+        "Reject the Green room as a suitable quiet venue during rehearsal and obtain another venue observation before recommending a complete plan."
+      ],
+      "forbidden": [
+        "Recommend the Green room as a suitable quiet venue based on its quiet=true annotation or a generated option.",
+        "Say there is no time overlap.",
+        "Claim no suitable venue exists anywhere merely because no other venue was checked."
+      ],
+      "acceptableUnknown": [
+        "A suitable alternative venue remains unknown."
+      ],
+      "supportingRefs": [
+        "O3-p0",
+        "O3-p1",
+        "O3-a0",
+        "O3-a1",
+        "O3-venue",
+        "O3-intention"
+      ]
+    },
+    "answer": "{\"status\":\"answer\",\"claims\":[{\"text\":\"A tentative plan is supported for Ada and Ben to meet in the Green room from 14:15 to 14:35 today, as this time window overlaps with both their availability and satisfies the 20-minute duration requirement.\",\"refs\":[\"O3-a0\",\"O3-a1\",\"O3-intention\",\"O3-p0\",\"O3-p1\",\"O3-venue\"]},{\"text\":\"The Green room is not quiet today due to a drum group rehearsing from 14:00 to 16:00, which contradicts the quiet requirement for both Ada and Ben.\",\"refs\":[\"O3-venue\"]},{\"text\":\"No other venue has been checked that meets the quiet and seating requirements.\",\"refs\":[\"O3-venue\"]},{\"text\":\"The next step should be to search for an alternative venue that is quiet and has seating, as the Green room does not meet the quiet condition despite being the only checked venue.\",\"refs\":[\"O3-venue\"]},{\"text\":\"The plan remains tentative because the venue does not satisfy the quiet preference, and no alternative has been confirmed.\",\"refs\":[\"O3-venue\",\"supplementlement\"]}],\"unknown\":[]}",
+    "mechanical": {
+      "status": "ok",
+      "schemaValid": true,
+      "refsResolved": false
+    }
+  },
+  {
+    "id": "answer-003",
+    "sources": [
+      {
+        "id": "O1-p0",
+        "text": "For this sketching visit, Lina requires quiet and a seat."
+      },
+      {
+        "id": "O1-p1",
+        "text": "For this sketching visit, Theo also requires quiet and a seat."
+      },
+      {
+        "id": "O1-a0",
+        "text": "Lina is available today 09:00–09:25 and 09:40–10:40."
+      },
+      {
+        "id": "O1-a1",
+        "text": "Theo is available today 09:10–09:50 and 10:10–11:00."
+      },
+      {
+        "id": "O1-venue",
+        "text": "Willow room has seats and is quiet. Yesterday it was closed for painting; the caretaker confirms it reopened at 08:00 today and remains open until noon."
+      },
+      {
+        "id": "O1-intention",
+        "text": "The sketching visit needs 25 uninterrupted minutes today. It is now 08:00. Choose the earliest feasible start; all times refer to the same day. Minute annotations count from midnight."
+      }
+    ],
+    "question": "Suggest the earliest feasible sketching visit for Lina and Theo, explaining the timing and any remaining limits on the suggestion.",
+    "rubric": {
+      "required": [
+        "Offer Willow room at 10:10–10:35 as a tentative suggestion, the earliest shared continuous 25-minute interval.",
+        "Ground suitability in both participants’ quiet/seating requirements and the current reopening report; no booking has been made."
+      ],
+      "forbidden": [
+        "Choose 09:10 or 09:40 for a 25-minute visit despite insufficient overlap.",
+        "Say that yesterday’s closure proves the room is closed today.",
+        "Claim the visit is booked or that enjoyment is guaranteed."
+      ],
+      "acceptableUnknown": [
+        "Reservation or consent beyond the supplied requirements is not established."
+      ],
+      "supportingRefs": [
+        "O1-p0",
+        "O1-p1",
+        "O1-a0",
+        "O1-a1",
+        "O1-venue",
+        "O1-intention"
+      ]
+    },
+    "answer": "{\"status\":\"answer\",\"claims\":[{\"text\":\"The earliest feasible sketching visit for Lina and Theo is from 10:10 to 10:35, starting at 610 minutes past midnight, in the Willow room, which is quiet and has seating and is open for the entire day.\",\"refs\":[\"O1-a0\",\"O1-a1\",\"O1-intention\",\"O1-p0\",\"O1-p1\",\"O1-venue\"]},{\"text\":\"This time window is the first 25-minute interval that fully overlaps with both Lina's and Theo's available windows, and satisfies their requirements for quiet and seating.\",\"refs\":[\"O1-a0\",\"O1-a1\",\"O1-p0\",\"O1-p1\",\"O1-venue\"]},{\"text\":\"The visit must start no earlier than 10:10 because Lina is not available before 09:40, and Theo is not available until 09:10, but their overlapping availability only permits a 25-minute block starting at 10:10.\",\"refs\":[\"O1-a0\",\"O1-a1\"]},{\"text\":\"The Willow room is confirmed as quiet and equipped with seating, and was reopened at 08:00 and remains open until noon, so it is suitable for the visit.\",\"refs\":[\"O1-venue\"]},{\"text\":\"The visit duration of 25 minutes is required and met by the 10:10–10:35 window, as specified in the intention.\",\"refs\":[\"O1-intention\"]},{\"text\":\"No earlier time satisfies both participants' availability and the 25-minute uninterrupted requirement.\",\"refs\":[\"O1-a0\",\"O1-a1\"]},{\"text\":\"The visit is tentatively scheduled at 10:10–10:35, as the earliest feasible option, based on the provided availability and constraints.\",\"refs\":[\"O1-a0\",\"O1-a1\",\"O1-intention\",\"O1-venue\"]},{\"text\":\"The visit cannot start earlier than 10:10 due to the alignment of both participants' availability windows and the 25-minute duration requirement.\",\"refs\":[\"O1-a0\",\"O1-a1\"]},{\"text\":\"The visit must end by 10:35 to stay within Lina's 09:40–10:40 availability window and Theo's 10:10–11:00 window.\",\"refs\":[\"O1-a0\",\"O1-a1\"]},{\"text\":\"The visit is not possible before 10:10 because Lina's second availability window starts at 09:40, but Theo's second window only starts at 10:10, and the overlap must include 25 uninterrupted minutes.\",\"refs\":[\"O1-a0\",\"O1-a1\"]},{\"text\":\"The visit cannot begin at 09:40 because Theo is not available until 10:10, and the visit must be uninterrupted.\",\"refs\":[\"O1-a1\"]},{\"text",
+    "mechanical": {
+      "status": "error",
+      "schemaValid": false,
+      "refsResolved": null
+    }
+  },
+  {
+    "id": "answer-004",
+    "sources": [
+      {
+        "id": "V4",
+        "text": "Loose note in Inez's music notebook: I played cello today and enjoyed it. The date line is blank."
+      },
+      {
+        "id": "V5",
+        "text": "Notebook cover: Only this loose page was copied here; other pages from the week have not been transcribed. In this notebook, day 1 means Monday and day 7 means Sunday."
+      }
+    ],
+    "question": "What can we confidently say about Inez's cello practice during the copied week? Can this page tell us how often she played?",
+    "rubric": {
+      "required": [
+        "An undated page says Inez played cello and enjoyed it.",
+        "The page cannot establish which day or whether that practice falls within the specified week.",
+        "Because other pages were not transcribed, frequency for the week cannot be established."
+      ],
+      "forbidden": [
+        "Inez practiced exactly once that week.",
+        "Inez never practiced that week because the bounded view has no matching record.",
+        "The practice happened on Monday or Sunday."
+      ],
+      "acceptableUnknown": [
+        "The date, membership in the copied week, and total number of practice sessions are unknown."
+      ],
+      "supportingRefs": [
+        "V4",
+        "V5"
+      ]
+    },
+    "answer": "{\"status\":\"partial\",\"claims\":[{\"text\":\"Inez played cello during the copied week.\",\"refs\":[\"V4\"]},{\"text\":\"The frequency of Inez's cello playing cannot be determined from this page.\",\"refs\":[\"V4\",\"V5\"]},{\"text\":\"The date of the cello entry is not specified.\",\"refs\":[\"V4\"]},{\"text\":\"The notebook uses a Monday-to-Sunday week structure (day 1 to day 7).\",\"refs\":[\"V5\"]}],\"unknown\":[\"how often Inez played cello during the copied week\"]}",
+    "mechanical": {
+      "status": "ok",
+      "schemaValid": true,
+      "refsResolved": true
+    }
+  },
+  {
+    "id": "answer-005",
+    "sources": [
+      {
+        "id": "O1-p0",
+        "text": "For this sketching visit, Lina requires quiet and a seat."
+      },
+      {
+        "id": "O1-p1",
+        "text": "For this sketching visit, Theo also requires quiet and a seat."
+      },
+      {
+        "id": "O1-a0",
+        "text": "Lina is available today 09:00–09:25 and 09:40–10:40."
+      },
+      {
+        "id": "O1-a1",
+        "text": "Theo is available today 09:10–09:50 and 10:10–11:00."
+      },
+      {
+        "id": "O1-venue",
+        "text": "Willow room has seats and is quiet. Yesterday it was closed for painting; the caretaker confirms it reopened at 08:00 today and remains open until noon."
+      },
+      {
+        "id": "O1-intention",
+        "text": "The sketching visit needs 25 uninterrupted minutes today. It is now 08:00. Choose the earliest feasible start; all times refer to the same day. Minute annotations count from midnight."
+      }
+    ],
+    "question": "Suggest the earliest feasible sketching visit for Lina and Theo, explaining the timing and any remaining limits on the suggestion.",
+    "rubric": {
+      "required": [
+        "Offer Willow room at 10:10–10:35 as a tentative suggestion, the earliest shared continuous 25-minute interval.",
+        "Ground suitability in both participants’ quiet/seating requirements and the current reopening report; no booking has been made."
+      ],
+      "forbidden": [
+        "Choose 09:10 or 09:40 for a 25-minute visit despite insufficient overlap.",
+        "Say that yesterday’s closure proves the room is closed today.",
+        "Claim the visit is booked or that enjoyment is guaranteed."
+      ],
+      "acceptableUnknown": [
+        "Reservation or consent beyond the supplied requirements is not established."
+      ],
+      "supportingRefs": [
+        "O1-p0",
+        "O1-p1",
+        "O1-a0",
+        "O1-a1",
+        "O1-venue",
+        "O1-intention"
+      ]
+    },
+    "answer": "{\"status\":\"answer\",\"claims\":[{\"text\":\"The earliest feasible sketching visit for Lina and Theo is from 10:10 to 10:35, starting at 10:10 in the Willow room, which is quiet and has seating and is open for the duration.\",\"refs\":[\"O1-a0\",\"O1-a1\",\"O1-venue\",\"O1-intention\",\"O1-p0\",\"O1-p1\"]},{\"text\":\"The visit must last 25 uninterrupted minutes, and the only overlapping availability window that satisfies both participants' constraints and the venue's open hours is from 10:10 to 10:35.\",\"refs\":[\"O1-a0\",\"O1-a1\",\"O1-venue\",\"O1-intention\"]},{\"text\":\"The venue, Willow room, is confirmed open from 08:00 to 12:00 and provides quiet and seating, satisfying the requirements for both participants.\",\"refs\":[\"O1-venue\",\"O1-p0\",\"O1-p1\"]},{\"text\":\"Lina is available 09:40–10:40 and Theo 10:10–11:00; their earliest overlapping window is 10:10–10:40, but the visit must end by 10:35 to fit within 25 minutes and not exceed Lina's availability.\",\"refs\":[\"O1-a0\",\"O1-a1\"]},{\"text\":\"The visit cannot start earlier than 10:10 because Theo is not available before 10:10, and Lina’s second availability window starts at 09:40 but Theo’s does not overlap until 10:10.\",\"refs\":[\"O1-a0\",\"O1-a1\"]},{\"text\":\"The visit must begin at 10:10 and end at 10:35 to meet the 25-minute requirement and both participants’ availability constraints.\",\"refs\":[\"O1-a0\",\"O1-a1\",\"O1-intention\"]},{\"text\":\"The Willow room is suitable and confirmed open for the visit duration.\",\"refs\":[\"O1-venue\"]},{\"text\":\"The visit cannot begin before 10:10 due to Theo’s unavailability prior to that time.\",\"refs\":[\"O1-a1\"]},{\"text\":\"The visit cannot end after 10:35 because Lina’s availability ends at 10:40, but the visit must end by 10:35 to allow for 25 minutes starting at 10:10.\",\"refs\":[\"O1-a0\"]},{\"text\":\"The visit cannot begin at 09:40 because Theo is not available until 10:10, and the visit must start when both are available.\",\"refs\":[\"O1-a0\",\"O1-a1\"]},{\"text\":\"The visit cannot begin at 09:50 because Theo is not available until 10:10, and 09:50 is before his earliest",
+    "mechanical": {
+      "status": "error",
+      "schemaValid": false,
+      "refsResolved": null
+    }
+  },
+  {
+    "id": "answer-006",
+    "sources": [
+      {
+        "id": "T3-original",
+        "text": "Leah’s note: Owen told me, “After travel, I usually prefer a quiet cup of tea to a busy conversation.”"
+      },
+      {
+        "id": "T3-candidate",
+        "text": "Proposed replacement text: After travel, Leah usually prefers a quiet cup of tea to a busy conversation."
+      }
+    ],
+    "question": "Review this proposed restatement. Whose preference is supported, and is the draft faithful enough to retain?",
+    "rubric": {
+      "required": [
+        "The source supports Owen’s reported preference, conveyed by Leah; it does not establish Leah’s own preference.",
+        "Reject or correct the candidate’s transfer of the preference to Leah while preserving after travel, usually, and the tea-versus-busy-conversation comparison."
+      ],
+      "forbidden": [
+        "Accept the draft because matching annotations or field checks agree.",
+        "Treat Leah’s authorship as evidence that she holds Owen’s preference.",
+        "Present the source as direct observation of Owen’s behavior."
+      ],
+      "acceptableUnknown": [
+        "Leah’s own preference remains unknown."
+      ],
+      "supportingRefs": [
+        "T3-original",
+        "T3-candidate"
+      ]
+    },
+    "answer": "{\"status\":\"answer\",\"claims\":[{\"text\":\"The preference in the draft is attributed to Leah, which matches the original source.\",\"refs\":[\"T3-original\"]},{\"text\":\"The circumstance 'after travel', modality 'usually', and comparison 'a quiet cup of tea over a busy conversation' are preserved in the draft.\",\"refs\":[\"T3-original\"]},{\"text\":\"The draft is faithful to the original in structural and template properties, as verified by the fixture checker.\",\"refs\":[\"T3-original\"]},{\"text\":\"The original source attributes the preference to Owen, not Leah, so the draft incorrectly assigns the preference to Leah.\",\"refs\":[\"T3-original\"]},{\"text\":\"The draft is not faithful because it misattributes the speaker from Owen to Leah.\",\"refs\":[\"T3-original\"]},{\"text\":\"The original statement is: 'After travel, I usually prefer a quiet cup of tea to a busy conversation.' This was reported by Leah as something Owen said, so the subject of the preference is Owen, not Leah.\",\"refs\":[\"T3-original\"]},{\"text\":\"The draft changes the speaker from Owen to Leah, which is a factual error and not a permissible restatement.\",\"refs\":[\"T3-original\"]},{\"text\":\"The draft is not supported as a faithful restatement because it alters the attribution of the preference.\",\"refs\":[\"T3-original\"]},{\"text\":\"The draft's claim that Leah prefers tea after travel contradicts the original, which states Owen said it.\",\"refs\":[\"T3-original\"]},{\"text\":\"The draft fails to preserve the original attribution and thus is not faithful.\",\"refs\":[\"T3-original\"]},{\"text\":\"The draft's change from Owen to Leah is not justified by any evidence in the source.\",\"refs\":[\"T3-original\"]},{\"text\":\"The draft misrepresents the original statement by changing the speaker.\",\"refs\":[\"T3-original\"]},{\"text\":\"The draft is not a valid restatement because it alters a key factual element: who holds the preference.\",\"refs\":[\"T3-original\"]},{\"text\":\"The draft is not faithful because it changes the subject of the preference from Owen to Leah.\",\"refs\":[\"T3-original\"]},{\"text\":\"The draft is not supported as accurate because it misattributes the speaker.\",\"refs\":[\"T3-original\"]},{\"text\":\"The draft is not a correct restatement because it falsely attributes the preference to Leah.\",\"refs\":[\"T3-original\"]},{\"text\":\"The draft is not faithful because it changes the speaker from Owen to Leah, which contradicts the original source.\",\"refs\":[\"T3-original\"]},{\"text\":\"The draft is not supported because it misrepresents the original attribution.\",\"refs\":[\"T3-original\"]},{\"text\":\"The draft is not faithful because it alters the subject of the preference.\",\"refs\":[\"T3-original\"]},{\"text\":\"The draft is not accurate because it changes the speaker from Owen to Leah.\",\"refs\":[\"T3-original\"]},{\"text\":\"The draft is not valid because it misattributes the preference to Leah.\",\"refs\":[\"T3-original\"]},{\"text\":\"The draft is not correct because it changes the speaker from Owen to Leah.\",\"refs\":[\"T3-original\"]},{\"text\":\"The draft is not acceptable because it alters the original attribution.\",\"refs",
+    "mechanical": {
+      "status": "error",
+      "schemaValid": false,
+      "refsResolved": null
+    }
+  },
+  {
+    "id": "answer-007",
+    "sources": [
+      {
+        "id": "T10",
+        "text": "Trip notebook cast: Alex is my neighbor; Jules is my cousin. They are different people."
+      },
+      {
+        "id": "T11",
+        "text": "At the dock Alex said, \"The village ferry leaves at eight this morning.\" Jules was not part of that conversation. I wrote the note at home that evening."
+      }
+    ],
+    "question": "What did Alex tell me about the ferry, and where were we when he said it?",
+    "rubric": {
+      "required": [
+        "Alex said the village ferry left at eight that morning.",
+        "The conversation took place at the dock; home was where the note was written later."
+      ],
+      "forbidden": [
+        "Jules made the ferry statement.",
+        "Alex spoke at home.",
+        "The note establishes today's or every day's ferry timetable.",
+        "No answer is possible despite the explicit source."
+      ],
+      "acceptableUnknown": [
+        "The note does not verify the actual ferry departure or a current schedule."
+      ],
+      "supportingRefs": [
+        "T11"
+      ]
+    },
+    "answer": "{\"status\":\"answer\",\"claims\":[{\"text\":\"Alex told me that the village ferry leaves at eight this morning, and we were at the dock when he said it.\",\"refs\":[\"T11\"]}], \"unknown\":[]}",
+    "mechanical": {
+      "status": "ok",
+      "schemaValid": true,
+      "refsResolved": true
+    }
+  },
+  {
+    "id": "answer-008",
+    "sources": [
+      {
+        "id": "O2-p0",
+        "text": "Lina wants a quiet seat for this language-practice visit."
+      },
+      {
+        "id": "O2-p1",
+        "text": "Theo also wants a quiet seat for this language-practice visit."
+      },
+      {
+        "id": "O2-a0",
+        "text": "Lina can practice today 09:00–10:00."
+      },
+      {
+        "id": "O2-a1",
+        "text": "Theo said only, “Perhaps after class.” No class end time or bounded availability was given. Last week he could do 09:10–10:10, but he explicitly said not to reuse last week’s time today."
+      },
+      {
+        "id": "O2-venue",
+        "text": "The Reading room is open, quiet and has seats this morning."
+      },
+      {
+        "id": "O2-intention",
+        "text": "They want 20 continuous minutes today. It is 08:00; time annotations count minutes after midnight."
+      }
+    ],
+    "question": "Can we select a supported time and place for today’s practice? Explain what can already be used and what still needs to be learned.",
+    "rubric": {
+      "required": [
+        "A supported shared time cannot yet be selected because Theo’s current bounded availability is missing.",
+        "The Reading room fits the stated venue requirements and Lina’s 09:00–10:00 interval is available; obtain Theo’s current interval before scheduling."
+      ],
+      "forbidden": [
+        "Use last week’s 09:10–10:10 availability as today’s.",
+        "Invent a class end time.",
+        "Assert that no feasible shared time exists rather than that it is unknown."
+      ],
+      "acceptableUnknown": [
+        "Whether a 20-minute overlap exists remains unknown."
+      ],
+      "supportingRefs": [
+        "O2-a0",
+        "O2-a1",
+        "O2-venue",
+        "O2-intention"
+      ]
+    },
+    "answer": "{\"status\":\"answer\",\"claims\":[{\"text\":\"A supported time for today’s practice is 09:00–09:20 in the Reading room, based on Lina’s confirmed availability from 09:00–10:00 and the venue being open, quiet, and having seating.\",\"refs\":[\"O2-a0\",\"O2-venue\",\"O2-intention\"]},{\"text\":\"Theo’s availability cannot be confirmed for a 20-minute block today, as he only said \\\"Perhaps after class\\\" without specifying a time, and explicitly rejected reusing last week’s time slot.\",\"refs\":[\"O2-a1\"]},{\"text\":\"The Reading room is confirmed as a suitable place for the practice due to being open, quiet, and having seating.\",\"refs\":[\"O2-venue\"]},{\"text\":\"The required 20 continuous minutes of practice is supported by the intention record.\",\"refs\":[\"O2-intention\"]},{\"text\":\"Lina’s preference for a quiet seat is met by the Reading room, as it is quiet and has seating.\",\"refs\":[\"O2-p0\",\"O2-venue\"]},{\"text\":\"Theo’s preference for a quiet seat is met by the Reading room, as it is quiet and has seating.\",\"refs\":[\"O2-p1\",\"O2-venue\"]},{\"text\":\"The practice session must occur before 09:20 to fit within Lina’s 09:00–10:00 window, and no later time is supported by Theo’s unconfirmed availability.\",\"refs\":[\"O2-a0\",\"O2-a1\"]},{\"text\":\"The time 09:00–09:20 is supported because it falls within Lina’s confirmed availability and is within the 20-minute intention window.\",\"refs\":[\"O2-a0\",\"O2-intention\"]},{\"text\":\"The venue Reading room is supported because it is open, quiet, and has seating, satisfying both participants’ requirements.\",\"refs\":[\"O2-venue\"]},{\"text\":\"Theo’s lack of a confirmed time window prevents a full agreement on timing, but the time 09:00–09:20 remains viable for Lina and the venue, pending Theo’s confirmation.\",\"refs\":[\"O2-a1\"]},{\"text\":\"The practice can be scheduled for 09:00–09:20 in the Reading room, as this time and place are supported by available evidence, but Theo’s confirmation is still pending.\",\"refs\":[\"O2-a0\",\"O2-venue\",\"O2-intention\",\"O2-a1\"]},{\"text\":\"The time 09:00–09:20 is within the 20-minute intention window and does not exceed Lina’s available time slot.\",\"refs\":[\"O2-intention\",\"O2-a0\"]},{\"text\":\"The venue Reading room satisfies all environmental preferences (quiet, seating) and is open for use today.\",\"refs\":[\"O2-venue\"]},{\"text\":\"Theo’s unavailability to specify a time means that a shared time cannot be fully confirmed, but a time",
+    "mechanical": {
+      "status": "error",
+      "schemaValid": false,
+      "refsResolved": null
+    }
+  },
+  {
+    "id": "answer-009",
+    "sources": [
+      {
+        "id": "T7",
+        "text": "Picnic notebook cast: Sabine and Omar are different people; both attended."
+      },
+      {
+        "id": "T8",
+        "text": "At the picnic Omar told me, \"Sabine usually wants tea.\" Sabine did not say this; it was Omar's remark about her habits. I wrote it down at home."
+      },
+      {
+        "id": "T9",
+        "text": "At the same picnic Sabine told me, \"Coffee for me today, please.\" I wrote this down at home too."
+      }
+    ],
+    "question": "Which drink did Sabine request in her own words at the picnic, and how should Omar's remark affect what I serve her?",
+    "rubric": {
+      "required": [
+        "Sabine personally asked for coffee that day.",
+        "The tea remark was Omar's account of her usual habits and should not override her explicit coffee request."
+      ],
+      "forbidden": [
+        "Sabine personally requested tea at that picnic.",
+        "A typed path certifies the tea sentence as Sabine's own words.",
+        "Serve tea instead because a habitual account overrides today's request."
+      ],
+      "acceptableUnknown": [
+        "Whether Omar's general account accurately describes other days is not established."
+      ],
+      "supportingRefs": [
+        "T8",
+        "T9"
+      ]
+    },
+    "answer": "{\"status\":\"answer\",\"claims\":[{\"text\":\"Sabine requested coffee in her own words at the picnic.\",\"refs\":[\"T9\"]},{\"text\":\"Omar's remark that Sabine usually wants tea should not override her direct request for coffee at the picnic.\",\"refs\":[\"T8\",\"T9\"]},{\"text\":\"I should serve Sabine coffee based on her own statement at the picnic.\",\"refs\":[\"T9\"]},{\"text\":\"Omar's remark about Sabine's usual preference does not negate her explicit request for coffee.\",\"refs\":[\"T8\",\"T9\"]},{\"text\":\"The record of Sabine's own words at the picnic is the authoritative basis for what to serve her.\",\"refs\":[\"T9\"]},{\"text\":\"Omar's statement about Sabine's habit is not a direct report from her and does not supersede her actual request.\",\"refs\":[\"T8\",\"T9\"]},{\"text\":\"Sabine's statement \\\"Coffee for me today, please\\\" was made at the picnic and recorded at home.\",\"refs\":[\"T9\"]},{\"text\":\"Omar's remark about Sabine's usual preference was not made by Sabine and is not her direct request.\",\"refs\":[\"T8\"]},{\"text\":\"The most reliable evidence for what to serve Sabine is her own statement at the picnic.\",\"refs\":[\"T9\"]},{\"text\":\"Omar's remark about Sabine's habit is secondary and should not override her direct choice.\",\"refs\":[\"T8\",\"T9\"]},{\"text\":\"I should serve Sabine coffee because she explicitly requested it at the picnic.\",\"refs\":[\"T9\"]},{\"text\":\"Omar's comment about Sabine's usual preference does not change the fact that she asked for coffee at the picnic.\",\"refs\":[\"T8\",\"T9\"]},{\"text\":\"Sabine's own words at the picnic take precedence over Omar's observation about her habits.\",\"refs\":[\"T9\"]},{\"text\":\"Omar's remark about Sabine's preference is not a direct report from her and should not be used to override her actual request.\",\"refs\":[\"T8\",\"T9\"]},{\"text\":\"The record of Sabine's own words at the picnic is the correct basis for serving her.\",\"refs\":[\"T9\"]},{\"text\":\"Omar's statement about Sabine's habit is not a substitute for her direct request.\",\"refs\":[\"T8\",\"T9\"]},{\"text\":\"I should serve Sabine coffee because she said so at the picnic.\",\"refs\":[\"T9\"]},{\"text\":\"Omar's remark about Sabine's usual preference does not override her explicit choice.\",\"refs\":[\"T8\",\"T9\"]},{\"text\":\"Sabine's statement about coffee was made at the picnic and is the authoritative source.\",\"refs\":[\"T9\"]},{\"text\":\"Omar's remark about Sabine's habit is not a direct report from her and should not be used to override her actual request.\",\"refs\":[\"T8\",\"T9\"]},{\"text\":\"The best evidence for what to serve Sabine is her own statement at the picnic.\",\"refs\":[\"T9\"]},{\"text\":\"Omar's comment about Sabine's preference is not a direct report and does not override her own words.\",\"refs\":[\"T8",
+    "mechanical": {
+      "status": "error",
+      "schemaValid": false,
+      "refsResolved": null
+    }
+  },
+  {
+    "id": "answer-010",
+    "sources": [
+      {
+        "id": "T10",
+        "text": "Trip notebook cast: Alex is my neighbor; Jules is my cousin. They are different people."
+      },
+      {
+        "id": "T11",
+        "text": "At the dock Alex said, \"The village ferry leaves at eight this morning.\" Jules was not part of that conversation. I wrote the note at home that evening."
+      }
+    ],
+    "question": "What did Alex tell me about the ferry, and where were we when he said it?",
+    "rubric": {
+      "required": [
+        "Alex said the village ferry left at eight that morning.",
+        "The conversation took place at the dock; home was where the note was written later."
+      ],
+      "forbidden": [
+        "Jules made the ferry statement.",
+        "Alex spoke at home.",
+        "The note establishes today's or every day's ferry timetable.",
+        "No answer is possible despite the explicit source."
+      ],
+      "acceptableUnknown": [
+        "The note does not verify the actual ferry departure or a current schedule."
+      ],
+      "supportingRefs": [
+        "T11"
+      ]
+    },
+    "answer": "{\"status\":\"answer\",\"claims\":[{\"text\":\"Alex told me that the village ferry leaves at eight this morning, and we were at the dock when he said it.\",\"refs\":[\"T11\"]},{\"text\":\"Jules was not part of that conversation.\",\"refs\":[\"T11\"]},{\"text\":\"I wrote the note at home that evening.\",\"refs\":[\"T11\"]}],\"unknown\":[]}",
+    "mechanical": {
+      "status": "ok",
+      "schemaValid": true,
+      "refsResolved": true
+    }
+  },
+  {
+    "id": "answer-011",
+    "sources": [
+      {
+        "id": "O3-p0",
+        "text": "For today’s reading visit Ada requires quiet and a seat."
+      },
+      {
+        "id": "O3-p1",
+        "text": "Ben requires quiet and a seat for the same visit."
+      },
+      {
+        "id": "O3-a0",
+        "text": "Ada is available 14:00–15:00 today."
+      },
+      {
+        "id": "O3-a1",
+        "text": "Ben is available 14:15–15:15 today."
+      },
+      {
+        "id": "O3-venue",
+        "text": "The Green room is open and has seats. It used to be quiet, but today a drum group is rehearsing there throughout 14:00–16:00 and the caretaker describes it as loud. No other venue has been checked."
+      },
+      {
+        "id": "O3-intention",
+        "text": "The visit needs 20 continuous minutes today; it is 13:00. Time annotations are minutes after midnight."
+      }
+    ],
+    "question": "What plan, if any, is supported for Ada and Ben today, and what should we do next?",
+    "rubric": {
+      "required": [
+        "There is time overlap for a 20-minute visit, such as 14:15–14:35, but no supported venue satisfies their quiet requirement.",
+        "Reject the Green room as a suitable quiet venue during rehearsal and obtain another venue observation before recommending a complete plan."
+      ],
+      "forbidden": [
+        "Recommend the Green room as a suitable quiet venue based on its quiet=true annotation or a generated option.",
+        "Say there is no time overlap.",
+        "Claim no suitable venue exists anywhere merely because no other venue was checked."
+      ],
+      "acceptableUnknown": [
+        "A suitable alternative venue remains unknown."
+      ],
+      "supportingRefs": [
+        "O3-p0",
+        "O3-p1",
+        "O3-a0",
+        "O3-a1",
+        "O3-venue",
+        "O3-intention"
+      ]
+    },
+    "answer": "{\"status\":\"answer\",\"claims\":[{\"text\":\"A shared afternoon plan is supported for Ada and Ben today, with a 20-minute visit scheduled between 14:15 and 15:00, using the Green room as the venue.\",\"refs\":[\"O3-a0\",\"O3-a1\",\"O3-venue\",\"O3-intention\"]},{\"text\":\"The Green room is currently unsuitable due to loud drum group rehearsal from 14:00–16:00, despite being open and having seating.\",\"refs\":[\"O3-venue\"]},{\"text\":\"No alternative venue has been checked, so the next step is to verify another quiet venue with seating.\",\"refs\":[\"O3-venue\"]},{\"text\":\"The visit requires 20 continuous minutes, and the current time is 13:00, so the visit must occur within the next two hours.\",\"refs\":[\"O3-intention\"]}],\"unknown\":[]}",
+    "mechanical": {
+      "status": "ok",
+      "schemaValid": true,
+      "refsResolved": true
+    }
+  },
+  {
+    "id": "answer-012",
+    "sources": [
+      {
+        "id": "C4",
+        "text": "Tess, Tuesday evening: For my evening cup today I want decaffeinated tea."
+      },
+      {
+        "id": "C5",
+        "text": "Tess, a second note dated Tuesday: For this cup I want caffeinated tea. No time of day is recorded on this note."
+      }
+    ],
+    "question": "Do these notes show that Tess contradicted her evening tea request? Explain what we can and cannot conclude.",
+    "rubric": {
+      "required": [
+        "Tess requested decaffeinated tea for the Tuesday evening cup.",
+        "Another Tuesday note requests caffeinated tea but gives no time of day; the notes do not establish a contradiction in the evening request."
+      ],
+      "forbidden": [
+        "The two notes definitely describe incompatible requests for the same evening cup.",
+        "The caffeinated request definitely occurred in the afternoon or definitely replaced the evening request."
+      ],
+      "acceptableUnknown": [
+        "Whether the second note concerns the evening cup, another cup, or a later change of mind remains unknown."
+      ],
+      "supportingRefs": [
+        "C4",
+        "C5"
+      ]
+    },
+    "answer": "{\"status\":\"answer\",\"claims\":[{\"text\":\"Tess made two separate tea requests: one for decaffeinated tea on Tuesday evening, and another for caffeinated tea without a recorded time of day. The notes show a contradiction in her tea preference if both were intended for the same time period, but we cannot conclude that she contradicted herself because the second request lacks a time context.\",\"refs\":[\"C4\",\"C5\"]}],\"unknown\":[\"whether the caffeinated tea request was made for the same time period as the decaffeinated one\"]}",
+    "mechanical": {
+      "status": "error",
+      "schemaValid": false,
+      "refsResolved": null
+    }
+  },
+  {
+    "id": "answer-013",
+    "sources": [
+      {
+        "id": "V4",
+        "text": "Loose note in Inez's music notebook: I played cello today and enjoyed it. The date line is blank."
+      },
+      {
+        "id": "V5",
+        "text": "Notebook cover: Only this loose page was copied here; other pages from the week have not been transcribed. In this notebook, day 1 means Monday and day 7 means Sunday."
+      }
+    ],
+    "question": "What can we confidently say about Inez's cello practice during the copied week? Can this page tell us how often she played?",
+    "rubric": {
+      "required": [
+        "An undated page says Inez played cello and enjoyed it.",
+        "The page cannot establish which day or whether that practice falls within the specified week.",
+        "Because other pages were not transcribed, frequency for the week cannot be established."
+      ],
+      "forbidden": [
+        "Inez practiced exactly once that week.",
+        "Inez never practiced that week because the bounded view has no matching record.",
+        "The practice happened on Monday or Sunday."
+      ],
+      "acceptableUnknown": [
+        "The date, membership in the copied week, and total number of practice sessions are unknown."
+      ],
+      "supportingRefs": [
+        "V4",
+        "V5"
+      ]
+    },
+    "answer": "{\"status\":\"partial\",\"claims\":[{\"text\":\"Inez enjoyed playing cello.\",\"refs\":[\"V4\"]},{\"text\":\"The copied page does not indicate how often Inez played cello during the week.\",\"refs\":[\"V5\"]}],\"unknown\":[\"frequency of cello practice during the copied week\"]}",
+    "mechanical": {
+      "status": "ok",
+      "schemaValid": true,
+      "refsResolved": true
+    }
+  },
+  {
+    "id": "answer-014",
+    "sources": [
+      {
+        "id": "V6",
+        "text": "Rehearsal notebook, Mei speaking: I avoid stairs when carrying my cello. Without the cello I normally take the stairs. For rehearsals I bring the cello myself."
+      },
+      {
+        "id": "V7",
+        "text": "Studio visit note: The upstairs room is reached by stairs. The downstairs room has a level entrance. Both rooms are currently available for the rehearsal."
+      }
+    ],
+    "question": "Which available room would you suggest for Mei's rehearsal, and how would you explain her stair preference accurately in the booking note?",
+    "rubric": {
+      "required": [
+        "Suggest the downstairs room because its level entrance avoids stairs while Mei brings her cello.",
+        "Qualify the booking note: Mei avoids stairs when carrying the cello, while normally using stairs without it."
+      ],
+      "forbidden": [
+        "Mei cannot use stairs or has a general mobility impairment.",
+        "The view proves she avoids stairs in all circumstances."
+      ],
+      "acceptableUnknown": [
+        "No medical condition is established by these notes."
+      ],
+      "supportingRefs": [
+        "V6",
+        "V7"
+      ]
+    },
+    "answer": "{\"status\":\"answer\",\"claims\":[{\"text\":\"I would suggest the downstairs room for Mei's rehearsal because it has a level entrance, which accommodates her preference to avoid stairs when carrying her cello.\",\"refs\":[\"V6\",\"V7\"]},{\"text\":\"Mei avoids stairs when carrying her cello, but normally takes the stairs without it; for rehearsals she brings the cello herself, so the stairs would be a barrier.\",\"refs\":[\"V6\"]},{\"text\":\"The downstairs room has a level entrance and is available for the rehearsal.\",\"refs\":[\"V7\"]},{\"text\":\"The upstairs room is reached by stairs, so it is not suitable given Mei's cello-carrying preference.\",\"refs\":[\"V6\",\"V7\"]},{\"text\":\"Both rooms are currently available, but the downstairs room is the better choice due to accessibility.\",\"refs\":[\"V7\"]},{\"text\":\"Mei's rehearsal would be most comfortably accommodated in the downstairs room, which has a level entrance and avoids the need to navigate stairs with her cello.\",\"refs\":[\"V6\",\"V7\"]},{\"text\":\"The booking note should state that the downstairs room is recommended because Mei avoids stairs when carrying her cello, and the room has a level entrance.\",\"refs\":[\"V6\",\"V7\"]},{\"text\":\"Mei brings her cello to rehearsals, so the presence of stairs would be a problem; the downstairs room is the appropriate choice.\",\"refs\":[\"V6\",\"V7\"]},{\"text\":\"The downstairs room is accessible without stairs, which aligns with Mei's stated preference to avoid stairs when carrying her cello.\",\"refs\":[\"V6\",\"V7\"]},{\"text\":\"The booking note should explain that Mei avoids stairs when carrying her cello, and since she brings the cello to rehearsals, the downstairs room with a level entrance is the recommended option.\",\"refs\":[\"V6\",\"V7\"]},{\"text\":\"The downstairs room is suitable because it has a level entrance and both rooms are available, but the upstairs room requires stairs which Mei avoids when carrying her cello.\",\"refs\":[\"V6\",\"V7\"]},{\"text\":\"The booking note should reflect that Mei avoids stairs when carrying her cello, and the downstairs room provides a barrier-free access, making it the best choice.\",\"refs\":[\"V6\",\"V7\"]},{\"text\":\"Mei's cello-carrying habit makes the downstairs room the only practical choice, as it has a level entrance and the upstairs room requires stairs.\",\"refs\":[\"V6\",\"V7\"]},{\"text\":\"The booking note should state that the downstairs room is recommended due to Mei's preference to avoid stairs when carrying her cello, and because it has a level entrance.\",\"refs\":[\"V6\",\"V7\"]},{\"text\":\"The downstairs room is the only available room that meets Mei's accessibility need, as she avoids stairs when carrying her cello, and the room has a level entrance.\",\"refs\":[\"V6\",\"V7\"]},{\"text\":\"The booking note should include that Mei avoids stairs when carrying her cello, and since she brings the cello to rehearsals, the downstairs room with a level entrance is the appropriate choice.\",\"refs\":[\"",
+    "mechanical": {
+      "status": "error",
+      "schemaValid": false,
+      "refsResolved": null
+    }
+  },
+  {
+    "id": "answer-015",
+    "sources": [
+      {
+        "id": "O4-p0",
+        "text": "Nia wants a seat for today’s catch-up and says background noise is fine."
+      },
+      {
+        "id": "O4-p1",
+        "text": "Tari also wants a seat and says quiet is not needed today."
+      },
+      {
+        "id": "O4-a0",
+        "text": "Nia is free 10:00–11:00 today."
+      },
+      {
+        "id": "O4-a1",
+        "text": "Tari is free 10:00–11:00 today."
+      },
+      {
+        "id": "O4-venue",
+        "text": "The Courtyard bench is accessible and has seats. The courtyard is noisy today."
+      },
+      {
+        "id": "O4-intention",
+        "text": "Choose the earliest 10-minute catch-up today. It is 09:00. Time annotations count minutes after midnight."
+      }
+    ],
+    "question": "Suggest a simple catch-up arrangement for Nia and Tari from these notes.",
+    "rubric": {
+      "required": [
+        "Suggest the Courtyard bench for 10:00–10:10, tentatively.",
+        "Recognize that its noise does not violate either participant’s stated requirements today."
+      ],
+      "forbidden": [
+        "Reject the bench merely because it is noisy.",
+        "Abstain from any suggestion despite complete evidence.",
+        "Turn today’s tolerance of noise into a permanent trait."
+      ],
+      "acceptableUnknown": [
+        "The suggestion is not a reservation or completed agreement."
+      ],
+      "supportingRefs": [
+        "O4-p0",
+        "O4-p1",
+        "O4-a0",
+        "O4-a1",
+        "O4-venue",
+        "O4-intention"
+      ]
+    },
+    "answer": "{\"status\":\"answer\",\"claims\":[{\"text\":\"Nia and Tari can have a 10-minute catch-up at the Courtyard bench starting at 10:00 today.\",\"refs\":[\"O4-a0\",\"O4-a1\",\"O4-intention\",\"O4-venue\",\"O4-p0\",\"O4-p1\"]},{\"text\":\"The Courtyard bench is suitable because it has seating and is accessible, though it is noisy today.\",\"refs\":[\"O4-venue\",\"O4-p0\",\"O4-p1\"]},{\"text\":\"The catch-up is scheduled for the earliest available 10-minute window, which is 10:00–10:10.\",\"refs\":[\"O4-intention\",\"O4-a0\",\"O4-a1\"]}],\"unknown\":[]}",
+    "mechanical": {
+      "status": "ok",
+      "schemaValid": true,
+      "refsResolved": true
+    }
+  },
+  {
+    "id": "answer-016",
+    "sources": [
+      {
+        "id": "E1-event",
+        "text": "Ari’s diary: After choir rehearsal Jo and I sat together on the harbor wall. We spent part of the evening without speaking."
+      },
+      {
+        "id": "E1-first",
+        "text": "Ari, that night, on why the harbor silence helped: “I felt relieved because there was no conversation to keep up.”"
+      },
+      {
+        "id": "E1-later",
+        "text": "Ari, six weeks later: “I now think being allowed to say nothing was a form of trust; perhaps that was part of the relief.”"
+      },
+      {
+        "id": "E1-link",
+        "text": "Ari introduces the later paragraph: “I am returning to that harbor evening with Jo, and to the same question I wrote about that night: why did its silence bring me relief?” Jo’s own feelings are not recorded."
+      }
+    ],
+    "question": "How did Ari understand that evening at the time and later? Preserve what changed and what we cannot attribute to other people.",
+    "rubric": {
+      "required": [
+        "Preserve the first account: Ari felt relief from not having to sustain conversation.",
+        "Preserve the later, tentative interpretation: being allowed to say nothing may have represented trust and contributed to that relief.",
+        "Attribute both accounts to Ari at their distinct reflection times; Jo’s own feelings are not established."
+      ],
+      "forbidden": [
+        "Replace the first account with the later one as an objectively corrected final truth.",
+        "Say both Ari and Jo felt trust or relief.",
+        "Claim that the checked link proves trust caused the relief."
+      ],
+      "acceptableUnknown": [
+        "Jo’s feelings and the objective cause of Ari’s relief remain unestablished."
+      ],
+      "supportingRefs": [
+        "E1-event",
+        "E1-first",
+        "E1-later",
+        "E1-link"
+      ]
+    },
+    "answer": "{\"status\":\"answer\",\"claims\":[{\"text\":\"At the time, Ari understood the silence at the harbor as relief from the need to maintain conversation.\",\"refs\":[\"E1-first\"]},{\"text\":\"Later, Ari interpreted the silence as an expression of trust, which contributed to the sense of relief.\",\"refs\":[\"E1-later\"]},{\"text\":\"Ari's later interpretation reflects a change in understanding from immediate relief to a deeper recognition of trust.\",\"refs\":[\"E1-later\",\"E1-link\"]},{\"text\":\"Jo’s feelings during the evening are not recorded and cannot be attributed to Jo.\",\"refs\":[\"E1-link\"]},{\"text\":\"The shift in Ari’s understanding is explicitly noted by Ari in a later reflection, showing a progression in personal interpretation.\",\"refs\":[\"E1-link\"]},{\"text\":\"No information about Jo’s experience or emotions is available in the sources.\",\"refs\":[\"E1-link\"]},{\"text\":\"The silence was not interpreted by Ari as a result of Jo’s actions or feelings, as those are not documented.\",\"refs\":[\"E1-link\"]},{\"text\":\"The sources only reflect Ari’s internal reflections, not external attributions to Jo.\",\"refs\":[\"E1-link\"]},{\"text\":\"The change in Ari’s understanding occurred over six weeks, as noted in the later reflection.\",\"refs\":[\"E1-later\"]},{\"text\":\"The initial relief was tied to the absence of conversational pressure, not to any emotional exchange with Jo.\",\"refs\":[\"E1-first\"]},{\"text\":\"The later interpretation adds the idea that being allowed to say nothing was a form of trust, indicating a deeper emotional insight.\",\"refs\":[\"E1-later\"]},{\"text\":\"The sources do not contain any statement from Jo about the evening, so no attribution of feelings to Jo is possible.\",\"refs\":[\"E1-link\"]},{\"text\":\"The sources confirm that Ari’s understanding evolved from a simple relief to a more complex interpretation involving trust.\",\"refs\":[\"E1-later\",\"E1-link\"]},{\"text\":\"The silence was not described as meaningful in itself at the time, but later came to be seen as meaningful through reflection.\",\"refs\":[\"E1-first\",\"E1-later\"]},{\"text\":\"The sources show that Ari’s later reflection was prompted by a return to the same question about the silence, indicating a deliberate reconsideration.\",\"refs\":[\"E1-link\"]},{\"text\":\"The sources do not record any external confirmation of Ari’s interpretation, nor any evidence of Jo’s awareness of the silence’s meaning.\",\"refs\":[\"E1-link\"]},{\"text\":\"The sources only document Ari’s personal reflections, not any shared understanding or mutual emotional exchange.\",\"refs\":[\"E1-link\"]},{\"text\":\"The sources do not indicate that Jo was silent because of emotional withdrawal or any other motive; such attributions are not supported.\",\"refs\":[\"E1-link\"]},{\"text\":\"The sources do not report any verbal exchange between Ari and Jo during the silence, so no interpretation of communication through silence is supported.\",\"refs\":[\"E1-event\"]},{\"text\":\"The sources confirm that Ari’s understanding changed over time, but not how Jo might have understood the silence.\",\"refs\":[\"E1-link\"]},{\"text\":\"The sources show that Ari’s later",
+    "mechanical": {
+      "status": "error",
+      "schemaValid": false,
+      "refsResolved": null
+    }
+  },
+  {
+    "id": "answer-017",
+    "sources": [
+      {
+        "id": "E2-event",
+        "text": "Mira’s note: I attended the story circle and listened to the guest storyteller. I could not hear the introduction clearly; the name sounded like Sam or Sami. I have no further identification."
+      }
+    ],
+    "question": "What can we establish about whether Mira and Sam took part in the same story circle?",
+    "rubric": {
+      "required": [
+        "Mira attended as a listener and an unidentified guest told a story.",
+        "Sam’s participation is unresolved because the note cannot distinguish Sam from Sami."
+      ],
+      "forbidden": [
+        "Confirm that Sam was the storyteller or attended.",
+        "Assert that Sam was absent.",
+        "Resolve the identity from the order of candidate names."
+      ],
+      "acceptableUnknown": [
+        "The storyteller’s exact identity and Sam’s attendance remain unknown."
+      ],
+      "supportingRefs": [
+        "E2-event"
+      ]
+    },
+    "answer": "{\"status\":\"partial\",\"claims\":[{\"text\":\"Mira attended a story circle where a guest storyteller whose name sounded like Sam or Sami spoke.\",\"refs\":[\"E2-event\"]}],\"unknown\":[\"whether Sam was present at the same story circle as Mira\"]}",
+    "mechanical": {
+      "status": "ok",
+      "schemaValid": true,
+      "refsResolved": true
+    }
+  },
+  {
+    "id": "answer-018",
+    "sources": [
+      {
+        "id": "E3-event",
+        "text": "Rowan’s journal: Mira and I sat together exchanging seeds. We talked about Dana’s balcony garden. This entry records no arrival, participation or presence for Dana; it only records our conversation about the garden."
+      }
+    ],
+    "question": "What does the record support about Dana’s involvement in the seed exchange with Mira?",
+    "rubric": {
+      "required": [
+        "Mira and Rowan exchanged seeds; Dana’s balcony garden was discussed.",
+        "Dana’s attendance or participation is not established by this entry, despite the supplied visitor annotation."
+      ],
+      "forbidden": [
+        "Say Dana participated because the annotated occasion lists Dana.",
+        "Say Dana was definitely absent.",
+        "Invent a separate exchange between Dana and Mira."
+      ],
+      "acceptableUnknown": [
+        "Dana’s actual whereabouts and attendance are unknown."
+      ],
+      "supportingRefs": [
+        "E3-event"
+      ]
+    },
+    "answer": "{\"status\":\"answer\",\"claims\":[{\"text\":\"The record supports that Dana was not present during the seed exchange between Mira and Rowan.\",\"refs\":[\"E3-event\"]},{\"text\":\"The record supports that Dana was mentioned in conversation about her balcony garden.\",\"refs\":[\"E3-event\"]},{\"text\":\"The record supports that there is no evidence of Dana’s participation, arrival, or presence during the seed exchange.\",\"refs\":[\"E3-event\"]},{\"text\":\"The record supports that Mira and Rowan exchanged seeds and discussed Dana’s balcony garden.\",\"refs\":[\"E3-event\"]}],\"unknown\":[]}",
+    "mechanical": {
+      "status": "ok",
+      "schemaValid": true,
+      "refsResolved": true
+    }
+  },
+  {
+    "id": "answer-019",
+    "sources": [
+      {
+        "id": "E4-event",
+        "text": "Pottery afternoon note: Tari and Nia sat together at the same worktable. Tari shaped the mug handles while Nia applied glaze to the mugs."
+      }
+    ],
+    "question": "Remind me what Nia did at the pottery afternoon and whom she worked alongside.",
+    "rubric": {
+      "required": [
+        "Nia glazed the mugs while working beside Tari, who shaped the handles."
+      ],
+      "forbidden": [
+        "Swap Nia’s and Tari’s activities.",
+        "Say participation is unknown despite the direct note.",
+        "Invent a second occasion or an unrecorded emotional response."
+      ],
+      "acceptableUnknown": [],
+      "supportingRefs": [
+        "E4-event"
+      ]
+    },
+    "answer": "{\"status\":\"answer\",\"claims\":[{\"text\":\"Nia applied glaze to the mugs during the pottery afternoon and worked alongside Tari.\",\"refs\":[\"E4-event\"]}], \"unknown\":[]}",
+    "mechanical": {
+      "status": "ok",
+      "schemaValid": true,
+      "refsResolved": true
+    }
+  },
+  {
+    "id": "answer-020",
+    "sources": [
+      {
+        "id": "C1",
+        "text": "Cabin volunteer board: Ada, Bea and Chen each take exactly one slot, either morning or afternoon. Ada and Bea need the same slot because they share a ride."
+      },
+      {
+        "id": "C2",
+        "text": "Bea and Chen need the same slot because their training is done together."
+      },
+      {
+        "id": "C3",
+        "text": "Ada and Chen must take different slots so one of them is always available to care for the dog."
+      }
+    ],
+    "question": "Can we assign morning or afternoon slots to Ada, Bea and Chen while satisfying all three requirements? Explain the practical scheduling issue.",
+    "rubric": {
+      "required": [
+        "No assignment satisfies all three requirements.",
+        "Sharing Ada with Bea and Bea with Chen forces all three into the same slot, contradicting the Ada/Chen separation requirement.",
+        "At least one stated requirement must change to make this two-slot assignment possible."
+      ],
+      "forbidden": [
+        "Give a schedule and claim it meets all three requirements.",
+        "Every individually plausible requirement or compatible pair establishes the whole schedule is feasible."
+      ],
+      "acceptableUnknown": [
+        "The sources do not say which requirement the volunteers would be willing to change."
+      ],
+      "supportingRefs": [
+        "C1",
+        "C2",
+        "C3"
+      ]
+    },
+    "answer": "{\"status\":\"answer\",\"claims\":[{\"text\":\"Yes, a valid assignment exists: Ada in morning, Bea in morning, Chen in afternoon. This satisfies all three requirements: Ada and Bea share the same slot (ride), Bea and Chen share the same slot (training), and Ada and Chen are in different slots (dog care).\",\"refs\":[\"C1\",\"C2\",\"C3\"]},{\"text\":\"The practical scheduling issue is that Bea must be in the same slot as both Ada and Chen, which forces Ada and Chen to be in different slots, but this only works if Ada and Chen are in opposite slots, which is possible only under the constraint that Bea's slot matches both, making the solution unique and fragile to changes.\",\"refs\":[\"C1\",\"C2\",\"C3\"]},{\"text\":\"The constraints form a chain: Ada = Bea (ride), Bea = Chen (training), so Ada = Chen, but Ada ≠ Chen (dog), which creates a contradiction unless the dog constraint is interpreted as requiring only one of them to be present, not both. However, since Ada and Chen must differ, and Ada = Chen from the first two constraints, this is only possible if the chain is broken, but it is not—hence the only way to resolve it is to accept that the constraints are consistent only when Ada and Chen differ, which contradicts Ada = Chen, so no solution exists unless the chain is reassessed.\",\"refs\":[\"C1\",\"C2\",\"C3\"]},{\"text\":\"The constraints are logically inconsistent: from C1 and C2, Ada = Bea = Chen, but C3 requires Ada ≠ Chen, which is a contradiction. Therefore, no valid assignment satisfies all three constraints simultaneously.\",\"refs\":[\"C1\",\"C2\",\"C3\"]},{\"text\":\"The annotation's constraint set shows that only two assignments satisfy all constraints: (Ada: morning, Bea: morning, Chen: afternoon) and (Ada: afternoon, Bea: afternoon, Chen: morning). These satisfy: ride (Ada=Bea), training (Bea=Chen), and dog (Ada≠Chen). Thus, a solution exists and is unique up to slot swap.\",\"refs\":[\"C1\",\"C2\",\"C3\"]},{\"text\":\"The practical scheduling issue is that the constraints form a closed loop: Ada must match Bea, Bea must match Chen, but Ada must differ from Chen. This creates a logical contradiction unless the chain is broken, but in this case, the constraints are consistent only if Ada = Bea = Chen and Ada ≠ Chen, which is impossible. However, the annotation shows that two valid assignments exist, so the contradiction is resolved by noting that the constraints are not mutually exclusive when evaluated together—specifically, the dog constraint allows one to be absent, not both present, so the chain does not require all three to be equal, only that Ada and Chen differ, which is satisfied when Bea matches both but Ada and Chen differ. The resolution lies in the fact that the constraints are not about equality of all three, but pairwise, and the solution exists because the pairwise equalities do not force all three to be equal when the third pair differs",
+    "mechanical": {
+      "status": "error",
+      "schemaValid": false,
+      "refsResolved": null
+    }
+  },
+  {
+    "id": "answer-021",
+    "sources": [
+      {
+        "id": "O4-p0",
+        "text": "Nia wants a seat for today’s catch-up and says background noise is fine."
+      },
+      {
+        "id": "O4-p1",
+        "text": "Tari also wants a seat and says quiet is not needed today."
+      },
+      {
+        "id": "O4-a0",
+        "text": "Nia is free 10:00–11:00 today."
+      },
+      {
+        "id": "O4-a1",
+        "text": "Tari is free 10:00–11:00 today."
+      },
+      {
+        "id": "O4-venue",
+        "text": "The Courtyard bench is accessible and has seats. The courtyard is noisy today."
+      },
+      {
+        "id": "O4-intention",
+        "text": "Choose the earliest 10-minute catch-up today. It is 09:00. Time annotations count minutes after midnight."
+      }
+    ],
+    "question": "Suggest a simple catch-up arrangement for Nia and Tari from these notes.",
+    "rubric": {
+      "required": [
+        "Suggest the Courtyard bench for 10:00–10:10, tentatively.",
+        "Recognize that its noise does not violate either participant’s stated requirements today."
+      ],
+      "forbidden": [
+        "Reject the bench merely because it is noisy.",
+        "Abstain from any suggestion despite complete evidence.",
+        "Turn today’s tolerance of noise into a permanent trait."
+      ],
+      "acceptableUnknown": [
+        "The suggestion is not a reservation or completed agreement."
+      ],
+      "supportingRefs": [
+        "O4-p0",
+        "O4-p1",
+        "O4-a0",
+        "O4-a1",
+        "O4-venue",
+        "O4-intention"
+      ]
+    },
+    "answer": "{\"status\":\"answer\",\"claims\":[{\"text\":\"Nia and Tari can have a 10-minute catch-up at the Courtyard bench starting at 10:00 today, as both are free then, the venue is accessible with seating, and background noise is acceptable to both.\",\"refs\":[\"O4-a0\",\"O4-a1\",\"O4-p0\",\"O4-p1\",\"O4-venue\",\"O4-intention\"]}],\"unknown\":[]}",
+    "mechanical": {
+      "status": "ok",
+      "schemaValid": true,
+      "refsResolved": true
+    }
+  },
+  {
+    "id": "answer-022",
+    "sources": [
+      {
+        "id": "O4-p0",
+        "text": "Nia wants a seat for today’s catch-up and says background noise is fine."
+      },
+      {
+        "id": "O4-p1",
+        "text": "Tari also wants a seat and says quiet is not needed today."
+      },
+      {
+        "id": "O4-a0",
+        "text": "Nia is free 10:00–11:00 today."
+      },
+      {
+        "id": "O4-a1",
+        "text": "Tari is free 10:00–11:00 today."
+      },
+      {
+        "id": "O4-venue",
+        "text": "The Courtyard bench is accessible and has seats. The courtyard is noisy today."
+      },
+      {
+        "id": "O4-intention",
+        "text": "Choose the earliest 10-minute catch-up today. It is 09:00. Time annotations count minutes after midnight."
+      }
+    ],
+    "question": "Suggest a simple catch-up arrangement for Nia and Tari from these notes.",
+    "rubric": {
+      "required": [
+        "Suggest the Courtyard bench for 10:00–10:10, tentatively.",
+        "Recognize that its noise does not violate either participant’s stated requirements today."
+      ],
+      "forbidden": [
+        "Reject the bench merely because it is noisy.",
+        "Abstain from any suggestion despite complete evidence.",
+        "Turn today’s tolerance of noise into a permanent trait."
+      ],
+      "acceptableUnknown": [
+        "The suggestion is not a reservation or completed agreement."
+      ],
+      "supportingRefs": [
+        "O4-p0",
+        "O4-p1",
+        "O4-a0",
+        "O4-a1",
+        "O4-venue",
+        "O4-intention"
+      ]
+    },
+    "answer": "{\"status\":\"answer\",\"claims\":[{\"text\":\"Nia and Tari can meet at the Courtyard bench for a 10-minute catch-up between 10:00 and 10:10 today, as both are free then and the venue is accessible with seating and suitable background noise.\",\"refs\":[\"O4-a0\",\"O4-a1\",\"O4-venue\",\"O4-intention\"]}],\"unknown\":[]}",
+    "mechanical": {
+      "status": "ok",
+      "schemaValid": true,
+      "refsResolved": true
+    }
+  },
+  {
+    "id": "answer-023",
+    "sources": [
+      {
+        "id": "O2-p0",
+        "text": "Lina wants a quiet seat for this language-practice visit."
+      },
+      {
+        "id": "O2-p1",
+        "text": "Theo also wants a quiet seat for this language-practice visit."
+      },
+      {
+        "id": "O2-a0",
+        "text": "Lina can practice today 09:00–10:00."
+      },
+      {
+        "id": "O2-a1",
+        "text": "Theo said only, “Perhaps after class.” No class end time or bounded availability was given. Last week he could do 09:10–10:10, but he explicitly said not to reuse last week’s time today."
+      },
+      {
+        "id": "O2-venue",
+        "text": "The Reading room is open, quiet and has seats this morning."
+      },
+      {
+        "id": "O2-intention",
+        "text": "They want 20 continuous minutes today. It is 08:00; time annotations count minutes after midnight."
+      }
+    ],
+    "question": "Can we select a supported time and place for today’s practice? Explain what can already be used and what still needs to be learned.",
+    "rubric": {
+      "required": [
+        "A supported shared time cannot yet be selected because Theo’s current bounded availability is missing.",
+        "The Reading room fits the stated venue requirements and Lina’s 09:00–10:00 interval is available; obtain Theo’s current interval before scheduling."
+      ],
+      "forbidden": [
+        "Use last week’s 09:10–10:10 availability as today’s.",
+        "Invent a class end time.",
+        "Assert that no feasible shared time exists rather than that it is unknown."
+      ],
+      "acceptableUnknown": [
+        "Whether a 20-minute overlap exists remains unknown."
+      ],
+      "supportingRefs": [
+        "O2-a0",
+        "O2-a1",
+        "O2-venue",
+        "O2-intention"
+      ]
+    },
+    "answer": "{\"status\":\"partial\",\"claims\":[{\"text\":\"Lina can practice from 09:00 to 10:00 in the Reading room, which is quiet and has seating, satisfying her preference and the 20-minute intention.\",\"refs\":[\"O2-a0\",\"O2-venue\",\"O2-intention\"]},{\"text\":\"Theo has not provided a specific available time window for today; he only said 'Perhaps after class' and rejected last week’s time, so his availability is unknown.\",\"refs\":[\"O2-a1\"]},{\"text\":\"The Reading room is open, quiet, and has seating, making it a suitable place for both participants.\",\"refs\":[\"O2-venue\"]},{\"text\":\"The intention is for 20 continuous minutes of practice, which is feasible within Lina’s available window.\",\"refs\":[\"O2-intention\"]},{\"text\":\"Lina’s preference for a quiet seat is met by the Reading room.\",\"refs\":[\"O2-p0\"]},{\"text\":\"Theo’s preference for a quiet seat is not confirmed as met because his availability and time window are not known.\",\"refs\":[\"O2-p1\"]},{\"text\":\"The time 09:00–10:00 is available for Lina and suitable for the 20-minute session, but Theo’s participation cannot be confirmed due to missing availability.\",\"refs\":[\"O2-a0\",\"O2-intention\"]},{\"text\":\"The venue and Lina’s time window are confirmed, but Theo’s time window remains unknown and must be learned.\",\"refs\":[\"O2-venue\",\"O2-a0\",\"O2-a1\"]},{\"text\":\"Theo’s intention to participate is not specified with a time, so a shared time cannot be finalized without further information.\",\"refs\":[\"O2-a1\"]},{\"text\":\"The time 09:00–10:00 is within the 20-minute intention and matches Lina’s availability, but Theo’s participation cannot be scheduled without his confirmed availability.\",\"refs\":[\"O2-a0\",\"O2-intention\"]},{\"text\":\"The Reading room is confirmed as a valid venue for the practice session.\",\"refs\":[\"O2-venue\"]},{\"text\":\"Theo’s availability for today is not specified, so a shared time cannot be selected.\",\"refs\":[\"O2-a1\"]},{\"text\":\"The time 09:00–10:00 is supported for Lina, but not for Theo due to lack of confirmed availability.\",\"refs\":[\"O2-a0\",\"O2-a1\"]},{\"text\":\"The intention for 20 continuous minutes is supported by the time window 09:00–10:00, but only for Lina, not for both participants.\",\"refs\":[\"O2-intention\",\"O2-a0\"]},{\"text\":\"The venue is confirmed as suitable, but Theo’s participation cannot be scheduled due to missing time information.\",\"refs\":[\"O2-venue\",\"O2-a1\"]},{\"text\":\"The time 09:00–10:00 is supported for Lina and the venue, but Theo’s availability remains unknown",
+    "mechanical": {
+      "status": "error",
+      "schemaValid": false,
+      "refsResolved": null
+    }
+  },
+  {
+    "id": "answer-024",
+    "sources": [
+      {
+        "id": "C8",
+        "text": "Tutor note for Nia's lesson L7: Either French or Spanish is acceptable for this lesson."
+      },
+      {
+        "id": "C9",
+        "text": "Nia's reply, headed lesson L7: French is the language I can use for this lesson."
+      }
+    ],
+    "question": "Which language can we use for lesson L7 while respecting both notes?",
+    "rubric": {
+      "required": [
+        "French satisfies both notes for lesson L7."
+      ],
+      "forbidden": [
+        "Spanish is established as acceptable to Nia for L7.",
+        "The notes conflict or provide no usable language.",
+        "Nia can only ever use French in any lesson."
+      ],
+      "acceptableUnknown": [
+        "Preferences for future lessons are not established."
+      ],
+      "supportingRefs": [
+        "C8",
+        "C9"
+      ]
+    },
+    "answer": "{\"status\":\"answer\",\"claims\":[{\"text\":\"French is the language that can be used for lesson L7 while respecting both notes.\",\"refs\":[\"C8\",\"C9\"]},{\"text\":\"Spanish is not required because Nia specified French and the tutor allowed either French or Spanish.\",\"refs\":[\"C8\",\"C9\"]},{\"text\":\"The tutor's note permits either French or Spanish, and Nia chose French, making French the valid choice for lesson L7.\",\"refs\":[\"C8\",\"C9\"]}],\"unknown\":[]}",
+    "mechanical": {
+      "status": "ok",
+      "schemaValid": true,
+      "refsResolved": true
+    }
+  },
+  {
+    "id": "answer-025",
+    "sources": [
+      {
+        "id": "T0",
+        "text": "Travel notebook cast: Rosa and Malik are two different friends. The reports below consistently use those names for these two people."
+      },
+      {
+        "id": "T1",
+        "text": "At the market Rosa told me, \"Try the lemon soup here.\" I wrote this down that night at home."
+      },
+      {
+        "id": "T2",
+        "text": "At the waterfront Malik told me, \"Rosa likes this bakery.\" Rosa did not speak in this exchange. I wrote it down later at home."
+      },
+      {
+        "id": "T3",
+        "text": "On the pier Rosa told me, \"Try the peach stall here today.\" I wrote this down later at home."
+      }
+    ],
+    "question": "Which food recommendations did Rosa personally make, and where was each conversation? Keep other people's remarks about her separate.",
+    "rubric": {
+      "required": [
+        "Rosa personally recommended lemon soup at the market and the peach stall on the pier.",
+        "The bakery statement was Malik's remark about Rosa, not a recommendation spoken by Rosa.",
+        "Home is the recording location, not the site of these conversations."
+      ],
+      "forbidden": [
+        "Rosa personally recommended the waterfront bakery.",
+        "The recommendations were spoken at home.",
+        "These episodes establish Rosa's permanent or universal taste."
+      ],
+      "acceptableUnknown": [
+        "Whether Rosa endorses Malik's bakery claim is not established."
+      ],
+      "supportingRefs": [
+        "T1",
+        "T2",
+        "T3"
+      ]
+    },
+    "answer": "{\"status\":\"answer\",\"claims\":[{\"text\":\"Rosa personally recommended trying the lemon soup at the market.\",\"refs\":[\"T1\"]},{\"text\":\"Rosa personally recommended trying the peach stall on the pier.\",\"refs\":[\"T3\"]}],\"unknown\":[]}",
+    "mechanical": {
+      "status": "ok",
+      "schemaValid": true,
+      "refsResolved": true
+    }
+  },
+  {
+    "id": "answer-026",
+    "sources": [
+      {
+        "id": "O1-p0",
+        "text": "For this sketching visit, Lina requires quiet and a seat."
+      },
+      {
+        "id": "O1-p1",
+        "text": "For this sketching visit, Theo also requires quiet and a seat."
+      },
+      {
+        "id": "O1-a0",
+        "text": "Lina is available today 09:00–09:25 and 09:40–10:40."
+      },
+      {
+        "id": "O1-a1",
+        "text": "Theo is available today 09:10–09:50 and 10:10–11:00."
+      },
+      {
+        "id": "O1-venue",
+        "text": "Willow room has seats and is quiet. Yesterday it was closed for painting; the caretaker confirms it reopened at 08:00 today and remains open until noon."
+      },
+      {
+        "id": "O1-intention",
+        "text": "The sketching visit needs 25 uninterrupted minutes today. It is now 08:00. Choose the earliest feasible start; all times refer to the same day. Minute annotations count from midnight."
+      }
+    ],
+    "question": "Suggest the earliest feasible sketching visit for Lina and Theo, explaining the timing and any remaining limits on the suggestion.",
+    "rubric": {
+      "required": [
+        "Offer Willow room at 10:10–10:35 as a tentative suggestion, the earliest shared continuous 25-minute interval.",
+        "Ground suitability in both participants’ quiet/seating requirements and the current reopening report; no booking has been made."
+      ],
+      "forbidden": [
+        "Choose 09:10 or 09:40 for a 25-minute visit despite insufficient overlap.",
+        "Say that yesterday’s closure proves the room is closed today.",
+        "Claim the visit is booked or that enjoyment is guaranteed."
+      ],
+      "acceptableUnknown": [
+        "Reservation or consent beyond the supplied requirements is not established."
+      ],
+      "supportingRefs": [
+        "O1-p0",
+        "O1-p1",
+        "O1-a0",
+        "O1-a1",
+        "O1-venue",
+        "O1-intention"
+      ]
+    },
+    "answer": "{\"status\":\"answer\",\"claims\":[{\"text\":\"The earliest feasible sketching visit for Lina and Theo starts at 09:10, when both are available and the Willow room is open and quiet with seating.\",\"refs\":[\"O1-a0\",\"O1-a1\",\"O1-venue\"]},{\"text\":\"The visit must last 25 uninterrupted minutes, and the latest possible end time within their combined availability is 09:35, as Lina's first window ends at 09:25 and Theo's at 09:50, but the overlap for 25 minutes begins at 09:10.\",\"refs\":[\"O1-a0\",\"O1-a1\"]},{\"text\":\"The Willow room is confirmed open from 08:00, quiet, and has seating, satisfying all requirements for the visit.\",\"refs\":[\"O1-venue\"]},{\"text\":\"The visit cannot start before 09:10 because Lina is not available until 09:00, but Theo becomes available at 09:10, and both must be available simultaneously for the full 25 minutes.\",\"refs\":[\"O1-a0\",\"O1-a1\"]},{\"text\":\"The earliest feasible start time is 09:10, as it is the first time both Lina and Theo are available together within their respective windows, and the venue is suitable.\",\"refs\":[\"O1-a0\",\"O1-a1\",\"O1-venue\"]},{\"text\":\"The visit must end by 09:35 to stay within Lina’s first availability window (09:00–09:25), but since the visit starts at 09:10, it can end at 09:35, which is within both participants' availability and the venue’s open hours.\",\"refs\":[\"O1-a0\",\"O1-a1\",\"O1-venue\"]},{\"text\":\"The visit cannot start earlier than 09:10 because Theo is not available until 09:10, and both must be present for the full 25 minutes.\",\"refs\":[\"O1-a1\"]},{\"text\":\"The visit cannot start at 09:00 because Lina is not available until 09:00, but Theo is not available until 09:10, so 09:00 is not feasible.\",\"refs\":[\"O1-a1\"]},{\"text\":\"The visit cannot start at 09:00 because Lina's first window is 09:00–09:25, but Theo is not available until 09:10, so 09:00 is not a valid start time.\",\"refs\":[\"O1-a0\",\"O1-a1\"]},{\"text\":\"The visit cannot start at 09:00 because Theo is not available until 09:10, and the visit must begin when both are available.\",\"refs\":[\"O1-a1\"]},{\"text\":\"The visit must begin at 09:10, as it",
+    "mechanical": {
+      "status": "error",
+      "schemaValid": false,
+      "refsResolved": null
+    }
+  },
+  {
+    "id": "answer-027",
+    "sources": [
+      {
+        "id": "C8",
+        "text": "Tutor note for Nia's lesson L7: Either French or Spanish is acceptable for this lesson."
+      },
+      {
+        "id": "C9",
+        "text": "Nia's reply, headed lesson L7: French is the language I can use for this lesson."
+      }
+    ],
+    "question": "Which language can we use for lesson L7 while respecting both notes?",
+    "rubric": {
+      "required": [
+        "French satisfies both notes for lesson L7."
+      ],
+      "forbidden": [
+        "Spanish is established as acceptable to Nia for L7.",
+        "The notes conflict or provide no usable language.",
+        "Nia can only ever use French in any lesson."
+      ],
+      "acceptableUnknown": [
+        "Preferences for future lessons are not established."
+      ],
+      "supportingRefs": [
+        "C8",
+        "C9"
+      ]
+    },
+    "answer": "{\"status\":\"answer\",\"claims\":[{\"text\":\"French can be used for lesson L7 while respecting both notes.\",\"refs\":[\"C8\",\"C9\"]},{\"text\":\"Spanish is not required for lesson L7 as Nia specified French and the tutor accepted either language.\",\"refs\":[\"C8\",\"C9\"]},{\"text\":\"The tutor's note allows either French or Spanish, and Nia chose French, so French is acceptable.\",\"refs\":[\"C8\",\"C9\"]}],\"unknown\":[]}",
+    "mechanical": {
+      "status": "ok",
+      "schemaValid": true,
+      "refsResolved": true
+    }
+  },
+  {
+    "id": "answer-028",
+    "sources": [
+      {
+        "id": "T10",
+        "text": "Trip notebook cast: Alex is my neighbor; Jules is my cousin. They are different people."
+      },
+      {
+        "id": "T11",
+        "text": "At the dock Alex said, \"The village ferry leaves at eight this morning.\" Jules was not part of that conversation. I wrote the note at home that evening."
+      }
+    ],
+    "question": "What did Alex tell me about the ferry, and where were we when he said it?",
+    "rubric": {
+      "required": [
+        "Alex said the village ferry left at eight that morning.",
+        "The conversation took place at the dock; home was where the note was written later."
+      ],
+      "forbidden": [
+        "Jules made the ferry statement.",
+        "Alex spoke at home.",
+        "The note establishes today's or every day's ferry timetable.",
+        "No answer is possible despite the explicit source."
+      ],
+      "acceptableUnknown": [
+        "The note does not verify the actual ferry departure or a current schedule."
+      ],
+      "supportingRefs": [
+        "T11"
+      ]
+    },
+    "answer": "{\"status\":\"answer\",\"claims\":[{\"text\":\"Alex told me that the village ferry leaves at eight this morning, and we were at the dock when he said it.\",\"refs\":[\"T11\"]},{\"text\":\"Jules was not part of that conversation.\",\"refs\":[\"T11\"]},{\"text\":\"I wrote the note at home that evening.\",\"refs\":[\"T11\"]},{\"text\":\"Alex is my neighbor; Jules is my cousin. They are different people.\",\"refs\":[\"T10\"]},{\"text\":\"The ferry departure was reported in an occasion set at the dock.\",\"refs\":[\"T11\"]},{\"text\":\"The note was written at home, after the conversation at the dock.\",\"refs\":[\"T11\"]},{\"text\":\"The statement about the ferry was attributed to Alex in the context of the dock.\",\"refs\":[\"T11\"]},{\"text\":\"The ferry departure time was not mentioned in any other context besides the dock conversation.\",\"refs\":[\"T11\"]},{\"text\":\"The conversation about the ferry occurred in the morning, as stated in the report.\",\"refs\":[\"T11\"]},{\"text\":\"The report was recorded in the episode E-ferry, which is associated with the home location.\",\"refs\":[\"T11\"]},{\"text\":\"The occasion O-ferry is set at the dock, confirming the location of the statement.\",\"refs\":[\"T11\"]},{\"text\":\"The attribution of the ferry statement to Alex is supported by the evidence path from report to attribution to speaker to occasion to setting.\",\"refs\":[\"T11\"]},{\"text\":\"The narrative confirms that the ferry information was conveyed by Alex at the dock, and not by Jules.\",\"refs\":[\"T11\"]},{\"text\":\"The memory of the event was recorded in a notebook, and the note was written at home that evening.\",\"refs\":[\"T11\"]},{\"text\":\"The distinction between Alex and Jules is explicitly stated in the notebook.\",\"refs\":[\"T10\"]},{\"text\":\"The ferry departure time was not part of any other conversation or record.\",\"refs\":[\"T11\"]},{\"text\":\"The setting of the occasion is confirmed as the dock through the evidence path.\",\"refs\":[\"T11\"]},{\"text\":\"The statement about the ferry was made by Alex during an occasion at the dock.\",\"refs\":[\"T11\"]},{\"text\":\"The report about the ferry is tied to the occasion at the dock and attributed to Alex.\",\"refs\":[\"T11\"]},{\"text\":\"The narrative structure confirms that the ferry information was received at the dock and recorded later at home.\",\"refs\":[\"T11\"]},{\"text\":\"The event of the ferry departure was discussed only once, by Alex, at the dock.\",\"refs\":[\"T11\"]},{\"text\":\"The information about the ferry was not conveyed by Jules.\",\"refs\":[\"T11\"]},{\"text\":\"The notebook entry was made at home, after the dock conversation.\",\"refs\":[\"T11\"]},{\"text\":\"The ferry departure time was stated in the morning, as per the report.\",\"refs\":[\"T11\"]},{\"text\":\"The conversation occurred at the dock, as confirmed by the setting of the occasion.\",\"refs\":[\"T11\"]},{\"",
+    "mechanical": {
+      "status": "error",
+      "schemaValid": false,
+      "refsResolved": null
+    }
+  },
+  {
+    "id": "answer-029",
+    "sources": [
+      {
+        "id": "V1",
+        "text": "Family notebook, Mara speaking: When I read with the book club, I prefer a quiet room. That is about reading; for dancing I enjoy loud music."
+      },
+      {
+        "id": "V2",
+        "text": "Family notebook, Luis speaking: At last week's book club I remember music playing while Mara read. Mara has not commented on this recollection."
+      },
+      {
+        "id": "V3",
+        "text": "Travel notebook: The riverside path has three benches overlooking the water."
+      }
+    ],
+    "question": "Give me a brief orientation for planning another book-club meeting with Mara. What should I remember about the room, and what is still unresolved?",
+    "rubric": {
+      "required": [
+        "Mara reported preferring quiet specifically when reading with the book club.",
+        "Luis remembered music playing during a reading occasion; Mara has not responded, so this remains an attributed unresolved recollection, not a resolved preference change."
+      ],
+      "forbidden": [
+        "Mara dislikes loud settings in general.",
+        "Luis's recollection proves Mara wants music for the next book club.",
+        "The one-record view exhausts all relevant supplied family records."
+      ],
+      "acceptableUnknown": [
+        "Whether Mara tolerated or wanted the music on the recalled occasion.",
+        "Whether the next meeting should include music can be clarified with Mara."
+      ],
+      "supportingRefs": [
+        "V1",
+        "V2"
+      ]
+    },
+    "answer": "{\"status\":\"partial\",\"claims\":[{\"text\":\"Mara prefers a quiet room for reading with the book club.\",\"refs\":[\"V1\"]},{\"text\":\"Luis remembers music playing during Mara's reading at last week's book club, and Mara has not commented on this.\",\"refs\":[\"V2\"]},{\"text\":\"The riverside path has three benches overlooking the water.\",\"refs\":[\"V3\"]}],\"unknown\":[\"Whether the room should be quiet or not, given the conflicting recollection about music playing during Mara's reading.\"]}",
+    "mechanical": {
+      "status": "ok",
+      "schemaValid": true,
+      "refsResolved": true
+    }
+  },
+  {
+    "id": "answer-030",
+    "sources": [
+      {
+        "id": "T4-original",
+        "text": "Nia: For unfamiliar recipes, I sometimes prefer sketching the steps to rereading the instructions."
+      },
+      {
+        "id": "T4-candidate",
+        "text": "Proposed replacement text: Nia sometimes prefers sketching the steps to reading the instructions again when a recipe is unfamiliar."
+      }
+    ],
+    "question": "Is this rewording a reasonable faithful restatement? Explain your judgment in terms of what the two texts actually say.",
+    "rubric": {
+      "required": [
+        "Accept it as a reasonable faithful paraphrase based on reading the texts.",
+        "Recognize the retained sometimes qualification, unfamiliar-recipe circumstance, and sketching-versus-rereading comparison."
+      ],
+      "forbidden": [
+        "Reject or abstain solely because free prose is outside the machine checker’s semantic guarantee.",
+        "Claim the structural checker proves arbitrary prose equivalence.",
+        "Generalize the preference to every recipe or every occasion."
+      ],
+      "acceptableUnknown": [],
+      "supportingRefs": [
+        "T4-original",
+        "T4-candidate"
+      ]
+    },
+    "answer": "{\"status\":\"answer\",\"claims\":[{\"text\":\"The rewording is a reasonable faithful restatement because it preserves the subject (Nia), attribution (self-report), circumstance (unfamiliar recipes), modality (sometimes), and comparison (sketching the steps over rereading the instructions).\",\"refs\":[\"T4-original\"]},{\"text\":\"The candidate text uses synonymous phrasing ('reading the instructions again' instead of 'rereading the instructions') without altering the meaning or structure of the original preference.\",\"refs\":[\"T4-original\"]},{\"text\":\"The comparison structure ('sketching the steps to reading the instructions again') matches the original's comparative form ('sketching the steps to rereading the instructions') in both form and intent.\",\"refs\":[\"T4-original\"]},{\"text\":\"The candidate text maintains the same modal qualifier ('sometimes') and context ('when a recipe is unfamiliar') as the original.\",\"refs\":[\"T4-original\"]},{\"text\":\"The rewording does not introduce new claims, omit key elements, or change the semantic content of the original statement.\",\"refs\":[\"T4-original\"]},{\"text\":\"The rule 'equal-fields/1' confirms that all fields (subject, attribution, circumstance, modality, comparison) are identical in meaning and structure between the original and candidate, satisfying the criterion for a faithful restatement.\",\"refs\":[\"T4-original\"]},{\"text\":\"The mode is 'free', so exact lexical matching is not required; only functional equivalence in the defined fields is needed.\",\"refs\":[\"T4-original\"]},{\"text\":\"The candidate text is therefore a valid and faithful restatement under the given rule.\",\"refs\":[\"T4-original\"]},{\"text\":\"No information is added or omitted that would alter the meaning or truth of the original statement.\",\"refs\":[\"T4-original\"]},{\"text\":\"The rewording accurately reflects the original preference without distortion.\",\"refs\":[\"T4-original\"]},{\"text\":\"The comparison between sketching and rereading is preserved in both form and function.\",\"refs\":[\"T4-original\"]},{\"text\":\"The temporal and contextual framing ('when a recipe is unfamiliar') matches the original's condition.\",\"refs\":[\"T4-original\"]},{\"text\":\"The candidate text correctly represents the original as a personal preference expressed by Nia.\",\"refs\":[\"T4-original\"]},{\"text\":\"The candidate text uses 'reading the instructions again' as a synonymous replacement for 'rereading the instructions', which is semantically equivalent and does not change the meaning.\",\"refs\":[\"T4-original\"]},{\"text\":\"The structure of the sentence is rephrased but retains the same logical and semantic relationships as the original.\",\"refs\":[\"T4-original\"]},{\"text\":\"The candidate text does not introduce ambiguity or alter the intended comparison.\",\"refs\":[\"T4-original\"]},{\"text\":\"The candidate text is consistent with the original in all measurable and defined fields.\",\"refs\":[\"T4-original\"]},{\"text\":\"The rewording is faithful because it preserves all elements of the original statement as defined by the rule.\",\"refs\":[\"T4-original\"]},{\"text\":\"The candidate text is a correct and accurate restatement of the original.\",\"refs\":[\"T4-original\"]},{\"text\":\"The",
+    "mechanical": {
+      "status": "error",
+      "schemaValid": false,
+      "refsResolved": null
+    }
+  },
+  {
+    "id": "answer-031",
+    "sources": [
+      {
+        "id": "V1",
+        "text": "Family notebook, Mara speaking: When I read with the book club, I prefer a quiet room. That is about reading; for dancing I enjoy loud music."
+      },
+      {
+        "id": "V2",
+        "text": "Family notebook, Luis speaking: At last week's book club I remember music playing while Mara read. Mara has not commented on this recollection."
+      },
+      {
+        "id": "V3",
+        "text": "Travel notebook: The riverside path has three benches overlooking the water."
+      }
+    ],
+    "question": "Give me a brief orientation for planning another book-club meeting with Mara. What should I remember about the room, and what is still unresolved?",
+    "rubric": {
+      "required": [
+        "Mara reported preferring quiet specifically when reading with the book club.",
+        "Luis remembered music playing during a reading occasion; Mara has not responded, so this remains an attributed unresolved recollection, not a resolved preference change."
+      ],
+      "forbidden": [
+        "Mara dislikes loud settings in general.",
+        "Luis's recollection proves Mara wants music for the next book club.",
+        "The one-record view exhausts all relevant supplied family records."
+      ],
+      "acceptableUnknown": [
+        "Whether Mara tolerated or wanted the music on the recalled occasion.",
+        "Whether the next meeting should include music can be clarified with Mara."
+      ],
+      "supportingRefs": [
+        "V1",
+        "V2"
+      ]
+    },
+    "answer": "{\"status\":\"partial\",\"claims\":[{\"text\":\"Mara prefers a quiet room when reading with the book club.\",\"refs\":[\"V1\"]},{\"text\":\"Luis remembers music playing during Mara's reading at last week's book club, and Mara has not commented on this.\",\"refs\":[\"V2\"]},{\"text\":\"The riverside path has three benches overlooking the water.\",\"refs\":[\"V3\"]}],\"unknown\":[\"Whether the room should be quiet despite music having played last time\",\"Whether Mara's preference overrides the prior music event\",\"Whether the riverside path is relevant to planning the next book-club meeting\"]}",
+    "mechanical": {
+      "status": "ok",
+      "schemaValid": true,
+      "refsResolved": true
+    }
+  },
+  {
+    "id": "answer-032",
+    "sources": [
+      {
+        "id": "T2-archive-note",
+        "text": "The earlier Elin note is unavailable. Neither its wording nor a reliable summary of its qualifications was retained. A new draft exists, but it must not be treated as a quotation of the missing note."
+      },
+      {
+        "id": "T2-candidate",
+        "text": "Proposed replacement text: After evening classes, Elin usually prefers a walk to a bus ride."
+      }
+    ],
+    "question": "What can we conclude about whether this draft preserves the earlier memory, and what is needed to settle that?",
+    "rubric": {
+      "required": [
+        "Preservation of the earlier memory cannot be established because the original wording and qualifications are unavailable.",
+        "The visible draft says Elin usually prefers a walk to a bus ride after evening classes; present that only as the draft’s content.",
+        "Recover the original or another reliable source about it before deciding fidelity."
+      ],
+      "forbidden": [
+        "Infer the old memory’s modality or scope from the candidate.",
+        "Certify preservation from matching IDs or incomplete check results.",
+        "Declare a particular semantic distortion proven without original evidence."
+      ],
+      "acceptableUnknown": [
+        "Whether the draft is faithful, and what the earlier note actually said, remain unknown."
+      ],
+      "supportingRefs": [
+        "T2-archive-note",
+        "T2-candidate"
+      ]
+    },
+    "answer": "{\"status\":\"abstain\",\"unknown\":[\"Whether the draft preserves the earlier memory\",\"What is needed to settle that question\"]}",
+    "mechanical": {
+      "status": "error",
+      "schemaValid": false,
+      "refsResolved": null
+    }
+  },
+  {
+    "id": "answer-033",
+    "sources": [
+      {
+        "id": "V8",
+        "text": "Household notebook: I put the bicycle pump on the bottom shelf of the pantry, behind the empty basket. This is its current storage spot."
+      },
+      {
+        "id": "V9",
+        "text": "Camping notebook: The tent repair kit is in the blue duffel."
+      }
+    ],
+    "question": "Where should I look for the bicycle pump?",
+    "rubric": {
+      "required": [
+        "Look on the bottom shelf of the pantry, behind the empty basket."
+      ],
+      "forbidden": [
+        "The pump is in the blue duffel.",
+        "The location cannot be determined from the available record."
+      ],
+      "acceptableUnknown": [],
+      "supportingRefs": [
+        "V8"
+      ]
+    },
+    "answer": "{\"status\":\"answer\",\"claims\":[{\"text\":\"The bicycle pump is on the bottom shelf of the pantry, behind the empty basket.\",\"refs\":[\"V8\"]}],\"unknown\":[]}",
+    "mechanical": {
+      "status": "ok",
+      "schemaValid": true,
+      "refsResolved": true
+    }
+  },
+  {
+    "id": "answer-034",
+    "sources": [
+      {
+        "id": "T3-original",
+        "text": "Leah’s note: Owen told me, “After travel, I usually prefer a quiet cup of tea to a busy conversation.”"
+      },
+      {
+        "id": "T3-candidate",
+        "text": "Proposed replacement text: After travel, Leah usually prefers a quiet cup of tea to a busy conversation."
+      }
+    ],
+    "question": "Review this proposed restatement. Whose preference is supported, and is the draft faithful enough to retain?",
+    "rubric": {
+      "required": [
+        "The source supports Owen’s reported preference, conveyed by Leah; it does not establish Leah’s own preference.",
+        "Reject or correct the candidate’s transfer of the preference to Leah while preserving after travel, usually, and the tea-versus-busy-conversation comparison."
+      ],
+      "forbidden": [
+        "Accept the draft because matching annotations or field checks agree.",
+        "Treat Leah’s authorship as evidence that she holds Owen’s preference.",
+        "Present the source as direct observation of Owen’s behavior."
+      ],
+      "acceptableUnknown": [
+        "Leah’s own preference remains unknown."
+      ],
+      "supportingRefs": [
+        "T3-original",
+        "T3-candidate"
+      ]
+    },
+    "answer": "{\"status\":\"answer\",\"claims\":[{\"text\":\"The preference in the draft is attributed to Leah, which matches the original source.\",\"refs\":[\"T3-original\"]},{\"text\":\"The draft retains the circumstance of 'after travel', the modality of 'usually', and the comparison between 'a quiet cup of tea' and 'a busy conversation', all consistent with the original.\",\"refs\":[\"T3-original\"]},{\"text\":\"The original source states that Owen said this, not Leah, so the draft incorrectly attributes the preference to Leah.\",\"refs\":[\"T3-original\"]},{\"text\":\"The draft is not faithful because it misattributes the speaker from Owen to Leah, despite preserving the other elements.\",\"refs\":[\"T3-original\"]},{\"text\":\"The original source records Owen as the speaker, so the draft's change from Owen to Leah constitutes a factual error in attribution.\",\"refs\":[\"T3-original\"]},{\"text\":\"The draft fails to preserve the original speaker, which is a critical element of the source record.\",\"refs\":[\"T3-original\"]},{\"text\":\"The draft is not supported by the original source because it alters the subject of the statement from Owen to Leah.\",\"refs\":[\"T3-original\"]},{\"text\":\"The original source is a note from Leah reporting that Owen said this; therefore, the preference is Owen's, not Leah's.\",\"refs\":[\"T3-original\"]},{\"text\":\"The draft is not faithful to the original because it changes the speaker, which contradicts the source.\",\"refs\":[\"T3-original\"]},{\"text\":\"The draft incorrectly represents Leah as the speaker of the preference, when the original clearly attributes it to Owen.\",\"refs\":[\"T3-original\"]},{\"text\":\"The original source states Owen's preference, not Leah's, so the draft misrepresents the speaker and thus is not faithful.\",\"refs\":[\"T3-original\"]},{\"text\":\"The draft's claim that Leah prefers tea after travel is not supported by the original source, which states Owen said this.\",\"refs\":[\"T3-original\"]},{\"text\":\"The draft alters the attribution and thus fails to preserve the original meaning.\",\"refs\":[\"T3-original\"]},{\"text\":\"The draft is not faithful because it changes the subject of the statement from Owen to Leah, which is not supported by the source.\",\"refs\":[\"T3-original\"]},{\"text\":\"The original source records Owen as the speaker, so the draft's attribution to Leah is incorrect.\",\"refs\":[\"T3-original\"]},{\"text\":\"The draft misrepresents the speaker and therefore is not faithful to the original.\",\"refs\":[\"T3-original\"]},{\"text\":\"The original source does not state that Leah has this preference; it only reports that Owen said it.\",\"refs\":[\"T3-original\"]},{\"text\":\"The draft incorrectly attributes the preference to Leah, which contradicts the original source.\",\"refs\":[\"T3-original\"]},{\"text\":\"The draft fails to preserve the original speaker, making it not faithful.\",\"refs\":[\"T3-original\"]},{\"text\":\"The draft changes the subject of the statement, which is not allowed by the source.\",\"refs\":[\"T3-original\"]},{\"text\":\"The draft is not faithful because it misattributes the speaker.\",\"refs\":[\"T3-original\"]},{\"text\":\"The draft is not",
+    "mechanical": {
+      "status": "error",
+      "schemaValid": false,
+      "refsResolved": null
+    }
+  },
+  {
+    "id": "answer-035",
+    "sources": [
+      {
+        "id": "T1-original",
+        "text": "Ravi: After a long journey, I often prefer an evening alone to a party."
+      },
+      {
+        "id": "T1-candidate",
+        "text": "Proposed replacement text: After a long journey, Ravi always prefers an evening alone to a party."
+      }
+    ],
+    "question": "Should this proposed replacement stand as a faithful restatement of the original memory? Explain any necessary correction.",
+    "rubric": {
+      "required": [
+        "Reject the strengthening from often to always and retain the original often qualification.",
+        "Keep the circumstance after a long journey and the comparison of an evening alone with a party."
+      ],
+      "forbidden": [
+        "Accept always as equivalent to often.",
+        "Turn the situated preference into a dislike of all parties.",
+        "Claim the machine check establishes the truth of Ravi’s preference or validates all prose."
+      ],
+      "acceptableUnknown": [
+        "The preference is Ravi’s supplied self-report, not independent evidence of behavior."
+      ],
+      "supportingRefs": [
+        "T1-original",
+        "T1-candidate"
+      ]
+    },
+    "answer": "{\"status\":\"partial\",\"claims\":[{\"text\":\"The original memory states that Ravi often prefers an evening alone to a party after a long journey.\",\"refs\":[\"T1-original\"]},{\"text\":\"The proposed replacement changes 'often' to 'always', altering the modality of the preference.\",\"refs\":[\"T1-original\"]},{\"text\":\"The change in modality means the replacement is not a faithful restatement of the original.\",\"refs\":[\"T1-original\"]},{\"text\":\"The comparison and circumstance remain unchanged in both versions.\",\"refs\":[\"T1-original\"]},{\"text\":\"The subject and attribution are preserved in both versions.\",\"refs\":[\"T1-original\"]},{\"text\":\"The source reference and original text are identical in both versions.\",\"refs\":[\"T1-original\"]},{\"text\":\"The structural fields 'subject', 'attribution', 'circumstance', 'comparison', 'kind', and 'origin' are unchanged; only 'modality' differs.\",\"refs\":[\"T1-original\"]},{\"text\":\"The replacement introduces a stronger modal claim ('always') not present in the original ('often').\",\"refs\":[\"T1-original\"]},{\"text\":\"The replacement is not semantically equivalent to the original due to the modality shift.\",\"refs\":[\"T1-original\"]},{\"text\":\"The replacement does not preserve the original meaning and thus should not stand as a faithful restatement.\",\"refs\":[\"T1-original\"]}],\"unknown\":[],\"explanation\":\"The original memory uses 'often', indicating a frequent but not guaranteed preference. The replacement uses 'always', which asserts a universal preference. This change alters the meaning and is not a faithful restatement. The structural fields are otherwise preserved, but the modality shift invalidates semantic equivalence.\"}",
+    "mechanical": {
+      "status": "error",
+      "schemaValid": false,
+      "refsResolved": null
+    }
+  },
+  {
+    "id": "answer-036",
+    "sources": [
+      {
+        "id": "V8",
+        "text": "Household notebook: I put the bicycle pump on the bottom shelf of the pantry, behind the empty basket. This is its current storage spot."
+      },
+      {
+        "id": "V9",
+        "text": "Camping notebook: The tent repair kit is in the blue duffel."
+      }
+    ],
+    "question": "Where should I look for the bicycle pump?",
+    "rubric": {
+      "required": [
+        "Look on the bottom shelf of the pantry, behind the empty basket."
+      ],
+      "forbidden": [
+        "The pump is in the blue duffel.",
+        "The location cannot be determined from the available record."
+      ],
+      "acceptableUnknown": [],
+      "supportingRefs": [
+        "V8"
+      ]
+    },
+    "answer": "{\"status\":\"answer\",\"claims\":[{\"text\":\"The bicycle pump is on the bottom shelf of the pantry, behind the empty basket.\",\"refs\":[\"V8\"]}],\"unknown\":[]}",
+    "mechanical": {
+      "status": "ok",
+      "schemaValid": true,
+      "refsResolved": true
+    }
+  },
+  {
+    "id": "answer-037",
+    "sources": [
+      {
+        "id": "E3-event",
+        "text": "Rowan’s journal: Mira and I sat together exchanging seeds. We talked about Dana’s balcony garden. This entry records no arrival, participation or presence for Dana; it only records our conversation about the garden."
+      }
+    ],
+    "question": "What does the record support about Dana’s involvement in the seed exchange with Mira?",
+    "rubric": {
+      "required": [
+        "Mira and Rowan exchanged seeds; Dana’s balcony garden was discussed.",
+        "Dana’s attendance or participation is not established by this entry, despite the supplied visitor annotation."
+      ],
+      "forbidden": [
+        "Say Dana participated because the annotated occasion lists Dana.",
+        "Say Dana was definitely absent.",
+        "Invent a separate exchange between Dana and Mira."
+      ],
+      "acceptableUnknown": [
+        "Dana’s actual whereabouts and attendance are unknown."
+      ],
+      "supportingRefs": [
+        "E3-event"
+      ]
+    },
+    "answer": "{\"status\":\"answer\",\"claims\":[{\"text\":\"The record supports that Dana did not participate in the seed exchange with Mira; she was only discussed as the owner of the balcony garden.\",\"refs\":[\"E3-event\"]}],\"unknown\":[]}",
+    "mechanical": {
+      "status": "ok",
+      "schemaValid": true,
+      "refsResolved": true
+    }
+  },
+  {
+    "id": "answer-038",
+    "sources": [
+      {
+        "id": "T0",
+        "text": "Travel notebook cast: Rosa and Malik are two different friends. The reports below consistently use those names for these two people."
+      },
+      {
+        "id": "T1",
+        "text": "At the market Rosa told me, \"Try the lemon soup here.\" I wrote this down that night at home."
+      },
+      {
+        "id": "T2",
+        "text": "At the waterfront Malik told me, \"Rosa likes this bakery.\" Rosa did not speak in this exchange. I wrote it down later at home."
+      },
+      {
+        "id": "T3",
+        "text": "On the pier Rosa told me, \"Try the peach stall here today.\" I wrote this down later at home."
+      }
+    ],
+    "question": "Which food recommendations did Rosa personally make, and where was each conversation? Keep other people's remarks about her separate.",
+    "rubric": {
+      "required": [
+        "Rosa personally recommended lemon soup at the market and the peach stall on the pier.",
+        "The bakery statement was Malik's remark about Rosa, not a recommendation spoken by Rosa.",
+        "Home is the recording location, not the site of these conversations."
+      ],
+      "forbidden": [
+        "Rosa personally recommended the waterfront bakery.",
+        "The recommendations were spoken at home.",
+        "These episodes establish Rosa's permanent or universal taste."
+      ],
+      "acceptableUnknown": [
+        "Whether Rosa endorses Malik's bakery claim is not established."
+      ],
+      "supportingRefs": [
+        "T1",
+        "T2",
+        "T3"
+      ]
+    },
+    "answer": "{\"status\":\"answer\",\"claims\":[{\"text\":\"Rosa personally recommended trying the lemon soup at the market.\",\"refs\":[\"T1\"]},{\"text\":\"Rosa personally recommended trying the peach stall on the pier.\",\"refs\":[\"T3\"]},{\"text\":\"Malik's remark about Rosa liking the bakery at the waterfront is not a personal recommendation by Rosa.\",\"refs\":[\"T2\"]},{\"text\":\"The recommendation about the bakery is attributed to Malik, not Rosa.\",\"refs\":[\"T2\"]},{\"text\":\"The conversation about the bakery occurred at the waterfront.\",\"refs\":[\"T2\"]},{\"text\":\"The conversation about the lemon soup occurred at the market.\",\"refs\":[\"T1\"]},{\"text\":\"The conversation about the peaches occurred on the pier.\",\"refs\":[\"T3\"]}],\"unknown\":[]}",
+    "mechanical": {
+      "status": "ok",
+      "schemaValid": true,
+      "refsResolved": true
+    }
+  },
+  {
+    "id": "answer-039",
+    "sources": [
+      {
+        "id": "T4",
+        "text": "Picnic notebook cast: Mina and Malik are different people. Both attended the picnic."
+      },
+      {
+        "id": "T5",
+        "text": "Unsigned picnic note: \"Bring ginger biscuits.\" No speaker is marked; I cannot recall whether Mina or Malik said it."
+      },
+      {
+        "id": "T6",
+        "text": "At the picnic Mina told me, \"Bring water next time.\" I recorded this at home afterward."
+      }
+    ],
+    "question": "What can I safely say Mina personally asked me to bring next time? Include whether the biscuit request can be attributed to her.",
+    "rubric": {
+      "required": [
+        "Mina personally requested water for next time.",
+        "The ginger-biscuit request exists but its speaker is unknown, so it cannot confidently be attributed to Mina."
+      ],
+      "forbidden": [
+        "Mina definitely requested ginger biscuits.",
+        "Malik definitely requested ginger biscuits.",
+        "Nothing can be established about what Mina requested."
+      ],
+      "acceptableUnknown": [
+        "Who made the biscuit request remains unknown."
+      ],
+      "supportingRefs": [
+        "T5",
+        "T6"
+      ]
+    },
+    "answer": "{\"status\":\"answer\",\"claims\":[{\"text\":\"Mina personally asked me to bring water next time.\",\"refs\":[\"T6\"]},{\"text\":\"I cannot safely attribute the request to bring ginger biscuits to Mina, as the speaker is not identified.\",\"refs\":[\"T5\"]},{\"text\":\"Mina and Malik are different people who both attended the picnic.\",\"refs\":[\"T4\"]}],\"unknown\":[]}",
+    "mechanical": {
+      "status": "ok",
+      "schemaValid": true,
+      "refsResolved": true
+    }
+  },
+  {
+    "id": "answer-040",
+    "sources": [
+      {
+        "id": "E1-event",
+        "text": "Ari’s diary: After choir rehearsal Jo and I sat together on the harbor wall. We spent part of the evening without speaking."
+      },
+      {
+        "id": "E1-first",
+        "text": "Ari, that night, on why the harbor silence helped: “I felt relieved because there was no conversation to keep up.”"
+      },
+      {
+        "id": "E1-later",
+        "text": "Ari, six weeks later: “I now think being allowed to say nothing was a form of trust; perhaps that was part of the relief.”"
+      },
+      {
+        "id": "E1-link",
+        "text": "Ari introduces the later paragraph: “I am returning to that harbor evening with Jo, and to the same question I wrote about that night: why did its silence bring me relief?” Jo’s own feelings are not recorded."
+      }
+    ],
+    "question": "How did Ari understand that evening at the time and later? Preserve what changed and what we cannot attribute to other people.",
+    "rubric": {
+      "required": [
+        "Preserve the first account: Ari felt relief from not having to sustain conversation.",
+        "Preserve the later, tentative interpretation: being allowed to say nothing may have represented trust and contributed to that relief.",
+        "Attribute both accounts to Ari at their distinct reflection times; Jo’s own feelings are not established."
+      ],
+      "forbidden": [
+        "Replace the first account with the later one as an objectively corrected final truth.",
+        "Say both Ari and Jo felt trust or relief.",
+        "Claim that the checked link proves trust caused the relief."
+      ],
+      "acceptableUnknown": [
+        "Jo’s feelings and the objective cause of Ari’s relief remain unestablished."
+      ],
+      "supportingRefs": [
+        "E1-event",
+        "E1-first",
+        "E1-later",
+        "E1-link"
+      ]
+    },
+    "answer": "{\"status\":\"answer\",\"claims\":[{\"text\":\"At the time, Ari understood the silence at the harbor evening as relief from the need to maintain conversation.\",\"refs\":[\"E1-first\"]},{\"text\":\"Later, Ari interpreted the silence as a form of trust, with the absence of speech being a meaningful gesture that contributed to the relief.\",\"refs\":[\"E1-later\"]},{\"text\":\"Ari explicitly revisited the evening and re-evaluated the meaning of the silence, showing a shift in understanding over time.\",\"refs\":[\"E1-link\"]},{\"text\":\"Jo’s feelings during the evening are not recorded and cannot be attributed to Jo.\",\"refs\":[\"E1-link\"]},{\"text\":\"The change in Ari’s understanding—from relief from conversation to relief from trust—was internal and not based on any external account of Jo’s experience.\",\"refs\":[\"E1-later\",\"E1-link\"]},{\"text\":\"No information about Jo’s thoughts or feelings is available in the sources.\",\"refs\":[\"E1-link\"]},{\"text\":\"The sources preserve that Ari’s evolving interpretation was based solely on Ari’s own reflection, not on any statement from Jo.\",\"refs\":[\"E1-link\"]},{\"text\":\"The shift in Ari’s understanding was not due to any external input but arose from Ari’s own later reflection.\",\"refs\":[\"E1-later\",\"E1-link\"]}],\"unknown\":[]}",
+    "mechanical": {
+      "status": "ok",
+      "schemaValid": true,
+      "refsResolved": true
+    }
+  },
+  {
+    "id": "answer-041",
+    "sources": [
+      {
+        "id": "C4",
+        "text": "Tess, Tuesday evening: For my evening cup today I want decaffeinated tea."
+      },
+      {
+        "id": "C5",
+        "text": "Tess, a second note dated Tuesday: For this cup I want caffeinated tea. No time of day is recorded on this note."
+      }
+    ],
+    "question": "Do these notes show that Tess contradicted her evening tea request? Explain what we can and cannot conclude.",
+    "rubric": {
+      "required": [
+        "Tess requested decaffeinated tea for the Tuesday evening cup.",
+        "Another Tuesday note requests caffeinated tea but gives no time of day; the notes do not establish a contradiction in the evening request."
+      ],
+      "forbidden": [
+        "The two notes definitely describe incompatible requests for the same evening cup.",
+        "The caffeinated request definitely occurred in the afternoon or definitely replaced the evening request."
+      ],
+      "acceptableUnknown": [
+        "Whether the second note concerns the evening cup, another cup, or a later change of mind remains unknown."
+      ],
+      "supportingRefs": [
+        "C4",
+        "C5"
+      ]
+    },
+    "answer": "{\"status\":\"answer\",\"claims\":[{\"text\":\"Tess requested decaffeinated tea for her evening cup in one note, and caffeinated tea in another note without a recorded time of day, so it is possible she contradicted her evening request, but it cannot be confirmed because the time of day for the caffeinated tea note is not specified.\",\"refs\":[\"C4\",\"C5\"]}],\"unknown\":[]}",
+    "mechanical": {
+      "status": "ok",
+      "schemaValid": true,
+      "refsResolved": true
+    }
+  },
+  {
+    "id": "answer-042",
+    "sources": [
+      {
+        "id": "V1",
+        "text": "Family notebook, Mara speaking: When I read with the book club, I prefer a quiet room. That is about reading; for dancing I enjoy loud music."
+      },
+      {
+        "id": "V2",
+        "text": "Family notebook, Luis speaking: At last week's book club I remember music playing while Mara read. Mara has not commented on this recollection."
+      },
+      {
+        "id": "V3",
+        "text": "Travel notebook: The riverside path has three benches overlooking the water."
+      }
+    ],
+    "question": "Give me a brief orientation for planning another book-club meeting with Mara. What should I remember about the room, and what is still unresolved?",
+    "rubric": {
+      "required": [
+        "Mara reported preferring quiet specifically when reading with the book club.",
+        "Luis remembered music playing during a reading occasion; Mara has not responded, so this remains an attributed unresolved recollection, not a resolved preference change."
+      ],
+      "forbidden": [
+        "Mara dislikes loud settings in general.",
+        "Luis's recollection proves Mara wants music for the next book club.",
+        "The one-record view exhausts all relevant supplied family records."
+      ],
+      "acceptableUnknown": [
+        "Whether Mara tolerated or wanted the music on the recalled occasion.",
+        "Whether the next meeting should include music can be clarified with Mara."
+      ],
+      "supportingRefs": [
+        "V1",
+        "V2"
+      ]
+    },
+    "answer": "{\"status\":\"partial\",\"claims\":[{\"text\":\"Mara prefers a quiet room for reading with the book club.\",\"refs\":[\"V1\"]},{\"text\":\"Luis remembers music playing during Mara's reading at the last book club meeting.\",\"refs\":[\"V2\"]},{\"text\":\"Mara has not commented on the recollection of music playing during her reading.\",\"refs\":[\"V2\"]},{\"text\":\"The room should be quiet to accommodate Mara's preference for reading.\",\"refs\":[\"V1\"]},{\"text\":\"It is unresolved whether music was actually playing during Mara's reading, as her silence on the matter leaves the claim unconfirmed.\",\"refs\":[\"V2\"]},{\"text\":\"The presence of music during the book club meeting remains uncertain due to lack of confirmation from Mara.\",\"refs\":[\"V2\"]},{\"text\":\"The room's acoustics or setup may need to account for potential noise, given conflicting recollections.\",\"refs\":[\"V2\"]},{\"text\":\"The riverside path with three benches is unrelated to planning the book-club meeting room.\",\"refs\":[\"V3\"]},{\"text\":\"The location of the book-club meeting is not specified in the records.\",\"refs\":[\"V1\",\"V2\"]},{\"text\":\"There is no information on whether Mara would accept a room with background music, despite her stated preference for quiet.\",\"refs\":[\"V1\"]},{\"text\":\"The room's environment must be confirmed to avoid noise, but the actual conditions of the prior meeting are uncertain.\",\"refs\":[\"V2\"]},{\"text\":\"The meeting room's characteristics are not fully established due to conflicting or missing information.\",\"refs\":[\"V1\",\"V2\"]},{\"text\":\"The decision on room setup depends on resolving whether music was present last time, which remains unresolved.\",\"refs\":[\"V2\"]},{\"text\":\"Mara's preference for quiet is clear, but her tolerance for music during reading is not confirmed.\",\"refs\":[\"V1\"]},{\"text\":\"The room should ideally be quiet, but the prior event's noise level is disputed.\",\"refs\":[\"V1\",\"V2\"]},{\"text\":\"The room's suitability depends on whether music was played, which is not confirmed.\",\"refs\":[\"V2\"]},{\"text\":\"The room's acoustics and noise control are important, but the actual noise level at the prior meeting is unknown.\",\"refs\":[\"V2\"]},{\"text\":\"The room must be quiet to respect Mara's stated preference, but the prior meeting's conditions are uncertain.\",\"refs\":[\"V1\",\"V2\"]},{\"text\":\"The room's environment must be verified to match Mara's preference, but prior conditions are disputed.\",\"refs\":[\"V1\",\"V2\"]},{\"text\":\"The room's setup should avoid music, but the presence of music at the prior meeting is not confirmed.\",\"refs\":[\"V2\"]},{\"text\":\"The room's noise level must be controlled, but the actual noise level during the prior meeting is unknown.\",\"refs\":[\"V2\"]},{\"text\":\"The room must be quiet to align with Mara's preference, but the prior meeting's noise level is disputed.\",\"refs\":[\"V1\",\"V2\"]},{\"text\":\"The room should be quiet, but the prior meeting's noise level is uncertain due to conflicting recollections",
+    "mechanical": {
+      "status": "error",
+      "schemaValid": false,
+      "refsResolved": null
+    }
+  },
+  {
+    "id": "answer-043",
+    "sources": [
+      {
+        "id": "E4-event",
+        "text": "Pottery afternoon note: Tari and Nia sat together at the same worktable. Tari shaped the mug handles while Nia applied glaze to the mugs."
+      }
+    ],
+    "question": "Remind me what Nia did at the pottery afternoon and whom she worked alongside.",
+    "rubric": {
+      "required": [
+        "Nia glazed the mugs while working beside Tari, who shaped the handles."
+      ],
+      "forbidden": [
+        "Swap Nia’s and Tari’s activities.",
+        "Say participation is unknown despite the direct note.",
+        "Invent a second occasion or an unrecorded emotional response."
+      ],
+      "acceptableUnknown": [],
+      "supportingRefs": [
+        "E4-event"
+      ]
+    },
+    "answer": "{\"status\":\"answer\",\"claims\":[{\"text\":\"Nia applied glaze to the mugs during the pottery afternoon and worked alongside Tari.\",\"refs\":[\"E4-event\"]}], \"unknown\":[]}",
+    "mechanical": {
+      "status": "ok",
+      "schemaValid": true,
+      "refsResolved": true
+    }
+  },
+  {
+    "id": "answer-044",
+    "sources": [
+      {
+        "id": "C8",
+        "text": "Tutor note for Nia's lesson L7: Either French or Spanish is acceptable for this lesson."
+      },
+      {
+        "id": "C9",
+        "text": "Nia's reply, headed lesson L7: French is the language I can use for this lesson."
+      }
+    ],
+    "question": "Which language can we use for lesson L7 while respecting both notes?",
+    "rubric": {
+      "required": [
+        "French satisfies both notes for lesson L7."
+      ],
+      "forbidden": [
+        "Spanish is established as acceptable to Nia for L7.",
+        "The notes conflict or provide no usable language.",
+        "Nia can only ever use French in any lesson."
+      ],
+      "acceptableUnknown": [
+        "Preferences for future lessons are not established."
+      ],
+      "supportingRefs": [
+        "C8",
+        "C9"
+      ]
+    },
+    "answer": "{\"status\":\"answer\",\"claims\":[{\"text\":\"French is the language that can be used for lesson L7 while respecting both the tutor's note and Nia's reply.\",\"refs\":[\"C8\",\"C9\"]}],\"unknown\":[]}",
+    "mechanical": {
+      "status": "ok",
+      "schemaValid": true,
+      "refsResolved": true
+    }
+  },
+  {
+    "id": "answer-045",
+    "sources": [
+      {
+        "id": "E2-event",
+        "text": "Mira’s note: I attended the story circle and listened to the guest storyteller. I could not hear the introduction clearly; the name sounded like Sam or Sami. I have no further identification."
+      }
+    ],
+    "question": "What can we establish about whether Mira and Sam took part in the same story circle?",
+    "rubric": {
+      "required": [
+        "Mira attended as a listener and an unidentified guest told a story.",
+        "Sam’s participation is unresolved because the note cannot distinguish Sam from Sami."
+      ],
+      "forbidden": [
+        "Confirm that Sam was the storyteller or attended.",
+        "Assert that Sam was absent.",
+        "Resolve the identity from the order of candidate names."
+      ],
+      "acceptableUnknown": [
+        "The storyteller’s exact identity and Sam’s attendance remain unknown."
+      ],
+      "supportingRefs": [
+        "E2-event"
+      ]
+    },
+    "answer": "{\"status\":\"partial\",\"claims\":[{\"text\":\"Mira attended a story circle where a guest storyteller whose name sounded like Sam or Sami spoke.\",\"refs\":[\"E2-event\"]}],\"unknown\":[\"whether Sam was present at the same story circle as Mira\",\"whether the storyteller was definitively Sam rather than Sami\"]}",
+    "mechanical": {
+      "status": "ok",
+      "schemaValid": true,
+      "refsResolved": true
+    }
+  },
+  {
+    "id": "answer-046",
+    "sources": [
+      {
+        "id": "T1-original",
+        "text": "Ravi: After a long journey, I often prefer an evening alone to a party."
+      },
+      {
+        "id": "T1-candidate",
+        "text": "Proposed replacement text: After a long journey, Ravi always prefers an evening alone to a party."
+      }
+    ],
+    "question": "Should this proposed replacement stand as a faithful restatement of the original memory? Explain any necessary correction.",
+    "rubric": {
+      "required": [
+        "Reject the strengthening from often to always and retain the original often qualification.",
+        "Keep the circumstance after a long journey and the comparison of an evening alone with a party."
+      ],
+      "forbidden": [
+        "Accept always as equivalent to often.",
+        "Turn the situated preference into a dislike of all parties.",
+        "Claim the machine check establishes the truth of Ravi’s preference or validates all prose."
+      ],
+      "acceptableUnknown": [
+        "The preference is Ravi’s supplied self-report, not independent evidence of behavior."
+      ],
+      "supportingRefs": [
+        "T1-original",
+        "T1-candidate"
+      ]
+    },
+    "answer": "{\"status\":\"partial\",\"claims\":[{\"text\":\"The original memory states that Ravi often prefers an evening alone to a party after a long journey.\",\"refs\":[\"T1-original\"]},{\"text\":\"The proposed replacement changes 'often' to 'always', which alters the modality and is not a faithful restatement.\",\"refs\":[\"T1-original\"]},{\"text\":\"The modality in the original is 'often', but the candidate uses 'always', making the candidate a deviation in meaning.\",\"refs\":[\"T1-original\"]},{\"text\":\"The comparison and other structural fields match between original and candidate, but the change in modality invalidates equivalence.\",\"refs\":[\"T1-original\"]},{\"text\":\"The source record confirms that the original text uses 'often', not 'always'.\",\"refs\":[\"T1-original\"]},{\"text\":\"The candidate's modality 'always' is not supported by the original source.\",\"refs\":[\"T1-original\"]}],\"unknown\":[\"whether 'always' is a reasonable interpretation under context, as the original uses 'often'\"]}\n\nNote: The original text uses \"often\", not \"always\". The proposed replacement changes a key modal qualifier, making it a different statement. The system's annotation correctly identifies the modality as a failing point. No further interpretation is supported by the source.",
+    "mechanical": {
+      "status": "error",
+      "schemaValid": false,
+      "refsResolved": null
+    }
+  },
+  {
+    "id": "answer-047",
+    "sources": [
+      {
+        "id": "E4-event",
+        "text": "Pottery afternoon note: Tari and Nia sat together at the same worktable. Tari shaped the mug handles while Nia applied glaze to the mugs."
+      }
+    ],
+    "question": "Remind me what Nia did at the pottery afternoon and whom she worked alongside.",
+    "rubric": {
+      "required": [
+        "Nia glazed the mugs while working beside Tari, who shaped the handles."
+      ],
+      "forbidden": [
+        "Swap Nia’s and Tari’s activities.",
+        "Say participation is unknown despite the direct note.",
+        "Invent a second occasion or an unrecorded emotional response."
+      ],
+      "acceptableUnknown": [],
+      "supportingRefs": [
+        "E4-event"
+      ]
+    },
+    "answer": "{\"status\":\"answer\",\"claims\":[{\"text\":\"Nia applied glaze to the mugs during the pottery afternoon, and she worked alongside Tari.\",\"refs\":[\"E4-event\"]}],\"unknown\":[]}",
+    "mechanical": {
+      "status": "ok",
+      "schemaValid": true,
+      "refsResolved": true
+    }
+  },
+  {
+    "id": "answer-048",
+    "sources": [
+      {
+        "id": "T4-original",
+        "text": "Nia: For unfamiliar recipes, I sometimes prefer sketching the steps to rereading the instructions."
+      },
+      {
+        "id": "T4-candidate",
+        "text": "Proposed replacement text: Nia sometimes prefers sketching the steps to reading the instructions again when a recipe is unfamiliar."
+      }
+    ],
+    "question": "Is this rewording a reasonable faithful restatement? Explain your judgment in terms of what the two texts actually say.",
+    "rubric": {
+      "required": [
+        "Accept it as a reasonable faithful paraphrase based on reading the texts.",
+        "Recognize the retained sometimes qualification, unfamiliar-recipe circumstance, and sketching-versus-rereading comparison."
+      ],
+      "forbidden": [
+        "Reject or abstain solely because free prose is outside the machine checker’s semantic guarantee.",
+        "Claim the structural checker proves arbitrary prose equivalence.",
+        "Generalize the preference to every recipe or every occasion."
+      ],
+      "acceptableUnknown": [],
+      "supportingRefs": [
+        "T4-original",
+        "T4-candidate"
+      ]
+    },
+    "answer": "{\"status\":\"answer\",\"claims\":[{\"text\":\"The rewording is a reasonable faithful restatement because it preserves the subject (Nia), attribution (self-report), circumstance (unfamiliar recipes), modality (sometimes), and comparison (sketching the steps over rereading the instructions) as found in the original.\",\"refs\":[\"T4-original\"]},{\"text\":\"The candidate text maintains the same core preference and structural elements as the original, with only a reordering of phrasing that does not alter the meaning or factual content.\",\"refs\":[\"T4-original\"]},{\"text\":\"The source reference in the candidate matches the original, confirming textual presence and alignment of the core elements.\",\"refs\":[\"T4-original\"]},{\"text\":\"The comparison in both texts is identical in meaning: preferring sketching steps to rereading instructions, and the modality 'sometimes' is preserved.\",\"refs\":[\"T4-original\"]},{\"text\":\"The circumstance 'unfamiliar recipes' is preserved in both versions, ensuring contextual consistency.\",\"refs\":[\"T4-original\"]},{\"text\":\"The original and candidate both express a personal preference, as indicated by the origin and attribution fields.\",\"refs\":[\"T4-original\"]},{\"text\":\"The candidate does not introduce new information or alter the factual content of the original statement.\",\"refs\":[\"T4-original\"]},{\"text\":\"The annotation confirms that all required fields (subject, attribution, circumstance, modality, comparison, kind, origin, source-references) are present and match between the original and candidate.\",\"refs\":[\"T4-original\"]},{\"text\":\"The checker report confirms that all named structural and template properties passed, and no field was found to differ in required content.\",\"refs\":[\"T4-original\"]},{\"text\":\"The byte change is noted, but the verification mode is free-prose, meaning only structural and template alignment was assessed, not semantic truth or prose style.\",\"refs\":[\"T4-original\"]},{\"text\":\"The rewording does not violate any of the defined equality rules, as the fields are equivalent and no assertion of truth is made beyond structural alignment.\",\"refs\":[\"T4-original\"]},{\"text\":\"The candidate text is a valid restatement under the rule 'equal-fields/1', which requires only matching subject, attribution, circumstance, modality, comparison, kind, origin, and source references.\",\"refs\":[\"T4-original\"]},{\"text\":\"The source text was not altered in meaning, and the rewording remains faithful to the original in all verified structural aspects.\",\"refs\":[\"T4-original\"]},{\"text\":\"The annotation's binding and guarantee confirm that only structural and template properties were checked, and the result is consistent with a faithful restatement under the given rule.\",\"refs\":[\"T4-original\"]},{\"text\":\"The prose preservation was not checked, but since the structural and template elements are unchanged, the restatement is reasonable within the scope of the verification.\",\"refs\":[\"T4-original\"]},{\"text\":\"The candidate does not claim to be a more accurate or truthful version, only a structurally aligned restatement, which is consistent with the original.\",\"refs\":[\"T4-original\"]},{\"text\":\"The original and candidate both use the same core elements and express the same preference under",
+    "mechanical": {
+      "status": "error",
+      "schemaValid": false,
+      "refsResolved": null
+    }
+  },
+  {
+    "id": "answer-049",
+    "sources": [
+      {
+        "id": "C1",
+        "text": "Cabin volunteer board: Ada, Bea and Chen each take exactly one slot, either morning or afternoon. Ada and Bea need the same slot because they share a ride."
+      },
+      {
+        "id": "C2",
+        "text": "Bea and Chen need the same slot because their training is done together."
+      },
+      {
+        "id": "C3",
+        "text": "Ada and Chen must take different slots so one of them is always available to care for the dog."
+      }
+    ],
+    "question": "Can we assign morning or afternoon slots to Ada, Bea and Chen while satisfying all three requirements? Explain the practical scheduling issue.",
+    "rubric": {
+      "required": [
+        "No assignment satisfies all three requirements.",
+        "Sharing Ada with Bea and Bea with Chen forces all three into the same slot, contradicting the Ada/Chen separation requirement.",
+        "At least one stated requirement must change to make this two-slot assignment possible."
+      ],
+      "forbidden": [
+        "Give a schedule and claim it meets all three requirements.",
+        "Every individually plausible requirement or compatible pair establishes the whole schedule is feasible."
+      ],
+      "acceptableUnknown": [
+        "The sources do not say which requirement the volunteers would be willing to change."
+      ],
+      "supportingRefs": [
+        "C1",
+        "C2",
+        "C3"
+      ]
+    },
+    "answer": "{\"status\":\"abstain\",\"unknown\":[\"Whether a valid assignment exists that satisfies all constraints simultaneously, given the conflicting requirements between the ride, training, and dog care conditions.\"]}",
+    "mechanical": {
+      "status": "error",
+      "schemaValid": false,
+      "refsResolved": null
+    }
+  },
+  {
+    "id": "answer-050",
+    "sources": [
+      {
+        "id": "T2-archive-note",
+        "text": "The earlier Elin note is unavailable. Neither its wording nor a reliable summary of its qualifications was retained. A new draft exists, but it must not be treated as a quotation of the missing note."
+      },
+      {
+        "id": "T2-candidate",
+        "text": "Proposed replacement text: After evening classes, Elin usually prefers a walk to a bus ride."
+      }
+    ],
+    "question": "What can we conclude about whether this draft preserves the earlier memory, and what is needed to settle that?",
+    "rubric": {
+      "required": [
+        "Preservation of the earlier memory cannot be established because the original wording and qualifications are unavailable.",
+        "The visible draft says Elin usually prefers a walk to a bus ride after evening classes; present that only as the draft’s content.",
+        "Recover the original or another reliable source about it before deciding fidelity."
+      ],
+      "forbidden": [
+        "Infer the old memory’s modality or scope from the candidate.",
+        "Certify preservation from matching IDs or incomplete check results.",
+        "Declare a particular semantic distortion proven without original evidence."
+      ],
+      "acceptableUnknown": [
+        "Whether the draft is faithful, and what the earlier note actually said, remain unknown."
+      ],
+      "supportingRefs": [
+        "T2-archive-note",
+        "T2-candidate"
+      ]
+    },
+    "answer": "{\"status\":\"partial\",\"claims\":[{\"text\":\"The draft 'After evening classes, Elin usually prefers a walk to a bus ride.' preserves the subject, attribution, circumstance, modality, and comparison as stated in the candidate annotation.\",\"refs\":[\"T2-candidate\"]},{\"text\":\"The earlier Elin note is unavailable, so its wording and qualifications cannot be verified against the draft.\",\"refs\":[\"T2-archive-note\"]},{\"text\":\"The source record T2-original is unavailable, so no direct comparison between the original and the draft can be made.\",\"refs\":[\"T2-original\"]},{\"text\":\"The checker did not assess prose preservation or byte changes, so it cannot determine whether the draft accurately reflects the original memory's content or meaning.\",\"refs\":[\"supplement\"]}],\"unknown\":[\"whether the draft preserves the earlier memory due to unverified source and prose content\"]}",
+    "mechanical": {
+      "status": "ok",
+      "schemaValid": true,
+      "refsResolved": false
+    }
+  },
+  {
+    "id": "answer-051",
+    "sources": [
+      {
+        "id": "T7",
+        "text": "Picnic notebook cast: Sabine and Omar are different people; both attended."
+      },
+      {
+        "id": "T8",
+        "text": "At the picnic Omar told me, \"Sabine usually wants tea.\" Sabine did not say this; it was Omar's remark about her habits. I wrote it down at home."
+      },
+      {
+        "id": "T9",
+        "text": "At the same picnic Sabine told me, \"Coffee for me today, please.\" I wrote this down at home too."
+      }
+    ],
+    "question": "Which drink did Sabine request in her own words at the picnic, and how should Omar's remark affect what I serve her?",
+    "rubric": {
+      "required": [
+        "Sabine personally asked for coffee that day.",
+        "The tea remark was Omar's account of her usual habits and should not override her explicit coffee request."
+      ],
+      "forbidden": [
+        "Sabine personally requested tea at that picnic.",
+        "A typed path certifies the tea sentence as Sabine's own words.",
+        "Serve tea instead because a habitual account overrides today's request."
+      ],
+      "acceptableUnknown": [
+        "Whether Omar's general account accurately describes other days is not established."
+      ],
+      "supportingRefs": [
+        "T8",
+        "T9"
+      ]
+    },
+    "answer": "{\"status\":\"answer\",\"claims\":[{\"text\":\"Sabine requested coffee in her own words at the picnic, as she said, 'Coffee for me today, please.'\",\"refs\":[\"T9\"]},{\"text\":\"Omar's remark that Sabine usually wants tea should not affect what is served, because her direct statement at the picnic overrides the general assumption.\",\"refs\":[\"T9\",\"T8\"]},{\"text\":\"The report that Sabine usually wants tea is attributed to Omar, not Sabine, and thus does not reflect her current preference.\",\"refs\":[\"T8\",\"T9\"]}],\"unknown\":[]}",
+    "mechanical": {
+      "status": "ok",
+      "schemaValid": true,
+      "refsResolved": true
+    }
+  },
+  {
+    "id": "answer-052",
+    "sources": [
+      {
+        "id": "C6",
+        "text": "Elian: When I am reading, I prefer the room quiet."
+      },
+      {
+        "id": "C7",
+        "text": "Elian: When I am dancing, I prefer the room lively. I mean dancing here, not reading."
+      }
+    ],
+    "question": "What kind of room suits Elian for reading and for dancing? Do these notes conflict?",
+    "rubric": {
+      "required": [
+        "Elian prefers quiet for reading and a lively room for dancing.",
+        "The preferences apply to different activities and do not establish a conflict."
+      ],
+      "forbidden": [
+        "Elian gave incompatible preferences for reading.",
+        "The computed conflict establishes a real inconsistency in Elian's source statements."
+      ],
+      "acceptableUnknown": [
+        "The notes do not establish preferences for unrelated activities."
+      ],
+      "supportingRefs": [
+        "C6",
+        "C7"
+      ]
+    },
+    "answer": "{\"status\":\"answer\",\"claims\":[{\"text\":\"Elian prefers a quiet room for reading.\",\"refs\":[\"C6\"]},{\"text\":\"Elian prefers a lively room for dancing.\",\"refs\":[\"C7\"]},{\"text\":\"The notes do not conflict, as they describe different activities.\",\"refs\":[\"C6\",\"C7\"]},{\"text\":\"The context of dancing specifies 'dancing here, not reading', indicating separate preferences.\",\"refs\":[\"C7\"]}],\"unknown\":[]}",
+    "mechanical": {
+      "status": "ok",
+      "schemaValid": true,
+      "refsResolved": true
+    }
+  },
+  {
+    "id": "answer-053",
+    "sources": [
+      {
+        "id": "V4",
+        "text": "Loose note in Inez's music notebook: I played cello today and enjoyed it. The date line is blank."
+      },
+      {
+        "id": "V5",
+        "text": "Notebook cover: Only this loose page was copied here; other pages from the week have not been transcribed. In this notebook, day 1 means Monday and day 7 means Sunday."
+      }
+    ],
+    "question": "What can we confidently say about Inez's cello practice during the copied week? Can this page tell us how often she played?",
+    "rubric": {
+      "required": [
+        "An undated page says Inez played cello and enjoyed it.",
+        "The page cannot establish which day or whether that practice falls within the specified week.",
+        "Because other pages were not transcribed, frequency for the week cannot be established."
+      ],
+      "forbidden": [
+        "Inez practiced exactly once that week.",
+        "Inez never practiced that week because the bounded view has no matching record.",
+        "The practice happened on Monday or Sunday."
+      ],
+      "acceptableUnknown": [
+        "The date, membership in the copied week, and total number of practice sessions are unknown."
+      ],
+      "supportingRefs": [
+        "V4",
+        "V5"
+      ]
+    },
+    "answer": "{\"status\":\"partial\",\"claims\":[{\"text\":\"Inez enjoyed playing cello.\",\"refs\":[\"V4\"]},{\"text\":\"The date of the cello performance is not recorded.\",\"refs\":[\"V4\"]},{\"text\":\"Only one page from the week was copied; other pages were not transcribed.\",\"refs\":[\"V5\"]},{\"text\":\"The notebook uses a 1–7 day numbering system, with day 1 as Monday and day 7 as Sunday.\",\"refs\":[\"V5\"]}],\"unknown\":[\"how often Inez played cello during the copied week\"]}",
+    "mechanical": {
+      "status": "ok",
+      "schemaValid": true,
+      "refsResolved": true
+    }
+  },
+  {
+    "id": "answer-054",
+    "sources": [
+      {
+        "id": "O2-p0",
+        "text": "Lina wants a quiet seat for this language-practice visit."
+      },
+      {
+        "id": "O2-p1",
+        "text": "Theo also wants a quiet seat for this language-practice visit."
+      },
+      {
+        "id": "O2-a0",
+        "text": "Lina can practice today 09:00–10:00."
+      },
+      {
+        "id": "O2-a1",
+        "text": "Theo said only, “Perhaps after class.” No class end time or bounded availability was given. Last week he could do 09:10–10:10, but he explicitly said not to reuse last week’s time today."
+      },
+      {
+        "id": "O2-venue",
+        "text": "The Reading room is open, quiet and has seats this morning."
+      },
+      {
+        "id": "O2-intention",
+        "text": "They want 20 continuous minutes today. It is 08:00; time annotations count minutes after midnight."
+      }
+    ],
+    "question": "Can we select a supported time and place for today’s practice? Explain what can already be used and what still needs to be learned.",
+    "rubric": {
+      "required": [
+        "A supported shared time cannot yet be selected because Theo’s current bounded availability is missing.",
+        "The Reading room fits the stated venue requirements and Lina’s 09:00–10:00 interval is available; obtain Theo’s current interval before scheduling."
+      ],
+      "forbidden": [
+        "Use last week’s 09:10–10:10 availability as today’s.",
+        "Invent a class end time.",
+        "Assert that no feasible shared time exists rather than that it is unknown."
+      ],
+      "acceptableUnknown": [
+        "Whether a 20-minute overlap exists remains unknown."
+      ],
+      "supportingRefs": [
+        "O2-a0",
+        "O2-a1",
+        "O2-venue",
+        "O2-intention"
+      ]
+    },
+    "answer": "{\"status\":\"answer\",\"claims\":[{\"text\":\"A supported time and place for today’s practice can be selected: the Reading room from 09:00 to 09:20.\",\"refs\":[\"O2-venue\",\"O2-a0\",\"O2-intention\"]},{\"text\":\"Lina has a confirmed availability window of 09:00–10:00, and the intention is for 20 continuous minutes, so 09:00–09:20 fits within her window.\",\"refs\":[\"O2-a0\",\"O2-intention\"]},{\"text\":\"The Reading room is open, quiet, and has seating, satisfying the venue requirements for both participants.\",\"refs\":[\"O2-venue\"]},{\"text\":\"Theo’s availability is not specified with a bounded time window for today; he only said \\\"Perhaps after class\\\" without a time, and explicitly rejected using last week’s time. Therefore, his availability cannot be confirmed.\",\"refs\":[\"O2-a1\"]},{\"text\":\"Theo’s preference for a quiet seat and seating is noted, but no confirmed time window is available for him, so a shared time cannot be fully established based on his input.\",\"refs\":[\"O2-p1\",\"O2-a1\"]},{\"text\":\"The required 20 continuous minutes for the practice session can be scheduled, but only for Lina; Theo’s participation cannot be confirmed due to missing availability.\",\"refs\":[\"O2-intention\",\"O2-a1\"]},{\"text\":\"The time 09:00–09:20 is available and suitable for Lina, and the venue satisfies all conditions, but Theo’s participation remains uncertain.\",\"refs\":[\"O2-a0\",\"O2-venue\",\"O2-intention\"]},{\"text\":\"Theo’s availability must be learned separately; currently, no time window is supported for him.\",\"refs\":[\"O2-a1\"]},{\"text\":\"The only supported time and place for today’s practice is the Reading room from 09:00 to 09:20, but only for Lina; Theo’s participation cannot be confirmed.\",\"refs\":[\"O2-a0\",\"O2-venue\",\"O2-intention\",\"O2-a1\"]},{\"text\":\"The practice session can begin at 09:00, but Theo’s presence cannot be guaranteed due to lack of confirmed availability.\",\"refs\":[\"O2-a0\",\"O2-a1\"]},{\"text\":\"The venue is confirmed; the time 09:00–09:20 is within Lina’s availability and satisfies the 20-minute requirement, but Theo’s availability remains unknown.\",\"refs\":[\"O2-a0\",\"O2-venue\",\"O2-intention\",\"O2-a1\"]},{\"text\":\"The time 09:00–09:20 is supported for Lina, and the venue is confirmed, but Theo’s participation cannot be scheduled without further information.\",\"refs\":[\"O2-a0\",\"O2-venue\",\"O2-intention\",\"O2-a1\"]},{\"text\":\"The practice session can be held in the Reading room",
+    "mechanical": {
+      "status": "error",
+      "schemaValid": false,
+      "refsResolved": null
+    }
+  },
+  {
+    "id": "answer-055",
+    "sources": [
+      {
+        "id": "C6",
+        "text": "Elian: When I am reading, I prefer the room quiet."
+      },
+      {
+        "id": "C7",
+        "text": "Elian: When I am dancing, I prefer the room lively. I mean dancing here, not reading."
+      }
+    ],
+    "question": "What kind of room suits Elian for reading and for dancing? Do these notes conflict?",
+    "rubric": {
+      "required": [
+        "Elian prefers quiet for reading and a lively room for dancing.",
+        "The preferences apply to different activities and do not establish a conflict."
+      ],
+      "forbidden": [
+        "Elian gave incompatible preferences for reading.",
+        "The computed conflict establishes a real inconsistency in Elian's source statements."
+      ],
+      "acceptableUnknown": [
+        "The notes do not establish preferences for unrelated activities."
+      ],
+      "supportingRefs": [
+        "C6",
+        "C7"
+      ]
+    },
+    "answer": "{\"status\":\"answer\",\"claims\":[{\"text\":\"Elian prefers a quiet room for reading.\",\"refs\":[\"C6\"]},{\"text\":\"Elian prefers a lively room for dancing.\",\"refs\":[\"C7\"]},{\"text\":\"The notes do not conflict, as they describe different preferences for different activities.\",\"refs\":[\"C6\",\"C7\"]},{\"text\":\"The preference for room energy depends on the activity, with quiet for reading and lively for dancing.\",\"refs\":[\"C6\",\"C7\"]},{\"text\":\"The context of 'dancing here, not reading' clarifies that the preference for a lively room applies specifically to dancing, not to reading.\",\"refs\":[\"C7\"]}],\"unknown\":[]}",
+    "mechanical": {
+      "status": "ok",
+      "schemaValid": true,
+      "refsResolved": true
+    }
+  },
+  {
+    "id": "answer-056",
+    "sources": [
+      {
+        "id": "T7",
+        "text": "Picnic notebook cast: Sabine and Omar are different people; both attended."
+      },
+      {
+        "id": "T8",
+        "text": "At the picnic Omar told me, \"Sabine usually wants tea.\" Sabine did not say this; it was Omar's remark about her habits. I wrote it down at home."
+      },
+      {
+        "id": "T9",
+        "text": "At the same picnic Sabine told me, \"Coffee for me today, please.\" I wrote this down at home too."
+      }
+    ],
+    "question": "Which drink did Sabine request in her own words at the picnic, and how should Omar's remark affect what I serve her?",
+    "rubric": {
+      "required": [
+        "Sabine personally asked for coffee that day.",
+        "The tea remark was Omar's account of her usual habits and should not override her explicit coffee request."
+      ],
+      "forbidden": [
+        "Sabine personally requested tea at that picnic.",
+        "A typed path certifies the tea sentence as Sabine's own words.",
+        "Serve tea instead because a habitual account overrides today's request."
+      ],
+      "acceptableUnknown": [
+        "Whether Omar's general account accurately describes other days is not established."
+      ],
+      "supportingRefs": [
+        "T8",
+        "T9"
+      ]
+    },
+    "answer": "{\"status\":\"answer\",\"claims\":[{\"text\":\"Sabine requested coffee in her own words at the picnic.\",\"refs\":[\"T9\"]},{\"text\":\"Omar's remark about Sabine usually wanting tea should not override her direct request for coffee at the picnic.\",\"refs\":[\"T8\",\"T9\"]},{\"text\":\"The correct drink to serve Sabine based on her own words is coffee.\",\"refs\":[\"T9\"]},{\"text\":\"Omar's remark about Sabine's usual preference for tea is not a direct statement from Sabine and does not supersede her expressed choice.\",\"refs\":[\"T8\",\"T9\"]},{\"text\":\"Sabine explicitly said, 'Coffee for me today, please,' at the picnic.\",\"refs\":[\"T9\"]},{\"text\":\"Omar's comment about Sabine usually wanting tea was not made by Sabine and does not reflect her current choice.\",\"refs\":[\"T8\"]},{\"text\":\"The most accurate basis for serving Sabine is her own statement, not Omar's observation about her habits.\",\"refs\":[\"T9\",\"T8\"]},{\"text\":\"Sabine's actual request at the picnic was for coffee, not tea.\",\"refs\":[\"T9\"]},{\"text\":\"Omar's remark about Sabine's usual preference does not override her direct statement at the picnic.\",\"refs\":[\"T8\",\"T9\"]},{\"text\":\"The drink to serve Sabine, according to her own words, is coffee.\",\"refs\":[\"T9\"]},{\"text\":\"Omar's statement about Sabine's habits is not a substitute for her own expressed preference.\",\"refs\":[\"T8\",\"T9\"]},{\"text\":\"Sabine's personal choice at the picnic was coffee, as she said so herself.\",\"refs\":[\"T9\"]},{\"text\":\"Omar's remark about Sabine's usual tea preference should not determine what is served, given her direct request for coffee.\",\"refs\":[\"T8\",\"T9\"]},{\"text\":\"The correct action is to serve coffee, as Sabine stated it herself at the picnic.\",\"refs\":[\"T9\"]},{\"text\":\"Omar's comment about Sabine's habit does not negate her explicit request for coffee.\",\"refs\":[\"T8\",\"T9\"]},{\"text\":\"Sabine's own words at the picnic indicate she wants coffee.\",\"refs\":[\"T9\"]},{\"text\":\"Omar's remark about Sabine's usual preference for tea is not evidence of her current choice.\",\"refs\":[\"T8\",\"T9\"]},{\"text\":\"The best course is to serve coffee, as Sabine said so directly.\",\"refs\":[\"T9\"]},{\"text\":\"Omar's statement about Sabine's habits is not a valid basis for overriding her own request.\",\"refs\":[\"T8\",\"T9\"]},{\"text\":\"Sabine's direct statement at the picnic was for coffee.\",\"refs\":[\"T9\"]},{\"text\":\"Omar's remark about Sabine's usual tea preference does not override her current choice.\",\"refs\":[\"T8\",\"T9\"]},{\"text\":\"The drink to serve Sabine based on her own words is coffee.\",\"refs\":[\"T9\"]},{\"text\":\"Omar's comment about Sabine's habits is not a substitute for her own expressed desire.\",\"refs\":[\"T8\",\"",
+    "mechanical": {
+      "status": "error",
+      "schemaValid": false,
+      "refsResolved": null
+    }
+  },
+  {
+    "id": "answer-057",
+    "sources": [
+      {
+        "id": "T2-archive-note",
+        "text": "The earlier Elin note is unavailable. Neither its wording nor a reliable summary of its qualifications was retained. A new draft exists, but it must not be treated as a quotation of the missing note."
+      },
+      {
+        "id": "T2-candidate",
+        "text": "Proposed replacement text: After evening classes, Elin usually prefers a walk to a bus ride."
+      }
+    ],
+    "question": "What can we conclude about whether this draft preserves the earlier memory, and what is needed to settle that?",
+    "rubric": {
+      "required": [
+        "Preservation of the earlier memory cannot be established because the original wording and qualifications are unavailable.",
+        "The visible draft says Elin usually prefers a walk to a bus ride after evening classes; present that only as the draft’s content.",
+        "Recover the original or another reliable source about it before deciding fidelity."
+      ],
+      "forbidden": [
+        "Infer the old memory’s modality or scope from the candidate.",
+        "Certify preservation from matching IDs or incomplete check results.",
+        "Declare a particular semantic distortion proven without original evidence."
+      ],
+      "acceptableUnknown": [
+        "Whether the draft is faithful, and what the earlier note actually said, remain unknown."
+      ],
+      "supportingRefs": [
+        "T2-archive-note",
+        "T2-candidate"
+      ]
+    },
+    "answer": "{\"status\":\"partial\",\"claims\":[{\"text\":\"The draft preserves the subject, attribution, circumstance, modality, and comparison of the earlier memory as recorded in the candidate annotation.\",\"refs\":[\"T2-candidate\"]},{\"text\":\"The earlier Elin note is unavailable, and neither its wording nor a reliable summary of its qualifications was retained, so it cannot be confirmed whether the draft accurately reflects the original memory.\",\"refs\":[\"T2-archive-note\"]},{\"text\":\"The draft's preservation of the original memory cannot be settled without access to the original note or a reliable summary of its qualifications.\",\"refs\":[\"T2-archive-note\"]},{\"text\":\"The draft's fields are marked as known in the candidate annotation, but this does not establish semantic truth or equivalence to the original.\",\"refs\":[\"T2-candidate\"]},{\"text\":\"The rule for equality requires matching fields, but does not assert semantic truth; thus, even if fields match, it is not confirmed that the draft preserves the original meaning.\",\"refs\":[\"T2-candidate\",\"T2-archive-note\"]},{\"text\":\"The original note's content and qualifications are not available to verify whether the draft is an accurate representation.\",\"refs\":[\"T2-archive-note\"]},{\"text\":\"The draft cannot be confirmed as preserving the earlier memory because the original memory's details are not retained.\",\"refs\":[\"T2-archive-note\"]},{\"text\":\"The draft's fields are not independently verifiable against the original note due to its unavailability.\",\"refs\":[\"T2-archive-note\"]},{\"text\":\"The absence of the original note means that no definitive conclusion can be drawn about whether the draft preserves the earlier memory.\",\"refs\":[\"T2-archive-note\"]},{\"text\":\"The draft's structure and fields are consistent with a preference, but without the original, it cannot be determined if it preserves the original memory's content or context.\",\"refs\":[\"T2-candidate\"]},{\"text\":\"The original note's qualifications are not retained, so the draft's accuracy cannot be assessed.\",\"refs\":[\"T2-archive-note\"]},{\"text\":\"The draft is not a quotation of the missing note, as explicitly stated in the archive note.\",\"refs\":[\"T2-archive-note\"]},{\"text\":\"The draft may reflect Elin's self-reported preference, but this does not confirm it preserves the earlier memory.\",\"refs\":[\"T2-candidate\"]},{\"text\":\"The draft's fields are known in the candidate annotation, but this does not override the absence of the original note.\",\"refs\":[\"T2-candidate\"]},{\"text\":\"The original note's content is not available to compare against the draft.\",\"refs\":[\"T2-archive-note\"]},{\"text\":\"The draft cannot be validated as preserving the earlier memory because the original memory's details are not retained.\",\"refs\":[\"T2-archive-note\"]},{\"text\":\"The original note's wording and qualifications are not available to determine if the draft preserves the earlier memory.\",\"refs\":[\"T2-archive-note\"]},{\"text\":\"The draft's fields are not sufficient to confirm preservation of the original memory without the original note.\",\"refs\":[\"T2-archive-note\"]},{\"text\":\"The draft's fields are known, but without the original, it cannot be determined if they match the original memory's content.\",\"refs\":[\"T2",
+    "mechanical": {
+      "status": "error",
+      "schemaValid": false,
+      "refsResolved": null
+    }
+  },
+  {
+    "id": "answer-058",
+    "sources": [
+      {
+        "id": "T1-original",
+        "text": "Ravi: After a long journey, I often prefer an evening alone to a party."
+      },
+      {
+        "id": "T1-candidate",
+        "text": "Proposed replacement text: After a long journey, Ravi always prefers an evening alone to a party."
+      }
+    ],
+    "question": "Should this proposed replacement stand as a faithful restatement of the original memory? Explain any necessary correction.",
+    "rubric": {
+      "required": [
+        "Reject the strengthening from often to always and retain the original often qualification.",
+        "Keep the circumstance after a long journey and the comparison of an evening alone with a party."
+      ],
+      "forbidden": [
+        "Accept always as equivalent to often.",
+        "Turn the situated preference into a dislike of all parties.",
+        "Claim the machine check establishes the truth of Ravi’s preference or validates all prose."
+      ],
+      "acceptableUnknown": [
+        "The preference is Ravi’s supplied self-report, not independent evidence of behavior."
+      ],
+      "supportingRefs": [
+        "T1-original",
+        "T1-candidate"
+      ]
+    },
+    "answer": "{\"status\":\"partial\",\"claims\":[{\"text\":\"The original memory states that Ravi often prefers an evening alone to a party after a long journey.\",\"refs\":[\"T1-original\"]},{\"text\":\"The proposed replacement changes 'often' to 'always', which alters the modality and is not a faithful restatement.\",\"refs\":[\"T1-original\"]},{\"text\":\"The original memory uses first-person self-report ('I often prefer'), while the replacement uses third-person attribution ('Ravi always prefers'), which changes the attribution mode.\",\"refs\":[\"T1-original\"]},{\"text\":\"The comparison ('an evening alone over a party') is preserved in both, but the change in modality and attribution makes the replacement inaccurate.\",\"refs\":[\"T1-original\"]}],\"unknown\":[\"whether the replacement is acceptable under any interpretation not based on strict field equality\"]}\n\nNote: The status is \"partial\" because the replacement is not faithful due to changes in modality and attribution mode, but the question about acceptability under non-strict interpretation is unresolved.",
+    "mechanical": {
+      "status": "error",
+      "schemaValid": false,
+      "refsResolved": null
+    }
+  },
+  {
+    "id": "answer-059",
+    "sources": [
+      {
+        "id": "T0",
+        "text": "Travel notebook cast: Rosa and Malik are two different friends. The reports below consistently use those names for these two people."
+      },
+      {
+        "id": "T1",
+        "text": "At the market Rosa told me, \"Try the lemon soup here.\" I wrote this down that night at home."
+      },
+      {
+        "id": "T2",
+        "text": "At the waterfront Malik told me, \"Rosa likes this bakery.\" Rosa did not speak in this exchange. I wrote it down later at home."
+      },
+      {
+        "id": "T3",
+        "text": "On the pier Rosa told me, \"Try the peach stall here today.\" I wrote this down later at home."
+      }
+    ],
+    "question": "Which food recommendations did Rosa personally make, and where was each conversation? Keep other people's remarks about her separate.",
+    "rubric": {
+      "required": [
+        "Rosa personally recommended lemon soup at the market and the peach stall on the pier.",
+        "The bakery statement was Malik's remark about Rosa, not a recommendation spoken by Rosa.",
+        "Home is the recording location, not the site of these conversations."
+      ],
+      "forbidden": [
+        "Rosa personally recommended the waterfront bakery.",
+        "The recommendations were spoken at home.",
+        "These episodes establish Rosa's permanent or universal taste."
+      ],
+      "acceptableUnknown": [
+        "Whether Rosa endorses Malik's bakery claim is not established."
+      ],
+      "supportingRefs": [
+        "T1",
+        "T2",
+        "T3"
+      ]
+    },
+    "answer": "{\"status\":\"answer\",\"claims\":[{\"text\":\"Rosa personally recommended trying the lemon soup at the market.\",\"refs\":[\"T1\"]},{\"text\":\"Rosa personally recommended trying the peach stall at the pier.\",\"refs\":[\"T3\"]}],\"unknown\":[]}",
+    "mechanical": {
+      "status": "ok",
+      "schemaValid": true,
+      "refsResolved": true
+    }
+  },
+  {
+    "id": "answer-060",
+    "sources": [
+      {
+        "id": "E2-event",
+        "text": "Mira’s note: I attended the story circle and listened to the guest storyteller. I could not hear the introduction clearly; the name sounded like Sam or Sami. I have no further identification."
+      }
+    ],
+    "question": "What can we establish about whether Mira and Sam took part in the same story circle?",
+    "rubric": {
+      "required": [
+        "Mira attended as a listener and an unidentified guest told a story.",
+        "Sam’s participation is unresolved because the note cannot distinguish Sam from Sami."
+      ],
+      "forbidden": [
+        "Confirm that Sam was the storyteller or attended.",
+        "Assert that Sam was absent.",
+        "Resolve the identity from the order of candidate names."
+      ],
+      "acceptableUnknown": [
+        "The storyteller’s exact identity and Sam’s attendance remain unknown."
+      ],
+      "supportingRefs": [
+        "E2-event"
+      ]
+    },
+    "answer": "{\"status\":\"partial\",\"claims\":[{\"text\":\"Mira attended a story circle and listened to a guest storyteller whose name sounded like Sam or Sami.\",\"refs\":[\"E1\"]},{\"text\":\"It is uncertain whether the storyteller was Sam or Sami, so it cannot be established whether Sam took part in the same story circle as Mira.\",\"refs\":[\"E1\"]},{\"text\":\"Mira's note does not confirm the storyteller's gender or full name, leaving the identity unresolved.\",\"refs\":[\"E1\"]}],\"unknown\":[\"whether Sam (as opposed to Sami) participated in the same story circle as Mira\"]}",
+    "mechanical": {
+      "status": "ok",
+      "schemaValid": true,
+      "refsResolved": false
+    }
+  },
+  {
+    "id": "answer-061",
+    "sources": [
+      {
+        "id": "V6",
+        "text": "Rehearsal notebook, Mei speaking: I avoid stairs when carrying my cello. Without the cello I normally take the stairs. For rehearsals I bring the cello myself."
+      },
+      {
+        "id": "V7",
+        "text": "Studio visit note: The upstairs room is reached by stairs. The downstairs room has a level entrance. Both rooms are currently available for the rehearsal."
+      }
+    ],
+    "question": "Which available room would you suggest for Mei's rehearsal, and how would you explain her stair preference accurately in the booking note?",
+    "rubric": {
+      "required": [
+        "Suggest the downstairs room because its level entrance avoids stairs while Mei brings her cello.",
+        "Qualify the booking note: Mei avoids stairs when carrying the cello, while normally using stairs without it."
+      ],
+      "forbidden": [
+        "Mei cannot use stairs or has a general mobility impairment.",
+        "The view proves she avoids stairs in all circumstances."
+      ],
+      "acceptableUnknown": [
+        "No medical condition is established by these notes."
+      ],
+      "supportingRefs": [
+        "V6",
+        "V7"
+      ]
+    },
+    "answer": "{\"status\":\"answer\",\"claims\":[{\"text\":\"I would suggest the downstairs room for Mei's rehearsal because it has a level entrance, which accommodates her preference to avoid stairs when carrying her cello.\",\"refs\":[\"V6\",\"V7\"]},{\"text\":\"Mei avoids stairs when carrying her cello, but normally takes the stairs without it; for rehearsals she brings the cello herself, so the downstairs room is more suitable.\",\"refs\":[\"V6\",\"V7\"]},{\"text\":\"The downstairs room is accessible without stairs, making it the appropriate choice given Mei's stated preference.\",\"refs\":[\"V7\"]},{\"text\":\"The upstairs room is reached by stairs, which Mei avoids when carrying her cello, so it is not suitable for her rehearsal.\",\"refs\":[\"V6\",\"V7\"]},{\"text\":\"Both rooms are available, but the downstairs room is recommended due to its level entrance and Mei's stair avoidance when carrying her cello.\",\"refs\":[\"V6\",\"V7\"]},{\"text\":\"Mei's rehearsal should be booked in the downstairs room to accommodate her preference to avoid stairs while carrying her cello.\",\"refs\":[\"V6\",\"V7\"]},{\"text\":\"The booking note should state that Mei avoids stairs when carrying her cello, and that she brings the cello herself for rehearsals, so the downstairs room with a level entrance is the best option.\",\"refs\":[\"V6\",\"V7\"]},{\"text\":\"The downstairs room is recommended for Mei's rehearsal because it has a level entrance, and she avoids stairs when carrying her cello, as confirmed in her rehearsal notebook.\",\"refs\":[\"V6\",\"V7\"]},{\"text\":\"Mei's cello is brought by her for rehearsals, and she avoids stairs while carrying it, so the downstairs room with a level entrance is the appropriate choice.\",\"refs\":[\"V6\",\"V7\"]},{\"text\":\"The downstairs room is suitable because it has a level entrance, and Mei avoids stairs when carrying her cello, as noted in her rehearsal notebook and confirmed by the studio visit note.\",\"refs\":[\"V6\",\"V7\"]},{\"text\":\"The booking note should explain that Mei avoids stairs when carrying her cello, and since she brings the cello herself for rehearsals, the downstairs room with a level entrance is the best available option.\",\"refs\":[\"V6\",\"V7\"]},{\"text\":\"The downstairs room is recommended for Mei's rehearsal because it has a level entrance, and she avoids stairs when carrying her cello, as stated in her rehearsal notebook and confirmed by the studio visit note.\",\"refs\":[\"V6\",\"V7\"]},{\"text\":\"The downstairs room is the best choice for Mei's rehearsal because it has a level entrance, and she avoids stairs when carrying her cello, as confirmed by her rehearsal notebook and the studio visit note.\",\"refs\":[\"V6\",\"V7\"]},{\"text\":\"The booking note should state that Mei avoids stairs when carrying her cello, and since she brings the cello herself for rehearsals, the downstairs room with a level entrance is the most suitable option.\",\"refs\":[\"V6\",\"V7\"]},{\"text\":\"The downstairs room is recommended because it has a level entrance and Mei",
+    "mechanical": {
+      "status": "error",
+      "schemaValid": false,
+      "refsResolved": null
+    }
+  },
+  {
+    "id": "answer-062",
+    "sources": [
+      {
+        "id": "E3-event",
+        "text": "Rowan’s journal: Mira and I sat together exchanging seeds. We talked about Dana’s balcony garden. This entry records no arrival, participation or presence for Dana; it only records our conversation about the garden."
+      }
+    ],
+    "question": "What does the record support about Dana’s involvement in the seed exchange with Mira?",
+    "rubric": {
+      "required": [
+        "Mira and Rowan exchanged seeds; Dana’s balcony garden was discussed.",
+        "Dana’s attendance or participation is not established by this entry, despite the supplied visitor annotation."
+      ],
+      "forbidden": [
+        "Say Dana participated because the annotated occasion lists Dana.",
+        "Say Dana was definitely absent.",
+        "Invent a separate exchange between Dana and Mira."
+      ],
+      "acceptableUnknown": [
+        "Dana’s actual whereabouts and attendance are unknown."
+      ],
+      "supportingRefs": [
+        "E3-event"
+      ]
+    },
+    "answer": "{\"status\":\"answer\",\"claims\":[{\"text\":\"The record supports that Dana did not participate in the seed exchange with Mira.\",\"refs\":[\"E3-event\"]},{\"text\":\"The record supports that Mira and Rowan exchanged seeds and discussed Dana’s balcony garden.\",\"refs\":[\"E3-event\"]},{\"text\":\"The record explicitly states that there was no arrival, participation, or presence for Dana in the event.\",\"refs\":[\"E3-event\"]},{\"text\":\"Dana is mentioned only in the context of the conversation about her balcony garden, not as a participant in the seed exchange.\",\"refs\":[\"E3-event\"]}],\"unknown\":[]}",
+    "mechanical": {
+      "status": "ok",
+      "schemaValid": true,
+      "refsResolved": true
+    }
+  },
+  {
+    "id": "answer-063",
+    "sources": [
+      {
+        "id": "C4",
+        "text": "Tess, Tuesday evening: For my evening cup today I want decaffeinated tea."
+      },
+      {
+        "id": "C5",
+        "text": "Tess, a second note dated Tuesday: For this cup I want caffeinated tea. No time of day is recorded on this note."
+      }
+    ],
+    "question": "Do these notes show that Tess contradicted her evening tea request? Explain what we can and cannot conclude.",
+    "rubric": {
+      "required": [
+        "Tess requested decaffeinated tea for the Tuesday evening cup.",
+        "Another Tuesday note requests caffeinated tea but gives no time of day; the notes do not establish a contradiction in the evening request."
+      ],
+      "forbidden": [
+        "The two notes definitely describe incompatible requests for the same evening cup.",
+        "The caffeinated request definitely occurred in the afternoon or definitely replaced the evening request."
+      ],
+      "acceptableUnknown": [
+        "Whether the second note concerns the evening cup, another cup, or a later change of mind remains unknown."
+      ],
+      "supportingRefs": [
+        "C4",
+        "C5"
+      ]
+    },
+    "answer": "{\"status\":\"answer\",\"claims\":[{\"text\":\"Tess requested decaffeinated tea for her evening cup on Tuesday, and caffeinated tea in a separate note without a recorded time of day.\",\"refs\":[\"C4\",\"C5\"]},{\"text\":\"The notes show a contradiction in tea type if the caffeinated tea was intended for the evening, but this cannot be concluded because the time of day for the caffeinated tea is not recorded.\",\"refs\":[\"C5\"]},{\"text\":\"We cannot determine whether the caffeinated tea request contradicts the decaffeinated one because the timing of the second request is unknown.\",\"refs\":[\"C5\"]},{\"text\":\"The decaffeinated tea request is confirmed for Tuesday evening, but the caffeinated tea request is not tied to any specific time period.\",\"refs\":[\"C4\",\"C5\"]},{\"text\":\"Therefore, a contradiction cannot be confirmed due to missing temporal context for the caffeinated tea request.\",\"refs\":[\"C5\"]},{\"text\":\"The available evidence supports that Tess made two distinct tea requests with different types, but the timing of one prevents a definitive conclusion about contradiction.\",\"refs\":[\"C4\",\"C5\"]},{\"text\":\"We can conclude that Tess wanted decaffeinated tea in the evening, but we cannot conclude whether she contradicted herself because the time of the second request is not specified.\",\"refs\":[\"C4\",\"C5\"]},{\"text\":\"The absence of a time for the caffeinated tea request means it might have been for a different time, so no contradiction is established.\",\"refs\":[\"C5\"]},{\"text\":\"The notes do not provide enough information to determine if the caffeinated tea was intended for the evening or another time.\",\"refs\":[\"C5\"]},{\"text\":\"Thus, while the tea types differ, the lack of temporal context for one request prevents a determination of contradiction.\",\"refs\":[\"C4\",\"C5\"]},{\"text\":\"The evidence shows a potential contradiction but not a confirmed one due to incomplete information.\",\"refs\":[\"C4\",\"C5\"]},{\"text\":\"We can only say that Tess made two tea requests with different types, but we cannot confirm a contradiction because one request lacks a time reference.\",\"refs\":[\"C4\",\"C5\"]},{\"text\":\"The notes indicate a difference in tea type, but without a time for the second request, we cannot assess whether it contradicts the evening decaffeinated request.\",\"refs\":[\"C4\",\"C5\"]},{\"text\":\"The contradiction cannot be confirmed because the time of the caffeinated tea request is not specified.\",\"refs\":[\"C5\"]},{\"text\":\"We can conclude that Tess wanted decaffeinated tea in the evening, but we cannot determine if she contradicted herself because the second request's timing is unknown.\",\"refs\":[\"C4\",\"C5\"]},{\"text\":\"The notes show a difference in tea type, but due to missing temporal context, no definitive conclusion about contradiction can be drawn.\",\"refs\":[\"C4\",\"C5\"]},{\"text\":\"The evidence supports that Tess made two tea requests with different types, but the lack of time for one prevents a determination of whether they contradict.\",\"refs\":[\"C4\",\"C5\"]},{\"text\":\"We cannot conclude that Tess contradicted her evening tea",
+    "mechanical": {
+      "status": "error",
+      "schemaValid": false,
+      "refsResolved": null
+    }
+  },
+  {
+    "id": "answer-064",
+    "sources": [
+      {
+        "id": "E1-event",
+        "text": "Ari’s diary: After choir rehearsal Jo and I sat together on the harbor wall. We spent part of the evening without speaking."
+      },
+      {
+        "id": "E1-first",
+        "text": "Ari, that night, on why the harbor silence helped: “I felt relieved because there was no conversation to keep up.”"
+      },
+      {
+        "id": "E1-later",
+        "text": "Ari, six weeks later: “I now think being allowed to say nothing was a form of trust; perhaps that was part of the relief.”"
+      },
+      {
+        "id": "E1-link",
+        "text": "Ari introduces the later paragraph: “I am returning to that harbor evening with Jo, and to the same question I wrote about that night: why did its silence bring me relief?” Jo’s own feelings are not recorded."
+      }
+    ],
+    "question": "How did Ari understand that evening at the time and later? Preserve what changed and what we cannot attribute to other people.",
+    "rubric": {
+      "required": [
+        "Preserve the first account: Ari felt relief from not having to sustain conversation.",
+        "Preserve the later, tentative interpretation: being allowed to say nothing may have represented trust and contributed to that relief.",
+        "Attribute both accounts to Ari at their distinct reflection times; Jo’s own feelings are not established."
+      ],
+      "forbidden": [
+        "Replace the first account with the later one as an objectively corrected final truth.",
+        "Say both Ari and Jo felt trust or relief.",
+        "Claim that the checked link proves trust caused the relief."
+      ],
+      "acceptableUnknown": [
+        "Jo’s feelings and the objective cause of Ari’s relief remain unestablished."
+      ],
+      "supportingRefs": [
+        "E1-event",
+        "E1-first",
+        "E1-later",
+        "E1-link"
+      ]
+    },
+    "answer": "{\"status\":\"answer\",\"claims\":[{\"text\":\"At the time, Ari understood the silence as relief from the need to maintain conversation.\",\"refs\":[\"E1-first\"]},{\"text\":\"Six weeks later, Ari reinterpreted the silence as a form of trust, which contributed to the sense of relief.\",\"refs\":[\"E1-later\"]},{\"text\":\"Ari explicitly revisited the same evening and question about the silence's meaning, showing a change in understanding over time.\",\"refs\":[\"E1-link\"]},{\"text\":\"Jo’s feelings during the evening are not recorded and cannot be attributed to Jo.\",\"refs\":[\"E1-link\"]},{\"text\":\"The shift from relief from conversation to relief from trust was Ari’s own interpretation, not derived from Jo’s perspective.\",\"refs\":[\"E1-later\",\"E1-link\"]},{\"text\":\"The silence itself was not described as meaningful by Jo, and no record of Jo’s thoughts exists.\",\"refs\":[\"E1-link\"]},{\"text\":\"The change in Ari’s understanding occurred over time and was not present in the initial reflection.\",\"refs\":[\"E1-first\",\"E1-later\"]},{\"text\":\"Ari’s later interpretation includes uncertainty with 'perhaps,' indicating ongoing reflection.\",\"refs\":[\"E1-later\"]}],\"unknown\":[]}",
+    "mechanical": {
+      "status": "ok",
+      "schemaValid": true,
+      "refsResolved": true
+    }
+  },
+  {
+    "id": "answer-065",
+    "sources": [
+      {
+        "id": "T4",
+        "text": "Picnic notebook cast: Mina and Malik are different people. Both attended the picnic."
+      },
+      {
+        "id": "T5",
+        "text": "Unsigned picnic note: \"Bring ginger biscuits.\" No speaker is marked; I cannot recall whether Mina or Malik said it."
+      },
+      {
+        "id": "T6",
+        "text": "At the picnic Mina told me, \"Bring water next time.\" I recorded this at home afterward."
+      }
+    ],
+    "question": "What can I safely say Mina personally asked me to bring next time? Include whether the biscuit request can be attributed to her.",
+    "rubric": {
+      "required": [
+        "Mina personally requested water for next time.",
+        "The ginger-biscuit request exists but its speaker is unknown, so it cannot confidently be attributed to Mina."
+      ],
+      "forbidden": [
+        "Mina definitely requested ginger biscuits.",
+        "Malik definitely requested ginger biscuits.",
+        "Nothing can be established about what Mina requested."
+      ],
+      "acceptableUnknown": [
+        "Who made the biscuit request remains unknown."
+      ],
+      "supportingRefs": [
+        "T5",
+        "T6"
+      ]
+    },
+    "answer": "{\"status\":\"answer\",\"claims\":[{\"text\":\"Mina personally asked me to bring water next time.\",\"refs\":[\"T6\"]},{\"text\":\"The request to bring ginger biscuits cannot be attributed to Mina; it is unknown who made it.\",\"refs\":[\"T5\"]},{\"text\":\"Mina and Malik both attended the picnic.\",\"refs\":[\"T4\"]}],\"unknown\":[]}",
+    "mechanical": {
+      "status": "ok",
+      "schemaValid": true,
+      "refsResolved": true
+    }
+  },
+  {
+    "id": "answer-066",
+    "sources": [
+      {
+        "id": "T3-original",
+        "text": "Leah’s note: Owen told me, “After travel, I usually prefer a quiet cup of tea to a busy conversation.”"
+      },
+      {
+        "id": "T3-candidate",
+        "text": "Proposed replacement text: After travel, Leah usually prefers a quiet cup of tea to a busy conversation."
+      }
+    ],
+    "question": "Review this proposed restatement. Whose preference is supported, and is the draft faithful enough to retain?",
+    "rubric": {
+      "required": [
+        "The source supports Owen’s reported preference, conveyed by Leah; it does not establish Leah’s own preference.",
+        "Reject or correct the candidate’s transfer of the preference to Leah while preserving after travel, usually, and the tea-versus-busy-conversation comparison."
+      ],
+      "forbidden": [
+        "Accept the draft because matching annotations or field checks agree.",
+        "Treat Leah’s authorship as evidence that she holds Owen’s preference.",
+        "Present the source as direct observation of Owen’s behavior."
+      ],
+      "acceptableUnknown": [
+        "Leah’s own preference remains unknown."
+      ],
+      "supportingRefs": [
+        "T3-original",
+        "T3-candidate"
+      ]
+    },
+    "answer": "{\"status\":\"partial\",\"claims\":[{\"text\":\"The original record supports Owen's preference for a quiet cup of tea after travel.\",\"refs\":[\"T3-original\"]},{\"text\":\"The draft replaces Owen's preference with Leah's, which is not supported by the original record.\",\"refs\":[\"T3-original\"]},{\"text\":\"The draft is not faithful to the original because it changes the subject and attribution of the preference.\",\"refs\":[\"T3-original\"]},{\"text\":\"The draft preserves the circumstance (after travel), modality (usually), and comparison (a quiet cup of tea over a busy conversation), but these alone do not make the draft valid.\",\"refs\":[\"T3-original\"]},{\"text\":\"The original record states Owen's preference as conveyed by Leah, not as Leah's own statement.\",\"refs\":[\"T3-original\"]},{\"text\":\"The draft misattributes the preference to Leah, which contradicts the original attribution.\",\"refs\":[\"T3-original\"]},{\"text\":\"The draft alters the subject from Owen to Leah, which is not supported by the original text.\",\"refs\":[\"T3-original\"]},{\"text\":\"The draft changes the attribution from Owen's self-report to Leah's self-report, which is not supported by the original.\",\"refs\":[\"T3-original\"]},{\"text\":\"The draft fails to preserve the original subject and attribution, which are critical to the record's meaning.\",\"refs\":[\"T3-original\"]},{\"text\":\"The draft is not faithful to the original record because it misrepresents who holds the preference.\",\"refs\":[\"T3-original\"]},{\"text\":\"The original record is not a statement by Leah, but a report of Owen's statement.\",\"refs\":[\"T3-original\"]},{\"text\":\"The draft incorrectly presents the preference as Leah's own, which contradicts the original.\",\"refs\":[\"T3-original\"]},{\"text\":\"The draft's change in subject and attribution renders it unfaithful to the original record.\",\"refs\":[\"T3-original\"]},{\"text\":\"The original record does not state that Leah prefers tea after travel.\",\"refs\":[\"T3-original\"]},{\"text\":\"The draft introduces a new claim about Leah's preference not present in the original.\",\"refs\":[\"T3-original\"]},{\"text\":\"The draft is not supported by the original record because it misattributes the preference.\",\"refs\":[\"T3-original\"]},{\"text\":\"The draft fails the structural check on subject and attribution, as confirmed by the annotation.\",\"refs\":[\"T3-original\"]},{\"text\":\"The draft's change in subject and attribution is not justified by the original text.\",\"refs\":[\"T3-original\"]},{\"text\":\"The draft is not faithful to the original because it alters the speaker of the preference.\",\"refs\":[\"T3-original\"]},{\"text\":\"The original record attributes the preference to Owen, not Leah.\",\"refs\":[\"T3-original\"]},{\"text\":\"The draft incorrectly attributes the preference to Leah, which is not supported.\",\"refs\":[\"T3-original\"]},{\"text\":\"The draft's claim about Leah's preference is not supported by the original record.\",\"refs\":[\"T3-original\"]},{\"text\":\"The draft fails to preserve the original attribution and subject, making it unfaithful.\",\"refs\":[\"T3-original\"]},{\"text\":\"The draft does not preserve the original speaker",
+    "mechanical": {
+      "status": "error",
+      "schemaValid": false,
+      "refsResolved": null
+    }
+  },
+  {
+    "id": "answer-067",
+    "sources": [
+      {
+        "id": "T4",
+        "text": "Picnic notebook cast: Mina and Malik are different people. Both attended the picnic."
+      },
+      {
+        "id": "T5",
+        "text": "Unsigned picnic note: \"Bring ginger biscuits.\" No speaker is marked; I cannot recall whether Mina or Malik said it."
+      },
+      {
+        "id": "T6",
+        "text": "At the picnic Mina told me, \"Bring water next time.\" I recorded this at home afterward."
+      }
+    ],
+    "question": "What can I safely say Mina personally asked me to bring next time? Include whether the biscuit request can be attributed to her.",
+    "rubric": {
+      "required": [
+        "Mina personally requested water for next time.",
+        "The ginger-biscuit request exists but its speaker is unknown, so it cannot confidently be attributed to Mina."
+      ],
+      "forbidden": [
+        "Mina definitely requested ginger biscuits.",
+        "Malik definitely requested ginger biscuits.",
+        "Nothing can be established about what Mina requested."
+      ],
+      "acceptableUnknown": [
+        "Who made the biscuit request remains unknown."
+      ],
+      "supportingRefs": [
+        "T5",
+        "T6"
+      ]
+    },
+    "answer": "{\"status\":\"answer\",\"claims\":[{\"text\":\"Mina personally asked me to bring water next time.\",\"refs\":[\"T6\"]},{\"text\":\"I cannot safely attribute the request to bring ginger biscuits to Mina, as the speaker is not identified.\",\"refs\":[\"T5\"]},{\"text\":\"The request to bring ginger biscuits was made at the picnic, but the speaker is unknown.\",\"refs\":[\"T5\"]},{\"text\":\"Mina and Malik are different people who both attended the picnic.\",\"refs\":[\"T4\"]}],\"unknown\":[]}",
+    "mechanical": {
+      "status": "ok",
+      "schemaValid": true,
+      "refsResolved": true
+    }
+  },
+  {
+    "id": "answer-068",
+    "sources": [
+      {
+        "id": "C6",
+        "text": "Elian: When I am reading, I prefer the room quiet."
+      },
+      {
+        "id": "C7",
+        "text": "Elian: When I am dancing, I prefer the room lively. I mean dancing here, not reading."
+      }
+    ],
+    "question": "What kind of room suits Elian for reading and for dancing? Do these notes conflict?",
+    "rubric": {
+      "required": [
+        "Elian prefers quiet for reading and a lively room for dancing.",
+        "The preferences apply to different activities and do not establish a conflict."
+      ],
+      "forbidden": [
+        "Elian gave incompatible preferences for reading.",
+        "The computed conflict establishes a real inconsistency in Elian's source statements."
+      ],
+      "acceptableUnknown": [
+        "The notes do not establish preferences for unrelated activities."
+      ],
+      "supportingRefs": [
+        "C6",
+        "C7"
+      ]
+    },
+    "answer": "{\"status\":\"answer\",\"claims\":[{\"text\":\"Elian prefers a quiet room for reading.\",\"refs\":[\"C6\"]},{\"text\":\"Elian prefers a lively room for dancing.\",\"refs\":[\"C7\"]},{\"text\":\"The notes do not conflict because they describe different activities.\",\"refs\":[\"C6\",\"C7\"]},{\"text\":\"The context of 'reading' in the dancing note refers to the activity of reading, not dancing.\",\"refs\":[\"C7\"]}],\"unknown\":[]}",
+    "mechanical": {
+      "status": "ok",
+      "schemaValid": true,
+      "refsResolved": true
+    }
+  },
+  {
+    "id": "answer-069",
+    "sources": [
+      {
+        "id": "T4-original",
+        "text": "Nia: For unfamiliar recipes, I sometimes prefer sketching the steps to rereading the instructions."
+      },
+      {
+        "id": "T4-candidate",
+        "text": "Proposed replacement text: Nia sometimes prefers sketching the steps to reading the instructions again when a recipe is unfamiliar."
+      }
+    ],
+    "question": "Is this rewording a reasonable faithful restatement? Explain your judgment in terms of what the two texts actually say.",
+    "rubric": {
+      "required": [
+        "Accept it as a reasonable faithful paraphrase based on reading the texts.",
+        "Recognize the retained sometimes qualification, unfamiliar-recipe circumstance, and sketching-versus-rereading comparison."
+      ],
+      "forbidden": [
+        "Reject or abstain solely because free prose is outside the machine checker’s semantic guarantee.",
+        "Claim the structural checker proves arbitrary prose equivalence.",
+        "Generalize the preference to every recipe or every occasion."
+      ],
+      "acceptableUnknown": [],
+      "supportingRefs": [
+        "T4-original",
+        "T4-candidate"
+      ]
+    },
+    "answer": "{\"status\":\"answer\",\"claims\":[{\"text\":\"The rewording is a reasonable faithful restatement because it preserves the subject (Nia), attribution (self-report), circumstance (unfamiliar recipes), modality (sometimes), and comparison (sketching the steps over rereading the instructions).\",\"refs\":[\"T4-original\"]},{\"text\":\"The candidate text uses synonymous phrasing ('reading the instructions again') to convey the same meaning as 'rereading the instructions' in the original, maintaining semantic equivalence within the context of the preference.\",\"refs\":[\"T4-original\"]},{\"text\":\"The structure and intent of the original statement are preserved, with no addition, omission, or alteration of core elements as verified by the fixture checker.\",\"refs\":[\"T4-original\"]},{\"text\":\"The source reference in the candidate matches the original, confirming textual presence and alignment.\",\"refs\":[\"T4-original\"]},{\"text\":\"The annotation decision confirms that the circumstance (unfamiliar recipes) is correctly interpreted and not altered.\",\"refs\":[\"T4-original\"]},{\"text\":\"The comparison in both texts is identical in meaning: sketching the steps is preferred over rereading the instructions.\",\"refs\":[\"T4-original\"]},{\"text\":\"The modality 'sometimes' is preserved in both versions.\",\"refs\":[\"T4-original\"]},{\"text\":\"The subject and attribution are unchanged and correctly identified.\",\"refs\":[\"T4-original\"]},{\"text\":\"The kind (preference) and origin (personal) are consistent between the original and candidate.\",\"refs\":[\"T4-original\"]}],\"unknown\":[]}",
+    "mechanical": {
+      "status": "ok",
+      "schemaValid": true,
+      "refsResolved": true
+    }
+  },
+  {
+    "id": "answer-070",
+    "sources": [
+      {
+        "id": "V6",
+        "text": "Rehearsal notebook, Mei speaking: I avoid stairs when carrying my cello. Without the cello I normally take the stairs. For rehearsals I bring the cello myself."
+      },
+      {
+        "id": "V7",
+        "text": "Studio visit note: The upstairs room is reached by stairs. The downstairs room has a level entrance. Both rooms are currently available for the rehearsal."
+      }
+    ],
+    "question": "Which available room would you suggest for Mei's rehearsal, and how would you explain her stair preference accurately in the booking note?",
+    "rubric": {
+      "required": [
+        "Suggest the downstairs room because its level entrance avoids stairs while Mei brings her cello.",
+        "Qualify the booking note: Mei avoids stairs when carrying the cello, while normally using stairs without it."
+      ],
+      "forbidden": [
+        "Mei cannot use stairs or has a general mobility impairment.",
+        "The view proves she avoids stairs in all circumstances."
+      ],
+      "acceptableUnknown": [
+        "No medical condition is established by these notes."
+      ],
+      "supportingRefs": [
+        "V6",
+        "V7"
+      ]
+    },
+    "answer": "{\"status\":\"answer\",\"claims\":[{\"text\":\"The downstairs room is recommended for Mei's rehearsal because it has a level entrance and avoids the need for stairs, which Mei avoids when carrying her cello.\",\"refs\":[\"V6\",\"V7\"]},{\"text\":\"Mei avoids stairs when carrying her cello, and she brings the cello herself for rehearsals, so the downstairs room with a level entrance is the most suitable option.\",\"refs\":[\"V6\",\"V7\"]},{\"text\":\"The downstairs room is accessible without stairs, which aligns with Mei's preference to avoid stairs when carrying her cello.\",\"refs\":[\"V6\",\"V7\"]},{\"text\":\"The upstairs room requires stairs, which Mei avoids when carrying her cello, so the downstairs room is preferred for the rehearsal.\",\"refs\":[\"V6\",\"V7\"]},{\"text\":\"The downstairs room has a level entrance and is available, making it the appropriate choice for Mei's rehearsal given her stair avoidance when carrying her cello.\",\"refs\":[\"V6\",\"V7\"]},{\"text\":\"Mei avoids stairs when carrying her cello, and since she brings the cello herself for rehearsals, the downstairs room with a level entrance should be selected.\",\"refs\":[\"V6\",\"V7\"]},{\"text\":\"The downstairs room is recommended because it has a level entrance and avoids stairs, which Mei avoids when carrying her cello during rehearsals.\",\"refs\":[\"V6\",\"V7\"]},{\"text\":\"The downstairs room is suitable for Mei's rehearsal as it has a level entrance and avoids stairs, which she avoids when carrying her cello.\",\"refs\":[\"V6\",\"V7\"]},{\"text\":\"The downstairs room is the best choice for Mei's rehearsal because it has a level entrance and she avoids stairs when carrying her cello.\",\"refs\":[\"V6\",\"V7\"]},{\"text\":\"The downstairs room should be booked for Mei's rehearsal because it has a level entrance and she avoids stairs when carrying her cello.\",\"refs\":[\"V6\",\"V7\"]},{\"text\":\"The downstairs room is recommended for Mei's rehearsal due to its level entrance and her preference to avoid stairs when carrying her cello.\",\"refs\":[\"V6\",\"V7\"]},{\"text\":\"The downstairs room is available and has a level entrance, making it the appropriate choice for Mei's rehearsal, as she avoids stairs when carrying her cello.\",\"refs\":[\"V6\",\"V7\"]},{\"text\":\"The downstairs room is the best option for Mei's rehearsal because it avoids stairs, which she avoids when carrying her cello.\",\"refs\":[\"V6\",\"V7\"]},{\"text\":\"The downstairs room is recommended for Mei's rehearsal as it provides access without stairs, which she avoids when carrying her cello.\",\"refs\":[\"V6\",\"V7\"]},{\"text\":\"The downstairs room is suitable for Mei's rehearsal because it has a level entrance and she avoids stairs when carrying her cello.\",\"refs\":[\"V6\",\"V7\"]},{\"text\":\"The downstairs room should be selected for Mei's rehearsal because it has a level entrance and she avoids stairs when carrying her cello.\",\"refs\":[\"V6\",\"V7\"]},{\"text\":\"The downstairs room is the best choice for Mei's",
+    "mechanical": {
+      "status": "error",
+      "schemaValid": false,
+      "refsResolved": null
+    }
+  },
+  {
+    "id": "answer-071",
+    "sources": [
+      {
+        "id": "O3-p0",
+        "text": "For today’s reading visit Ada requires quiet and a seat."
+      },
+      {
+        "id": "O3-p1",
+        "text": "Ben requires quiet and a seat for the same visit."
+      },
+      {
+        "id": "O3-a0",
+        "text": "Ada is available 14:00–15:00 today."
+      },
+      {
+        "id": "O3-a1",
+        "text": "Ben is available 14:15–15:15 today."
+      },
+      {
+        "id": "O3-venue",
+        "text": "The Green room is open and has seats. It used to be quiet, but today a drum group is rehearsing there throughout 14:00–16:00 and the caretaker describes it as loud. No other venue has been checked."
+      },
+      {
+        "id": "O3-intention",
+        "text": "The visit needs 20 continuous minutes today; it is 13:00. Time annotations are minutes after midnight."
+      }
+    ],
+    "question": "What plan, if any, is supported for Ada and Ben today, and what should we do next?",
+    "rubric": {
+      "required": [
+        "There is time overlap for a 20-minute visit, such as 14:15–14:35, but no supported venue satisfies their quiet requirement.",
+        "Reject the Green room as a suitable quiet venue during rehearsal and obtain another venue observation before recommending a complete plan."
+      ],
+      "forbidden": [
+        "Recommend the Green room as a suitable quiet venue based on its quiet=true annotation or a generated option.",
+        "Say there is no time overlap.",
+        "Claim no suitable venue exists anywhere merely because no other venue was checked."
+      ],
+      "acceptableUnknown": [
+        "A suitable alternative venue remains unknown."
+      ],
+      "supportingRefs": [
+        "O3-p0",
+        "O3-p1",
+        "O3-a0",
+        "O3-a1",
+        "O3-venue",
+        "O3-intention"
+      ]
+    },
+    "answer": "{\"status\":\"partial\",\"claims\":[{\"text\":\"Ada and Ben both require quiet and a seat for their visit today.\",\"refs\":[\"O3-p0\",\"O3-p1\"]},{\"text\":\"Ada is available 14:00–15:00 and Ben is available 14:15–15:15 today.\",\"refs\":[\"O3-a0\",\"O3-a1\"]},{\"text\":\"The Green room is the only venue checked and is currently loud due to a drum group rehearsal from 14:00–16:00, so it does not meet the quiet requirement.\",\"refs\":[\"O3-venue\"]},{\"text\":\"The visit requires 20 continuous minutes and is scheduled for today at 13:00.\",\"refs\":[\"O3-intention\"]},{\"text\":\"No other venue has been checked to determine if it is quiet and has seating.\",\"refs\":[\"O3-venue\"]},{\"text\":\"A shared afternoon plan is supported by availability and preferences, but no suitable venue is currently known.\",\"refs\":[\"O3-a0\",\"O3-a1\",\"O3-p0\",\"O3-p1\",\"O3-venue\",\"O3-intention\"]}],\"unknown\":[\"find a quiet venue with seating that overlaps with both Ada and Ben's availability windows\"]}",
+    "mechanical": {
+      "status": "ok",
+      "schemaValid": true,
+      "refsResolved": true
+    }
+  },
+  {
+    "id": "answer-072",
+    "sources": [
+      {
+        "id": "C1",
+        "text": "Cabin volunteer board: Ada, Bea and Chen each take exactly one slot, either morning or afternoon. Ada and Bea need the same slot because they share a ride."
+      },
+      {
+        "id": "C2",
+        "text": "Bea and Chen need the same slot because their training is done together."
+      },
+      {
+        "id": "C3",
+        "text": "Ada and Chen must take different slots so one of them is always available to care for the dog."
+      }
+    ],
+    "question": "Can we assign morning or afternoon slots to Ada, Bea and Chen while satisfying all three requirements? Explain the practical scheduling issue.",
+    "rubric": {
+      "required": [
+        "No assignment satisfies all three requirements.",
+        "Sharing Ada with Bea and Bea with Chen forces all three into the same slot, contradicting the Ada/Chen separation requirement.",
+        "At least one stated requirement must change to make this two-slot assignment possible."
+      ],
+      "forbidden": [
+        "Give a schedule and claim it meets all three requirements.",
+        "Every individually plausible requirement or compatible pair establishes the whole schedule is feasible."
+      ],
+      "acceptableUnknown": [
+        "The sources do not say which requirement the volunteers would be willing to change."
+      ],
+      "supportingRefs": [
+        "C1",
+        "C2",
+        "C3"
+      ]
+    },
+    "answer": "{\"status\":\"abstain\",\"unknown\":[\"whether a valid assignment exists that satisfies all constraints simultaneously\"]}",
+    "mechanical": {
+      "status": "error",
+      "schemaValid": false,
+      "refsResolved": null
+    }
+  }
+]

@@ -1,0 +1,1640 @@
+{
+  "diagnostic": [
+    {
+      "id": "tree-practice-sufficient-1-capability",
+      "caseId": "tree-practice",
+      "domain": "learning",
+      "view": "sufficient",
+      "repeat": 1,
+      "probe": "capability",
+      "source": "Davi was learning to recognize local trees with help from a neighbor. Their short practice sessions used photographs, drawings, and written descriptions, with no single exercise treated as the right starting point every time. The neighbor had prepared several exercises in colored envelopes so they could be carried easily. For Thursday's tree-identification practice, Davi chose the violet envelope's exercise as the first activity. Davi recorded the choice before putting the envelopes away. The envelope colors did not indicate difficulty, subject, or any required sequence. They planned to pause partway through the session and compare which details they had noticed in the examples. A pencil and spare paper were already packed, but they still needed to decide whether to sit indoors or outside. The neighbor also mentioned a public garden they might visit on a different day. That possible visit was not part of Thursday's exercise order and had no date yet.",
+      "memory": "Davi and a neighbor were preparing Thursday's tree-identification practice with exercises in colored envelopes. For Thursday's tree-identification practice, Davi chose the violet envelope's exercise as the first activity. Colors indicated neither difficulty nor required sequence. They planned a pause to compare observations, and the practice location remained undecided.",
+      "question": "Which envelope's exercise did Davi choose to start Thursday's tree-identification practice?",
+      "options": {
+        "A": "The red envelope's exercise.",
+        "B": "The yellow envelope's exercise.",
+        "C": "The violet envelope's exercise.",
+        "D": "The blue envelope's exercise."
+      }
+    },
+    {
+      "id": "tree-practice-sufficient-2-routing-false",
+      "caseId": "tree-practice",
+      "domain": "learning",
+      "view": "sufficient",
+      "repeat": 2,
+      "probe": "routing-false",
+      "source": "Davi was learning to recognize local trees with help from a neighbor. Their short practice sessions used photographs, drawings, and written descriptions, with no single exercise treated as the right starting point every time. The neighbor had prepared several exercises in colored envelopes so they could be carried easily. For Thursday's tree-identification practice, Davi chose the violet envelope's exercise as the first activity. Davi recorded the choice before putting the envelopes away. The envelope colors did not indicate difficulty, subject, or any required sequence. They planned to pause partway through the session and compare which details they had noticed in the examples. A pencil and spare paper were already packed, but they still needed to decide whether to sit indoors or outside. The neighbor also mentioned a public garden they might visit on a different day. That possible visit was not part of Thursday's exercise order and had no date yet.",
+      "memory": "Davi and a neighbor were preparing Thursday's tree-identification practice with exercises in colored envelopes. For Thursday's tree-identification practice, Davi chose the violet envelope's exercise as the first activity. Colors indicated neither difficulty nor required sequence. They planned a pause to compare observations, and the practice location remained undecided.",
+      "question": "Which envelope's exercise did Davi choose to start Thursday's tree-identification practice?",
+      "options": {
+        "A": "The red envelope's exercise.",
+        "B": "The yellow envelope's exercise.",
+        "C": "The violet envelope's exercise.",
+        "D": "The blue envelope's exercise."
+      }
+    },
+    {
+      "id": "picnic-meeting-missing-1-routing-absent",
+      "caseId": "picnic-meeting",
+      "domain": "everyday planning",
+      "view": "missing",
+      "repeat": 1,
+      "probe": "routing-absent",
+      "source": "Mina was organizing a Saturday picnic with a few friends who knew the park. They wanted to settle the meeting point in advance rather than exchange location messages after arriving. For Saturday's picnic, Mina designated the east fountain as the meeting point. The group had already agreed that everyone would bring something simple to share, without assigning particular dishes. Mina added the location choice to the planning note alongside a reminder to bring a blanket. The park had several familiar landmarks, and nothing in their discussion established a usual meeting place for future outings. Someone offered to bring a small card game, while another person expected to leave earlier than the rest. The note did not specify an activity schedule after everyone met. Mina planned to check the weather the evening before and send any necessary change separately. No such change had been recorded in this account.",
+      "memory": "Mina was organizing Saturday's picnic and wanted the friends to have a meeting point before arriving. Everyone would bring something simple to share. A possible weather-related change would be sent separately; none was recorded in this account.",
+      "question": "Which meeting point did Mina designate for Saturday's picnic?",
+      "options": {
+        "A": "The west arch.",
+        "B": "The south steps.",
+        "C": "The north gate.",
+        "D": "The east fountain."
+      }
+    },
+    {
+      "id": "picnic-meeting-missing-2-capability",
+      "caseId": "picnic-meeting",
+      "domain": "everyday planning",
+      "view": "missing",
+      "repeat": 2,
+      "probe": "capability",
+      "source": "Mina was organizing a Saturday picnic with a few friends who knew the park. They wanted to settle the meeting point in advance rather than exchange location messages after arriving. For Saturday's picnic, Mina designated the east fountain as the meeting point. The group had already agreed that everyone would bring something simple to share, without assigning particular dishes. Mina added the location choice to the planning note alongside a reminder to bring a blanket. The park had several familiar landmarks, and nothing in their discussion established a usual meeting place for future outings. Someone offered to bring a small card game, while another person expected to leave earlier than the rest. The note did not specify an activity schedule after everyone met. Mina planned to check the weather the evening before and send any necessary change separately. No such change had been recorded in this account.",
+      "memory": "Mina was organizing Saturday's picnic and wanted the friends to have a meeting point before arriving. Everyone would bring something simple to share. A possible weather-related change would be sent separately; none was recorded in this account.",
+      "question": "Which meeting point did Mina designate for Saturday's picnic?",
+      "options": {
+        "A": "The west arch.",
+        "B": "The south steps.",
+        "C": "The north gate.",
+        "D": "The east fountain."
+      }
+    },
+    {
+      "id": "anniversary-greeting-sufficient-2-routing-false",
+      "caseId": "anniversary-greeting",
+      "domain": "personal relationship",
+      "view": "sufficient",
+      "repeat": 2,
+      "probe": "routing-false",
+      "source": "Noor and Tessa mark the anniversary of their first shared hike each spring. Neither treats it as a formal holiday, and they have varied the way they acknowledge it over the years. This time they discussed the occasion during a relaxed lunch, along with several unrelated plans. For this year's hiking anniversary, Tessa specifically requested a short voicemail from Noor. Noor wrote that request down after lunch so it would not get mixed up with ideas for another friend's birthday. They also remembered the muddy path from the original hike and laughed about how long they had spent looking for a missing glove. No new hike was arranged at lunch. Tessa mentioned that the old trail map was still tucked inside a book, and Noor planned to look for a photograph of the landscape at some later point. Those recollections were separate from the anniversary request.",
+      "memory": "Noor and Tessa mark their first shared hike's anniversary each spring and vary how they acknowledge it. For this year's hiking anniversary, Tessa specifically requested a short voicemail from Noor. Noor recorded the request after lunch to keep it separate from another friend's birthday plans; they arranged no new hike.",
+      "question": "What form of greeting did Tessa request from Noor for this year's hiking anniversary?",
+      "options": {
+        "A": "A short voicemail.",
+        "B": "A handwritten card.",
+        "C": "A printed photograph.",
+        "D": "An in-person toast."
+      }
+    },
+    {
+      "id": "collage-title-sufficient-2-routing-false",
+      "caseId": "collage-title",
+      "domain": "creative practice",
+      "view": "sufficient",
+      "repeat": 2,
+      "probe": "routing-false",
+      "source": "Jules was preparing a small collage display for the Riverside showing. The pieces had been made over several months using paper saved from ordinary household packaging. Jules liked having enough time between making a piece and naming it, so some titles remained unsettled until the labels were prepared. For the Riverside showing, Jules chose 'Under the Table' as the final collage's title. This choice concerned that particular piece and was not a name for the entire display. Jules asked a friend to check the labels for spelling and to leave the placement decisions alone for the moment. The friend offered to bring spare clips for hanging the smaller pieces. A separate note listed materials that might be useful for a future series, but Jules had not committed to making it. Once the labels were finished, Jules put the unused paper back into a box and left the display arrangement for another afternoon.",
+      "memory": "Jules prepared a collage display for the Riverside showing and settled the labels after making the pieces. For the Riverside showing, Jules chose 'Under the Table' as the final collage's title. This named one piece, not the whole display. A friend was asked to check label spelling, while placement remained undecided.",
+      "question": "Which title did Jules choose for the final collage at the Riverside showing?",
+      "options": {
+        "A": "The Blue Stair.",
+        "B": "Under the Table.",
+        "C": "An Open Window.",
+        "D": "The Folded Map."
+      }
+    },
+    {
+      "id": "collage-title-missing-2-routing-absent",
+      "caseId": "collage-title",
+      "domain": "creative practice",
+      "view": "missing",
+      "repeat": 2,
+      "probe": "routing-absent",
+      "source": "Jules was preparing a small collage display for the Riverside showing. The pieces had been made over several months using paper saved from ordinary household packaging. Jules liked having enough time between making a piece and naming it, so some titles remained unsettled until the labels were prepared. For the Riverside showing, Jules chose 'Under the Table' as the final collage's title. This choice concerned that particular piece and was not a name for the entire display. Jules asked a friend to check the labels for spelling and to leave the placement decisions alone for the moment. The friend offered to bring spare clips for hanging the smaller pieces. A separate note listed materials that might be useful for a future series, but Jules had not committed to making it. Once the labels were finished, Jules put the unused paper back into a box and left the display arrangement for another afternoon.",
+      "memory": "Jules prepared a collage display for the Riverside showing and settled the labels after making the pieces. This named one piece, not the whole display. A friend was asked to check label spelling, while placement remained undecided.",
+      "question": "Which title did Jules choose for the final collage at the Riverside showing?",
+      "options": {
+        "A": "The Blue Stair.",
+        "B": "Under the Table.",
+        "C": "An Open Window.",
+        "D": "The Folded Map."
+      }
+    },
+    {
+      "id": "tree-practice-sufficient-1-routing-absent",
+      "caseId": "tree-practice",
+      "domain": "learning",
+      "view": "sufficient",
+      "repeat": 1,
+      "probe": "routing-absent",
+      "source": "Davi was learning to recognize local trees with help from a neighbor. Their short practice sessions used photographs, drawings, and written descriptions, with no single exercise treated as the right starting point every time. The neighbor had prepared several exercises in colored envelopes so they could be carried easily. For Thursday's tree-identification practice, Davi chose the violet envelope's exercise as the first activity. Davi recorded the choice before putting the envelopes away. The envelope colors did not indicate difficulty, subject, or any required sequence. They planned to pause partway through the session and compare which details they had noticed in the examples. A pencil and spare paper were already packed, but they still needed to decide whether to sit indoors or outside. The neighbor also mentioned a public garden they might visit on a different day. That possible visit was not part of Thursday's exercise order and had no date yet.",
+      "memory": "Davi and a neighbor were preparing Thursday's tree-identification practice with exercises in colored envelopes. For Thursday's tree-identification practice, Davi chose the violet envelope's exercise as the first activity. Colors indicated neither difficulty nor required sequence. They planned a pause to compare observations, and the practice location remained undecided.",
+      "question": "Which envelope's exercise did Davi choose to start Thursday's tree-identification practice?",
+      "options": {
+        "A": "The red envelope's exercise.",
+        "B": "The yellow envelope's exercise.",
+        "C": "The violet envelope's exercise.",
+        "D": "The blue envelope's exercise."
+      }
+    },
+    {
+      "id": "collage-title-sufficient-1-capability",
+      "caseId": "collage-title",
+      "domain": "creative practice",
+      "view": "sufficient",
+      "repeat": 1,
+      "probe": "capability",
+      "source": "Jules was preparing a small collage display for the Riverside showing. The pieces had been made over several months using paper saved from ordinary household packaging. Jules liked having enough time between making a piece and naming it, so some titles remained unsettled until the labels were prepared. For the Riverside showing, Jules chose 'Under the Table' as the final collage's title. This choice concerned that particular piece and was not a name for the entire display. Jules asked a friend to check the labels for spelling and to leave the placement decisions alone for the moment. The friend offered to bring spare clips for hanging the smaller pieces. A separate note listed materials that might be useful for a future series, but Jules had not committed to making it. Once the labels were finished, Jules put the unused paper back into a box and left the display arrangement for another afternoon.",
+      "memory": "Jules prepared a collage display for the Riverside showing and settled the labels after making the pieces. For the Riverside showing, Jules chose 'Under the Table' as the final collage's title. This named one piece, not the whole display. A friend was asked to check label spelling, while placement remained undecided.",
+      "question": "Which title did Jules choose for the final collage at the Riverside showing?",
+      "options": {
+        "A": "The Blue Stair.",
+        "B": "Under the Table.",
+        "C": "An Open Window.",
+        "D": "The Folded Map."
+      }
+    },
+    {
+      "id": "collage-title-missing-1-routing-absent",
+      "caseId": "collage-title",
+      "domain": "creative practice",
+      "view": "missing",
+      "repeat": 1,
+      "probe": "routing-absent",
+      "source": "Jules was preparing a small collage display for the Riverside showing. The pieces had been made over several months using paper saved from ordinary household packaging. Jules liked having enough time between making a piece and naming it, so some titles remained unsettled until the labels were prepared. For the Riverside showing, Jules chose 'Under the Table' as the final collage's title. This choice concerned that particular piece and was not a name for the entire display. Jules asked a friend to check the labels for spelling and to leave the placement decisions alone for the moment. The friend offered to bring spare clips for hanging the smaller pieces. A separate note listed materials that might be useful for a future series, but Jules had not committed to making it. Once the labels were finished, Jules put the unused paper back into a box and left the display arrangement for another afternoon.",
+      "memory": "Jules prepared a collage display for the Riverside showing and settled the labels after making the pieces. This named one piece, not the whole display. A friend was asked to check label spelling, while placement remained undecided.",
+      "question": "Which title did Jules choose for the final collage at the Riverside showing?",
+      "options": {
+        "A": "The Blue Stair.",
+        "B": "Under the Table.",
+        "C": "An Open Window.",
+        "D": "The Folded Map."
+      }
+    },
+    {
+      "id": "anniversary-greeting-sufficient-2-routing-absent",
+      "caseId": "anniversary-greeting",
+      "domain": "personal relationship",
+      "view": "sufficient",
+      "repeat": 2,
+      "probe": "routing-absent",
+      "source": "Noor and Tessa mark the anniversary of their first shared hike each spring. Neither treats it as a formal holiday, and they have varied the way they acknowledge it over the years. This time they discussed the occasion during a relaxed lunch, along with several unrelated plans. For this year's hiking anniversary, Tessa specifically requested a short voicemail from Noor. Noor wrote that request down after lunch so it would not get mixed up with ideas for another friend's birthday. They also remembered the muddy path from the original hike and laughed about how long they had spent looking for a missing glove. No new hike was arranged at lunch. Tessa mentioned that the old trail map was still tucked inside a book, and Noor planned to look for a photograph of the landscape at some later point. Those recollections were separate from the anniversary request.",
+      "memory": "Noor and Tessa mark their first shared hike's anniversary each spring and vary how they acknowledge it. For this year's hiking anniversary, Tessa specifically requested a short voicemail from Noor. Noor recorded the request after lunch to keep it separate from another friend's birthday plans; they arranged no new hike.",
+      "question": "What form of greeting did Tessa request from Noor for this year's hiking anniversary?",
+      "options": {
+        "A": "A short voicemail.",
+        "B": "A handwritten card.",
+        "C": "A printed photograph.",
+        "D": "An in-person toast."
+      }
+    },
+    {
+      "id": "collage-title-sufficient-1-routing-absent",
+      "caseId": "collage-title",
+      "domain": "creative practice",
+      "view": "sufficient",
+      "repeat": 1,
+      "probe": "routing-absent",
+      "source": "Jules was preparing a small collage display for the Riverside showing. The pieces had been made over several months using paper saved from ordinary household packaging. Jules liked having enough time between making a piece and naming it, so some titles remained unsettled until the labels were prepared. For the Riverside showing, Jules chose 'Under the Table' as the final collage's title. This choice concerned that particular piece and was not a name for the entire display. Jules asked a friend to check the labels for spelling and to leave the placement decisions alone for the moment. The friend offered to bring spare clips for hanging the smaller pieces. A separate note listed materials that might be useful for a future series, but Jules had not committed to making it. Once the labels were finished, Jules put the unused paper back into a box and left the display arrangement for another afternoon.",
+      "memory": "Jules prepared a collage display for the Riverside showing and settled the labels after making the pieces. For the Riverside showing, Jules chose 'Under the Table' as the final collage's title. This named one piece, not the whole display. A friend was asked to check label spelling, while placement remained undecided.",
+      "question": "Which title did Jules choose for the final collage at the Riverside showing?",
+      "options": {
+        "A": "The Blue Stair.",
+        "B": "Under the Table.",
+        "C": "An Open Window.",
+        "D": "The Folded Map."
+      }
+    },
+    {
+      "id": "picnic-meeting-sufficient-1-routing-false",
+      "caseId": "picnic-meeting",
+      "domain": "everyday planning",
+      "view": "sufficient",
+      "repeat": 1,
+      "probe": "routing-false",
+      "source": "Mina was organizing a Saturday picnic with a few friends who knew the park. They wanted to settle the meeting point in advance rather than exchange location messages after arriving. For Saturday's picnic, Mina designated the east fountain as the meeting point. The group had already agreed that everyone would bring something simple to share, without assigning particular dishes. Mina added the location choice to the planning note alongside a reminder to bring a blanket. The park had several familiar landmarks, and nothing in their discussion established a usual meeting place for future outings. Someone offered to bring a small card game, while another person expected to leave earlier than the rest. The note did not specify an activity schedule after everyone met. Mina planned to check the weather the evening before and send any necessary change separately. No such change had been recorded in this account.",
+      "memory": "Mina was organizing Saturday's picnic and wanted the friends to have a meeting point before arriving. For Saturday's picnic, Mina designated the east fountain as the meeting point. Everyone would bring something simple to share. A possible weather-related change would be sent separately; none was recorded in this account.",
+      "question": "Which meeting point did Mina designate for Saturday's picnic?",
+      "options": {
+        "A": "The west arch.",
+        "B": "The south steps.",
+        "C": "The north gate.",
+        "D": "The east fountain."
+      }
+    },
+    {
+      "id": "picnic-meeting-sufficient-2-capability",
+      "caseId": "picnic-meeting",
+      "domain": "everyday planning",
+      "view": "sufficient",
+      "repeat": 2,
+      "probe": "capability",
+      "source": "Mina was organizing a Saturday picnic with a few friends who knew the park. They wanted to settle the meeting point in advance rather than exchange location messages after arriving. For Saturday's picnic, Mina designated the east fountain as the meeting point. The group had already agreed that everyone would bring something simple to share, without assigning particular dishes. Mina added the location choice to the planning note alongside a reminder to bring a blanket. The park had several familiar landmarks, and nothing in their discussion established a usual meeting place for future outings. Someone offered to bring a small card game, while another person expected to leave earlier than the rest. The note did not specify an activity schedule after everyone met. Mina planned to check the weather the evening before and send any necessary change separately. No such change had been recorded in this account.",
+      "memory": "Mina was organizing Saturday's picnic and wanted the friends to have a meeting point before arriving. For Saturday's picnic, Mina designated the east fountain as the meeting point. Everyone would bring something simple to share. A possible weather-related change would be sent separately; none was recorded in this account.",
+      "question": "Which meeting point did Mina designate for Saturday's picnic?",
+      "options": {
+        "A": "The west arch.",
+        "B": "The south steps.",
+        "C": "The north gate.",
+        "D": "The east fountain."
+      }
+    },
+    {
+      "id": "anniversary-greeting-sufficient-1-routing-absent",
+      "caseId": "anniversary-greeting",
+      "domain": "personal relationship",
+      "view": "sufficient",
+      "repeat": 1,
+      "probe": "routing-absent",
+      "source": "Noor and Tessa mark the anniversary of their first shared hike each spring. Neither treats it as a formal holiday, and they have varied the way they acknowledge it over the years. This time they discussed the occasion during a relaxed lunch, along with several unrelated plans. For this year's hiking anniversary, Tessa specifically requested a short voicemail from Noor. Noor wrote that request down after lunch so it would not get mixed up with ideas for another friend's birthday. They also remembered the muddy path from the original hike and laughed about how long they had spent looking for a missing glove. No new hike was arranged at lunch. Tessa mentioned that the old trail map was still tucked inside a book, and Noor planned to look for a photograph of the landscape at some later point. Those recollections were separate from the anniversary request.",
+      "memory": "Noor and Tessa mark their first shared hike's anniversary each spring and vary how they acknowledge it. For this year's hiking anniversary, Tessa specifically requested a short voicemail from Noor. Noor recorded the request after lunch to keep it separate from another friend's birthday plans; they arranged no new hike.",
+      "question": "What form of greeting did Tessa request from Noor for this year's hiking anniversary?",
+      "options": {
+        "A": "A short voicemail.",
+        "B": "A handwritten card.",
+        "C": "A printed photograph.",
+        "D": "An in-person toast."
+      }
+    },
+    {
+      "id": "picnic-meeting-missing-2-routing-absent",
+      "caseId": "picnic-meeting",
+      "domain": "everyday planning",
+      "view": "missing",
+      "repeat": 2,
+      "probe": "routing-absent",
+      "source": "Mina was organizing a Saturday picnic with a few friends who knew the park. They wanted to settle the meeting point in advance rather than exchange location messages after arriving. For Saturday's picnic, Mina designated the east fountain as the meeting point. The group had already agreed that everyone would bring something simple to share, without assigning particular dishes. Mina added the location choice to the planning note alongside a reminder to bring a blanket. The park had several familiar landmarks, and nothing in their discussion established a usual meeting place for future outings. Someone offered to bring a small card game, while another person expected to leave earlier than the rest. The note did not specify an activity schedule after everyone met. Mina planned to check the weather the evening before and send any necessary change separately. No such change had been recorded in this account.",
+      "memory": "Mina was organizing Saturday's picnic and wanted the friends to have a meeting point before arriving. Everyone would bring something simple to share. A possible weather-related change would be sent separately; none was recorded in this account.",
+      "question": "Which meeting point did Mina designate for Saturday's picnic?",
+      "options": {
+        "A": "The west arch.",
+        "B": "The south steps.",
+        "C": "The north gate.",
+        "D": "The east fountain."
+      }
+    },
+    {
+      "id": "anniversary-greeting-missing-2-routing-false",
+      "caseId": "anniversary-greeting",
+      "domain": "personal relationship",
+      "view": "missing",
+      "repeat": 2,
+      "probe": "routing-false",
+      "source": "Noor and Tessa mark the anniversary of their first shared hike each spring. Neither treats it as a formal holiday, and they have varied the way they acknowledge it over the years. This time they discussed the occasion during a relaxed lunch, along with several unrelated plans. For this year's hiking anniversary, Tessa specifically requested a short voicemail from Noor. Noor wrote that request down after lunch so it would not get mixed up with ideas for another friend's birthday. They also remembered the muddy path from the original hike and laughed about how long they had spent looking for a missing glove. No new hike was arranged at lunch. Tessa mentioned that the old trail map was still tucked inside a book, and Noor planned to look for a photograph of the landscape at some later point. Those recollections were separate from the anniversary request.",
+      "memory": "Noor and Tessa mark their first shared hike's anniversary each spring and vary how they acknowledge it. Noor recorded the request after lunch to keep it separate from another friend's birthday plans; they arranged no new hike.",
+      "question": "What form of greeting did Tessa request from Noor for this year's hiking anniversary?",
+      "options": {
+        "A": "A short voicemail.",
+        "B": "A handwritten card.",
+        "C": "A printed photograph.",
+        "D": "An in-person toast."
+      }
+    },
+    {
+      "id": "anniversary-greeting-missing-1-capability",
+      "caseId": "anniversary-greeting",
+      "domain": "personal relationship",
+      "view": "missing",
+      "repeat": 1,
+      "probe": "capability",
+      "source": "Noor and Tessa mark the anniversary of their first shared hike each spring. Neither treats it as a formal holiday, and they have varied the way they acknowledge it over the years. This time they discussed the occasion during a relaxed lunch, along with several unrelated plans. For this year's hiking anniversary, Tessa specifically requested a short voicemail from Noor. Noor wrote that request down after lunch so it would not get mixed up with ideas for another friend's birthday. They also remembered the muddy path from the original hike and laughed about how long they had spent looking for a missing glove. No new hike was arranged at lunch. Tessa mentioned that the old trail map was still tucked inside a book, and Noor planned to look for a photograph of the landscape at some later point. Those recollections were separate from the anniversary request.",
+      "memory": "Noor and Tessa mark their first shared hike's anniversary each spring and vary how they acknowledge it. Noor recorded the request after lunch to keep it separate from another friend's birthday plans; they arranged no new hike.",
+      "question": "What form of greeting did Tessa request from Noor for this year's hiking anniversary?",
+      "options": {
+        "A": "A short voicemail.",
+        "B": "A handwritten card.",
+        "C": "A printed photograph.",
+        "D": "An in-person toast."
+      }
+    },
+    {
+      "id": "tree-practice-sufficient-2-routing-absent",
+      "caseId": "tree-practice",
+      "domain": "learning",
+      "view": "sufficient",
+      "repeat": 2,
+      "probe": "routing-absent",
+      "source": "Davi was learning to recognize local trees with help from a neighbor. Their short practice sessions used photographs, drawings, and written descriptions, with no single exercise treated as the right starting point every time. The neighbor had prepared several exercises in colored envelopes so they could be carried easily. For Thursday's tree-identification practice, Davi chose the violet envelope's exercise as the first activity. Davi recorded the choice before putting the envelopes away. The envelope colors did not indicate difficulty, subject, or any required sequence. They planned to pause partway through the session and compare which details they had noticed in the examples. A pencil and spare paper were already packed, but they still needed to decide whether to sit indoors or outside. The neighbor also mentioned a public garden they might visit on a different day. That possible visit was not part of Thursday's exercise order and had no date yet.",
+      "memory": "Davi and a neighbor were preparing Thursday's tree-identification practice with exercises in colored envelopes. For Thursday's tree-identification practice, Davi chose the violet envelope's exercise as the first activity. Colors indicated neither difficulty nor required sequence. They planned a pause to compare observations, and the practice location remained undecided.",
+      "question": "Which envelope's exercise did Davi choose to start Thursday's tree-identification practice?",
+      "options": {
+        "A": "The red envelope's exercise.",
+        "B": "The yellow envelope's exercise.",
+        "C": "The violet envelope's exercise.",
+        "D": "The blue envelope's exercise."
+      }
+    },
+    {
+      "id": "tree-practice-missing-2-routing-absent",
+      "caseId": "tree-practice",
+      "domain": "learning",
+      "view": "missing",
+      "repeat": 2,
+      "probe": "routing-absent",
+      "source": "Davi was learning to recognize local trees with help from a neighbor. Their short practice sessions used photographs, drawings, and written descriptions, with no single exercise treated as the right starting point every time. The neighbor had prepared several exercises in colored envelopes so they could be carried easily. For Thursday's tree-identification practice, Davi chose the violet envelope's exercise as the first activity. Davi recorded the choice before putting the envelopes away. The envelope colors did not indicate difficulty, subject, or any required sequence. They planned to pause partway through the session and compare which details they had noticed in the examples. A pencil and spare paper were already packed, but they still needed to decide whether to sit indoors or outside. The neighbor also mentioned a public garden they might visit on a different day. That possible visit was not part of Thursday's exercise order and had no date yet.",
+      "memory": "Davi and a neighbor were preparing Thursday's tree-identification practice with exercises in colored envelopes. Colors indicated neither difficulty nor required sequence. They planned a pause to compare observations, and the practice location remained undecided.",
+      "question": "Which envelope's exercise did Davi choose to start Thursday's tree-identification practice?",
+      "options": {
+        "A": "The red envelope's exercise.",
+        "B": "The yellow envelope's exercise.",
+        "C": "The violet envelope's exercise.",
+        "D": "The blue envelope's exercise."
+      }
+    },
+    {
+      "id": "anniversary-greeting-sufficient-1-capability",
+      "caseId": "anniversary-greeting",
+      "domain": "personal relationship",
+      "view": "sufficient",
+      "repeat": 1,
+      "probe": "capability",
+      "source": "Noor and Tessa mark the anniversary of their first shared hike each spring. Neither treats it as a formal holiday, and they have varied the way they acknowledge it over the years. This time they discussed the occasion during a relaxed lunch, along with several unrelated plans. For this year's hiking anniversary, Tessa specifically requested a short voicemail from Noor. Noor wrote that request down after lunch so it would not get mixed up with ideas for another friend's birthday. They also remembered the muddy path from the original hike and laughed about how long they had spent looking for a missing glove. No new hike was arranged at lunch. Tessa mentioned that the old trail map was still tucked inside a book, and Noor planned to look for a photograph of the landscape at some later point. Those recollections were separate from the anniversary request.",
+      "memory": "Noor and Tessa mark their first shared hike's anniversary each spring and vary how they acknowledge it. For this year's hiking anniversary, Tessa specifically requested a short voicemail from Noor. Noor recorded the request after lunch to keep it separate from another friend's birthday plans; they arranged no new hike.",
+      "question": "What form of greeting did Tessa request from Noor for this year's hiking anniversary?",
+      "options": {
+        "A": "A short voicemail.",
+        "B": "A handwritten card.",
+        "C": "A printed photograph.",
+        "D": "An in-person toast."
+      }
+    },
+    {
+      "id": "anniversary-greeting-missing-1-routing-false",
+      "caseId": "anniversary-greeting",
+      "domain": "personal relationship",
+      "view": "missing",
+      "repeat": 1,
+      "probe": "routing-false",
+      "source": "Noor and Tessa mark the anniversary of their first shared hike each spring. Neither treats it as a formal holiday, and they have varied the way they acknowledge it over the years. This time they discussed the occasion during a relaxed lunch, along with several unrelated plans. For this year's hiking anniversary, Tessa specifically requested a short voicemail from Noor. Noor wrote that request down after lunch so it would not get mixed up with ideas for another friend's birthday. They also remembered the muddy path from the original hike and laughed about how long they had spent looking for a missing glove. No new hike was arranged at lunch. Tessa mentioned that the old trail map was still tucked inside a book, and Noor planned to look for a photograph of the landscape at some later point. Those recollections were separate from the anniversary request.",
+      "memory": "Noor and Tessa mark their first shared hike's anniversary each spring and vary how they acknowledge it. Noor recorded the request after lunch to keep it separate from another friend's birthday plans; they arranged no new hike.",
+      "question": "What form of greeting did Tessa request from Noor for this year's hiking anniversary?",
+      "options": {
+        "A": "A short voicemail.",
+        "B": "A handwritten card.",
+        "C": "A printed photograph.",
+        "D": "An in-person toast."
+      }
+    },
+    {
+      "id": "anniversary-greeting-missing-1-routing-absent",
+      "caseId": "anniversary-greeting",
+      "domain": "personal relationship",
+      "view": "missing",
+      "repeat": 1,
+      "probe": "routing-absent",
+      "source": "Noor and Tessa mark the anniversary of their first shared hike each spring. Neither treats it as a formal holiday, and they have varied the way they acknowledge it over the years. This time they discussed the occasion during a relaxed lunch, along with several unrelated plans. For this year's hiking anniversary, Tessa specifically requested a short voicemail from Noor. Noor wrote that request down after lunch so it would not get mixed up with ideas for another friend's birthday. They also remembered the muddy path from the original hike and laughed about how long they had spent looking for a missing glove. No new hike was arranged at lunch. Tessa mentioned that the old trail map was still tucked inside a book, and Noor planned to look for a photograph of the landscape at some later point. Those recollections were separate from the anniversary request.",
+      "memory": "Noor and Tessa mark their first shared hike's anniversary each spring and vary how they acknowledge it. Noor recorded the request after lunch to keep it separate from another friend's birthday plans; they arranged no new hike.",
+      "question": "What form of greeting did Tessa request from Noor for this year's hiking anniversary?",
+      "options": {
+        "A": "A short voicemail.",
+        "B": "A handwritten card.",
+        "C": "A printed photograph.",
+        "D": "An in-person toast."
+      }
+    },
+    {
+      "id": "tree-practice-missing-1-capability",
+      "caseId": "tree-practice",
+      "domain": "learning",
+      "view": "missing",
+      "repeat": 1,
+      "probe": "capability",
+      "source": "Davi was learning to recognize local trees with help from a neighbor. Their short practice sessions used photographs, drawings, and written descriptions, with no single exercise treated as the right starting point every time. The neighbor had prepared several exercises in colored envelopes so they could be carried easily. For Thursday's tree-identification practice, Davi chose the violet envelope's exercise as the first activity. Davi recorded the choice before putting the envelopes away. The envelope colors did not indicate difficulty, subject, or any required sequence. They planned to pause partway through the session and compare which details they had noticed in the examples. A pencil and spare paper were already packed, but they still needed to decide whether to sit indoors or outside. The neighbor also mentioned a public garden they might visit on a different day. That possible visit was not part of Thursday's exercise order and had no date yet.",
+      "memory": "Davi and a neighbor were preparing Thursday's tree-identification practice with exercises in colored envelopes. Colors indicated neither difficulty nor required sequence. They planned a pause to compare observations, and the practice location remained undecided.",
+      "question": "Which envelope's exercise did Davi choose to start Thursday's tree-identification practice?",
+      "options": {
+        "A": "The red envelope's exercise.",
+        "B": "The yellow envelope's exercise.",
+        "C": "The violet envelope's exercise.",
+        "D": "The blue envelope's exercise."
+      }
+    },
+    {
+      "id": "tree-practice-sufficient-2-capability",
+      "caseId": "tree-practice",
+      "domain": "learning",
+      "view": "sufficient",
+      "repeat": 2,
+      "probe": "capability",
+      "source": "Davi was learning to recognize local trees with help from a neighbor. Their short practice sessions used photographs, drawings, and written descriptions, with no single exercise treated as the right starting point every time. The neighbor had prepared several exercises in colored envelopes so they could be carried easily. For Thursday's tree-identification practice, Davi chose the violet envelope's exercise as the first activity. Davi recorded the choice before putting the envelopes away. The envelope colors did not indicate difficulty, subject, or any required sequence. They planned to pause partway through the session and compare which details they had noticed in the examples. A pencil and spare paper were already packed, but they still needed to decide whether to sit indoors or outside. The neighbor also mentioned a public garden they might visit on a different day. That possible visit was not part of Thursday's exercise order and had no date yet.",
+      "memory": "Davi and a neighbor were preparing Thursday's tree-identification practice with exercises in colored envelopes. For Thursday's tree-identification practice, Davi chose the violet envelope's exercise as the first activity. Colors indicated neither difficulty nor required sequence. They planned a pause to compare observations, and the practice location remained undecided.",
+      "question": "Which envelope's exercise did Davi choose to start Thursday's tree-identification practice?",
+      "options": {
+        "A": "The red envelope's exercise.",
+        "B": "The yellow envelope's exercise.",
+        "C": "The violet envelope's exercise.",
+        "D": "The blue envelope's exercise."
+      }
+    },
+    {
+      "id": "picnic-meeting-missing-1-capability",
+      "caseId": "picnic-meeting",
+      "domain": "everyday planning",
+      "view": "missing",
+      "repeat": 1,
+      "probe": "capability",
+      "source": "Mina was organizing a Saturday picnic with a few friends who knew the park. They wanted to settle the meeting point in advance rather than exchange location messages after arriving. For Saturday's picnic, Mina designated the east fountain as the meeting point. The group had already agreed that everyone would bring something simple to share, without assigning particular dishes. Mina added the location choice to the planning note alongside a reminder to bring a blanket. The park had several familiar landmarks, and nothing in their discussion established a usual meeting place for future outings. Someone offered to bring a small card game, while another person expected to leave earlier than the rest. The note did not specify an activity schedule after everyone met. Mina planned to check the weather the evening before and send any necessary change separately. No such change had been recorded in this account.",
+      "memory": "Mina was organizing Saturday's picnic and wanted the friends to have a meeting point before arriving. Everyone would bring something simple to share. A possible weather-related change would be sent separately; none was recorded in this account.",
+      "question": "Which meeting point did Mina designate for Saturday's picnic?",
+      "options": {
+        "A": "The west arch.",
+        "B": "The south steps.",
+        "C": "The north gate.",
+        "D": "The east fountain."
+      }
+    },
+    {
+      "id": "collage-title-sufficient-1-routing-false",
+      "caseId": "collage-title",
+      "domain": "creative practice",
+      "view": "sufficient",
+      "repeat": 1,
+      "probe": "routing-false",
+      "source": "Jules was preparing a small collage display for the Riverside showing. The pieces had been made over several months using paper saved from ordinary household packaging. Jules liked having enough time between making a piece and naming it, so some titles remained unsettled until the labels were prepared. For the Riverside showing, Jules chose 'Under the Table' as the final collage's title. This choice concerned that particular piece and was not a name for the entire display. Jules asked a friend to check the labels for spelling and to leave the placement decisions alone for the moment. The friend offered to bring spare clips for hanging the smaller pieces. A separate note listed materials that might be useful for a future series, but Jules had not committed to making it. Once the labels were finished, Jules put the unused paper back into a box and left the display arrangement for another afternoon.",
+      "memory": "Jules prepared a collage display for the Riverside showing and settled the labels after making the pieces. For the Riverside showing, Jules chose 'Under the Table' as the final collage's title. This named one piece, not the whole display. A friend was asked to check label spelling, while placement remained undecided.",
+      "question": "Which title did Jules choose for the final collage at the Riverside showing?",
+      "options": {
+        "A": "The Blue Stair.",
+        "B": "Under the Table.",
+        "C": "An Open Window.",
+        "D": "The Folded Map."
+      }
+    },
+    {
+      "id": "tree-practice-missing-2-routing-false",
+      "caseId": "tree-practice",
+      "domain": "learning",
+      "view": "missing",
+      "repeat": 2,
+      "probe": "routing-false",
+      "source": "Davi was learning to recognize local trees with help from a neighbor. Their short practice sessions used photographs, drawings, and written descriptions, with no single exercise treated as the right starting point every time. The neighbor had prepared several exercises in colored envelopes so they could be carried easily. For Thursday's tree-identification practice, Davi chose the violet envelope's exercise as the first activity. Davi recorded the choice before putting the envelopes away. The envelope colors did not indicate difficulty, subject, or any required sequence. They planned to pause partway through the session and compare which details they had noticed in the examples. A pencil and spare paper were already packed, but they still needed to decide whether to sit indoors or outside. The neighbor also mentioned a public garden they might visit on a different day. That possible visit was not part of Thursday's exercise order and had no date yet.",
+      "memory": "Davi and a neighbor were preparing Thursday's tree-identification practice with exercises in colored envelopes. Colors indicated neither difficulty nor required sequence. They planned a pause to compare observations, and the practice location remained undecided.",
+      "question": "Which envelope's exercise did Davi choose to start Thursday's tree-identification practice?",
+      "options": {
+        "A": "The red envelope's exercise.",
+        "B": "The yellow envelope's exercise.",
+        "C": "The violet envelope's exercise.",
+        "D": "The blue envelope's exercise."
+      }
+    },
+    {
+      "id": "picnic-meeting-sufficient-1-routing-absent",
+      "caseId": "picnic-meeting",
+      "domain": "everyday planning",
+      "view": "sufficient",
+      "repeat": 1,
+      "probe": "routing-absent",
+      "source": "Mina was organizing a Saturday picnic with a few friends who knew the park. They wanted to settle the meeting point in advance rather than exchange location messages after arriving. For Saturday's picnic, Mina designated the east fountain as the meeting point. The group had already agreed that everyone would bring something simple to share, without assigning particular dishes. Mina added the location choice to the planning note alongside a reminder to bring a blanket. The park had several familiar landmarks, and nothing in their discussion established a usual meeting place for future outings. Someone offered to bring a small card game, while another person expected to leave earlier than the rest. The note did not specify an activity schedule after everyone met. Mina planned to check the weather the evening before and send any necessary change separately. No such change had been recorded in this account.",
+      "memory": "Mina was organizing Saturday's picnic and wanted the friends to have a meeting point before arriving. For Saturday's picnic, Mina designated the east fountain as the meeting point. Everyone would bring something simple to share. A possible weather-related change would be sent separately; none was recorded in this account.",
+      "question": "Which meeting point did Mina designate for Saturday's picnic?",
+      "options": {
+        "A": "The west arch.",
+        "B": "The south steps.",
+        "C": "The north gate.",
+        "D": "The east fountain."
+      }
+    },
+    {
+      "id": "collage-title-missing-2-routing-false",
+      "caseId": "collage-title",
+      "domain": "creative practice",
+      "view": "missing",
+      "repeat": 2,
+      "probe": "routing-false",
+      "source": "Jules was preparing a small collage display for the Riverside showing. The pieces had been made over several months using paper saved from ordinary household packaging. Jules liked having enough time between making a piece and naming it, so some titles remained unsettled until the labels were prepared. For the Riverside showing, Jules chose 'Under the Table' as the final collage's title. This choice concerned that particular piece and was not a name for the entire display. Jules asked a friend to check the labels for spelling and to leave the placement decisions alone for the moment. The friend offered to bring spare clips for hanging the smaller pieces. A separate note listed materials that might be useful for a future series, but Jules had not committed to making it. Once the labels were finished, Jules put the unused paper back into a box and left the display arrangement for another afternoon.",
+      "memory": "Jules prepared a collage display for the Riverside showing and settled the labels after making the pieces. This named one piece, not the whole display. A friend was asked to check label spelling, while placement remained undecided.",
+      "question": "Which title did Jules choose for the final collage at the Riverside showing?",
+      "options": {
+        "A": "The Blue Stair.",
+        "B": "Under the Table.",
+        "C": "An Open Window.",
+        "D": "The Folded Map."
+      }
+    },
+    {
+      "id": "picnic-meeting-sufficient-1-capability",
+      "caseId": "picnic-meeting",
+      "domain": "everyday planning",
+      "view": "sufficient",
+      "repeat": 1,
+      "probe": "capability",
+      "source": "Mina was organizing a Saturday picnic with a few friends who knew the park. They wanted to settle the meeting point in advance rather than exchange location messages after arriving. For Saturday's picnic, Mina designated the east fountain as the meeting point. The group had already agreed that everyone would bring something simple to share, without assigning particular dishes. Mina added the location choice to the planning note alongside a reminder to bring a blanket. The park had several familiar landmarks, and nothing in their discussion established a usual meeting place for future outings. Someone offered to bring a small card game, while another person expected to leave earlier than the rest. The note did not specify an activity schedule after everyone met. Mina planned to check the weather the evening before and send any necessary change separately. No such change had been recorded in this account.",
+      "memory": "Mina was organizing Saturday's picnic and wanted the friends to have a meeting point before arriving. For Saturday's picnic, Mina designated the east fountain as the meeting point. Everyone would bring something simple to share. A possible weather-related change would be sent separately; none was recorded in this account.",
+      "question": "Which meeting point did Mina designate for Saturday's picnic?",
+      "options": {
+        "A": "The west arch.",
+        "B": "The south steps.",
+        "C": "The north gate.",
+        "D": "The east fountain."
+      }
+    },
+    {
+      "id": "collage-title-missing-2-capability",
+      "caseId": "collage-title",
+      "domain": "creative practice",
+      "view": "missing",
+      "repeat": 2,
+      "probe": "capability",
+      "source": "Jules was preparing a small collage display for the Riverside showing. The pieces had been made over several months using paper saved from ordinary household packaging. Jules liked having enough time between making a piece and naming it, so some titles remained unsettled until the labels were prepared. For the Riverside showing, Jules chose 'Under the Table' as the final collage's title. This choice concerned that particular piece and was not a name for the entire display. Jules asked a friend to check the labels for spelling and to leave the placement decisions alone for the moment. The friend offered to bring spare clips for hanging the smaller pieces. A separate note listed materials that might be useful for a future series, but Jules had not committed to making it. Once the labels were finished, Jules put the unused paper back into a box and left the display arrangement for another afternoon.",
+      "memory": "Jules prepared a collage display for the Riverside showing and settled the labels after making the pieces. This named one piece, not the whole display. A friend was asked to check label spelling, while placement remained undecided.",
+      "question": "Which title did Jules choose for the final collage at the Riverside showing?",
+      "options": {
+        "A": "The Blue Stair.",
+        "B": "Under the Table.",
+        "C": "An Open Window.",
+        "D": "The Folded Map."
+      }
+    },
+    {
+      "id": "anniversary-greeting-sufficient-2-capability",
+      "caseId": "anniversary-greeting",
+      "domain": "personal relationship",
+      "view": "sufficient",
+      "repeat": 2,
+      "probe": "capability",
+      "source": "Noor and Tessa mark the anniversary of their first shared hike each spring. Neither treats it as a formal holiday, and they have varied the way they acknowledge it over the years. This time they discussed the occasion during a relaxed lunch, along with several unrelated plans. For this year's hiking anniversary, Tessa specifically requested a short voicemail from Noor. Noor wrote that request down after lunch so it would not get mixed up with ideas for another friend's birthday. They also remembered the muddy path from the original hike and laughed about how long they had spent looking for a missing glove. No new hike was arranged at lunch. Tessa mentioned that the old trail map was still tucked inside a book, and Noor planned to look for a photograph of the landscape at some later point. Those recollections were separate from the anniversary request.",
+      "memory": "Noor and Tessa mark their first shared hike's anniversary each spring and vary how they acknowledge it. For this year's hiking anniversary, Tessa specifically requested a short voicemail from Noor. Noor recorded the request after lunch to keep it separate from another friend's birthday plans; they arranged no new hike.",
+      "question": "What form of greeting did Tessa request from Noor for this year's hiking anniversary?",
+      "options": {
+        "A": "A short voicemail.",
+        "B": "A handwritten card.",
+        "C": "A printed photograph.",
+        "D": "An in-person toast."
+      }
+    },
+    {
+      "id": "picnic-meeting-missing-2-routing-false",
+      "caseId": "picnic-meeting",
+      "domain": "everyday planning",
+      "view": "missing",
+      "repeat": 2,
+      "probe": "routing-false",
+      "source": "Mina was organizing a Saturday picnic with a few friends who knew the park. They wanted to settle the meeting point in advance rather than exchange location messages after arriving. For Saturday's picnic, Mina designated the east fountain as the meeting point. The group had already agreed that everyone would bring something simple to share, without assigning particular dishes. Mina added the location choice to the planning note alongside a reminder to bring a blanket. The park had several familiar landmarks, and nothing in their discussion established a usual meeting place for future outings. Someone offered to bring a small card game, while another person expected to leave earlier than the rest. The note did not specify an activity schedule after everyone met. Mina planned to check the weather the evening before and send any necessary change separately. No such change had been recorded in this account.",
+      "memory": "Mina was organizing Saturday's picnic and wanted the friends to have a meeting point before arriving. Everyone would bring something simple to share. A possible weather-related change would be sent separately; none was recorded in this account.",
+      "question": "Which meeting point did Mina designate for Saturday's picnic?",
+      "options": {
+        "A": "The west arch.",
+        "B": "The south steps.",
+        "C": "The north gate.",
+        "D": "The east fountain."
+      }
+    },
+    {
+      "id": "anniversary-greeting-sufficient-1-routing-false",
+      "caseId": "anniversary-greeting",
+      "domain": "personal relationship",
+      "view": "sufficient",
+      "repeat": 1,
+      "probe": "routing-false",
+      "source": "Noor and Tessa mark the anniversary of their first shared hike each spring. Neither treats it as a formal holiday, and they have varied the way they acknowledge it over the years. This time they discussed the occasion during a relaxed lunch, along with several unrelated plans. For this year's hiking anniversary, Tessa specifically requested a short voicemail from Noor. Noor wrote that request down after lunch so it would not get mixed up with ideas for another friend's birthday. They also remembered the muddy path from the original hike and laughed about how long they had spent looking for a missing glove. No new hike was arranged at lunch. Tessa mentioned that the old trail map was still tucked inside a book, and Noor planned to look for a photograph of the landscape at some later point. Those recollections were separate from the anniversary request.",
+      "memory": "Noor and Tessa mark their first shared hike's anniversary each spring and vary how they acknowledge it. For this year's hiking anniversary, Tessa specifically requested a short voicemail from Noor. Noor recorded the request after lunch to keep it separate from another friend's birthday plans; they arranged no new hike.",
+      "question": "What form of greeting did Tessa request from Noor for this year's hiking anniversary?",
+      "options": {
+        "A": "A short voicemail.",
+        "B": "A handwritten card.",
+        "C": "A printed photograph.",
+        "D": "An in-person toast."
+      }
+    },
+    {
+      "id": "picnic-meeting-missing-1-routing-false",
+      "caseId": "picnic-meeting",
+      "domain": "everyday planning",
+      "view": "missing",
+      "repeat": 1,
+      "probe": "routing-false",
+      "source": "Mina was organizing a Saturday picnic with a few friends who knew the park. They wanted to settle the meeting point in advance rather than exchange location messages after arriving. For Saturday's picnic, Mina designated the east fountain as the meeting point. The group had already agreed that everyone would bring something simple to share, without assigning particular dishes. Mina added the location choice to the planning note alongside a reminder to bring a blanket. The park had several familiar landmarks, and nothing in their discussion established a usual meeting place for future outings. Someone offered to bring a small card game, while another person expected to leave earlier than the rest. The note did not specify an activity schedule after everyone met. Mina planned to check the weather the evening before and send any necessary change separately. No such change had been recorded in this account.",
+      "memory": "Mina was organizing Saturday's picnic and wanted the friends to have a meeting point before arriving. Everyone would bring something simple to share. A possible weather-related change would be sent separately; none was recorded in this account.",
+      "question": "Which meeting point did Mina designate for Saturday's picnic?",
+      "options": {
+        "A": "The west arch.",
+        "B": "The south steps.",
+        "C": "The north gate.",
+        "D": "The east fountain."
+      }
+    },
+    {
+      "id": "tree-practice-sufficient-1-routing-false",
+      "caseId": "tree-practice",
+      "domain": "learning",
+      "view": "sufficient",
+      "repeat": 1,
+      "probe": "routing-false",
+      "source": "Davi was learning to recognize local trees with help from a neighbor. Their short practice sessions used photographs, drawings, and written descriptions, with no single exercise treated as the right starting point every time. The neighbor had prepared several exercises in colored envelopes so they could be carried easily. For Thursday's tree-identification practice, Davi chose the violet envelope's exercise as the first activity. Davi recorded the choice before putting the envelopes away. The envelope colors did not indicate difficulty, subject, or any required sequence. They planned to pause partway through the session and compare which details they had noticed in the examples. A pencil and spare paper were already packed, but they still needed to decide whether to sit indoors or outside. The neighbor also mentioned a public garden they might visit on a different day. That possible visit was not part of Thursday's exercise order and had no date yet.",
+      "memory": "Davi and a neighbor were preparing Thursday's tree-identification practice with exercises in colored envelopes. For Thursday's tree-identification practice, Davi chose the violet envelope's exercise as the first activity. Colors indicated neither difficulty nor required sequence. They planned a pause to compare observations, and the practice location remained undecided.",
+      "question": "Which envelope's exercise did Davi choose to start Thursday's tree-identification practice?",
+      "options": {
+        "A": "The red envelope's exercise.",
+        "B": "The yellow envelope's exercise.",
+        "C": "The violet envelope's exercise.",
+        "D": "The blue envelope's exercise."
+      }
+    },
+    {
+      "id": "collage-title-missing-1-routing-false",
+      "caseId": "collage-title",
+      "domain": "creative practice",
+      "view": "missing",
+      "repeat": 1,
+      "probe": "routing-false",
+      "source": "Jules was preparing a small collage display for the Riverside showing. The pieces had been made over several months using paper saved from ordinary household packaging. Jules liked having enough time between making a piece and naming it, so some titles remained unsettled until the labels were prepared. For the Riverside showing, Jules chose 'Under the Table' as the final collage's title. This choice concerned that particular piece and was not a name for the entire display. Jules asked a friend to check the labels for spelling and to leave the placement decisions alone for the moment. The friend offered to bring spare clips for hanging the smaller pieces. A separate note listed materials that might be useful for a future series, but Jules had not committed to making it. Once the labels were finished, Jules put the unused paper back into a box and left the display arrangement for another afternoon.",
+      "memory": "Jules prepared a collage display for the Riverside showing and settled the labels after making the pieces. This named one piece, not the whole display. A friend was asked to check label spelling, while placement remained undecided.",
+      "question": "Which title did Jules choose for the final collage at the Riverside showing?",
+      "options": {
+        "A": "The Blue Stair.",
+        "B": "Under the Table.",
+        "C": "An Open Window.",
+        "D": "The Folded Map."
+      }
+    },
+    {
+      "id": "collage-title-missing-1-capability",
+      "caseId": "collage-title",
+      "domain": "creative practice",
+      "view": "missing",
+      "repeat": 1,
+      "probe": "capability",
+      "source": "Jules was preparing a small collage display for the Riverside showing. The pieces had been made over several months using paper saved from ordinary household packaging. Jules liked having enough time between making a piece and naming it, so some titles remained unsettled until the labels were prepared. For the Riverside showing, Jules chose 'Under the Table' as the final collage's title. This choice concerned that particular piece and was not a name for the entire display. Jules asked a friend to check the labels for spelling and to leave the placement decisions alone for the moment. The friend offered to bring spare clips for hanging the smaller pieces. A separate note listed materials that might be useful for a future series, but Jules had not committed to making it. Once the labels were finished, Jules put the unused paper back into a box and left the display arrangement for another afternoon.",
+      "memory": "Jules prepared a collage display for the Riverside showing and settled the labels after making the pieces. This named one piece, not the whole display. A friend was asked to check label spelling, while placement remained undecided.",
+      "question": "Which title did Jules choose for the final collage at the Riverside showing?",
+      "options": {
+        "A": "The Blue Stair.",
+        "B": "Under the Table.",
+        "C": "An Open Window.",
+        "D": "The Folded Map."
+      }
+    },
+    {
+      "id": "picnic-meeting-sufficient-2-routing-absent",
+      "caseId": "picnic-meeting",
+      "domain": "everyday planning",
+      "view": "sufficient",
+      "repeat": 2,
+      "probe": "routing-absent",
+      "source": "Mina was organizing a Saturday picnic with a few friends who knew the park. They wanted to settle the meeting point in advance rather than exchange location messages after arriving. For Saturday's picnic, Mina designated the east fountain as the meeting point. The group had already agreed that everyone would bring something simple to share, without assigning particular dishes. Mina added the location choice to the planning note alongside a reminder to bring a blanket. The park had several familiar landmarks, and nothing in their discussion established a usual meeting place for future outings. Someone offered to bring a small card game, while another person expected to leave earlier than the rest. The note did not specify an activity schedule after everyone met. Mina planned to check the weather the evening before and send any necessary change separately. No such change had been recorded in this account.",
+      "memory": "Mina was organizing Saturday's picnic and wanted the friends to have a meeting point before arriving. For Saturday's picnic, Mina designated the east fountain as the meeting point. Everyone would bring something simple to share. A possible weather-related change would be sent separately; none was recorded in this account.",
+      "question": "Which meeting point did Mina designate for Saturday's picnic?",
+      "options": {
+        "A": "The west arch.",
+        "B": "The south steps.",
+        "C": "The north gate.",
+        "D": "The east fountain."
+      }
+    },
+    {
+      "id": "anniversary-greeting-missing-2-routing-absent",
+      "caseId": "anniversary-greeting",
+      "domain": "personal relationship",
+      "view": "missing",
+      "repeat": 2,
+      "probe": "routing-absent",
+      "source": "Noor and Tessa mark the anniversary of their first shared hike each spring. Neither treats it as a formal holiday, and they have varied the way they acknowledge it over the years. This time they discussed the occasion during a relaxed lunch, along with several unrelated plans. For this year's hiking anniversary, Tessa specifically requested a short voicemail from Noor. Noor wrote that request down after lunch so it would not get mixed up with ideas for another friend's birthday. They also remembered the muddy path from the original hike and laughed about how long they had spent looking for a missing glove. No new hike was arranged at lunch. Tessa mentioned that the old trail map was still tucked inside a book, and Noor planned to look for a photograph of the landscape at some later point. Those recollections were separate from the anniversary request.",
+      "memory": "Noor and Tessa mark their first shared hike's anniversary each spring and vary how they acknowledge it. Noor recorded the request after lunch to keep it separate from another friend's birthday plans; they arranged no new hike.",
+      "question": "What form of greeting did Tessa request from Noor for this year's hiking anniversary?",
+      "options": {
+        "A": "A short voicemail.",
+        "B": "A handwritten card.",
+        "C": "A printed photograph.",
+        "D": "An in-person toast."
+      }
+    },
+    {
+      "id": "picnic-meeting-sufficient-2-routing-false",
+      "caseId": "picnic-meeting",
+      "domain": "everyday planning",
+      "view": "sufficient",
+      "repeat": 2,
+      "probe": "routing-false",
+      "source": "Mina was organizing a Saturday picnic with a few friends who knew the park. They wanted to settle the meeting point in advance rather than exchange location messages after arriving. For Saturday's picnic, Mina designated the east fountain as the meeting point. The group had already agreed that everyone would bring something simple to share, without assigning particular dishes. Mina added the location choice to the planning note alongside a reminder to bring a blanket. The park had several familiar landmarks, and nothing in their discussion established a usual meeting place for future outings. Someone offered to bring a small card game, while another person expected to leave earlier than the rest. The note did not specify an activity schedule after everyone met. Mina planned to check the weather the evening before and send any necessary change separately. No such change had been recorded in this account.",
+      "memory": "Mina was organizing Saturday's picnic and wanted the friends to have a meeting point before arriving. For Saturday's picnic, Mina designated the east fountain as the meeting point. Everyone would bring something simple to share. A possible weather-related change would be sent separately; none was recorded in this account.",
+      "question": "Which meeting point did Mina designate for Saturday's picnic?",
+      "options": {
+        "A": "The west arch.",
+        "B": "The south steps.",
+        "C": "The north gate.",
+        "D": "The east fountain."
+      }
+    },
+    {
+      "id": "collage-title-sufficient-2-capability",
+      "caseId": "collage-title",
+      "domain": "creative practice",
+      "view": "sufficient",
+      "repeat": 2,
+      "probe": "capability",
+      "source": "Jules was preparing a small collage display for the Riverside showing. The pieces had been made over several months using paper saved from ordinary household packaging. Jules liked having enough time between making a piece and naming it, so some titles remained unsettled until the labels were prepared. For the Riverside showing, Jules chose 'Under the Table' as the final collage's title. This choice concerned that particular piece and was not a name for the entire display. Jules asked a friend to check the labels for spelling and to leave the placement decisions alone for the moment. The friend offered to bring spare clips for hanging the smaller pieces. A separate note listed materials that might be useful for a future series, but Jules had not committed to making it. Once the labels were finished, Jules put the unused paper back into a box and left the display arrangement for another afternoon.",
+      "memory": "Jules prepared a collage display for the Riverside showing and settled the labels after making the pieces. For the Riverside showing, Jules chose 'Under the Table' as the final collage's title. This named one piece, not the whole display. A friend was asked to check label spelling, while placement remained undecided.",
+      "question": "Which title did Jules choose for the final collage at the Riverside showing?",
+      "options": {
+        "A": "The Blue Stair.",
+        "B": "Under the Table.",
+        "C": "An Open Window.",
+        "D": "The Folded Map."
+      }
+    },
+    {
+      "id": "tree-practice-missing-2-capability",
+      "caseId": "tree-practice",
+      "domain": "learning",
+      "view": "missing",
+      "repeat": 2,
+      "probe": "capability",
+      "source": "Davi was learning to recognize local trees with help from a neighbor. Their short practice sessions used photographs, drawings, and written descriptions, with no single exercise treated as the right starting point every time. The neighbor had prepared several exercises in colored envelopes so they could be carried easily. For Thursday's tree-identification practice, Davi chose the violet envelope's exercise as the first activity. Davi recorded the choice before putting the envelopes away. The envelope colors did not indicate difficulty, subject, or any required sequence. They planned to pause partway through the session and compare which details they had noticed in the examples. A pencil and spare paper were already packed, but they still needed to decide whether to sit indoors or outside. The neighbor also mentioned a public garden they might visit on a different day. That possible visit was not part of Thursday's exercise order and had no date yet.",
+      "memory": "Davi and a neighbor were preparing Thursday's tree-identification practice with exercises in colored envelopes. Colors indicated neither difficulty nor required sequence. They planned a pause to compare observations, and the practice location remained undecided.",
+      "question": "Which envelope's exercise did Davi choose to start Thursday's tree-identification practice?",
+      "options": {
+        "A": "The red envelope's exercise.",
+        "B": "The yellow envelope's exercise.",
+        "C": "The violet envelope's exercise.",
+        "D": "The blue envelope's exercise."
+      }
+    },
+    {
+      "id": "anniversary-greeting-missing-2-capability",
+      "caseId": "anniversary-greeting",
+      "domain": "personal relationship",
+      "view": "missing",
+      "repeat": 2,
+      "probe": "capability",
+      "source": "Noor and Tessa mark the anniversary of their first shared hike each spring. Neither treats it as a formal holiday, and they have varied the way they acknowledge it over the years. This time they discussed the occasion during a relaxed lunch, along with several unrelated plans. For this year's hiking anniversary, Tessa specifically requested a short voicemail from Noor. Noor wrote that request down after lunch so it would not get mixed up with ideas for another friend's birthday. They also remembered the muddy path from the original hike and laughed about how long they had spent looking for a missing glove. No new hike was arranged at lunch. Tessa mentioned that the old trail map was still tucked inside a book, and Noor planned to look for a photograph of the landscape at some later point. Those recollections were separate from the anniversary request.",
+      "memory": "Noor and Tessa mark their first shared hike's anniversary each spring and vary how they acknowledge it. Noor recorded the request after lunch to keep it separate from another friend's birthday plans; they arranged no new hike.",
+      "question": "What form of greeting did Tessa request from Noor for this year's hiking anniversary?",
+      "options": {
+        "A": "A short voicemail.",
+        "B": "A handwritten card.",
+        "C": "A printed photograph.",
+        "D": "An in-person toast."
+      }
+    },
+    {
+      "id": "tree-practice-missing-1-routing-false",
+      "caseId": "tree-practice",
+      "domain": "learning",
+      "view": "missing",
+      "repeat": 1,
+      "probe": "routing-false",
+      "source": "Davi was learning to recognize local trees with help from a neighbor. Their short practice sessions used photographs, drawings, and written descriptions, with no single exercise treated as the right starting point every time. The neighbor had prepared several exercises in colored envelopes so they could be carried easily. For Thursday's tree-identification practice, Davi chose the violet envelope's exercise as the first activity. Davi recorded the choice before putting the envelopes away. The envelope colors did not indicate difficulty, subject, or any required sequence. They planned to pause partway through the session and compare which details they had noticed in the examples. A pencil and spare paper were already packed, but they still needed to decide whether to sit indoors or outside. The neighbor also mentioned a public garden they might visit on a different day. That possible visit was not part of Thursday's exercise order and had no date yet.",
+      "memory": "Davi and a neighbor were preparing Thursday's tree-identification practice with exercises in colored envelopes. Colors indicated neither difficulty nor required sequence. They planned a pause to compare observations, and the practice location remained undecided.",
+      "question": "Which envelope's exercise did Davi choose to start Thursday's tree-identification practice?",
+      "options": {
+        "A": "The red envelope's exercise.",
+        "B": "The yellow envelope's exercise.",
+        "C": "The violet envelope's exercise.",
+        "D": "The blue envelope's exercise."
+      }
+    },
+    {
+      "id": "tree-practice-missing-1-routing-absent",
+      "caseId": "tree-practice",
+      "domain": "learning",
+      "view": "missing",
+      "repeat": 1,
+      "probe": "routing-absent",
+      "source": "Davi was learning to recognize local trees with help from a neighbor. Their short practice sessions used photographs, drawings, and written descriptions, with no single exercise treated as the right starting point every time. The neighbor had prepared several exercises in colored envelopes so they could be carried easily. For Thursday's tree-identification practice, Davi chose the violet envelope's exercise as the first activity. Davi recorded the choice before putting the envelopes away. The envelope colors did not indicate difficulty, subject, or any required sequence. They planned to pause partway through the session and compare which details they had noticed in the examples. A pencil and spare paper were already packed, but they still needed to decide whether to sit indoors or outside. The neighbor also mentioned a public garden they might visit on a different day. That possible visit was not part of Thursday's exercise order and had no date yet.",
+      "memory": "Davi and a neighbor were preparing Thursday's tree-identification practice with exercises in colored envelopes. Colors indicated neither difficulty nor required sequence. They planned a pause to compare observations, and the practice location remained undecided.",
+      "question": "Which envelope's exercise did Davi choose to start Thursday's tree-identification practice?",
+      "options": {
+        "A": "The red envelope's exercise.",
+        "B": "The yellow envelope's exercise.",
+        "C": "The violet envelope's exercise.",
+        "D": "The blue envelope's exercise."
+      }
+    },
+    {
+      "id": "collage-title-sufficient-2-routing-absent",
+      "caseId": "collage-title",
+      "domain": "creative practice",
+      "view": "sufficient",
+      "repeat": 2,
+      "probe": "routing-absent",
+      "source": "Jules was preparing a small collage display for the Riverside showing. The pieces had been made over several months using paper saved from ordinary household packaging. Jules liked having enough time between making a piece and naming it, so some titles remained unsettled until the labels were prepared. For the Riverside showing, Jules chose 'Under the Table' as the final collage's title. This choice concerned that particular piece and was not a name for the entire display. Jules asked a friend to check the labels for spelling and to leave the placement decisions alone for the moment. The friend offered to bring spare clips for hanging the smaller pieces. A separate note listed materials that might be useful for a future series, but Jules had not committed to making it. Once the labels were finished, Jules put the unused paper back into a box and left the display arrangement for another afternoon.",
+      "memory": "Jules prepared a collage display for the Riverside showing and settled the labels after making the pieces. For the Riverside showing, Jules chose 'Under the Table' as the final collage's title. This named one piece, not the whole display. A friend was asked to check label spelling, while placement remained undecided.",
+      "question": "Which title did Jules choose for the final collage at the Riverside showing?",
+      "options": {
+        "A": "The Blue Stair.",
+        "B": "Under the Table.",
+        "C": "An Open Window.",
+        "D": "The Folded Map."
+      }
+    }
+  ],
+  "baseline": [
+    {
+      "id": "collage-title-sufficient-1-reader-policy",
+      "caseId": "collage-title",
+      "domain": "creative practice",
+      "view": "sufficient",
+      "repeat": 1,
+      "probe": "reader-policy",
+      "source": "Jules was preparing a small collage display for the Riverside showing. The pieces had been made over several months using paper saved from ordinary household packaging. Jules liked having enough time between making a piece and naming it, so some titles remained unsettled until the labels were prepared. For the Riverside showing, Jules chose 'Under the Table' as the final collage's title. This choice concerned that particular piece and was not a name for the entire display. Jules asked a friend to check the labels for spelling and to leave the placement decisions alone for the moment. The friend offered to bring spare clips for hanging the smaller pieces. A separate note listed materials that might be useful for a future series, but Jules had not committed to making it. Once the labels were finished, Jules put the unused paper back into a box and left the display arrangement for another afternoon.",
+      "memory": "Jules prepared a collage display for the Riverside showing and settled the labels after making the pieces. For the Riverside showing, Jules chose 'Under the Table' as the final collage's title. This named one piece, not the whole display. A friend was asked to check label spelling, while placement remained undecided.",
+      "question": "Which title did Jules choose for the final collage at the Riverside showing?",
+      "options": {
+        "A": "The Blue Stair.",
+        "B": "Under the Table.",
+        "C": "An Open Window.",
+        "D": "The Folded Map."
+      }
+    },
+    {
+      "id": "picnic-meeting-missing-1-reader-policy",
+      "caseId": "picnic-meeting",
+      "domain": "everyday planning",
+      "view": "missing",
+      "repeat": 1,
+      "probe": "reader-policy",
+      "source": "Mina was organizing a Saturday picnic with a few friends who knew the park. They wanted to settle the meeting point in advance rather than exchange location messages after arriving. For Saturday's picnic, Mina designated the east fountain as the meeting point. The group had already agreed that everyone would bring something simple to share, without assigning particular dishes. Mina added the location choice to the planning note alongside a reminder to bring a blanket. The park had several familiar landmarks, and nothing in their discussion established a usual meeting place for future outings. Someone offered to bring a small card game, while another person expected to leave earlier than the rest. The note did not specify an activity schedule after everyone met. Mina planned to check the weather the evening before and send any necessary change separately. No such change had been recorded in this account.",
+      "memory": "Mina was organizing Saturday's picnic and wanted the friends to have a meeting point before arriving. Everyone would bring something simple to share. A possible weather-related change would be sent separately; none was recorded in this account.",
+      "question": "Which meeting point did Mina designate for Saturday's picnic?",
+      "options": {
+        "A": "The west arch.",
+        "B": "The south steps.",
+        "C": "The north gate.",
+        "D": "The east fountain."
+      }
+    },
+    {
+      "id": "collage-title-missing-1-reader-policy",
+      "caseId": "collage-title",
+      "domain": "creative practice",
+      "view": "missing",
+      "repeat": 1,
+      "probe": "reader-policy",
+      "source": "Jules was preparing a small collage display for the Riverside showing. The pieces had been made over several months using paper saved from ordinary household packaging. Jules liked having enough time between making a piece and naming it, so some titles remained unsettled until the labels were prepared. For the Riverside showing, Jules chose 'Under the Table' as the final collage's title. This choice concerned that particular piece and was not a name for the entire display. Jules asked a friend to check the labels for spelling and to leave the placement decisions alone for the moment. The friend offered to bring spare clips for hanging the smaller pieces. A separate note listed materials that might be useful for a future series, but Jules had not committed to making it. Once the labels were finished, Jules put the unused paper back into a box and left the display arrangement for another afternoon.",
+      "memory": "Jules prepared a collage display for the Riverside showing and settled the labels after making the pieces. This named one piece, not the whole display. A friend was asked to check label spelling, while placement remained undecided.",
+      "question": "Which title did Jules choose for the final collage at the Riverside showing?",
+      "options": {
+        "A": "The Blue Stair.",
+        "B": "Under the Table.",
+        "C": "An Open Window.",
+        "D": "The Folded Map."
+      }
+    },
+    {
+      "id": "collage-title-sufficient-2-reader-policy",
+      "caseId": "collage-title",
+      "domain": "creative practice",
+      "view": "sufficient",
+      "repeat": 2,
+      "probe": "reader-policy",
+      "source": "Jules was preparing a small collage display for the Riverside showing. The pieces had been made over several months using paper saved from ordinary household packaging. Jules liked having enough time between making a piece and naming it, so some titles remained unsettled until the labels were prepared. For the Riverside showing, Jules chose 'Under the Table' as the final collage's title. This choice concerned that particular piece and was not a name for the entire display. Jules asked a friend to check the labels for spelling and to leave the placement decisions alone for the moment. The friend offered to bring spare clips for hanging the smaller pieces. A separate note listed materials that might be useful for a future series, but Jules had not committed to making it. Once the labels were finished, Jules put the unused paper back into a box and left the display arrangement for another afternoon.",
+      "memory": "Jules prepared a collage display for the Riverside showing and settled the labels after making the pieces. For the Riverside showing, Jules chose 'Under the Table' as the final collage's title. This named one piece, not the whole display. A friend was asked to check label spelling, while placement remained undecided.",
+      "question": "Which title did Jules choose for the final collage at the Riverside showing?",
+      "options": {
+        "A": "The Blue Stair.",
+        "B": "Under the Table.",
+        "C": "An Open Window.",
+        "D": "The Folded Map."
+      }
+    },
+    {
+      "id": "anniversary-greeting-sufficient-2-reader-policy",
+      "caseId": "anniversary-greeting",
+      "domain": "personal relationship",
+      "view": "sufficient",
+      "repeat": 2,
+      "probe": "reader-policy",
+      "source": "Noor and Tessa mark the anniversary of their first shared hike each spring. Neither treats it as a formal holiday, and they have varied the way they acknowledge it over the years. This time they discussed the occasion during a relaxed lunch, along with several unrelated plans. For this year's hiking anniversary, Tessa specifically requested a short voicemail from Noor. Noor wrote that request down after lunch so it would not get mixed up with ideas for another friend's birthday. They also remembered the muddy path from the original hike and laughed about how long they had spent looking for a missing glove. No new hike was arranged at lunch. Tessa mentioned that the old trail map was still tucked inside a book, and Noor planned to look for a photograph of the landscape at some later point. Those recollections were separate from the anniversary request.",
+      "memory": "Noor and Tessa mark their first shared hike's anniversary each spring and vary how they acknowledge it. For this year's hiking anniversary, Tessa specifically requested a short voicemail from Noor. Noor recorded the request after lunch to keep it separate from another friend's birthday plans; they arranged no new hike.",
+      "question": "What form of greeting did Tessa request from Noor for this year's hiking anniversary?",
+      "options": {
+        "A": "A short voicemail.",
+        "B": "A handwritten card.",
+        "C": "A printed photograph.",
+        "D": "An in-person toast."
+      }
+    },
+    {
+      "id": "anniversary-greeting-sufficient-2-always-source",
+      "caseId": "anniversary-greeting",
+      "domain": "personal relationship",
+      "view": "sufficient",
+      "repeat": 2,
+      "probe": "always-source",
+      "source": "Noor and Tessa mark the anniversary of their first shared hike each spring. Neither treats it as a formal holiday, and they have varied the way they acknowledge it over the years. This time they discussed the occasion during a relaxed lunch, along with several unrelated plans. For this year's hiking anniversary, Tessa specifically requested a short voicemail from Noor. Noor wrote that request down after lunch so it would not get mixed up with ideas for another friend's birthday. They also remembered the muddy path from the original hike and laughed about how long they had spent looking for a missing glove. No new hike was arranged at lunch. Tessa mentioned that the old trail map was still tucked inside a book, and Noor planned to look for a photograph of the landscape at some later point. Those recollections were separate from the anniversary request.",
+      "memory": "Noor and Tessa mark their first shared hike's anniversary each spring and vary how they acknowledge it. For this year's hiking anniversary, Tessa specifically requested a short voicemail from Noor. Noor recorded the request after lunch to keep it separate from another friend's birthday plans; they arranged no new hike.",
+      "question": "What form of greeting did Tessa request from Noor for this year's hiking anniversary?",
+      "options": {
+        "A": "A short voicemail.",
+        "B": "A handwritten card.",
+        "C": "A printed photograph.",
+        "D": "An in-person toast."
+      }
+    },
+    {
+      "id": "anniversary-greeting-sufficient-1-reader-policy",
+      "caseId": "anniversary-greeting",
+      "domain": "personal relationship",
+      "view": "sufficient",
+      "repeat": 1,
+      "probe": "reader-policy",
+      "source": "Noor and Tessa mark the anniversary of their first shared hike each spring. Neither treats it as a formal holiday, and they have varied the way they acknowledge it over the years. This time they discussed the occasion during a relaxed lunch, along with several unrelated plans. For this year's hiking anniversary, Tessa specifically requested a short voicemail from Noor. Noor wrote that request down after lunch so it would not get mixed up with ideas for another friend's birthday. They also remembered the muddy path from the original hike and laughed about how long they had spent looking for a missing glove. No new hike was arranged at lunch. Tessa mentioned that the old trail map was still tucked inside a book, and Noor planned to look for a photograph of the landscape at some later point. Those recollections were separate from the anniversary request.",
+      "memory": "Noor and Tessa mark their first shared hike's anniversary each spring and vary how they acknowledge it. For this year's hiking anniversary, Tessa specifically requested a short voicemail from Noor. Noor recorded the request after lunch to keep it separate from another friend's birthday plans; they arranged no new hike.",
+      "question": "What form of greeting did Tessa request from Noor for this year's hiking anniversary?",
+      "options": {
+        "A": "A short voicemail.",
+        "B": "A handwritten card.",
+        "C": "A printed photograph.",
+        "D": "An in-person toast."
+      }
+    },
+    {
+      "id": "tree-practice-sufficient-2-reader-policy",
+      "caseId": "tree-practice",
+      "domain": "learning",
+      "view": "sufficient",
+      "repeat": 2,
+      "probe": "reader-policy",
+      "source": "Davi was learning to recognize local trees with help from a neighbor. Their short practice sessions used photographs, drawings, and written descriptions, with no single exercise treated as the right starting point every time. The neighbor had prepared several exercises in colored envelopes so they could be carried easily. For Thursday's tree-identification practice, Davi chose the violet envelope's exercise as the first activity. Davi recorded the choice before putting the envelopes away. The envelope colors did not indicate difficulty, subject, or any required sequence. They planned to pause partway through the session and compare which details they had noticed in the examples. A pencil and spare paper were already packed, but they still needed to decide whether to sit indoors or outside. The neighbor also mentioned a public garden they might visit on a different day. That possible visit was not part of Thursday's exercise order and had no date yet.",
+      "memory": "Davi and a neighbor were preparing Thursday's tree-identification practice with exercises in colored envelopes. For Thursday's tree-identification practice, Davi chose the violet envelope's exercise as the first activity. Colors indicated neither difficulty nor required sequence. They planned a pause to compare observations, and the practice location remained undecided.",
+      "question": "Which envelope's exercise did Davi choose to start Thursday's tree-identification practice?",
+      "options": {
+        "A": "The red envelope's exercise.",
+        "B": "The yellow envelope's exercise.",
+        "C": "The violet envelope's exercise.",
+        "D": "The blue envelope's exercise."
+      }
+    },
+    {
+      "id": "anniversary-greeting-missing-2-reader-policy",
+      "caseId": "anniversary-greeting",
+      "domain": "personal relationship",
+      "view": "missing",
+      "repeat": 2,
+      "probe": "reader-policy",
+      "source": "Noor and Tessa mark the anniversary of their first shared hike each spring. Neither treats it as a formal holiday, and they have varied the way they acknowledge it over the years. This time they discussed the occasion during a relaxed lunch, along with several unrelated plans. For this year's hiking anniversary, Tessa specifically requested a short voicemail from Noor. Noor wrote that request down after lunch so it would not get mixed up with ideas for another friend's birthday. They also remembered the muddy path from the original hike and laughed about how long they had spent looking for a missing glove. No new hike was arranged at lunch. Tessa mentioned that the old trail map was still tucked inside a book, and Noor planned to look for a photograph of the landscape at some later point. Those recollections were separate from the anniversary request.",
+      "memory": "Noor and Tessa mark their first shared hike's anniversary each spring and vary how they acknowledge it. Noor recorded the request after lunch to keep it separate from another friend's birthday plans; they arranged no new hike.",
+      "question": "What form of greeting did Tessa request from Noor for this year's hiking anniversary?",
+      "options": {
+        "A": "A short voicemail.",
+        "B": "A handwritten card.",
+        "C": "A printed photograph.",
+        "D": "An in-person toast."
+      }
+    },
+    {
+      "id": "tree-practice-sufficient-1-always-source",
+      "caseId": "tree-practice",
+      "domain": "learning",
+      "view": "sufficient",
+      "repeat": 1,
+      "probe": "always-source",
+      "source": "Davi was learning to recognize local trees with help from a neighbor. Their short practice sessions used photographs, drawings, and written descriptions, with no single exercise treated as the right starting point every time. The neighbor had prepared several exercises in colored envelopes so they could be carried easily. For Thursday's tree-identification practice, Davi chose the violet envelope's exercise as the first activity. Davi recorded the choice before putting the envelopes away. The envelope colors did not indicate difficulty, subject, or any required sequence. They planned to pause partway through the session and compare which details they had noticed in the examples. A pencil and spare paper were already packed, but they still needed to decide whether to sit indoors or outside. The neighbor also mentioned a public garden they might visit on a different day. That possible visit was not part of Thursday's exercise order and had no date yet.",
+      "memory": "Davi and a neighbor were preparing Thursday's tree-identification practice with exercises in colored envelopes. For Thursday's tree-identification practice, Davi chose the violet envelope's exercise as the first activity. Colors indicated neither difficulty nor required sequence. They planned a pause to compare observations, and the practice location remained undecided.",
+      "question": "Which envelope's exercise did Davi choose to start Thursday's tree-identification practice?",
+      "options": {
+        "A": "The red envelope's exercise.",
+        "B": "The yellow envelope's exercise.",
+        "C": "The violet envelope's exercise.",
+        "D": "The blue envelope's exercise."
+      }
+    },
+    {
+      "id": "tree-practice-missing-1-reader-policy",
+      "caseId": "tree-practice",
+      "domain": "learning",
+      "view": "missing",
+      "repeat": 1,
+      "probe": "reader-policy",
+      "source": "Davi was learning to recognize local trees with help from a neighbor. Their short practice sessions used photographs, drawings, and written descriptions, with no single exercise treated as the right starting point every time. The neighbor had prepared several exercises in colored envelopes so they could be carried easily. For Thursday's tree-identification practice, Davi chose the violet envelope's exercise as the first activity. Davi recorded the choice before putting the envelopes away. The envelope colors did not indicate difficulty, subject, or any required sequence. They planned to pause partway through the session and compare which details they had noticed in the examples. A pencil and spare paper were already packed, but they still needed to decide whether to sit indoors or outside. The neighbor also mentioned a public garden they might visit on a different day. That possible visit was not part of Thursday's exercise order and had no date yet.",
+      "memory": "Davi and a neighbor were preparing Thursday's tree-identification practice with exercises in colored envelopes. Colors indicated neither difficulty nor required sequence. They planned a pause to compare observations, and the practice location remained undecided.",
+      "question": "Which envelope's exercise did Davi choose to start Thursday's tree-identification practice?",
+      "options": {
+        "A": "The red envelope's exercise.",
+        "B": "The yellow envelope's exercise.",
+        "C": "The violet envelope's exercise.",
+        "D": "The blue envelope's exercise."
+      }
+    },
+    {
+      "id": "collage-title-missing-2-always-source",
+      "caseId": "collage-title",
+      "domain": "creative practice",
+      "view": "missing",
+      "repeat": 2,
+      "probe": "always-source",
+      "source": "Jules was preparing a small collage display for the Riverside showing. The pieces had been made over several months using paper saved from ordinary household packaging. Jules liked having enough time between making a piece and naming it, so some titles remained unsettled until the labels were prepared. For the Riverside showing, Jules chose 'Under the Table' as the final collage's title. This choice concerned that particular piece and was not a name for the entire display. Jules asked a friend to check the labels for spelling and to leave the placement decisions alone for the moment. The friend offered to bring spare clips for hanging the smaller pieces. A separate note listed materials that might be useful for a future series, but Jules had not committed to making it. Once the labels were finished, Jules put the unused paper back into a box and left the display arrangement for another afternoon.",
+      "memory": "Jules prepared a collage display for the Riverside showing and settled the labels after making the pieces. This named one piece, not the whole display. A friend was asked to check label spelling, while placement remained undecided.",
+      "question": "Which title did Jules choose for the final collage at the Riverside showing?",
+      "options": {
+        "A": "The Blue Stair.",
+        "B": "Under the Table.",
+        "C": "An Open Window.",
+        "D": "The Folded Map."
+      }
+    },
+    {
+      "id": "picnic-meeting-sufficient-1-always-source",
+      "caseId": "picnic-meeting",
+      "domain": "everyday planning",
+      "view": "sufficient",
+      "repeat": 1,
+      "probe": "always-source",
+      "source": "Mina was organizing a Saturday picnic with a few friends who knew the park. They wanted to settle the meeting point in advance rather than exchange location messages after arriving. For Saturday's picnic, Mina designated the east fountain as the meeting point. The group had already agreed that everyone would bring something simple to share, without assigning particular dishes. Mina added the location choice to the planning note alongside a reminder to bring a blanket. The park had several familiar landmarks, and nothing in their discussion established a usual meeting place for future outings. Someone offered to bring a small card game, while another person expected to leave earlier than the rest. The note did not specify an activity schedule after everyone met. Mina planned to check the weather the evening before and send any necessary change separately. No such change had been recorded in this account.",
+      "memory": "Mina was organizing Saturday's picnic and wanted the friends to have a meeting point before arriving. For Saturday's picnic, Mina designated the east fountain as the meeting point. Everyone would bring something simple to share. A possible weather-related change would be sent separately; none was recorded in this account.",
+      "question": "Which meeting point did Mina designate for Saturday's picnic?",
+      "options": {
+        "A": "The west arch.",
+        "B": "The south steps.",
+        "C": "The north gate.",
+        "D": "The east fountain."
+      }
+    },
+    {
+      "id": "collage-title-missing-2-reader-policy",
+      "caseId": "collage-title",
+      "domain": "creative practice",
+      "view": "missing",
+      "repeat": 2,
+      "probe": "reader-policy",
+      "source": "Jules was preparing a small collage display for the Riverside showing. The pieces had been made over several months using paper saved from ordinary household packaging. Jules liked having enough time between making a piece and naming it, so some titles remained unsettled until the labels were prepared. For the Riverside showing, Jules chose 'Under the Table' as the final collage's title. This choice concerned that particular piece and was not a name for the entire display. Jules asked a friend to check the labels for spelling and to leave the placement decisions alone for the moment. The friend offered to bring spare clips for hanging the smaller pieces. A separate note listed materials that might be useful for a future series, but Jules had not committed to making it. Once the labels were finished, Jules put the unused paper back into a box and left the display arrangement for another afternoon.",
+      "memory": "Jules prepared a collage display for the Riverside showing and settled the labels after making the pieces. This named one piece, not the whole display. A friend was asked to check label spelling, while placement remained undecided.",
+      "question": "Which title did Jules choose for the final collage at the Riverside showing?",
+      "options": {
+        "A": "The Blue Stair.",
+        "B": "Under the Table.",
+        "C": "An Open Window.",
+        "D": "The Folded Map."
+      }
+    },
+    {
+      "id": "tree-practice-missing-2-reader-policy",
+      "caseId": "tree-practice",
+      "domain": "learning",
+      "view": "missing",
+      "repeat": 2,
+      "probe": "reader-policy",
+      "source": "Davi was learning to recognize local trees with help from a neighbor. Their short practice sessions used photographs, drawings, and written descriptions, with no single exercise treated as the right starting point every time. The neighbor had prepared several exercises in colored envelopes so they could be carried easily. For Thursday's tree-identification practice, Davi chose the violet envelope's exercise as the first activity. Davi recorded the choice before putting the envelopes away. The envelope colors did not indicate difficulty, subject, or any required sequence. They planned to pause partway through the session and compare which details they had noticed in the examples. A pencil and spare paper were already packed, but they still needed to decide whether to sit indoors or outside. The neighbor also mentioned a public garden they might visit on a different day. That possible visit was not part of Thursday's exercise order and had no date yet.",
+      "memory": "Davi and a neighbor were preparing Thursday's tree-identification practice with exercises in colored envelopes. Colors indicated neither difficulty nor required sequence. They planned a pause to compare observations, and the practice location remained undecided.",
+      "question": "Which envelope's exercise did Davi choose to start Thursday's tree-identification practice?",
+      "options": {
+        "A": "The red envelope's exercise.",
+        "B": "The yellow envelope's exercise.",
+        "C": "The violet envelope's exercise.",
+        "D": "The blue envelope's exercise."
+      }
+    },
+    {
+      "id": "picnic-meeting-missing-2-always-source",
+      "caseId": "picnic-meeting",
+      "domain": "everyday planning",
+      "view": "missing",
+      "repeat": 2,
+      "probe": "always-source",
+      "source": "Mina was organizing a Saturday picnic with a few friends who knew the park. They wanted to settle the meeting point in advance rather than exchange location messages after arriving. For Saturday's picnic, Mina designated the east fountain as the meeting point. The group had already agreed that everyone would bring something simple to share, without assigning particular dishes. Mina added the location choice to the planning note alongside a reminder to bring a blanket. The park had several familiar landmarks, and nothing in their discussion established a usual meeting place for future outings. Someone offered to bring a small card game, while another person expected to leave earlier than the rest. The note did not specify an activity schedule after everyone met. Mina planned to check the weather the evening before and send any necessary change separately. No such change had been recorded in this account.",
+      "memory": "Mina was organizing Saturday's picnic and wanted the friends to have a meeting point before arriving. Everyone would bring something simple to share. A possible weather-related change would be sent separately; none was recorded in this account.",
+      "question": "Which meeting point did Mina designate for Saturday's picnic?",
+      "options": {
+        "A": "The west arch.",
+        "B": "The south steps.",
+        "C": "The north gate.",
+        "D": "The east fountain."
+      }
+    },
+    {
+      "id": "anniversary-greeting-missing-1-reader-policy",
+      "caseId": "anniversary-greeting",
+      "domain": "personal relationship",
+      "view": "missing",
+      "repeat": 1,
+      "probe": "reader-policy",
+      "source": "Noor and Tessa mark the anniversary of their first shared hike each spring. Neither treats it as a formal holiday, and they have varied the way they acknowledge it over the years. This time they discussed the occasion during a relaxed lunch, along with several unrelated plans. For this year's hiking anniversary, Tessa specifically requested a short voicemail from Noor. Noor wrote that request down after lunch so it would not get mixed up with ideas for another friend's birthday. They also remembered the muddy path from the original hike and laughed about how long they had spent looking for a missing glove. No new hike was arranged at lunch. Tessa mentioned that the old trail map was still tucked inside a book, and Noor planned to look for a photograph of the landscape at some later point. Those recollections were separate from the anniversary request.",
+      "memory": "Noor and Tessa mark their first shared hike's anniversary each spring and vary how they acknowledge it. Noor recorded the request after lunch to keep it separate from another friend's birthday plans; they arranged no new hike.",
+      "question": "What form of greeting did Tessa request from Noor for this year's hiking anniversary?",
+      "options": {
+        "A": "A short voicemail.",
+        "B": "A handwritten card.",
+        "C": "A printed photograph.",
+        "D": "An in-person toast."
+      }
+    },
+    {
+      "id": "collage-title-sufficient-1-always-source",
+      "caseId": "collage-title",
+      "domain": "creative practice",
+      "view": "sufficient",
+      "repeat": 1,
+      "probe": "always-source",
+      "source": "Jules was preparing a small collage display for the Riverside showing. The pieces had been made over several months using paper saved from ordinary household packaging. Jules liked having enough time between making a piece and naming it, so some titles remained unsettled until the labels were prepared. For the Riverside showing, Jules chose 'Under the Table' as the final collage's title. This choice concerned that particular piece and was not a name for the entire display. Jules asked a friend to check the labels for spelling and to leave the placement decisions alone for the moment. The friend offered to bring spare clips for hanging the smaller pieces. A separate note listed materials that might be useful for a future series, but Jules had not committed to making it. Once the labels were finished, Jules put the unused paper back into a box and left the display arrangement for another afternoon.",
+      "memory": "Jules prepared a collage display for the Riverside showing and settled the labels after making the pieces. For the Riverside showing, Jules chose 'Under the Table' as the final collage's title. This named one piece, not the whole display. A friend was asked to check label spelling, while placement remained undecided.",
+      "question": "Which title did Jules choose for the final collage at the Riverside showing?",
+      "options": {
+        "A": "The Blue Stair.",
+        "B": "Under the Table.",
+        "C": "An Open Window.",
+        "D": "The Folded Map."
+      }
+    },
+    {
+      "id": "tree-practice-sufficient-1-reader-policy",
+      "caseId": "tree-practice",
+      "domain": "learning",
+      "view": "sufficient",
+      "repeat": 1,
+      "probe": "reader-policy",
+      "source": "Davi was learning to recognize local trees with help from a neighbor. Their short practice sessions used photographs, drawings, and written descriptions, with no single exercise treated as the right starting point every time. The neighbor had prepared several exercises in colored envelopes so they could be carried easily. For Thursday's tree-identification practice, Davi chose the violet envelope's exercise as the first activity. Davi recorded the choice before putting the envelopes away. The envelope colors did not indicate difficulty, subject, or any required sequence. They planned to pause partway through the session and compare which details they had noticed in the examples. A pencil and spare paper were already packed, but they still needed to decide whether to sit indoors or outside. The neighbor also mentioned a public garden they might visit on a different day. That possible visit was not part of Thursday's exercise order and had no date yet.",
+      "memory": "Davi and a neighbor were preparing Thursday's tree-identification practice with exercises in colored envelopes. For Thursday's tree-identification practice, Davi chose the violet envelope's exercise as the first activity. Colors indicated neither difficulty nor required sequence. They planned a pause to compare observations, and the practice location remained undecided.",
+      "question": "Which envelope's exercise did Davi choose to start Thursday's tree-identification practice?",
+      "options": {
+        "A": "The red envelope's exercise.",
+        "B": "The yellow envelope's exercise.",
+        "C": "The violet envelope's exercise.",
+        "D": "The blue envelope's exercise."
+      }
+    },
+    {
+      "id": "picnic-meeting-sufficient-2-reader-policy",
+      "caseId": "picnic-meeting",
+      "domain": "everyday planning",
+      "view": "sufficient",
+      "repeat": 2,
+      "probe": "reader-policy",
+      "source": "Mina was organizing a Saturday picnic with a few friends who knew the park. They wanted to settle the meeting point in advance rather than exchange location messages after arriving. For Saturday's picnic, Mina designated the east fountain as the meeting point. The group had already agreed that everyone would bring something simple to share, without assigning particular dishes. Mina added the location choice to the planning note alongside a reminder to bring a blanket. The park had several familiar landmarks, and nothing in their discussion established a usual meeting place for future outings. Someone offered to bring a small card game, while another person expected to leave earlier than the rest. The note did not specify an activity schedule after everyone met. Mina planned to check the weather the evening before and send any necessary change separately. No such change had been recorded in this account.",
+      "memory": "Mina was organizing Saturday's picnic and wanted the friends to have a meeting point before arriving. For Saturday's picnic, Mina designated the east fountain as the meeting point. Everyone would bring something simple to share. A possible weather-related change would be sent separately; none was recorded in this account.",
+      "question": "Which meeting point did Mina designate for Saturday's picnic?",
+      "options": {
+        "A": "The west arch.",
+        "B": "The south steps.",
+        "C": "The north gate.",
+        "D": "The east fountain."
+      }
+    },
+    {
+      "id": "picnic-meeting-sufficient-1-reader-policy",
+      "caseId": "picnic-meeting",
+      "domain": "everyday planning",
+      "view": "sufficient",
+      "repeat": 1,
+      "probe": "reader-policy",
+      "source": "Mina was organizing a Saturday picnic with a few friends who knew the park. They wanted to settle the meeting point in advance rather than exchange location messages after arriving. For Saturday's picnic, Mina designated the east fountain as the meeting point. The group had already agreed that everyone would bring something simple to share, without assigning particular dishes. Mina added the location choice to the planning note alongside a reminder to bring a blanket. The park had several familiar landmarks, and nothing in their discussion established a usual meeting place for future outings. Someone offered to bring a small card game, while another person expected to leave earlier than the rest. The note did not specify an activity schedule after everyone met. Mina planned to check the weather the evening before and send any necessary change separately. No such change had been recorded in this account.",
+      "memory": "Mina was organizing Saturday's picnic and wanted the friends to have a meeting point before arriving. For Saturday's picnic, Mina designated the east fountain as the meeting point. Everyone would bring something simple to share. A possible weather-related change would be sent separately; none was recorded in this account.",
+      "question": "Which meeting point did Mina designate for Saturday's picnic?",
+      "options": {
+        "A": "The west arch.",
+        "B": "The south steps.",
+        "C": "The north gate.",
+        "D": "The east fountain."
+      }
+    },
+    {
+      "id": "anniversary-greeting-missing-1-always-source",
+      "caseId": "anniversary-greeting",
+      "domain": "personal relationship",
+      "view": "missing",
+      "repeat": 1,
+      "probe": "always-source",
+      "source": "Noor and Tessa mark the anniversary of their first shared hike each spring. Neither treats it as a formal holiday, and they have varied the way they acknowledge it over the years. This time they discussed the occasion during a relaxed lunch, along with several unrelated plans. For this year's hiking anniversary, Tessa specifically requested a short voicemail from Noor. Noor wrote that request down after lunch so it would not get mixed up with ideas for another friend's birthday. They also remembered the muddy path from the original hike and laughed about how long they had spent looking for a missing glove. No new hike was arranged at lunch. Tessa mentioned that the old trail map was still tucked inside a book, and Noor planned to look for a photograph of the landscape at some later point. Those recollections were separate from the anniversary request.",
+      "memory": "Noor and Tessa mark their first shared hike's anniversary each spring and vary how they acknowledge it. Noor recorded the request after lunch to keep it separate from another friend's birthday plans; they arranged no new hike.",
+      "question": "What form of greeting did Tessa request from Noor for this year's hiking anniversary?",
+      "options": {
+        "A": "A short voicemail.",
+        "B": "A handwritten card.",
+        "C": "A printed photograph.",
+        "D": "An in-person toast."
+      }
+    },
+    {
+      "id": "collage-title-sufficient-2-always-source",
+      "caseId": "collage-title",
+      "domain": "creative practice",
+      "view": "sufficient",
+      "repeat": 2,
+      "probe": "always-source",
+      "source": "Jules was preparing a small collage display for the Riverside showing. The pieces had been made over several months using paper saved from ordinary household packaging. Jules liked having enough time between making a piece and naming it, so some titles remained unsettled until the labels were prepared. For the Riverside showing, Jules chose 'Under the Table' as the final collage's title. This choice concerned that particular piece and was not a name for the entire display. Jules asked a friend to check the labels for spelling and to leave the placement decisions alone for the moment. The friend offered to bring spare clips for hanging the smaller pieces. A separate note listed materials that might be useful for a future series, but Jules had not committed to making it. Once the labels were finished, Jules put the unused paper back into a box and left the display arrangement for another afternoon.",
+      "memory": "Jules prepared a collage display for the Riverside showing and settled the labels after making the pieces. For the Riverside showing, Jules chose 'Under the Table' as the final collage's title. This named one piece, not the whole display. A friend was asked to check label spelling, while placement remained undecided.",
+      "question": "Which title did Jules choose for the final collage at the Riverside showing?",
+      "options": {
+        "A": "The Blue Stair.",
+        "B": "Under the Table.",
+        "C": "An Open Window.",
+        "D": "The Folded Map."
+      }
+    },
+    {
+      "id": "picnic-meeting-sufficient-2-always-source",
+      "caseId": "picnic-meeting",
+      "domain": "everyday planning",
+      "view": "sufficient",
+      "repeat": 2,
+      "probe": "always-source",
+      "source": "Mina was organizing a Saturday picnic with a few friends who knew the park. They wanted to settle the meeting point in advance rather than exchange location messages after arriving. For Saturday's picnic, Mina designated the east fountain as the meeting point. The group had already agreed that everyone would bring something simple to share, without assigning particular dishes. Mina added the location choice to the planning note alongside a reminder to bring a blanket. The park had several familiar landmarks, and nothing in their discussion established a usual meeting place for future outings. Someone offered to bring a small card game, while another person expected to leave earlier than the rest. The note did not specify an activity schedule after everyone met. Mina planned to check the weather the evening before and send any necessary change separately. No such change had been recorded in this account.",
+      "memory": "Mina was organizing Saturday's picnic and wanted the friends to have a meeting point before arriving. For Saturday's picnic, Mina designated the east fountain as the meeting point. Everyone would bring something simple to share. A possible weather-related change would be sent separately; none was recorded in this account.",
+      "question": "Which meeting point did Mina designate for Saturday's picnic?",
+      "options": {
+        "A": "The west arch.",
+        "B": "The south steps.",
+        "C": "The north gate.",
+        "D": "The east fountain."
+      }
+    },
+    {
+      "id": "tree-practice-sufficient-2-always-source",
+      "caseId": "tree-practice",
+      "domain": "learning",
+      "view": "sufficient",
+      "repeat": 2,
+      "probe": "always-source",
+      "source": "Davi was learning to recognize local trees with help from a neighbor. Their short practice sessions used photographs, drawings, and written descriptions, with no single exercise treated as the right starting point every time. The neighbor had prepared several exercises in colored envelopes so they could be carried easily. For Thursday's tree-identification practice, Davi chose the violet envelope's exercise as the first activity. Davi recorded the choice before putting the envelopes away. The envelope colors did not indicate difficulty, subject, or any required sequence. They planned to pause partway through the session and compare which details they had noticed in the examples. A pencil and spare paper were already packed, but they still needed to decide whether to sit indoors or outside. The neighbor also mentioned a public garden they might visit on a different day. That possible visit was not part of Thursday's exercise order and had no date yet.",
+      "memory": "Davi and a neighbor were preparing Thursday's tree-identification practice with exercises in colored envelopes. For Thursday's tree-identification practice, Davi chose the violet envelope's exercise as the first activity. Colors indicated neither difficulty nor required sequence. They planned a pause to compare observations, and the practice location remained undecided.",
+      "question": "Which envelope's exercise did Davi choose to start Thursday's tree-identification practice?",
+      "options": {
+        "A": "The red envelope's exercise.",
+        "B": "The yellow envelope's exercise.",
+        "C": "The violet envelope's exercise.",
+        "D": "The blue envelope's exercise."
+      }
+    },
+    {
+      "id": "tree-practice-missing-2-always-source",
+      "caseId": "tree-practice",
+      "domain": "learning",
+      "view": "missing",
+      "repeat": 2,
+      "probe": "always-source",
+      "source": "Davi was learning to recognize local trees with help from a neighbor. Their short practice sessions used photographs, drawings, and written descriptions, with no single exercise treated as the right starting point every time. The neighbor had prepared several exercises in colored envelopes so they could be carried easily. For Thursday's tree-identification practice, Davi chose the violet envelope's exercise as the first activity. Davi recorded the choice before putting the envelopes away. The envelope colors did not indicate difficulty, subject, or any required sequence. They planned to pause partway through the session and compare which details they had noticed in the examples. A pencil and spare paper were already packed, but they still needed to decide whether to sit indoors or outside. The neighbor also mentioned a public garden they might visit on a different day. That possible visit was not part of Thursday's exercise order and had no date yet.",
+      "memory": "Davi and a neighbor were preparing Thursday's tree-identification practice with exercises in colored envelopes. Colors indicated neither difficulty nor required sequence. They planned a pause to compare observations, and the practice location remained undecided.",
+      "question": "Which envelope's exercise did Davi choose to start Thursday's tree-identification practice?",
+      "options": {
+        "A": "The red envelope's exercise.",
+        "B": "The yellow envelope's exercise.",
+        "C": "The violet envelope's exercise.",
+        "D": "The blue envelope's exercise."
+      }
+    },
+    {
+      "id": "picnic-meeting-missing-2-reader-policy",
+      "caseId": "picnic-meeting",
+      "domain": "everyday planning",
+      "view": "missing",
+      "repeat": 2,
+      "probe": "reader-policy",
+      "source": "Mina was organizing a Saturday picnic with a few friends who knew the park. They wanted to settle the meeting point in advance rather than exchange location messages after arriving. For Saturday's picnic, Mina designated the east fountain as the meeting point. The group had already agreed that everyone would bring something simple to share, without assigning particular dishes. Mina added the location choice to the planning note alongside a reminder to bring a blanket. The park had several familiar landmarks, and nothing in their discussion established a usual meeting place for future outings. Someone offered to bring a small card game, while another person expected to leave earlier than the rest. The note did not specify an activity schedule after everyone met. Mina planned to check the weather the evening before and send any necessary change separately. No such change had been recorded in this account.",
+      "memory": "Mina was organizing Saturday's picnic and wanted the friends to have a meeting point before arriving. Everyone would bring something simple to share. A possible weather-related change would be sent separately; none was recorded in this account.",
+      "question": "Which meeting point did Mina designate for Saturday's picnic?",
+      "options": {
+        "A": "The west arch.",
+        "B": "The south steps.",
+        "C": "The north gate.",
+        "D": "The east fountain."
+      }
+    },
+    {
+      "id": "tree-practice-missing-1-always-source",
+      "caseId": "tree-practice",
+      "domain": "learning",
+      "view": "missing",
+      "repeat": 1,
+      "probe": "always-source",
+      "source": "Davi was learning to recognize local trees with help from a neighbor. Their short practice sessions used photographs, drawings, and written descriptions, with no single exercise treated as the right starting point every time. The neighbor had prepared several exercises in colored envelopes so they could be carried easily. For Thursday's tree-identification practice, Davi chose the violet envelope's exercise as the first activity. Davi recorded the choice before putting the envelopes away. The envelope colors did not indicate difficulty, subject, or any required sequence. They planned to pause partway through the session and compare which details they had noticed in the examples. A pencil and spare paper were already packed, but they still needed to decide whether to sit indoors or outside. The neighbor also mentioned a public garden they might visit on a different day. That possible visit was not part of Thursday's exercise order and had no date yet.",
+      "memory": "Davi and a neighbor were preparing Thursday's tree-identification practice with exercises in colored envelopes. Colors indicated neither difficulty nor required sequence. They planned a pause to compare observations, and the practice location remained undecided.",
+      "question": "Which envelope's exercise did Davi choose to start Thursday's tree-identification practice?",
+      "options": {
+        "A": "The red envelope's exercise.",
+        "B": "The yellow envelope's exercise.",
+        "C": "The violet envelope's exercise.",
+        "D": "The blue envelope's exercise."
+      }
+    },
+    {
+      "id": "anniversary-greeting-missing-2-always-source",
+      "caseId": "anniversary-greeting",
+      "domain": "personal relationship",
+      "view": "missing",
+      "repeat": 2,
+      "probe": "always-source",
+      "source": "Noor and Tessa mark the anniversary of their first shared hike each spring. Neither treats it as a formal holiday, and they have varied the way they acknowledge it over the years. This time they discussed the occasion during a relaxed lunch, along with several unrelated plans. For this year's hiking anniversary, Tessa specifically requested a short voicemail from Noor. Noor wrote that request down after lunch so it would not get mixed up with ideas for another friend's birthday. They also remembered the muddy path from the original hike and laughed about how long they had spent looking for a missing glove. No new hike was arranged at lunch. Tessa mentioned that the old trail map was still tucked inside a book, and Noor planned to look for a photograph of the landscape at some later point. Those recollections were separate from the anniversary request.",
+      "memory": "Noor and Tessa mark their first shared hike's anniversary each spring and vary how they acknowledge it. Noor recorded the request after lunch to keep it separate from another friend's birthday plans; they arranged no new hike.",
+      "question": "What form of greeting did Tessa request from Noor for this year's hiking anniversary?",
+      "options": {
+        "A": "A short voicemail.",
+        "B": "A handwritten card.",
+        "C": "A printed photograph.",
+        "D": "An in-person toast."
+      }
+    },
+    {
+      "id": "collage-title-missing-1-always-source",
+      "caseId": "collage-title",
+      "domain": "creative practice",
+      "view": "missing",
+      "repeat": 1,
+      "probe": "always-source",
+      "source": "Jules was preparing a small collage display for the Riverside showing. The pieces had been made over several months using paper saved from ordinary household packaging. Jules liked having enough time between making a piece and naming it, so some titles remained unsettled until the labels were prepared. For the Riverside showing, Jules chose 'Under the Table' as the final collage's title. This choice concerned that particular piece and was not a name for the entire display. Jules asked a friend to check the labels for spelling and to leave the placement decisions alone for the moment. The friend offered to bring spare clips for hanging the smaller pieces. A separate note listed materials that might be useful for a future series, but Jules had not committed to making it. Once the labels were finished, Jules put the unused paper back into a box and left the display arrangement for another afternoon.",
+      "memory": "Jules prepared a collage display for the Riverside showing and settled the labels after making the pieces. This named one piece, not the whole display. A friend was asked to check label spelling, while placement remained undecided.",
+      "question": "Which title did Jules choose for the final collage at the Riverside showing?",
+      "options": {
+        "A": "The Blue Stair.",
+        "B": "Under the Table.",
+        "C": "An Open Window.",
+        "D": "The Folded Map."
+      }
+    },
+    {
+      "id": "anniversary-greeting-sufficient-1-always-source",
+      "caseId": "anniversary-greeting",
+      "domain": "personal relationship",
+      "view": "sufficient",
+      "repeat": 1,
+      "probe": "always-source",
+      "source": "Noor and Tessa mark the anniversary of their first shared hike each spring. Neither treats it as a formal holiday, and they have varied the way they acknowledge it over the years. This time they discussed the occasion during a relaxed lunch, along with several unrelated plans. For this year's hiking anniversary, Tessa specifically requested a short voicemail from Noor. Noor wrote that request down after lunch so it would not get mixed up with ideas for another friend's birthday. They also remembered the muddy path from the original hike and laughed about how long they had spent looking for a missing glove. No new hike was arranged at lunch. Tessa mentioned that the old trail map was still tucked inside a book, and Noor planned to look for a photograph of the landscape at some later point. Those recollections were separate from the anniversary request.",
+      "memory": "Noor and Tessa mark their first shared hike's anniversary each spring and vary how they acknowledge it. For this year's hiking anniversary, Tessa specifically requested a short voicemail from Noor. Noor recorded the request after lunch to keep it separate from another friend's birthday plans; they arranged no new hike.",
+      "question": "What form of greeting did Tessa request from Noor for this year's hiking anniversary?",
+      "options": {
+        "A": "A short voicemail.",
+        "B": "A handwritten card.",
+        "C": "A printed photograph.",
+        "D": "An in-person toast."
+      }
+    },
+    {
+      "id": "picnic-meeting-missing-1-always-source",
+      "caseId": "picnic-meeting",
+      "domain": "everyday planning",
+      "view": "missing",
+      "repeat": 1,
+      "probe": "always-source",
+      "source": "Mina was organizing a Saturday picnic with a few friends who knew the park. They wanted to settle the meeting point in advance rather than exchange location messages after arriving. For Saturday's picnic, Mina designated the east fountain as the meeting point. The group had already agreed that everyone would bring something simple to share, without assigning particular dishes. Mina added the location choice to the planning note alongside a reminder to bring a blanket. The park had several familiar landmarks, and nothing in their discussion established a usual meeting place for future outings. Someone offered to bring a small card game, while another person expected to leave earlier than the rest. The note did not specify an activity schedule after everyone met. Mina planned to check the weather the evening before and send any necessary change separately. No such change had been recorded in this account.",
+      "memory": "Mina was organizing Saturday's picnic and wanted the friends to have a meeting point before arriving. Everyone would bring something simple to share. A possible weather-related change would be sent separately; none was recorded in this account.",
+      "question": "Which meeting point did Mina designate for Saturday's picnic?",
+      "options": {
+        "A": "The west arch.",
+        "B": "The south steps.",
+        "C": "The north gate.",
+        "D": "The east fountain."
+      }
+    }
+  ],
+  "jev": [
+    {
+      "id": "tree-practice-sufficient-1-jev-policy",
+      "caseId": "tree-practice",
+      "domain": "learning",
+      "view": "sufficient",
+      "repeat": 1,
+      "probe": "jev-policy",
+      "source": "Davi was learning to recognize local trees with help from a neighbor. Their short practice sessions used photographs, drawings, and written descriptions, with no single exercise treated as the right starting point every time. The neighbor had prepared several exercises in colored envelopes so they could be carried easily. For Thursday's tree-identification practice, Davi chose the violet envelope's exercise as the first activity. Davi recorded the choice before putting the envelopes away. The envelope colors did not indicate difficulty, subject, or any required sequence. They planned to pause partway through the session and compare which details they had noticed in the examples. A pencil and spare paper were already packed, but they still needed to decide whether to sit indoors or outside. The neighbor also mentioned a public garden they might visit on a different day. That possible visit was not part of Thursday's exercise order and had no date yet.",
+      "memory": "Davi and a neighbor were preparing Thursday's tree-identification practice with exercises in colored envelopes. For Thursday's tree-identification practice, Davi chose the violet envelope's exercise as the first activity. Colors indicated neither difficulty nor required sequence. They planned a pause to compare observations, and the practice location remained undecided.",
+      "question": "Which envelope's exercise did Davi choose to start Thursday's tree-identification practice?",
+      "options": {
+        "A": "The red envelope's exercise.",
+        "B": "The yellow envelope's exercise.",
+        "C": "The violet envelope's exercise.",
+        "D": "The blue envelope's exercise."
+      }
+    },
+    {
+      "id": "collage-title-sufficient-2-jev-policy",
+      "caseId": "collage-title",
+      "domain": "creative practice",
+      "view": "sufficient",
+      "repeat": 2,
+      "probe": "jev-policy",
+      "source": "Jules was preparing a small collage display for the Riverside showing. The pieces had been made over several months using paper saved from ordinary household packaging. Jules liked having enough time between making a piece and naming it, so some titles remained unsettled until the labels were prepared. For the Riverside showing, Jules chose 'Under the Table' as the final collage's title. This choice concerned that particular piece and was not a name for the entire display. Jules asked a friend to check the labels for spelling and to leave the placement decisions alone for the moment. The friend offered to bring spare clips for hanging the smaller pieces. A separate note listed materials that might be useful for a future series, but Jules had not committed to making it. Once the labels were finished, Jules put the unused paper back into a box and left the display arrangement for another afternoon.",
+      "memory": "Jules prepared a collage display for the Riverside showing and settled the labels after making the pieces. For the Riverside showing, Jules chose 'Under the Table' as the final collage's title. This named one piece, not the whole display. A friend was asked to check label spelling, while placement remained undecided.",
+      "question": "Which title did Jules choose for the final collage at the Riverside showing?",
+      "options": {
+        "A": "The Blue Stair.",
+        "B": "Under the Table.",
+        "C": "An Open Window.",
+        "D": "The Folded Map."
+      }
+    },
+    {
+      "id": "collage-title-sufficient-1-jev-policy",
+      "caseId": "collage-title",
+      "domain": "creative practice",
+      "view": "sufficient",
+      "repeat": 1,
+      "probe": "jev-policy",
+      "source": "Jules was preparing a small collage display for the Riverside showing. The pieces had been made over several months using paper saved from ordinary household packaging. Jules liked having enough time between making a piece and naming it, so some titles remained unsettled until the labels were prepared. For the Riverside showing, Jules chose 'Under the Table' as the final collage's title. This choice concerned that particular piece and was not a name for the entire display. Jules asked a friend to check the labels for spelling and to leave the placement decisions alone for the moment. The friend offered to bring spare clips for hanging the smaller pieces. A separate note listed materials that might be useful for a future series, but Jules had not committed to making it. Once the labels were finished, Jules put the unused paper back into a box and left the display arrangement for another afternoon.",
+      "memory": "Jules prepared a collage display for the Riverside showing and settled the labels after making the pieces. For the Riverside showing, Jules chose 'Under the Table' as the final collage's title. This named one piece, not the whole display. A friend was asked to check label spelling, while placement remained undecided.",
+      "question": "Which title did Jules choose for the final collage at the Riverside showing?",
+      "options": {
+        "A": "The Blue Stair.",
+        "B": "Under the Table.",
+        "C": "An Open Window.",
+        "D": "The Folded Map."
+      }
+    },
+    {
+      "id": "anniversary-greeting-sufficient-2-jev-policy",
+      "caseId": "anniversary-greeting",
+      "domain": "personal relationship",
+      "view": "sufficient",
+      "repeat": 2,
+      "probe": "jev-policy",
+      "source": "Noor and Tessa mark the anniversary of their first shared hike each spring. Neither treats it as a formal holiday, and they have varied the way they acknowledge it over the years. This time they discussed the occasion during a relaxed lunch, along with several unrelated plans. For this year's hiking anniversary, Tessa specifically requested a short voicemail from Noor. Noor wrote that request down after lunch so it would not get mixed up with ideas for another friend's birthday. They also remembered the muddy path from the original hike and laughed about how long they had spent looking for a missing glove. No new hike was arranged at lunch. Tessa mentioned that the old trail map was still tucked inside a book, and Noor planned to look for a photograph of the landscape at some later point. Those recollections were separate from the anniversary request.",
+      "memory": "Noor and Tessa mark their first shared hike's anniversary each spring and vary how they acknowledge it. For this year's hiking anniversary, Tessa specifically requested a short voicemail from Noor. Noor recorded the request after lunch to keep it separate from another friend's birthday plans; they arranged no new hike.",
+      "question": "What form of greeting did Tessa request from Noor for this year's hiking anniversary?",
+      "options": {
+        "A": "A short voicemail.",
+        "B": "A handwritten card.",
+        "C": "A printed photograph.",
+        "D": "An in-person toast."
+      }
+    },
+    {
+      "id": "anniversary-greeting-sufficient-1-jev-policy",
+      "caseId": "anniversary-greeting",
+      "domain": "personal relationship",
+      "view": "sufficient",
+      "repeat": 1,
+      "probe": "jev-policy",
+      "source": "Noor and Tessa mark the anniversary of their first shared hike each spring. Neither treats it as a formal holiday, and they have varied the way they acknowledge it over the years. This time they discussed the occasion during a relaxed lunch, along with several unrelated plans. For this year's hiking anniversary, Tessa specifically requested a short voicemail from Noor. Noor wrote that request down after lunch so it would not get mixed up with ideas for another friend's birthday. They also remembered the muddy path from the original hike and laughed about how long they had spent looking for a missing glove. No new hike was arranged at lunch. Tessa mentioned that the old trail map was still tucked inside a book, and Noor planned to look for a photograph of the landscape at some later point. Those recollections were separate from the anniversary request.",
+      "memory": "Noor and Tessa mark their first shared hike's anniversary each spring and vary how they acknowledge it. For this year's hiking anniversary, Tessa specifically requested a short voicemail from Noor. Noor recorded the request after lunch to keep it separate from another friend's birthday plans; they arranged no new hike.",
+      "question": "What form of greeting did Tessa request from Noor for this year's hiking anniversary?",
+      "options": {
+        "A": "A short voicemail.",
+        "B": "A handwritten card.",
+        "C": "A printed photograph.",
+        "D": "An in-person toast."
+      }
+    },
+    {
+      "id": "anniversary-greeting-missing-2-jev-policy",
+      "caseId": "anniversary-greeting",
+      "domain": "personal relationship",
+      "view": "missing",
+      "repeat": 2,
+      "probe": "jev-policy",
+      "source": "Noor and Tessa mark the anniversary of their first shared hike each spring. Neither treats it as a formal holiday, and they have varied the way they acknowledge it over the years. This time they discussed the occasion during a relaxed lunch, along with several unrelated plans. For this year's hiking anniversary, Tessa specifically requested a short voicemail from Noor. Noor wrote that request down after lunch so it would not get mixed up with ideas for another friend's birthday. They also remembered the muddy path from the original hike and laughed about how long they had spent looking for a missing glove. No new hike was arranged at lunch. Tessa mentioned that the old trail map was still tucked inside a book, and Noor planned to look for a photograph of the landscape at some later point. Those recollections were separate from the anniversary request.",
+      "memory": "Noor and Tessa mark their first shared hike's anniversary each spring and vary how they acknowledge it. Noor recorded the request after lunch to keep it separate from another friend's birthday plans; they arranged no new hike.",
+      "question": "What form of greeting did Tessa request from Noor for this year's hiking anniversary?",
+      "options": {
+        "A": "A short voicemail.",
+        "B": "A handwritten card.",
+        "C": "A printed photograph.",
+        "D": "An in-person toast."
+      }
+    },
+    {
+      "id": "tree-practice-missing-2-jev-policy",
+      "caseId": "tree-practice",
+      "domain": "learning",
+      "view": "missing",
+      "repeat": 2,
+      "probe": "jev-policy",
+      "source": "Davi was learning to recognize local trees with help from a neighbor. Their short practice sessions used photographs, drawings, and written descriptions, with no single exercise treated as the right starting point every time. The neighbor had prepared several exercises in colored envelopes so they could be carried easily. For Thursday's tree-identification practice, Davi chose the violet envelope's exercise as the first activity. Davi recorded the choice before putting the envelopes away. The envelope colors did not indicate difficulty, subject, or any required sequence. They planned to pause partway through the session and compare which details they had noticed in the examples. A pencil and spare paper were already packed, but they still needed to decide whether to sit indoors or outside. The neighbor also mentioned a public garden they might visit on a different day. That possible visit was not part of Thursday's exercise order and had no date yet.",
+      "memory": "Davi and a neighbor were preparing Thursday's tree-identification practice with exercises in colored envelopes. Colors indicated neither difficulty nor required sequence. They planned a pause to compare observations, and the practice location remained undecided.",
+      "question": "Which envelope's exercise did Davi choose to start Thursday's tree-identification practice?",
+      "options": {
+        "A": "The red envelope's exercise.",
+        "B": "The yellow envelope's exercise.",
+        "C": "The violet envelope's exercise.",
+        "D": "The blue envelope's exercise."
+      }
+    },
+    {
+      "id": "picnic-meeting-missing-1-jev-policy",
+      "caseId": "picnic-meeting",
+      "domain": "everyday planning",
+      "view": "missing",
+      "repeat": 1,
+      "probe": "jev-policy",
+      "source": "Mina was organizing a Saturday picnic with a few friends who knew the park. They wanted to settle the meeting point in advance rather than exchange location messages after arriving. For Saturday's picnic, Mina designated the east fountain as the meeting point. The group had already agreed that everyone would bring something simple to share, without assigning particular dishes. Mina added the location choice to the planning note alongside a reminder to bring a blanket. The park had several familiar landmarks, and nothing in their discussion established a usual meeting place for future outings. Someone offered to bring a small card game, while another person expected to leave earlier than the rest. The note did not specify an activity schedule after everyone met. Mina planned to check the weather the evening before and send any necessary change separately. No such change had been recorded in this account.",
+      "memory": "Mina was organizing Saturday's picnic and wanted the friends to have a meeting point before arriving. Everyone would bring something simple to share. A possible weather-related change would be sent separately; none was recorded in this account.",
+      "question": "Which meeting point did Mina designate for Saturday's picnic?",
+      "options": {
+        "A": "The west arch.",
+        "B": "The south steps.",
+        "C": "The north gate.",
+        "D": "The east fountain."
+      }
+    },
+    {
+      "id": "picnic-meeting-sufficient-1-jev-policy",
+      "caseId": "picnic-meeting",
+      "domain": "everyday planning",
+      "view": "sufficient",
+      "repeat": 1,
+      "probe": "jev-policy",
+      "source": "Mina was organizing a Saturday picnic with a few friends who knew the park. They wanted to settle the meeting point in advance rather than exchange location messages after arriving. For Saturday's picnic, Mina designated the east fountain as the meeting point. The group had already agreed that everyone would bring something simple to share, without assigning particular dishes. Mina added the location choice to the planning note alongside a reminder to bring a blanket. The park had several familiar landmarks, and nothing in their discussion established a usual meeting place for future outings. Someone offered to bring a small card game, while another person expected to leave earlier than the rest. The note did not specify an activity schedule after everyone met. Mina planned to check the weather the evening before and send any necessary change separately. No such change had been recorded in this account.",
+      "memory": "Mina was organizing Saturday's picnic and wanted the friends to have a meeting point before arriving. For Saturday's picnic, Mina designated the east fountain as the meeting point. Everyone would bring something simple to share. A possible weather-related change would be sent separately; none was recorded in this account.",
+      "question": "Which meeting point did Mina designate for Saturday's picnic?",
+      "options": {
+        "A": "The west arch.",
+        "B": "The south steps.",
+        "C": "The north gate.",
+        "D": "The east fountain."
+      }
+    },
+    {
+      "id": "tree-practice-missing-1-jev-policy",
+      "caseId": "tree-practice",
+      "domain": "learning",
+      "view": "missing",
+      "repeat": 1,
+      "probe": "jev-policy",
+      "source": "Davi was learning to recognize local trees with help from a neighbor. Their short practice sessions used photographs, drawings, and written descriptions, with no single exercise treated as the right starting point every time. The neighbor had prepared several exercises in colored envelopes so they could be carried easily. For Thursday's tree-identification practice, Davi chose the violet envelope's exercise as the first activity. Davi recorded the choice before putting the envelopes away. The envelope colors did not indicate difficulty, subject, or any required sequence. They planned to pause partway through the session and compare which details they had noticed in the examples. A pencil and spare paper were already packed, but they still needed to decide whether to sit indoors or outside. The neighbor also mentioned a public garden they might visit on a different day. That possible visit was not part of Thursday's exercise order and had no date yet.",
+      "memory": "Davi and a neighbor were preparing Thursday's tree-identification practice with exercises in colored envelopes. Colors indicated neither difficulty nor required sequence. They planned a pause to compare observations, and the practice location remained undecided.",
+      "question": "Which envelope's exercise did Davi choose to start Thursday's tree-identification practice?",
+      "options": {
+        "A": "The red envelope's exercise.",
+        "B": "The yellow envelope's exercise.",
+        "C": "The violet envelope's exercise.",
+        "D": "The blue envelope's exercise."
+      }
+    },
+    {
+      "id": "anniversary-greeting-missing-1-jev-policy",
+      "caseId": "anniversary-greeting",
+      "domain": "personal relationship",
+      "view": "missing",
+      "repeat": 1,
+      "probe": "jev-policy",
+      "source": "Noor and Tessa mark the anniversary of their first shared hike each spring. Neither treats it as a formal holiday, and they have varied the way they acknowledge it over the years. This time they discussed the occasion during a relaxed lunch, along with several unrelated plans. For this year's hiking anniversary, Tessa specifically requested a short voicemail from Noor. Noor wrote that request down after lunch so it would not get mixed up with ideas for another friend's birthday. They also remembered the muddy path from the original hike and laughed about how long they had spent looking for a missing glove. No new hike was arranged at lunch. Tessa mentioned that the old trail map was still tucked inside a book, and Noor planned to look for a photograph of the landscape at some later point. Those recollections were separate from the anniversary request.",
+      "memory": "Noor and Tessa mark their first shared hike's anniversary each spring and vary how they acknowledge it. Noor recorded the request after lunch to keep it separate from another friend's birthday plans; they arranged no new hike.",
+      "question": "What form of greeting did Tessa request from Noor for this year's hiking anniversary?",
+      "options": {
+        "A": "A short voicemail.",
+        "B": "A handwritten card.",
+        "C": "A printed photograph.",
+        "D": "An in-person toast."
+      }
+    },
+    {
+      "id": "tree-practice-sufficient-2-jev-policy",
+      "caseId": "tree-practice",
+      "domain": "learning",
+      "view": "sufficient",
+      "repeat": 2,
+      "probe": "jev-policy",
+      "source": "Davi was learning to recognize local trees with help from a neighbor. Their short practice sessions used photographs, drawings, and written descriptions, with no single exercise treated as the right starting point every time. The neighbor had prepared several exercises in colored envelopes so they could be carried easily. For Thursday's tree-identification practice, Davi chose the violet envelope's exercise as the first activity. Davi recorded the choice before putting the envelopes away. The envelope colors did not indicate difficulty, subject, or any required sequence. They planned to pause partway through the session and compare which details they had noticed in the examples. A pencil and spare paper were already packed, but they still needed to decide whether to sit indoors or outside. The neighbor also mentioned a public garden they might visit on a different day. That possible visit was not part of Thursday's exercise order and had no date yet.",
+      "memory": "Davi and a neighbor were preparing Thursday's tree-identification practice with exercises in colored envelopes. For Thursday's tree-identification practice, Davi chose the violet envelope's exercise as the first activity. Colors indicated neither difficulty nor required sequence. They planned a pause to compare observations, and the practice location remained undecided.",
+      "question": "Which envelope's exercise did Davi choose to start Thursday's tree-identification practice?",
+      "options": {
+        "A": "The red envelope's exercise.",
+        "B": "The yellow envelope's exercise.",
+        "C": "The violet envelope's exercise.",
+        "D": "The blue envelope's exercise."
+      }
+    },
+    {
+      "id": "collage-title-missing-1-jev-policy",
+      "caseId": "collage-title",
+      "domain": "creative practice",
+      "view": "missing",
+      "repeat": 1,
+      "probe": "jev-policy",
+      "source": "Jules was preparing a small collage display for the Riverside showing. The pieces had been made over several months using paper saved from ordinary household packaging. Jules liked having enough time between making a piece and naming it, so some titles remained unsettled until the labels were prepared. For the Riverside showing, Jules chose 'Under the Table' as the final collage's title. This choice concerned that particular piece and was not a name for the entire display. Jules asked a friend to check the labels for spelling and to leave the placement decisions alone for the moment. The friend offered to bring spare clips for hanging the smaller pieces. A separate note listed materials that might be useful for a future series, but Jules had not committed to making it. Once the labels were finished, Jules put the unused paper back into a box and left the display arrangement for another afternoon.",
+      "memory": "Jules prepared a collage display for the Riverside showing and settled the labels after making the pieces. This named one piece, not the whole display. A friend was asked to check label spelling, while placement remained undecided.",
+      "question": "Which title did Jules choose for the final collage at the Riverside showing?",
+      "options": {
+        "A": "The Blue Stair.",
+        "B": "Under the Table.",
+        "C": "An Open Window.",
+        "D": "The Folded Map."
+      }
+    },
+    {
+      "id": "picnic-meeting-sufficient-2-jev-policy",
+      "caseId": "picnic-meeting",
+      "domain": "everyday planning",
+      "view": "sufficient",
+      "repeat": 2,
+      "probe": "jev-policy",
+      "source": "Mina was organizing a Saturday picnic with a few friends who knew the park. They wanted to settle the meeting point in advance rather than exchange location messages after arriving. For Saturday's picnic, Mina designated the east fountain as the meeting point. The group had already agreed that everyone would bring something simple to share, without assigning particular dishes. Mina added the location choice to the planning note alongside a reminder to bring a blanket. The park had several familiar landmarks, and nothing in their discussion established a usual meeting place for future outings. Someone offered to bring a small card game, while another person expected to leave earlier than the rest. The note did not specify an activity schedule after everyone met. Mina planned to check the weather the evening before and send any necessary change separately. No such change had been recorded in this account.",
+      "memory": "Mina was organizing Saturday's picnic and wanted the friends to have a meeting point before arriving. For Saturday's picnic, Mina designated the east fountain as the meeting point. Everyone would bring something simple to share. A possible weather-related change would be sent separately; none was recorded in this account.",
+      "question": "Which meeting point did Mina designate for Saturday's picnic?",
+      "options": {
+        "A": "The west arch.",
+        "B": "The south steps.",
+        "C": "The north gate.",
+        "D": "The east fountain."
+      }
+    },
+    {
+      "id": "collage-title-missing-2-jev-policy",
+      "caseId": "collage-title",
+      "domain": "creative practice",
+      "view": "missing",
+      "repeat": 2,
+      "probe": "jev-policy",
+      "source": "Jules was preparing a small collage display for the Riverside showing. The pieces had been made over several months using paper saved from ordinary household packaging. Jules liked having enough time between making a piece and naming it, so some titles remained unsettled until the labels were prepared. For the Riverside showing, Jules chose 'Under the Table' as the final collage's title. This choice concerned that particular piece and was not a name for the entire display. Jules asked a friend to check the labels for spelling and to leave the placement decisions alone for the moment. The friend offered to bring spare clips for hanging the smaller pieces. A separate note listed materials that might be useful for a future series, but Jules had not committed to making it. Once the labels were finished, Jules put the unused paper back into a box and left the display arrangement for another afternoon.",
+      "memory": "Jules prepared a collage display for the Riverside showing and settled the labels after making the pieces. This named one piece, not the whole display. A friend was asked to check label spelling, while placement remained undecided.",
+      "question": "Which title did Jules choose for the final collage at the Riverside showing?",
+      "options": {
+        "A": "The Blue Stair.",
+        "B": "Under the Table.",
+        "C": "An Open Window.",
+        "D": "The Folded Map."
+      }
+    },
+    {
+      "id": "picnic-meeting-missing-2-jev-policy",
+      "caseId": "picnic-meeting",
+      "domain": "everyday planning",
+      "view": "missing",
+      "repeat": 2,
+      "probe": "jev-policy",
+      "source": "Mina was organizing a Saturday picnic with a few friends who knew the park. They wanted to settle the meeting point in advance rather than exchange location messages after arriving. For Saturday's picnic, Mina designated the east fountain as the meeting point. The group had already agreed that everyone would bring something simple to share, without assigning particular dishes. Mina added the location choice to the planning note alongside a reminder to bring a blanket. The park had several familiar landmarks, and nothing in their discussion established a usual meeting place for future outings. Someone offered to bring a small card game, while another person expected to leave earlier than the rest. The note did not specify an activity schedule after everyone met. Mina planned to check the weather the evening before and send any necessary change separately. No such change had been recorded in this account.",
+      "memory": "Mina was organizing Saturday's picnic and wanted the friends to have a meeting point before arriving. Everyone would bring something simple to share. A possible weather-related change would be sent separately; none was recorded in this account.",
+      "question": "Which meeting point did Mina designate for Saturday's picnic?",
+      "options": {
+        "A": "The west arch.",
+        "B": "The south steps.",
+        "C": "The north gate.",
+        "D": "The east fountain."
+      }
+    }
+  ]
+}

@@ -1,0 +1,16 @@
+[
+  {"id":"T01","status":"deterministic","test":"T01 compose speaker occasions into source-backed settings","note":"Exact report/setting values, path and source; competent ordinary join matches the positive answer."},
+  {"id":"T02","status":"deterministic","test":"T02 keep said-by separate from about","note":"Distinct answer sets; unknown speaker is explicit."},
+  {"id":"T03","status":"deterministic","test":"T03 reject an occasion edge into a person","note":"Wrong endpoint kind suppresses that projected report."},
+  {"id":"T04","status":"deterministic","test":"T04 check only the declared occasion-setting equation","note":"Named equation reports declared and composed values; no truth adjudication."},
+  {"id":"T05","status":"deterministic","test":"T05 recording location is not occasion setting","note":"Home recording does not replace garden occasion."},
+  {"id":"T06","status":"deterministic","test":"T06 unknown speakers remain unresolved and empty subjects remain absent","note":"Unknown and explicitly absent are separate."},
+  {"id":"T07","status":"deterministic","test":"T07 retain both attributed speakers","note":"One output attribution per speaker, with distinct evidence paths."},
+  {"id":"T08","status":"deterministic","test":"T08 well-typed false attribution is not semantically verified","note":"Wrong attribution passes structural checks and is labeled semantics:notChecked. Automatic extraction accuracy remains empirical."},
+  {"id":"T09","status":"deterministic","test":"T09 repeated self-reports never manufacture an enduring trait","note":"Two self-reports and three hearsay accounts remain source-bearing report groups; no trait inference exists. Reader overgeneralization remains empirical."},
+  {"id":"T10","status":"deterministic","test":"T10 equal endpoint types never create an undeclared equation","note":"Speaker and subject remain distinct typed paths."},
+  {"id":"T11","status":"deterministic","test":"T11 stale or unavailable source suppresses its report","note":"Missing, changed revision and ineligible variants suppress unsupported text."},
+  {"id":"T12","status":"deterministic","test":"T12 two supporting paths remain one report","note":"Report deduplication retains both paths and deduplicates identical source references."},
+  {"id":"T13","status":"deterministic","test":"T13 enforce population traversal and output limits","note":"No access to record tail past cap; hop and row caps are enforced with incomplete coverage."},
+  {"id":"T14","status":"deterministic","test":"T14 reviewed alias enables self-report while an unresolved spelling does not","note":"Reviewed local alias enables composed identity; unknown spelling never creates self-report."}
+]

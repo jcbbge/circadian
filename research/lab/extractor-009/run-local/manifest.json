@@ -1,0 +1,19 @@
+{
+  "study": "extractor-009-serving-ablation",
+  "at": "2026-10-12T05:26:51.545Z",
+  "calls": 36,
+  "cohort": "exposed-development",
+  "parentManifest": "b1d49bea25ccd2ed86427a5d6d3db88d1986d8daefdf58fd86564293558a147b",
+  "historicalComparator": "6b6399aced2fbd72b815ff070278e3201441ee7a70bdcc4dc0448859539274a9",
+  "reviewHash": "51935040a3e7b0801259b88735e54ebbde371371bf442502d89aa2ae94763e0f",
+  "sourceHashes": {
+    "/Users/jrg/circadian/research/lab/extractor-009/runner.ts": "2c9089fb177bf4350b2b87c87c0951e9ba8461f5e1397f56efbf0d840091afec",
+    "/Users/jrg/circadian/research/lab/extractor-009/PROTOCOL.md": "8ef5ee7806152ffbee5bf8aa228ccf7d1523481dc6c78f412c98bf6838510ade"
+  },
+  "inputs": {
+    "fixtures.json": "42f597f6ac77083463ca97ba52e342e433aafd0ef3c7b0bd5596041952c7a406",
+    "config.json": "dacdff21e2e3ca544bdcbcf5c849cc1b4fc1700bf17aec3a7531072cad21077c",
+    "pairs.json": "b365fd5876c77167969a3169e4978cb1367b8e6ef8bdfe1b488314a7443e680e",
+    "jobs.json": "5ddd88bd7ec2ac33684768a74b7fd824254d76c4fe7c4d59eec58b92cb111901"
+  }
+}

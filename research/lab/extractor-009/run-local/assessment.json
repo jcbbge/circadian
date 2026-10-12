@@ -1,0 +1,871 @@
+{
+  "study": "009",
+  "status": "complete",
+  "at": "2026-10-12T05:31:33.827485+00:00",
+  "studyCalls": 36,
+  "remoteStudyCalls": 0,
+  "retries": 0,
+  "bundles": 18,
+  "usableStructured": 15,
+  "cohorts": {
+    "exposed-development": {
+      "bundles": 18,
+      "usable": 15,
+      "criticalFieldFailureOutputs": 2,
+      "semantic": {
+        "preparation": {
+          "structured": {
+            "count": 18,
+            "meaningPass": 15,
+            "criticalErrors": 3,
+            "uncertaintyCorrect": 15,
+            "unsupportedClaimOutputs": 3,
+            "packetSupported": null
+          }
+        },
+        "reader": {
+          "structured": {
+            "count": 18,
+            "meaningPass": 12,
+            "criticalErrors": 3,
+            "uncertaintyCorrect": 15,
+            "unsupportedClaimOutputs": 6,
+            "packetSupported": 14
+          }
+        }
+      }
+    }
+  },
+  "mechanisms": {
+    "01": {
+      "bundles": 2,
+      "usable": 2,
+      "preparation": {
+        "count": 2,
+        "meaningPass": 2,
+        "criticalErrors": 0,
+        "uncertaintyCorrect": 2,
+        "unsupportedClaimOutputs": 0,
+        "packetSupported": null
+      },
+      "reader": {
+        "count": 2,
+        "meaningPass": 2,
+        "criticalErrors": 0,
+        "uncertaintyCorrect": 2,
+        "unsupportedClaimOutputs": 0,
+        "packetSupported": 2
+      },
+      "strictReadyCases": [
+        "cal-01-qualified-view",
+        "confirm-h31"
+      ]
+    },
+    "02": {
+      "bundles": 3,
+      "usable": 3,
+      "preparation": {
+        "count": 3,
+        "meaningPass": 3,
+        "criticalErrors": 0,
+        "uncertaintyCorrect": 3,
+        "unsupportedClaimOutputs": 0,
+        "packetSupported": null
+      },
+      "reader": {
+        "count": 3,
+        "meaningPass": 2,
+        "criticalErrors": 0,
+        "uncertaintyCorrect": 3,
+        "unsupportedClaimOutputs": 0,
+        "packetSupported": 3
+      },
+      "strictReadyCases": [
+        "cal-02-disjoint-contexts",
+        "confirm-p84"
+      ]
+    },
+    "03": {
+      "bundles": 4,
+      "usable": 4,
+      "preparation": {
+        "count": 4,
+        "meaningPass": 2,
+        "criticalErrors": 2,
+        "uncertaintyCorrect": 2,
+        "unsupportedClaimOutputs": 2,
+        "packetSupported": null
+      },
+      "reader": {
+        "count": 4,
+        "meaningPass": 2,
+        "criticalErrors": 2,
+        "uncertaintyCorrect": 2,
+        "unsupportedClaimOutputs": 2,
+        "packetSupported": 4
+      },
+      "strictReadyCases": [
+        "cal-03-speaker-subject",
+        "confirm-d57"
+      ]
+    },
+    "04": {
+      "bundles": 2,
+      "usable": 2,
+      "preparation": {
+        "count": 2,
+        "meaningPass": 2,
+        "criticalErrors": 0,
+        "uncertaintyCorrect": 2,
+        "unsupportedClaimOutputs": 0,
+        "packetSupported": null
+      },
+      "reader": {
+        "count": 2,
+        "meaningPass": 2,
+        "criticalErrors": 0,
+        "uncertaintyCorrect": 2,
+        "unsupportedClaimOutputs": 1,
+        "packetSupported": 1
+      },
+      "strictReadyCases": [
+        "cal-04-conservatory"
+      ]
+    },
+    "05": {
+      "bundles": 2,
+      "usable": 1,
+      "preparation": {
+        "count": 2,
+        "meaningPass": 1,
+        "criticalErrors": 1,
+        "uncertaintyCorrect": 1,
+        "unsupportedClaimOutputs": 1,
+        "packetSupported": null
+      },
+      "reader": {
+        "count": 2,
+        "meaningPass": 1,
+        "criticalErrors": 1,
+        "uncertaintyCorrect": 1,
+        "unsupportedClaimOutputs": 1,
+        "packetSupported": 1
+      },
+      "strictReadyCases": [
+        "cal-05-lanterns"
+      ]
+    },
+    "06": {
+      "bundles": 5,
+      "usable": 3,
+      "preparation": {
+        "count": 5,
+        "meaningPass": 5,
+        "criticalErrors": 0,
+        "uncertaintyCorrect": 5,
+        "unsupportedClaimOutputs": 0,
+        "packetSupported": null
+      },
+      "reader": {
+        "count": 5,
+        "meaningPass": 3,
+        "criticalErrors": 0,
+        "uncertaintyCorrect": 5,
+        "unsupportedClaimOutputs": 2,
+        "packetSupported": 3
+      },
+      "strictReadyCases": [
+        "cal-06-journal-old",
+        "cal-06-journal-candidate",
+        "confirm-r15"
+      ]
+    }
+  },
+  "strictReadyCases": [
+    "cal-01-qualified-view",
+    "confirm-h31",
+    "cal-02-disjoint-contexts",
+    "confirm-p84",
+    "cal-03-speaker-subject",
+    "confirm-d57",
+    "cal-04-conservatory",
+    "cal-05-lanterns",
+    "cal-06-journal-old",
+    "cal-06-journal-candidate",
+    "confirm-r15"
+  ],
+  "strictReadinessPassed": false,
+  "semanticTotals": {
+    "preparation": {
+      "structured": {
+        "count": 18,
+        "meaningPass": 15,
+        "criticalErrors": 3,
+        "uncertaintyCorrect": 15,
+        "unsupportedClaimOutputs": 3,
+        "packetSupported": null
+      }
+    },
+    "reader": {
+      "structured": {
+        "count": 18,
+        "meaningPass": 12,
+        "criticalErrors": 3,
+        "uncertaintyCorrect": 15,
+        "unsupportedClaimOutputs": 6,
+        "packetSupported": 14
+      }
+    }
+  },
+  "changedByAdjudication": [],
+  "tokens": {
+    "prompt_tokens": 23093,
+    "completion_tokens": 3080,
+    "total_tokens": 26173
+  },
+  "sumRequestMs": 45558,
+  "stageCosts": {
+    "extract": {
+      "calls": 18,
+      "sumRequestMs": 30604,
+      "tokens": {
+        "prompt_tokens": 13813,
+        "completion_tokens": 2154,
+        "total_tokens": 15967
+      }
+    },
+    "read-structured": {
+      "calls": 18,
+      "sumRequestMs": 14954,
+      "tokens": {
+        "prompt_tokens": 9280,
+        "completion_tokens": 926,
+        "total_tokens": 10206
+      }
+    }
+  },
+  "items": [
+    {
+      "id": "item-01",
+      "caseId": "confirm-v26",
+      "mechanism": "02",
+      "cohort": "exposed-development",
+      "form": "structured",
+      "stage": "preparation",
+      "callId": "confirm-v26/extract",
+      "meaningPass": true,
+      "unsupportedClaims": [],
+      "omissions": [],
+      "uncertaintyCorrect": true,
+      "criticalError": false,
+      "supportedByPresentedMemory": null,
+      "rationale": "The maintenance and safety accounts retain the courtyard-pump subject, respectively running and stopped values, and Monday applicability. They remain separate accounts; the output supplies no invented resolution or common conclusion. Property and source bookkeeping are supplied by the caller and need not be repeated for semantic fidelity."
+    },
+    {
+      "id": "item-02",
+      "caseId": "cal-06-journal-old",
+      "mechanism": "06",
+      "cohort": "exposed-development",
+      "form": "structured",
+      "stage": "preparation",
+      "callId": "cal-06-journal-old/extract",
+      "meaningPass": true,
+      "unsupportedClaims": [],
+      "omissions": [],
+      "uncertaintyCorrect": true,
+      "criticalError": false,
+      "supportedByPresentedMemory": null,
+      "rationale": "The output preserves Noor as the person, her travel-journal writing as attribution, short winter walks as the condition, might prefer as the modality, and canal path over hill trail as the comparison. These are the source phrases; no field is falsely declared absent or certain."
+    },
+    {
+      "id": "item-03",
+      "caseId": "confirm-r15",
+      "mechanism": "06",
+      "cohort": "exposed-development",
+      "form": "structured",
+      "stage": "reader",
+      "callId": "confirm-r15/read-structured",
+      "meaningPass": true,
+      "unsupportedClaims": [],
+      "omissions": [],
+      "uncertaintyCorrect": true,
+      "criticalError": false,
+      "supportedByPresentedMemory": true,
+      "rationale": "Both src-u13 and the actual prepared fields establish Ravi, his sketchbook statement, brief evening drawing sessions, and a possible preference for charcoal pencil over ink pen. The answer states every requested element and explicitly preserves could favor as tentative rather than established."
+    },
+    {
+      "id": "item-04",
+      "caseId": "cal-01-qualified-view",
+      "mechanism": "01",
+      "cohort": "exposed-development",
+      "form": "structured",
+      "stage": "reader",
+      "callId": "cal-01-qualified-view/read-structured",
+      "meaningPass": true,
+      "unsupportedClaims": [],
+      "omissions": [],
+      "uncertaintyCorrect": true,
+      "criticalError": false,
+      "supportedByPresentedMemory": true,
+      "rationale": "The answer retains the seed-note restriction that renewal is allowed once only and only if nobody is waiting. Its seven-day loan duration is also in the source and presented memory. Renewal is not guaranteed is a faithful response to the question about always renewing; it does not invent an additional policy condition or imply complete view coverage."
+    },
+    {
+      "id": "item-05",
+      "caseId": "confirm-m93",
+      "mechanism": "03",
+      "cohort": "exposed-development",
+      "form": "structured",
+      "stage": "preparation",
+      "callId": "confirm-m93/extract",
+      "meaningPass": false,
+      "unsupportedClaims": [
+        "occasionSetting is kiosk, although the source establishes the ticket kiosk only as the recording location and explicitly says the sewing-session location is not recorded."
+      ],
+      "omissions": [
+        "The event location must remain unknown, separately from the known recording location."
+      ],
+      "uncertaintyCorrect": false,
+      "criticalError": true,
+      "supportedByPresentedMemory": null,
+      "rationale": "src-r58 leaves the speaker, the people denoted by they, and the sewing-session location unresolved. The output correctly preserves the first two and the reported fabric choice, but copies the recording location kiosk into occasionSetting. This converts explicitly missing event-location evidence into a positive location claim."
+    },
+    {
+      "id": "item-06",
+      "caseId": "confirm-d57",
+      "mechanism": "03",
+      "cohort": "exposed-development",
+      "form": "structured",
+      "stage": "reader",
+      "callId": "confirm-d57/read-structured",
+      "meaningPass": true,
+      "unsupportedClaims": [],
+      "omissions": [],
+      "uncertaintyCorrect": true,
+      "criticalError": false,
+      "supportedByPresentedMemory": true,
+      "rationale": "src-c15 and the candidate report distinguish Selma as speaker, Tomas as the person whose firmer-clay preference is described, the pottery studio as the conversation setting, and the ticket counter as the later recording location. The answer preserves all four distinctions and does not claim Tomas attended."
+    },
+    {
+      "id": "item-07",
+      "caseId": "confirm-c42",
+      "mechanism": "05",
+      "cohort": "exposed-development",
+      "form": "structured",
+      "stage": "preparation",
+      "callId": "confirm-c42/extract",
+      "meaningPass": false,
+      "unsupportedClaims": [
+        "Bex is included among event participants with role provided instructions; the sources establish authorship of referenced instructions and a later reflection, while explicitly leaving attendance unknown."
+      ],
+      "omissions": [
+        "The participant field does not preserve Bex as a person whose event participation is unestablished."
+      ],
+      "uncertaintyCorrect": false,
+      "criticalError": true,
+      "supportedByPresentedMemory": null,
+      "rationale": "The narrative accurately preserves Kato replacing a spar, Elin patching a sail, their simultaneous work at one bench, and unknown Bex attendance. The interpretation also correctly remains Bex\u2019s first-person assessment. However, the participants field positively assigns Bex event participation despite both sources withholding that conclusion. The narrative disclaimer does not cancel this contradictory field. The broader repaired spar role is not independently penalized because the narrative retains the precise replaced action."
+    },
+    {
+      "id": "item-08",
+      "caseId": "confirm-b76",
+      "mechanism": "06",
+      "cohort": "exposed-development",
+      "form": "structured",
+      "stage": "reader",
+      "callId": "confirm-b76/read-structured",
+      "meaningPass": false,
+      "unsupportedClaims": [
+        "The preparation failed due to absence of source facts: the actualReaderPacket says the generated annotation failed validation, then says no source facts are supplied in this preparation; it does not identify absent source facts as the cause of failure."
+      ],
+      "omissions": [
+        "Ravi as the preference subject and his sketchbook statement as the reporting source.",
+        "Brief evening drawing sessions as the applicability condition.",
+        "Charcoal pencil over ink pen as the comparison.",
+        "Could favor as the exact possible, rather than established, preference."
+      ],
+      "uncertaintyCorrect": true,
+      "criticalError": false,
+      "supportedByPresentedMemory": false,
+      "rationale": "The original src-w67 supplies every requested fact, so this abstention does not retain the required source knowledge. Abstaining from answering is appropriate given the actualReaderPacket, which contains only extraction-unavailable and no source facts. The whole answer is scored unsupported by presented memory solely because its added causal explanation reverses the packet\u2019s stated failure account: validation failed, rather than source-fact absence being identified as the cause. The answer does not assert that these facts are absent in the world, so the omission and process-cause imprecision are not scored as a critical semantic error. This support judgment is flagged for adjudication."
+    },
+    {
+      "id": "item-09",
+      "caseId": "cal-02-disjoint-contexts",
+      "mechanism": "02",
+      "cohort": "exposed-development",
+      "form": "structured",
+      "stage": "preparation",
+      "callId": "cal-02-disjoint-contexts/extract",
+      "meaningPass": true,
+      "unsupportedClaims": [],
+      "omissions": [],
+      "uncertaintyCorrect": true,
+      "criticalError": false,
+      "supportedByPresentedMemory": null,
+      "rationale": "The output preserves dark lighting on Tuesday and bright lighting on Wednesday for the community darkroom as distinct accounts. It invents neither a shared day nor a conflict. Developing and cleaning explain the requirements but are not additional assigned comparison fields."
+    },
+    {
+      "id": "item-10",
+      "caseId": "confirm-h31",
+      "mechanism": "01",
+      "cohort": "exposed-development",
+      "form": "structured",
+      "stage": "reader",
+      "callId": "confirm-h31/read-structured",
+      "meaningPass": true,
+      "unsupportedClaims": [],
+      "omissions": [],
+      "uncertaintyCorrect": true,
+      "criticalError": false,
+      "supportedByPresentedMemory": true,
+      "rationale": "The four-day loan, two-day extension, and requirement for staff approval before the due date are all explicit in src-j52 and in the presented candidate and view. The answer preserves the complete requested condition and adds no connection to exhibition deliveries or additional extension policy."
+    },
+    {
+      "id": "item-11",
+      "caseId": "confirm-b76",
+      "mechanism": "06",
+      "cohort": "exposed-development",
+      "form": "structured",
+      "stage": "preparation",
+      "callId": "confirm-b76/extract",
+      "meaningPass": true,
+      "unsupportedClaims": [],
+      "omissions": [],
+      "uncertaintyCorrect": true,
+      "criticalError": false,
+      "supportedByPresentedMemory": null,
+      "rationale": "All five assigned meanings remain identifiable: Ravi, his own sketchbook writing, brief evening drawing sessions, could favor, and charcoal pencil over ink pen. The attribution includes the whole quotation and contains sketchbookbook instead of sketchbook. This fails literal phrase minimality/exactness but is an obvious duplication typo that introduces no different speaker, medium, condition, or preference. Under the brief\u2019s meaning-focused rule and tolerance for harmless reporting-phrase boundaries, it passes semantic fidelity; the literal-versus-semantic boundary is flagged for adjudication."
+    },
+    {
+      "id": "item-12",
+      "caseId": "confirm-r15",
+      "mechanism": "06",
+      "cohort": "exposed-development",
+      "form": "structured",
+      "stage": "preparation",
+      "callId": "confirm-r15/extract",
+      "meaningPass": true,
+      "unsupportedClaims": [],
+      "omissions": [],
+      "uncertaintyCorrect": true,
+      "criticalError": false,
+      "supportedByPresentedMemory": null,
+      "rationale": "The output preserves the source\u2019s Ravi subject, sketchbook attribution, brief evening drawing condition, could favor uncertainty, and charcoal-pencil-over-ink-pen comparison. No attribution, qualification, or required semantic field is lost."
+    },
+    {
+      "id": "item-13",
+      "caseId": "cal-06-journal-old",
+      "mechanism": "06",
+      "cohort": "exposed-development",
+      "form": "structured",
+      "stage": "reader",
+      "callId": "cal-06-journal-old/read-structured",
+      "meaningPass": true,
+      "unsupportedClaims": [],
+      "omissions": [],
+      "uncertaintyCorrect": true,
+      "criticalError": false,
+      "supportedByPresentedMemory": true,
+      "rationale": "Preserves Noor, short winter walks, canal over hill, and the exact tentative strength 'might prefer'. Saying the text attributes the preference preserves reported-content status rather than independently asserting the preference. The packet supplies every substantive field. Naming the journal again is unnecessary to answer the question faithfully."
+    },
+    {
+      "id": "item-14",
+      "caseId": "cal-05-lanterns",
+      "mechanism": "05",
+      "cohort": "exposed-development",
+      "form": "structured",
+      "stage": "reader",
+      "callId": "cal-05-lanterns/read-structured",
+      "meaningPass": true,
+      "unsupportedClaims": [],
+      "omissions": [],
+      "uncertaintyCorrect": true,
+      "criticalError": false,
+      "supportedByPresentedMemory": true,
+      "rationale": "The reflection explicitly attributes the cooperation interpretation to Jules, and neither source establishes attendance. The answer preserves both points and does not infer absence. Its statement that the operation lists attendance as unknown is supported by the presented account's attendance field."
+    },
+    {
+      "id": "item-15",
+      "caseId": "confirm-m93",
+      "mechanism": "03",
+      "cohort": "exposed-development",
+      "form": "structured",
+      "stage": "reader",
+      "callId": "confirm-m93/read-structured",
+      "meaningPass": false,
+      "unsupportedClaims": [
+        "The sewing session took place at the kiosk. The source explicitly says the described sewing-session location is not recorded."
+      ],
+      "omissions": [
+        "The requested sewing-session location should remain unknown."
+      ],
+      "uncertaintyCorrect": false,
+      "criticalError": true,
+      "supportedByPresentedMemory": true,
+      "rationale": "The answer correctly retains the heavier-fabric choice, unidentified speaker and subjects, and kiosk recording location. It nevertheless turns the recording location into the event location, contradicting the source's explicit uncertainty. This source error is supported by the erroneous presented candidate, whose occasionSetting is kiosk; source fidelity and packet support therefore diverge."
+    },
+    {
+      "id": "item-16",
+      "caseId": "cal-06-journal-candidate",
+      "mechanism": "06",
+      "cohort": "exposed-development",
+      "form": "structured",
+      "stage": "preparation",
+      "callId": "cal-06-journal-candidate/extract",
+      "meaningPass": true,
+      "unsupportedClaims": [],
+      "omissions": [],
+      "uncertaintyCorrect": true,
+      "criticalError": false,
+      "supportedByPresentedMemory": null,
+      "rationale": "Identifies Noor and her journal attribution, retains the short-winter-walk condition, preserves 'always' with the preference verb, and gives the correct alternatives. 'I always prefer' is an exact source phrase carrying the assigned modality; its extra pronoun and the person field name do not change meaning."
+    },
+    {
+      "id": "item-17",
+      "caseId": "cal-02-disjoint-contexts",
+      "mechanism": "02",
+      "cohort": "exposed-development",
+      "form": "structured",
+      "stage": "reader",
+      "callId": "cal-02-disjoint-contexts/read-structured",
+      "meaningPass": true,
+      "unsupportedClaims": [],
+      "omissions": [],
+      "uncertaintyCorrect": true,
+      "criticalError": false,
+      "supportedByPresentedMemory": true,
+      "rationale": "Correctly keeps Tuesday's dark requirement separate from Wednesday's bright requirement and answers that these declared day contexts do not conflict. Both the sources and the candidate fields support the days and values, while the operation reports disjoint applicability. No claim about unmentioned days is added."
+    },
+    {
+      "id": "item-18",
+      "caseId": "confirm-d57",
+      "mechanism": "03",
+      "cohort": "exposed-development",
+      "form": "structured",
+      "stage": "preparation",
+      "callId": "confirm-d57/extract",
+      "meaningPass": true,
+      "unsupportedClaims": [],
+      "omissions": [],
+      "uncertaintyCorrect": true,
+      "criticalError": false,
+      "supportedByPresentedMemory": null,
+      "rationale": "Preserves the firmer-clay assertion, attributes it to Selma rather than Tomas, identifies Tomas as its subject, and separates the pottery-studio occasion from later recording at the ticket counter. Caller vocabulary resolves the supplied identifiers directly."
+    },
+    {
+      "id": "item-19",
+      "caseId": "cal-03-speaker-subject",
+      "mechanism": "03",
+      "cohort": "exposed-development",
+      "form": "structured",
+      "stage": "preparation",
+      "callId": "cal-03-speaker-subject/extract",
+      "meaningPass": true,
+      "unsupportedClaims": [],
+      "omissions": [],
+      "uncertaintyCorrect": true,
+      "criticalError": false,
+      "supportedByPresentedMemory": null,
+      "rationale": "Preserves Omar's reported preference for the shorter walking route, with Nia as speaker and Omar as subject. The riverside shelter remains the occasion setting, and the town archive remains the later recording location."
+    },
+    {
+      "id": "item-20",
+      "caseId": "confirm-v26",
+      "mechanism": "02",
+      "cohort": "exposed-development",
+      "form": "structured",
+      "stage": "reader",
+      "callId": "confirm-v26/read-structured",
+      "meaningPass": false,
+      "unsupportedClaims": [],
+      "omissions": [
+        "Does not identify the maintenance note as requiring running and the safety note as requiring stopped; it says only 'one note' and 'another note'."
+      ],
+      "uncertaintyCorrect": true,
+      "criticalError": false,
+      "supportedByPresentedMemory": true,
+      "rationale": "Correctly gives running versus stopped in the shared Monday context and the impossibility of satisfying both. However, the literal question asks what each note requires, and the rubric names their maintenance/safety association; that association is omitted rather than falsely assigned. This is a noncritical completeness failure. The presented packet contains only opaque source IDs, so the limited answer is packet-supported. Within the question's finite day context, 'on Monday' together with the explicit same-context conflict is accepted as preserving the full-day requirement's relevant force; it does not invent separate time slots."
+    },
+    {
+      "id": "item-21",
+      "caseId": "confirm-p84",
+      "mechanism": "02",
+      "cohort": "exposed-development",
+      "form": "structured",
+      "stage": "preparation",
+      "callId": "confirm-p84/extract",
+      "meaningPass": true,
+      "unsupportedClaims": [],
+      "omissions": [],
+      "uncertaintyCorrect": true,
+      "criticalError": false,
+      "supportedByPresentedMemory": null,
+      "rationale": "Captures the equipment gate as the subject, locked on Thursday and unlocked on Saturday, and keeps the contexts separate. The comparison property is supplied by the caller; omitted bookkeeping fields do not lose the assigned subject/value/day meanings. Inventory and pickup purposes are incidental to this explicitly day-based preparation task."
+    },
+    {
+      "id": "item-22",
+      "caseId": "confirm-t68",
+      "mechanism": "04",
+      "cohort": "exposed-development",
+      "form": "structured",
+      "stage": "reader",
+      "callId": "confirm-t68/read-structured",
+      "meaningPass": true,
+      "unsupportedClaims": [
+        "Uses 'she' for Asha and 'he' for Bram, although neither the source nor the presented memory establishes gendered pronouns."
+      ],
+      "omissions": [],
+      "uncertaintyCorrect": true,
+      "criticalError": false,
+      "supportedByPresentedMemory": false,
+      "rationale": "All requested task meaning is correct: Asha needs quiet but not seating and is available 847-911; Bram needs seating but not quiet and is available 859-903; the reading alcove meets those needs; max(847,859,866)=866 and 866+23=889 gives the earliest feasible window. No booking or independently verified opening is claimed. I treat the ungrounded gendered pronouns as peripheral unsupported additions rather than failure of the requested planning meaning, while marking whole-answer packet support false. This boundary is flagged for adjudication."
+    },
+    {
+      "id": "item-23",
+      "caseId": "cal-05-lanterns",
+      "mechanism": "05",
+      "cohort": "exposed-development",
+      "form": "structured",
+      "stage": "preparation",
+      "callId": "cal-05-lanterns/extract",
+      "meaningPass": true,
+      "unsupportedClaims": [],
+      "omissions": [],
+      "uncertaintyCorrect": true,
+      "criticalError": false,
+      "supportedByPresentedMemory": null,
+      "rationale": "Preserves Mira's paper cutting, Soren's frame assembly, discussion of Jules's pattern, their affirmative simultaneous presence through coPresence, and Jules's attendance uncertainty. The cooperation account remains separately attributed to Jules and retains the first-person perspective. The source's next-morning timestamp is incidental to the assigned event/participation/interpretation fields."
+    },
+    {
+      "id": "item-24",
+      "caseId": "cal-04-conservatory",
+      "mechanism": "04",
+      "cohort": "exposed-development",
+      "form": "structured",
+      "stage": "preparation",
+      "callId": "cal-04-conservatory/extract",
+      "meaningPass": true,
+      "unsupportedClaims": [],
+      "omissions": [],
+      "uncertaintyCorrect": true,
+      "criticalError": false,
+      "supportedByPresentedMemory": null,
+      "rationale": "Correctly keeps Inez's quiet and seating requirements with 13:00-14:00 and Pavel's lack of a quiet requirement plus seating requirement with 13:20-14:10. The conservatory's open, quiet and seating properties and the 25-minute duration are preserved. Clock strings and grouped participant records carry the same assigned facts as minute values and separate arrays; no downstream visit computation is required of this preparation."
+    },
+    {
+      "id": "item-25",
+      "caseId": "cal-04-conservatory",
+      "mechanism": "04",
+      "cohort": "exposed-development",
+      "form": "structured",
+      "stage": "reader",
+      "callId": "cal-04-conservatory/read-structured",
+      "meaningPass": true,
+      "unsupportedClaims": [],
+      "omissions": [],
+      "uncertaintyCorrect": true,
+      "criticalError": false,
+      "supportedByPresentedMemory": true,
+      "rationale": "The source gives Inez 780\u2013840, Pavel 800\u2013850, and a 25-minute visit; with caller.asOf 790 the earliest feasible start is 800 and finish 825. The supplied conservatory meets the collective requirements. 'Their seating and quiet requirements' is a group-level description, not an explicit claim that Pavel individually requires quiet. Both the candidate and computed option support the answer, with no claim of a booking or independent verification."
+    },
+    {
+      "id": "item-26",
+      "caseId": "cal-03-unknown-attribution",
+      "mechanism": "03",
+      "cohort": "exposed-development",
+      "form": "structured",
+      "stage": "reader",
+      "callId": "cal-03-unknown-attribution/read-structured",
+      "meaningPass": false,
+      "unsupportedClaims": [
+        "The outing happened at the ferry office.",
+        "The preference was expressed at the ferry office; the original source establishes only where the note was recorded."
+      ],
+      "omissions": [
+        "The outing location is unrecorded/unknown."
+      ],
+      "uncertaintyCorrect": false,
+      "criticalError": true,
+      "supportedByPresentedMemory": true,
+      "rationale": "The unsigned-note source explicitly leaves the outing location unknown and establishes the ferry office only as the recording location. The answer correctly leaves the speaker unidentified but invents an event location. Its presented candidate, however, erroneously supplies occasionSetting=ferry-office as well as recordingLocation=ferry-office, so the asserted location is supported by that presented memory even though it is false to the source."
+    },
+    {
+      "id": "item-27",
+      "caseId": "confirm-p84",
+      "mechanism": "02",
+      "cohort": "exposed-development",
+      "form": "structured",
+      "stage": "reader",
+      "callId": "confirm-p84/read-structured",
+      "meaningPass": true,
+      "unsupportedClaims": [],
+      "omissions": [],
+      "uncertaintyCorrect": true,
+      "criticalError": false,
+      "supportedByPresentedMemory": true,
+      "rationale": "src-e29 requires locked on Thursday; src-o64 requires unlocked on Saturday. The answer preserves both requirements and their separate day contexts without extending either to unmentioned days. The actual packet contains those same conditions and a disjoint-applicability operation result."
+    },
+    {
+      "id": "item-28",
+      "caseId": "cal-03-unknown-attribution",
+      "mechanism": "03",
+      "cohort": "exposed-development",
+      "form": "structured",
+      "stage": "preparation",
+      "callId": "cal-03-unknown-attribution/extract",
+      "meaningPass": false,
+      "unsupportedClaims": [
+        "occasionSetting is ferry-office."
+      ],
+      "omissions": [
+        "The event location must remain unknown separately from the known recording location."
+      ],
+      "uncertaintyCorrect": false,
+      "criticalError": true,
+      "supportedByPresentedMemory": null,
+      "rationale": "The source explicitly says the outing's place is not recorded. The preparation correctly retains the assertion, unknown speaker and unknown subjects, but assigns the recording location to occasionSetting. This violates the assigned distinction between note location and event location."
+    },
+    {
+      "id": "item-29",
+      "caseId": "confirm-t68",
+      "mechanism": "04",
+      "cohort": "exposed-development",
+      "form": "structured",
+      "stage": "preparation",
+      "callId": "confirm-t68/extract",
+      "meaningPass": true,
+      "unsupportedClaims": [],
+      "omissions": [],
+      "uncertaintyCorrect": true,
+      "criticalError": false,
+      "supportedByPresentedMemory": null,
+      "rationale": "All assigned semantic fields are preserved: Asha needs quiet but not seating and has 14:07\u201315:11; Bram needs seating but not quiet and has 14:19\u201315:03; the reading alcove is open, quiet and seated; duration is 23 minutes. Clock strings and minute integers are equivalent here. Grouping requirements and availability under participants preserves their association. This judges preparation meaning, not whether a downstream planning result has already been emitted."
+    },
+    {
+      "id": "item-30",
+      "caseId": "cal-01-qualified-view",
+      "mechanism": "01",
+      "cohort": "exposed-development",
+      "form": "structured",
+      "stage": "preparation",
+      "callId": "cal-01-qualified-view/extract",
+      "meaningPass": true,
+      "unsupportedClaims": [],
+      "omissions": [],
+      "uncertaintyCorrect": true,
+      "criticalError": false,
+      "supportedByPresentedMemory": null,
+      "rationale": "Both source claims retain their domains and material qualifications: seven-day seed-library loans with one renewal only when nobody waits; garden opening after sunrise with access suspended during icy conditions. Caller limits do not change the assigned instruction to preserve each source's meaning, and representation/bookkeeping is outside this review."
+    },
+    {
+      "id": "item-31",
+      "caseId": "confirm-n24",
+      "mechanism": "06",
+      "cohort": "exposed-development",
+      "form": "structured",
+      "stage": "preparation",
+      "callId": "confirm-n24/extract",
+      "meaningPass": true,
+      "unsupportedClaims": [],
+      "omissions": [],
+      "uncertaintyCorrect": true,
+      "criticalError": false,
+      "supportedByPresentedMemory": null,
+      "rationale": "The preparation identifies Ravi and his sketchbook attribution, retains all drawing sessions, 'often favor', and charcoal pencil over ink pen. The duplicated 'ForFor' is a visible transcription defect but does not alter the stated applicability. Including the quoted assertion in the attribution value adds no false author or reporting source. Under the brief's semantic rather than exact-string standard, all assigned meanings remain recoverable."
+    },
+    {
+      "id": "item-32",
+      "caseId": "confirm-h31",
+      "mechanism": "01",
+      "cohort": "exposed-development",
+      "form": "structured",
+      "stage": "preparation",
+      "callId": "confirm-h31/extract",
+      "meaningPass": true,
+      "unsupportedClaims": [],
+      "omissions": [],
+      "uncertaintyCorrect": true,
+      "criticalError": false,
+      "supportedByPresentedMemory": null,
+      "rationale": "The repair-desk claim preserves the four-day loan and the two-day extension requiring staff approval before the due date. The exhibition-hall claim preserves local photographs and east-entrance closure during deliveries. Both claims remain attached to the appropriate scope; no material qualification is lost."
+    },
+    {
+      "id": "item-33",
+      "caseId": "cal-06-journal-candidate",
+      "mechanism": "06",
+      "cohort": "exposed-development",
+      "form": "structured",
+      "stage": "reader",
+      "callId": "cal-06-journal-candidate/read-structured",
+      "meaningPass": true,
+      "unsupportedClaims": [],
+      "omissions": [],
+      "uncertaintyCorrect": true,
+      "criticalError": false,
+      "supportedByPresentedMemory": true,
+      "rationale": "The answer attributes the preference to Noor through the text and retains short winter walks, canal path over hill trail, and the literal 'always prefer'. Calling it certainty does not erase the frequency qualifier because always is quoted explicitly. The answer does not promote the attributed statement to independently verified reality. The actual packet supplies each retained field."
+    },
+    {
+      "id": "item-34",
+      "caseId": "cal-03-speaker-subject",
+      "mechanism": "03",
+      "cohort": "exposed-development",
+      "form": "structured",
+      "stage": "reader",
+      "callId": "cal-03-speaker-subject/read-structured",
+      "meaningPass": true,
+      "unsupportedClaims": [],
+      "omissions": [],
+      "uncertaintyCorrect": true,
+      "criticalError": false,
+      "supportedByPresentedMemory": true,
+      "rationale": "The source attributes the statement about Omar to Nia at the riverside shelter, with later recording at the archive. The output keeps Nia as speaker and the shelter as the conversation setting. 'The shelter' uniquely resolves through the supplied place vocabulary; no unasked claim about Omar's attendance is added. The presented memory supports both facts."
+    },
+    {
+      "id": "item-35",
+      "caseId": "confirm-n24",
+      "mechanism": "06",
+      "cohort": "exposed-development",
+      "form": "structured",
+      "stage": "reader",
+      "callId": "confirm-n24/read-structured",
+      "meaningPass": false,
+      "unsupportedClaims": [
+        "The preparation failed due to missing source facts; the presented packet reports validation failure and then absence of supplied facts, without identifying missing facts as its cause."
+      ],
+      "omissions": [
+        "Ravi and his sketchbook statement as the subject and reporting source.",
+        "Applicability to all drawing sessions.",
+        "Charcoal pencil favored over ink pen.",
+        "Often: frequent preference, neither mere possibility nor every occasion."
+      ],
+      "uncertaintyCorrect": true,
+      "criticalError": false,
+      "supportedByPresentedMemory": false,
+      "rationale": "The original source supplies every requested preference field, so unavailable-memory abstention fails required knowledge without inventing a different preference. The packet supports abstaining because it supplies no source facts after validation failure. It does not support the added causal explanation that missing facts caused preparation failure; for that reason whole-answer packet support is false. This is a noncritical omission failure, with uncertainty appropriately maintained about the unavailable substantive fields."
+    },
+    {
+      "id": "item-36",
+      "caseId": "confirm-c42",
+      "mechanism": "05",
+      "cohort": "exposed-development",
+      "form": "structured",
+      "stage": "reader",
+      "callId": "confirm-c42/read-structured",
+      "meaningPass": false,
+      "unsupportedClaims": [
+        "Bex is one of the documented participants, in the phrase 'each documented participant\u2014Kato, Elin, and Bex'."
+      ],
+      "omissions": [
+        "Kato replaced a spar and Elin patched a sail simultaneously at the same bench.",
+        "Bex authored the instructions they consulted and later wrote an interpretation.",
+        "Bex interpreted their careful repairs as an example of patience."
+      ],
+      "uncertaintyCorrect": false,
+      "criticalError": true,
+      "supportedByPresentedMemory": false,
+      "rationale": "The source documents Kato and Elin's participation and explicitly leaves Bex's attendance unestablished. The answer mostly abstains because the packet contains no extracted facts, but its participant apposition includes Bex, adding an unsupported participation claim despite its later uncertainty about attendance. The caller's people list does not establish participation. The requested actions, overlap and attributed interpretation are all omitted; merely abstaining cannot retain those source facts."
+    }
+  ],
+  "parentAcceptance": "Inspected all first-pass reports, concrete source/output failures and independent adjudication where recorded. Contract validity is separate from meaning. No output or source was repaired."
+}

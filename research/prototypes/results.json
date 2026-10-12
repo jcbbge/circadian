@@ -1,0 +1,159 @@
+{
+  "phase": "six isolated deterministic prototypes",
+  "status": "deterministic_phase_complete_peer_reviewed",
+  "validated_at_utc": "2026-10-11T22:45:23.873102+00:00",
+  "base_commit": "dd31739cf8cf5f5c7e137d8a8f2b4ebaac3bb3a7",
+  "runtime": "1.3.14",
+  "commands": [
+    {
+      "command": [
+        "/Users/jrg/.bun/bin/bun",
+        "test",
+        "./research/prototypes",
+        "--reporter",
+        "junit",
+        "--reporter-outfile",
+        "research/prototypes/test-results.xml"
+      ],
+      "exit_code": 0
+    },
+    {
+      "command": [
+        "/Users/jrg/.bun/bin/bun",
+        "research/prototypes/run.ts"
+      ],
+      "exit_code": 0
+    },
+    {
+      "command": [
+        "/Users/jrg/.bun/bin/bun",
+        "research/prototypes/coverage.ts"
+      ],
+      "exit_code": 0
+    },
+    {
+      "command": [
+        "/Users/jrg/.bun/bin/bun",
+        "research/prototypes/run.ts",
+        "--only",
+        "none"
+      ],
+      "exit_code": 0
+    }
+  ],
+  "test_count": 120,
+  "assertions": 492,
+  "failures": 0,
+  "skipped": 0,
+  "coverage": [
+    {
+      "id": "01",
+      "name": "Coordinated views",
+      "specified_cases": 14,
+      "deterministic_cases": 14,
+      "deferred_cases": []
+    },
+    {
+      "id": "02",
+      "name": "Contextual compatibility",
+      "specified_cases": 15,
+      "deterministic_cases": 15,
+      "deferred_cases": []
+    },
+    {
+      "id": "03",
+      "name": "Typed relations",
+      "specified_cases": 14,
+      "deterministic_cases": 14,
+      "deferred_cases": []
+    },
+    {
+      "id": "04",
+      "name": "Reusable operations",
+      "specified_cases": 16,
+      "deterministic_cases": 15,
+      "deferred_cases": [
+        "R14"
+      ]
+    },
+    {
+      "id": "05",
+      "name": "Joint experiences",
+      "specified_cases": 16,
+      "deterministic_cases": 16,
+      "deferred_cases": []
+    },
+    {
+      "id": "06",
+      "name": "Checked transformations",
+      "specified_cases": 18,
+      "deterministic_cases": 18,
+      "deferred_cases": []
+    }
+  ],
+  "specified_case_count": 93,
+  "deterministic_case_count": 92,
+  "deterministic_test_labels_matched_junit": true,
+  "demonstrations_executed": [
+    "01",
+    "02",
+    "03",
+    "04",
+    "05",
+    "06"
+  ],
+  "behavioral_model_calls": 0,
+  "production_tracked_files_checked": 213,
+  "production_tracked_files_changed": [],
+  "source_hashes": {
+    "research/prototypes/01-views/demo.ts": "a89584ecbaa535382bd319efb88c9a990e62faf809b3ebe9ed0fca2cdfa0da83",
+    "research/prototypes/01-views/fixtures.ts": "97feed9a4432aa8121265af6a11fc7ce4550a146420f7c8ebb4fe021e4614489",
+    "research/prototypes/01-views/index.test.ts": "1fd46780cb0c860cdee30d317d188468b34e75617a46243e240cba11d4b20ed2",
+    "research/prototypes/01-views/index.ts": "872350d514d48cfcd5fba98166815f1fa3177714ab1218d86c8e0e12b06508a3",
+    "research/prototypes/02-compatibility/demo.ts": "d7b747dbab330787cd10d7dd10c4a08f2c377e56fef4b00d9aa018c6a1b06cdb",
+    "research/prototypes/02-compatibility/fixtures.ts": "c2139a9a9106e011e95bd79acc469fec83aa223522873bbfcfd0758a419db9ac",
+    "research/prototypes/02-compatibility/index.test.ts": "ac12e84b535d9fbf4a140ca5a638d2547b6374a214fea00fe607234c66ee9ea8",
+    "research/prototypes/02-compatibility/index.ts": "d27da24b8e56d2f9702ceb850af0544f203aca42a40f1c4964227f5a06ee16db",
+    "research/prototypes/03-relations/demo.ts": "c245f33d13eb54a11c00799ff51a90567f6d3a1abcee4df33398dd1ad960c0e0",
+    "research/prototypes/03-relations/fixtures.ts": "09ba542f7f0cab8bb3ec6a97523c4d584ec8894c8aa82e184df85d4c3bf35da5",
+    "research/prototypes/03-relations/index.test.ts": "bacd2f26b65ee8b5171d130421e46547eda77d006e77fac6c622219fc0f970ba",
+    "research/prototypes/03-relations/index.ts": "59a6563527175f901fe9363391bb5cb2811faae0067155d5c478cce477ca1354",
+    "research/prototypes/04-operations/demo.ts": "011d6820bb96227a192611dba39aa9bbbbd56d18e6eb9662977033e130a7827c",
+    "research/prototypes/04-operations/fixtures.ts": "bc348323a394fec8cbe2d47279b41e3e4226fdeafc4f4faeebbd35f49a5ed5a7",
+    "research/prototypes/04-operations/index.test.ts": "8b08dab4e42f703c904079a63787ccd90980468b1fd772b792c72c8e794c524f",
+    "research/prototypes/04-operations/index.ts": "c6e877f71fdd2fb7fbd06a3f07e1bd4c500e998e7193e758a3495b69a46ab82f",
+    "research/prototypes/05-experiences/demo.ts": "251248e52b3913f1f6494412775582a3faa476a8fc7e47b81193a648dcc2e80f",
+    "research/prototypes/05-experiences/fixtures.ts": "d9ded5c28bf4c6c418578b291fe00b9c3452816ad519cdbe879c0392941accd4",
+    "research/prototypes/05-experiences/index.test.ts": "2d54585ff34009a9b9c28db5fb517156a2ace6c554d08ab536372e55a923f7f3",
+    "research/prototypes/05-experiences/index.ts": "8e9bab2f4a9a507d4ab8668d90f83f713aed40c42ab51837d98197f3191ae987",
+    "research/prototypes/06-transformations/demo.ts": "1701e6b5548534821c5f8df566846313437a53e0f4c72662a74152783b0c4283",
+    "research/prototypes/06-transformations/fixtures.ts": "ece77e697048f9548b4866c533a65c7b0f441a584fe0fbdcdbd83754458640ae",
+    "research/prototypes/06-transformations/index.test.ts": "f396af0c858ab09051e9be2de6285228a1ea85ad7fcb64a42de88df9d37672be",
+    "research/prototypes/06-transformations/index.ts": "6c82a84e7215cae4152b0f905dd9bdbf665c301dc495131de47453b0ed671bfc",
+    "research/prototypes/coverage.ts": "f11c06244508706154e0ff3a566097ce9b3c6f48b271e4201257cf97fae83c4c",
+    "research/prototypes/run.ts": "da8e1fb220a555f9eb6ccf57867921c8d5f353dd04934adef1695259d297e06d",
+    "research/prototypes/suite.test.ts": "8560277d3b6ba0b1b18381ef4b21e7fe411f20bfdabaa44e8352ffb693ce9be8",
+    "research/prototypes/01-views/coverage.json": "84aa009ba6faf3d3ebe2bc0069d817205aa25347be78837fce5a6fc11adf0052",
+    "research/prototypes/02-compatibility/coverage.json": "7d2ad42315d2f61494a2e5b1ea0e9c6404a12afc5f1dc938bfad472f71ece6b5",
+    "research/prototypes/03-relations/coverage.json": "3f3cd179d5d7b68023c6f693f7822947274016db2f0d822f5e7be7ce8c5d66e0",
+    "research/prototypes/04-operations/coverage.json": "bead4f4c39ea42deb7b212dc300888124647f6759ff0e8b39151a8272de52e71",
+    "research/prototypes/05-experiences/coverage.json": "2bc6dfbd63dd834fe1eda4e5bf17aebfd645a2ee02ddcefb79937fae7aa50408",
+    "research/prototypes/06-transformations/coverage.json": "791fb269f80a37ab6e8eb87265e9cf8a2ea65115222a30deedb4e14b812776b9"
+  },
+  "limits": "Fixture contract/boundary checks only. Semantic extraction, reader usefulness and total-cost benefit unmeasured across all six. Consultation inference is separate.",
+  "peer_review": {
+    "response": "PEER-REVIEW.md",
+    "receipt": "PEER-REVIEW-RECEIPT.json",
+    "closure_response": "PEER-CLOSURE.md",
+    "closure_receipt": "PEER-CLOSURE-RECEIPT.json",
+    "resolution": "REVIEW-RESOLUTION.md",
+    "served_model": "claude-fable-5-1",
+    "peer_accepted_bounded_phase": true,
+    "post_closure_source_changes": [
+      "research/prototypes/05-experiences/index.test.ts",
+      "research/prototypes/05-experiences/index.ts",
+      "research/prototypes/05-experiences/coverage.json"
+    ],
+    "post_closure_disposition": "Parent inspected the two small 05 follow-ups requested by closure: separate interpretation accounting and accurate omission label. XH06/XH07 regressions and final combined suite pass; no additional peer review claimed."
+  }
+}

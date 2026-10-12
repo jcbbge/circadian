@@ -1,0 +1,110 @@
+[
+  {
+    "id": "K01",
+    "status": "deterministic",
+    "test": "K01 fixed rendering preserves only the named properties",
+    "note": "Named field equality, source presence and exact fixed template pass; prose semantics explicitly remains notChecked."
+  },
+  {
+    "id": "K02",
+    "status": "deterministic",
+    "test": "K02 subject changes fail equality",
+    "note": "A changed represented subject fails equality."
+  },
+  {
+    "id": "K03",
+    "status": "deterministic",
+    "test": "K03 often becoming always fails modality",
+    "note": "Often versus always fails exact represented modality equality."
+  },
+  {
+    "id": "K04",
+    "status": "deterministic",
+    "test": "K04 explicitly removed circumstances fail equality",
+    "note": "Known circumstance versus explicit absence fails equality."
+  },
+  {
+    "id": "K05",
+    "status": "deterministic",
+    "test": "K05 widening the comparison fails equality",
+    "note": "A changed represented comparison fails equality."
+  },
+  {
+    "id": "K06",
+    "status": "deterministic",
+    "test": "K06 misleading free prose cannot receive a semantic pass",
+    "note": "Misleading free prose yields changed bytes, an empty represented-property differences list and prose notChecked. Byte inequality is separate from semantic assessment; downstream trust behavior remains untested."
+  },
+  {
+    "id": "K07",
+    "status": "deterministic",
+    "test": "K07 unannotated circumstances remain not checked",
+    "note": "Unknown annotation returns notChecked rather than a false pass or removal finding."
+  },
+  {
+    "id": "K08",
+    "status": "deterministic",
+    "test": "K08 edited candidate bytes invalidate receipt",
+    "note": "Changed candidate bytes produce stale(candidate) despite unchanged fields."
+  },
+  {
+    "id": "K09",
+    "status": "deterministic",
+    "test": "K09 same atom ID cannot conceal changed source bytes",
+    "note": "Changed source bytes under the same atom identity produce stale(source); a fresh quote-presence check detects removal."
+  },
+  {
+    "id": "K10",
+    "status": "deterministic",
+    "test": "K10 every declared input component invalidates its binding",
+    "note": "Separate mutations cover old bytes, annotation, rule definition, rule version, checker version, assumptions and mode; each invalidates the corresponding digest."
+  },
+  {
+    "id": "K11",
+    "status": "deterministic",
+    "test": "K11 missing or ineligible sources prevent current checking",
+    "note": "Deleted/ineligible required sources make source checks notChecked and receipt applicability unavailable. Independently available presentation bytes can still be unchanged; missing old or candidate bytes yield byteChange unavailable."
+  },
+  {
+    "id": "K12",
+    "status": "deterministic",
+    "test": "K12 admitted identity remains an explicit assumption",
+    "note": "The admitted identity claim is exposed on dependent passing properties as conditional. No annotation fidelity is inferred."
+  },
+  {
+    "id": "K13",
+    "status": "deterministic",
+    "test": "K13 lost narrative uncertainty remains outside field checking",
+    "note": "The fixture loses its literal uncertainty sentence while represented fields pass; byteChange reports changed and prose remains unassessed. Independent narrative review/reader behavior is deferred."
+  },
+  {
+    "id": "K14",
+    "status": "deterministic",
+    "test": "K14 selection commutes only with field-preserving formatting",
+    "note": "Finite field-preserving selection/formatting paths commute after normalization; a subject-changing counterexample does not. No truncation or lossy transform is included."
+  },
+  {
+    "id": "K15",
+    "status": "deterministic",
+    "test": "K15 faithful free rephrasing has no machine prose guarantee",
+    "note": "Faithful free prose receives field passes, byteChange changed and prose notChecked. Whether readers accept it appropriately remains behavioral work."
+  },
+  {
+    "id": "K16",
+    "status": "deterministic",
+    "test": "K16 matching false annotations expose the semantic boundary",
+    "note": "The same deliberately false attribution passes preservation, exposing that shared false premises are not detected. Annotation extraction/review performance remains unmeasured."
+  },
+  {
+    "id": "K17",
+    "status": "deterministic",
+    "test": "K17 byte limits refuse before source traversal or hashing",
+    "note": "An oversized input returns unsupported before source traversal; all component text and total canonical bytes are bounded before hashes/property checks."
+  },
+  {
+    "id": "K18",
+    "status": "deterministic",
+    "test": "K18 historical failure is separate from present applicability",
+    "note": "A prior modality failure remains explicitly historical when sources become unavailable; policy suppression takes precedence. Receipts contain no quotes or semantic field values."
+  }
+]

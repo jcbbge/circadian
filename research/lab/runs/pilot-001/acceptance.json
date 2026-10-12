@@ -1,0 +1,43 @@
+{
+  "status": "accepted",
+  "accepted_at_utc": "2026-10-11T00:45:25.192322+00:00",
+  "accepting_role": "root reviewer",
+  "independent_audit": "audit.md",
+  "scope": "Research pilot and its reported findings only; no production integration accepted.",
+  "evidence": {
+    "independent_audit_read": true,
+    "raw_counts_and_input_integrity_independently_recomputed": true,
+    "harness_tests_passed": 17,
+    "existing_scope_tests_passed": 6,
+    "full_repository_suite_run": false,
+    "research_credential_format_scan": "no matches",
+    "measured_trials": 144,
+    "measured_inference_calls": 296,
+    "measured_errors": 0
+  },
+  "limits": [
+    "Every final reader answer had the full source available; compact-view fidelity was not isolated.",
+    "Baseline-first ordering makes latency comparisons descriptive.",
+    "Small authored fixtures, ceiling scores, and no unknown-gold or held-out cases.",
+    "Accurate selector classification does not establish net benefit or justify production integration."
+  ],
+  "sha256": {
+    "research/lab/RESULTS.md": "3fcb0a9054965222067dd228d5058f6b46dc01d5f2b04ed43e87276a6d007b08",
+    "research/lab/harness.ts": "7d86a6915b48892f42a35d319266e8ed8480af1345ac91e95538a582d975c2b6",
+    "research/lab/harness.test.ts": "7af420e7dbc225139e346493f11893e56a162c769c6de7f4cc30546b60cb9528",
+    "research/lab/fixtures.json": "a6c0af4a8ec1332b8f5c58069b91328437dcfac23eeb3fadb5c3c576da01c9ba",
+    "research/lab/runs/pilot-001/analysis.json": "6698886c2b98819d49a4e70cee19aeed83e92b0b74cc699dd9b7d1517c9f160a",
+    "research/lab/runs/pilot-001/audit.md": "61b78e2dcfce3138ec5ac10a03c0fe8b91abefb418da040b1dcd443d00ad5eb1",
+    "research/lab/runs/pilot-001/baseline.calls.jsonl": "4fcd0c840b68b3b355c01cbc57e7e6e4aff682414c979ea57329aaf759e20ba8",
+    "research/lab/runs/pilot-001/baseline.complete.json": "e9b2ad6205db32a851afaa19c183aff34e346e37458e192340f2b6db761fa86a",
+    "research/lab/runs/pilot-001/baseline.jsonl": "0299ed3b41de97e38f5081ac0702f8e31358fb4d0b480aa9e6002b9b4317930c",
+    "research/lab/runs/pilot-001/bundles.json": "3e0a2787300db68c5b5954971f145789b46a3babc709743c1b23c85868c39da3",
+    "research/lab/runs/pilot-001/gold.json": "2efdca5a28c57686afdd38159d38e4798c8e77d10a1099a769a62fecb4f98592",
+    "research/lab/runs/pilot-001/jev.calls.jsonl": "668310c53ce4ad4813f573d35fa75d374b6a6950856cdb182d311e650854dc38",
+    "research/lab/runs/pilot-001/jev.complete.json": "bbe4c71e4912c6a81f55ab0437bb2397b20e0cd8fed3879d03075dfe49eb4cc4",
+    "research/lab/runs/pilot-001/jev.jsonl": "c156d988f1beef5ef265562bac20b9a97ab16e5e27cac46f51f481d4d480d649",
+    "research/lab/runs/pilot-001/manifest.json": "3fe78acb1995994eac02f23ed3287942d79dcc150871b614ef75c942976ef457",
+    "research/lab/runs/pilot-001/manifest.sha256": "09fae5d3c2fd3819d70ef2af5870733911fa4039c98f79427ffeff7be535516d",
+    "research/lab/runs/pilot-001/summary.json": "08dfa6fcf6a54ffa7bd509e9d8d56d7741c6df89542957d3cd16708a3e7c5634"
+  }
+}

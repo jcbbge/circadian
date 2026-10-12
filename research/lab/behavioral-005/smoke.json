@@ -1,0 +1,82 @@
+{
+  "purpose": "Two transport smoke calls; not study observations",
+  "observedAt": "2026-10-12T01:47:01.747449+00:00",
+  "reader": {
+    "request": {
+      "model": "mlx-community/Qwen3-30B-A3B-Instruct-2507-4bit",
+      "temperature": 0.2,
+      "top_p": 1,
+      "max_tokens": 64,
+      "stream": false,
+      "messages": [
+        {
+          "role": "user",
+          "content": "Return only {\"transport\":\"ready\"}."
+        }
+      ]
+    },
+    "endpoint": "http://127.0.0.1:10240/v1/chat/completions",
+    "response": {
+      "id": "chatcmpl-788f21392c",
+      "object": "chat.completion",
+      "created": 1791769623,
+      "model": "mlx-community/Qwen3-30B-A3B-Instruct-2507-4bit",
+      "choices": [
+        {
+          "index": 0,
+          "message": {
+            "role": "assistant",
+            "content": "{\"transport\":\"ready\"}"
+          },
+          "finish_reason": "stop"
+        }
+      ],
+      "usage": {
+        "prompt_tokens": 16,
+        "completion_tokens": 5,
+        "total_tokens": 21
+      }
+    },
+    "ok": true,
+    "elapsedMs": 2116.087458
+  },
+  "annotation": {
+    "request": {
+      "model": "jev-1.13.0",
+      "state": "A fictional card says the marker is blue.",
+      "questions": {
+        "annotation": {
+          "type": "choice",
+          "instructions": "Which color does the card explicitly state?",
+          "criteria": {
+            "red": "Red",
+            "blue": "Blue",
+            "unknown": "Not stated"
+          }
+        }
+      }
+    },
+    "endpoint": "https://api.typesafe.ai/v1/systemone",
+    "response": {
+      "model": "jev-1.13.0",
+      "answers": {
+        "annotation": {
+          "type": "choice",
+          "choice": "blue",
+          "confidence": 1.0,
+          "probabilities": {
+            "red": 0.0,
+            "blue": 1.0,
+            "unknown": 0.0
+          }
+        }
+      },
+      "usage": {
+        "input_tokens": 330,
+        "output_tokens": 38
+      }
+    },
+    "ok": true,
+    "elapsedMs": 308.8889999999997
+  }
+}

@@ -1,0 +1,85 @@
+{
+  "study": "behavioral-005",
+  "accepted": true,
+  "reviewedAt": "2026-10-12T01:55:40.496334+00:00",
+  "reviewer": {
+    "identity": "colleague",
+    "role": "independent experimental validity and runner reviewer",
+    "model": "gpt-6-astra",
+    "fixtureAuthor": false,
+    "studyModelOutputsRead": false,
+    "armMapRead": false
+  },
+  "reviewedHashes": {
+    "research/lab/behavioral-005/contract.ts": "41e1195a86915ba110194eeae31c4b4a47bb111f24ae6472ac28d5d555175f2a",
+    "research/lab/behavioral-005/PROTOCOL.md": "a0af95114be76f5acc7e7866f184578440db41f6c4ec103573ea44a8b6a366ae",
+    "research/lab/behavioral-005/SCORING.md": "aa2fae18478531b88b9522fa5743473775a3ab30797bff8d00c9e1b021fe165e",
+    "research/lab/behavioral-005/runner.ts": "06950e84078fac8a9dce310815d85fb5e47ad559a9eb48c7821a5b63f3acd474",
+    "research/lab/behavioral-005/runner.test.ts": "73bfee98739a49da5f8b520ed9271f70ddc81d05fdb69dd7eb456a83d39ccb8a",
+    "research/lab/behavioral-005/cases-01-03.ts": "c5f3c34089b5769a2833670040a74bcabf63702072a5c9d86d7daf16eee248e3",
+    "research/lab/behavioral-005/cases-04-06.ts": "dfc0085d85c06cf3e6d4767e40d0d52d13f25d5bdc39b57a95f1ddf0a79a36a5",
+    "research/lab/behavioral-005/endpoint-evidence.json": "276d599198292aa087923769afb4cf36171328fedef1be8f575416709b5dc625",
+    "research/lab/behavioral-005/smoke.json": "acecc51dec3160848b303013d46e88f3c4bc45b41164d5fca0c7ae81912a50dd",
+    "research/lab/harness.ts": "7d86a6915b48892f42a35d319266e8ed8480af1345ac91e95538a582d975c2b6",
+    "research/lab/calibration.ts": "2669d52181804c645b4389a1a7d73d79b8a85ed0d8c4bce650c2b97c16e334a4",
+    "research/prototypes/01-views/index.ts": "872350d514d48cfcd5fba98166815f1fa3177714ab1218d86c8e0e12b06508a3",
+    "research/prototypes/02-compatibility/index.ts": "d27da24b8e56d2f9702ceb850af0544f203aca42a40f1c4964227f5a06ee16db",
+    "research/prototypes/03-relations/index.ts": "59a6563527175f901fe9363391bb5cb2811faae0067155d5c478cce477ca1354",
+    "research/prototypes/04-operations/index.ts": "c6e877f71fdd2fb7fbd06a3f07e1bd4c500e998e7193e758a3495b69a46ab82f",
+    "research/prototypes/05-experiences/index.ts": "8e9bab2f4a9a507d4ab8668d90f83f713aed40c42ab51837d98197f3191ae987",
+    "research/prototypes/06-transformations/index.ts": "6c82a84e7215cae4152b0f905dd9bdbf665c301dc495131de47453b0ed671bfc"
+  },
+  "scope": "All 24 sources, questions, rubrics, annotation criteria and variant definitions; protocol/scoring contract; request preparation, freezing, execution, parsers and transport; actual prototype call adapters, relevant prototype implementation sections and all 24 base operation outputs. This is not a full independent re-proof of prototype internals.",
+  "checks": {
+    "caseCoverage": {
+      "proposals": 6,
+      "cases": 24,
+      "perProposal": 4,
+      "conditions": [
+        "useful",
+        "missing",
+        "misleading",
+        "ordinary"
+      ],
+      "laterInterpretationCase": "B05-01"
+    },
+    "sameInformation": "Baseline and augmented requests share actual ordinary recall output and the same supplied annotations; only the computed supplement differs.",
+    "prototypeUse": "All six adapters call the actual existing prototype functions, rather than prewritten answer reports. Inspected outputs include false-annotation supplements and the later-interpretation traversal.",
+    "annotationTasks": "Every task changes a named field or coherent field group from sources alone. No question, gold, rubric, expected choice or study condition is passed to the annotation endpoint. Some annotations directly cover a requested fact; this remains constrained source annotation, not full extraction.",
+    "leakage": "Reader requests omit case IDs, condition labels, gold, rubric and answer choices. They include legitimate structured evidence and computed results. The selected annotation and its fallible description are explicit treatment data.",
+    "sourceAuthority": "System prompt and adversarial rubrics require source evidence to govern where annotations or operation results conflict with it.",
+    "finiteCalls": "48 plain reader calls, then at most 24 annotation plus 24 assisted reader calls; zero retry/repair calls; existing attempt files refuse replay; three consecutive infrastructure failures stop a phase; separate two-call smoke receipt.",
+    "identity": "Selected reader appears in acquired endpoint evidence. Reader and annotation responses must match configured model identity. Smoke responses match both selected model names.",
+    "freeze": "Preparation requires accepted review and exact reviewed bytes for contract, protocol, scoring contract, runner and fixture modules. Execution checks manifest, frozen inputs, relevant code and preparation hashes.",
+    "failureAndAccounting": "Raw calls preserve responses or sanitized transport failures. Model output/schema failures stay failures without repair requests. Protocol explicitly counts all raw calls, including malformed annotations; setup and review computation are excluded and named.",
+    "credentials": "Environment credentials are used only for transport headers; no headers/error bodies are stored and logged values redact configured credentials. Reviewed fixtures and metadata contain no credentials.",
+    "blinding": "Blinding output includes only sources, question, rubric, answer and mechanical validity under shuffled anonymous IDs; separate map must remain unread until semantic scores are saved."
+  },
+  "resolvedFindings": [
+    {
+      "id": "R1",
+      "severity": "blocking before freeze",
+      "case": "B06-04",
+      "finding": "The original preference statement became a choice/action claim in the candidate while the rubric required faithful-paraphrase acceptance. A faithful reader could legitimately reject it.",
+      "resolution": "Candidate now retains prefers and preserves sometimes, unfamiliar recipes and sketching versus rereading. Revised bytes re-read and all instrument tests passed."
+    }
+  ],
+  "openBlockingFindings": [],
+  "validation": {
+    "command": "/Users/jrg/.bun/bin/bun test research/lab/behavioral-005/runner.test.ts",
+    "tests": 5,
+    "assertions": 222,
+    "failures": 0,
+    "studyInferenceCallsByReviewer": 0
+  },
+  "limitations": [
+    "24 authored diagnostic cases and one observation per condition do not estimate population performance or establish a shipping threshold.",
+    "Full sources and manually supplied annotations are always present in the paired comparison; this measures consumption, not context saving, retrieval policy, or the default capture pipeline end to end.",
+    "Unknown annotation choices remove both annotations and supplement; assisted fallback therefore changes more than the operation alone.",
+    "Jev selects among bounded prewritten annotation variants. This is not arbitrary extraction, ontology discovery, mnemonic invention or proof a classifier is necessary.",
+    "Annotations and supplied source-validity flags remain fallible. Formal results establish only their declared structural properties.",
+    "Assisted calls occur later, generation is not deterministically seeded, immutable weights are not asserted, and no repeats estimate variance.",
+    "One arm-blinded agent performs semantic judgment; no human adjudication or inter-rater reliability is claimed.",
+    "Prototype timings are preparation measurements; setup, fixture authoring and reviewer computation are outside study HTTP accounting."
+  ]
+}

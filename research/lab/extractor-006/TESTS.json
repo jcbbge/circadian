@@ -1,0 +1,17 @@
+{
+  "focused": {
+    "passed": 50,
+    "failed": 0,
+    "assertions": 365,
+    "scope": "final calibration code/fixture corrections"
+  },
+  "full_repository_before_final_fixture_corrections": {
+    "passed": 905,
+    "skipped": 21,
+    "failed": 0,
+    "assertions": 18799,
+    "log": "/Users/jrg/Library/Caches/circadian-research/extractor-006-z74ujy9d/full-tests.txt"
+  },
+  "historical_005_hashes_unchanged": 30,
+  "production_files_changed": false
+}

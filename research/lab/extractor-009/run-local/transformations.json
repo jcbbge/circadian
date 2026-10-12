@@ -1,0 +1,116 @@
+[
+  {
+    "oldId": "cal-06-journal-old",
+    "candidateId": "cal-06-journal-candidate",
+    "expected": "changed",
+    "report": {
+      "operation": "checkPresentation",
+      "result": {
+        "status": "checked",
+        "properties": [
+          {
+            "name": "subject",
+            "status": "pass",
+            "conditionalOn": []
+          },
+          {
+            "name": "attribution",
+            "status": "pass",
+            "conditionalOn": []
+          },
+          {
+            "name": "circumstance",
+            "status": "pass",
+            "conditionalOn": []
+          },
+          {
+            "name": "modality",
+            "status": "fail",
+            "conditionalOn": []
+          },
+          {
+            "name": "comparison",
+            "status": "pass",
+            "conditionalOn": []
+          },
+          {
+            "name": "kind",
+            "status": "pass",
+            "conditionalOn": []
+          },
+          {
+            "name": "origin",
+            "status": "pass",
+            "conditionalOn": []
+          },
+          {
+            "name": "source-references",
+            "status": "pass",
+            "conditionalOn": []
+          },
+          {
+            "name": "source[0]",
+            "status": "pass",
+            "reason": "textual-presence-only",
+            "conditionalOn": []
+          },
+          {
+            "name": "source[1]",
+            "status": "pass",
+            "reason": "textual-presence-only",
+            "conditionalOn": []
+          },
+          {
+            "name": "input-bytes",
+            "status": "pass",
+            "conditionalOn": []
+          },
+          {
+            "name": "prose-preservation",
+            "status": "notChecked",
+            "reason": "free-prose-unassessed",
+            "conditionalOn": []
+          }
+        ],
+        "differences": [
+          "modality"
+        ],
+        "byteChange": "changed",
+        "representationCoverage": {
+          "knownFields": 5,
+          "totalFields": 5,
+          "prose": "unassessed"
+        },
+        "assumptionsUsed": [],
+        "binding": {
+          "old": "339d773a2b884d5e85b6fe1140bdff38d1ee62e679f1aa1b045131a5d3a96c3b",
+          "candidate": "050654c594663cd9c3cd279afd5265fb2ec7818170f4d608b802920222c65ff8",
+          "annotation": "bc237f8be8ff39fd4664141ad47cbd0194fd6c69aee2da01cd9dc5bc645d4550",
+          "source": "16b7ac1488fb025c22ad8368d650a899d99a01ff9db3deda0493dfa7f2694484",
+          "assumption": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+          "rule": "6e281940ac44973028903304503d9cd06d1571b1fae507a7606222ebfd62c6a5",
+          "checker": "11b7895fb647c750305011398a6a9a6ba32a61496b5b664577a93489483ebabc",
+          "mode": "3e07f22f81c02a1dc7a1eb3e427e68335ff0ee3534a04bc2feaafcf0523fe778"
+        },
+        "guarantee": "Only named structural and template properties were checked. Byte changes are not semantic verdicts. Annotations, assumptions and arbitrary prose are not verified truth. This report authorizes no publication."
+      },
+      "scope": "Checks annotated equality and caller-declared unchanged provenance. Quotes establish presence only; arbitrary prose and annotation truth remain unassessed."
+    }
+  },
+  {
+    "oldId": "confirm-r15",
+    "candidateId": "confirm-b76",
+    "expected": "preserved",
+    "report": {
+      "status": "unavailable"
+    }
+  },
+  {
+    "oldId": "confirm-r15",
+    "candidateId": "confirm-n24",
+    "expected": "changed",
+    "report": {
+      "status": "unavailable"
+    }
+  }
+]

@@ -1,0 +1,18 @@
+[
+  {"id":"R01","status":"deterministic","test":"R01 produce the exact tentative source-backed afternoon","note":"Exact G [90,105) output and six independent evidence refs; ordinary full function matches."},
+  {"id":"R02","status":"deterministic","test":"R02 missing Noor availability never invents an interval","note":"Precise missing slot, no invented calendar."},
+  {"id":"R03","status":"deterministic","test":"R03 reject a preference bound to a different participant","note":"Dana cannot substitute for a participant."},
+  {"id":"R04","status":"deterministic","test":"R04 superseded ineligible or changed bindings need reconsideration","note":"All three source-state variants prevent reuse; continuing real-world truth is supplied separately."},
+  {"id":"R05","status":"deterministic","test":"R05 shared evidence across branches is not double counted","note":"Same source used in preference and calendar branches yields one evidence ref."},
+  {"id":"R06","status":"deterministic","test":"R06 preference residual equals full application across three completions","note":"Base, insufficient overlap and alternate quiet venue match explicit expected outcomes and full application."},
+  {"id":"R07","status":"deterministic","test":"R07 only windows can substitute into the windows slot","note":"Runtime type tags accept interval output and reject place output in that slot."},
+  {"id":"R08","status":"deterministic","test":"R08 pure identity and grouping preserve result and evidence","note":"Specific finite grouping and identity examples, not a general operad proof."},
+  {"id":"R09","status":"deterministic","test":"R09 supplied time makes computation deterministic without input mutation","note":"Changing wall clock leaves outputs equal; inputs remain unchanged and API has no persistence integration."},
+  {"id":"R10","status":"deterministic","test":"R10 temporary inapplicability does not retire the aid","note":"Does-not-apply, applies and unknown have distinct results; no retirement mutation."},
+  {"id":"R11","status":"deterministic","test":"R11 invalid conditions and retirement are separate from deleting experience","note":"A bound place with invalid condition causes reconsideration; explicit retirement retains the source-bearing aid."},
+  {"id":"R12","status":"deterministic","test":"R12 deleted required source prevents stale binding reuse","note":"Missing source returns unavailableSource. Persistent sidecar label/text erasure remains unimplemented and is required before live use."},
+  {"id":"R13","status":"deterministic","test":"R13 record cap rejects before inspecting the excess population","note":"21 records against cap20 rejected before any record getter is read."},
+  {"id":"R14","status":"deferred-behavioral","test":null,"note":"No inference, authoring/discovery-cost or prose comparison run. Direct function equivalence is tested in R01/R06/R15; total-cost advantage and usefulness require the bounded later evaluation."},
+  {"id":"R15","status":"deterministic","test":"R15 distinct specializations equal the same full application","note":"Preference-bound and calendar-bound residuals yield exact same output and evidence as full application."},
+  {"id":"R16","status":"deterministic","test":"R16 conflicting bound preferences are never overwritten","note":"Conflicting repeat returns bindingConflict, preserves original input."}
+]

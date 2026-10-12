@@ -1,0 +1,10 @@
+{
+  "intended_condition": "ordinary prose preparation with same informational assignment",
+  "implementation_limit": "The plain packet retained JSON-oriented preparationContract instructions and supplied a formatOverride. Two outputs still emitted schema-shaped JSON; this is not a clean prose-only comparison.",
+  "json_shaped_outputs": [
+    "cal-03-speaker-subject",
+    "cal-03-unknown-attribution"
+  ],
+  "count": 2,
+  "future_change_proposal": "Separate semantic preparation instructions from serialization instructions before another run. No repair or rerun performed."
+}

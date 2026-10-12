@@ -1,0 +1,11 @@
+{
+  "accepted": true,
+  "at": "2026-10-12T05:26:51.487587+00:00",
+  "independentReview": "/Users/jrg/Library/Caches/circadian-research/extractor-007-cb3pwuv2/009-review.md",
+  "independentReviewHash": "5f84eaea6d70926e8423d6da168f7c2ecd83727ab18669901372a21e927607e8",
+  "parentAcceptance": "Inspected actual verifier report, final source hashes, unchanged decoding and readers, bounded36calls, parse/import check and inherited freeze verification.",
+  "hashes": {
+    "/Users/jrg/circadian/research/lab/extractor-009/runner.ts": "2c9089fb177bf4350b2b87c87c0951e9ba8461f5e1397f56efbf0d840091afec",
+    "/Users/jrg/circadian/research/lab/extractor-009/PROTOCOL.md": "8ef5ee7806152ffbee5bf8aa228ccf7d1523481dc6c78f412c98bf6838510ade"
+  }
+}

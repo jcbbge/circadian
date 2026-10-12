@@ -1,0 +1,21 @@
+{
+  "status": "accepted for measured inference",
+  "acceptor": "root reviewer",
+  "tests": {
+    "command": "bun test research/lab",
+    "passed": 36,
+    "failed": 0,
+    "real_network_calls_in_tests": 0
+  },
+  "review_findings_resolved": [
+    "Retrieval permission equal with and without metadata",
+    "Progression gate explicit before inference",
+    "Action correctness separate from answer and support",
+    "Choice arrays rejected before option lookup"
+  ],
+  "fixture_review": "fixture-review.md",
+  "protocol": "../../DIAGNOSTIC.md",
+  "protocolSha256": "7a440e9c97316b20b7a078aeac95ce06b3991d3a0e134fe8c6e5361c71ab5ecc",
+  "runnerTestSha256": "4717087324ecd33b2c43ce7be72626fdfd819881ca0ca11554218af2f4ae1d8a",
+  "progression": "All 8 sufficient capability trials supported and 48 error-free diagnostic trials; missing abstention inspected, not required."
+}

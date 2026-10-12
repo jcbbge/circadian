@@ -1,0 +1,429 @@
+{
+  "status": "Document checks passed within the recorded browser limitations",
+  "sourceChecks": {
+    "verifiedAt": "2026-10-11T23:21:24.393501+00:00",
+    "prototypeSourcesChecked": 33,
+    "prototypeHashMismatches": [],
+    "buildSourcesChecked": 19,
+    "buildHashMismatches": [],
+    "missingLinks": [],
+    "trackedFiles": 213,
+    "trackedDiffBytes": 0,
+    "htmlSHA256": "4e445520769913d79bbae3e0fb6085306bbd40a62c62fa172f4a5711c2bcb01d",
+    "htmlBytes": 1673272
+  },
+  "browser": {
+    "engine": "T3 Code native collaborative preview",
+    "readoutAndLineChecks": [
+      {
+        "expected": "1 shown · 2 omitted",
+        "id": "01",
+        "lineAudit": {
+          "ends": 60,
+          "lines": 25,
+          "problems": []
+        },
+        "readout": "1 shown · 2 omitted",
+        "state": "a",
+        "theme": "light"
+      },
+      {
+        "expected": "2 shown · 1 omitted",
+        "id": "01",
+        "lineAudit": {
+          "ends": 60,
+          "lines": 25,
+          "problems": []
+        },
+        "readout": "2 shown · 1 omitted",
+        "state": "b",
+        "theme": "light"
+      },
+      {
+        "expected": "1 assignment checked · fits",
+        "id": "02",
+        "lineAudit": {
+          "ends": 60,
+          "lines": 12,
+          "problems": []
+        },
+        "readout": "1 assignment checked · fits",
+        "state": "a",
+        "theme": "light"
+      },
+      {
+        "expected": "8 assignments checked · no fit",
+        "id": "02",
+        "lineAudit": {
+          "ends": 60,
+          "lines": 12,
+          "problems": []
+        },
+        "readout": "8 assignments checked · no fit",
+        "state": "b",
+        "theme": "light"
+      },
+      {
+        "expected": "2 supported reports",
+        "id": "03",
+        "lineAudit": {
+          "ends": 66,
+          "lines": 21,
+          "problems": []
+        },
+        "readout": "2 supported reports",
+        "state": "a",
+        "theme": "light"
+      },
+      {
+        "expected": "3 supported reports",
+        "id": "03",
+        "lineAudit": {
+          "ends": 66,
+          "lines": 21,
+          "problems": []
+        },
+        "readout": "3 supported reports",
+        "state": "b",
+        "theme": "light"
+      },
+      {
+        "expected": "15-minute tentative option",
+        "id": "04",
+        "lineAudit": {
+          "ends": 60,
+          "lines": 26,
+          "problems": []
+        },
+        "readout": "15-minute tentative option",
+        "state": "a",
+        "theme": "light"
+      },
+      {
+        "expected": "1 missing input · no invented plan",
+        "id": "04",
+        "lineAudit": {
+          "ends": 60,
+          "lines": 26,
+          "problems": []
+        },
+        "readout": "1 missing input · no invented plan",
+        "state": "b",
+        "theme": "light"
+      },
+      {
+        "expected": "1 jointly supported occasion",
+        "id": "05",
+        "lineAudit": {
+          "ends": 60,
+          "lines": 26,
+          "problems": []
+        },
+        "readout": "1 jointly supported occasion",
+        "state": "a",
+        "theme": "light"
+      },
+      {
+        "expected": "0 jointly supported occasions",
+        "id": "05",
+        "lineAudit": {
+          "ends": 60,
+          "lines": 24,
+          "problems": []
+        },
+        "readout": "0 jointly supported occasions",
+        "state": "b",
+        "theme": "light"
+      },
+      {
+        "expected": "5 named fields match",
+        "id": "06",
+        "lineAudit": {
+          "ends": 68,
+          "lines": 24,
+          "problems": []
+        },
+        "readout": "5 named fields match",
+        "state": "a",
+        "theme": "light"
+      },
+      {
+        "expected": "1 named property fails",
+        "id": "06",
+        "lineAudit": {
+          "ends": 68,
+          "lines": 24,
+          "problems": []
+        },
+        "readout": "1 named property fails",
+        "state": "b",
+        "theme": "light"
+      },
+      {
+        "expected": "1 shown · 2 omitted",
+        "id": "01",
+        "lineAudit": {
+          "ends": 60,
+          "lines": 25,
+          "problems": []
+        },
+        "readout": "1 shown · 2 omitted",
+        "state": "a",
+        "theme": "dark"
+      },
+      {
+        "expected": "2 shown · 1 omitted",
+        "id": "01",
+        "lineAudit": {
+          "ends": 60,
+          "lines": 25,
+          "problems": []
+        },
+        "readout": "2 shown · 1 omitted",
+        "state": "b",
+        "theme": "dark"
+      },
+      {
+        "expected": "1 assignment checked · fits",
+        "id": "02",
+        "lineAudit": {
+          "ends": 60,
+          "lines": 12,
+          "problems": []
+        },
+        "readout": "1 assignment checked · fits",
+        "state": "a",
+        "theme": "dark"
+      },
+      {
+        "expected": "8 assignments checked · no fit",
+        "id": "02",
+        "lineAudit": {
+          "ends": 60,
+          "lines": 12,
+          "problems": []
+        },
+        "readout": "8 assignments checked · no fit",
+        "state": "b",
+        "theme": "dark"
+      },
+      {
+        "expected": "2 supported reports",
+        "id": "03",
+        "lineAudit": {
+          "ends": 66,
+          "lines": 21,
+          "problems": []
+        },
+        "readout": "2 supported reports",
+        "state": "a",
+        "theme": "dark"
+      },
+      {
+        "expected": "3 supported reports",
+        "id": "03",
+        "lineAudit": {
+          "ends": 66,
+          "lines": 21,
+          "problems": []
+        },
+        "readout": "3 supported reports",
+        "state": "b",
+        "theme": "dark"
+      },
+      {
+        "expected": "15-minute tentative option",
+        "id": "04",
+        "lineAudit": {
+          "ends": 60,
+          "lines": 26,
+          "problems": []
+        },
+        "readout": "15-minute tentative option",
+        "state": "a",
+        "theme": "dark"
+      },
+      {
+        "expected": "1 missing input · no invented plan",
+        "id": "04",
+        "lineAudit": {
+          "ends": 60,
+          "lines": 26,
+          "problems": []
+        },
+        "readout": "1 missing input · no invented plan",
+        "state": "b",
+        "theme": "dark"
+      },
+      {
+        "expected": "1 jointly supported occasion",
+        "id": "05",
+        "lineAudit": {
+          "ends": 60,
+          "lines": 26,
+          "problems": []
+        },
+        "readout": "1 jointly supported occasion",
+        "state": "a",
+        "theme": "dark"
+      },
+      {
+        "expected": "0 jointly supported occasions",
+        "id": "05",
+        "lineAudit": {
+          "ends": 60,
+          "lines": 24,
+          "problems": []
+        },
+        "readout": "0 jointly supported occasions",
+        "state": "b",
+        "theme": "dark"
+      },
+      {
+        "expected": "5 named fields match",
+        "id": "06",
+        "lineAudit": {
+          "ends": 68,
+          "lines": 24,
+          "problems": []
+        },
+        "readout": "5 named fields match",
+        "state": "a",
+        "theme": "dark"
+      },
+      {
+        "expected": "1 named property fails",
+        "id": "06",
+        "lineAudit": {
+          "ends": 68,
+          "lines": 24,
+          "problems": []
+        },
+        "readout": "1 named property fails",
+        "state": "b",
+        "theme": "dark"
+      }
+    ],
+    "controller": {
+      "arrow": {
+        "proposal": "02",
+        "tab": "tool-02"
+      },
+      "clickState": "b",
+      "dark": "dark",
+      "desktop": {
+        "height": 800,
+        "scrollWidth": 1280,
+        "width": 1280
+      },
+      "end": "06",
+      "home": "01",
+      "left": "a",
+      "light": "light",
+      "method": "DOM click and KeyboardEvent dispatch in native browser",
+      "next": "02",
+      "right": "b"
+    },
+    "mobile": {
+      "checks": [
+        {
+          "id": "01",
+          "overflow": [],
+          "state": "a"
+        },
+        {
+          "id": "01",
+          "overflow": [],
+          "state": "b"
+        },
+        {
+          "id": "02",
+          "overflow": [],
+          "state": "a"
+        },
+        {
+          "id": "02",
+          "overflow": [],
+          "state": "b"
+        },
+        {
+          "id": "03",
+          "overflow": [],
+          "state": "a"
+        },
+        {
+          "id": "03",
+          "overflow": [],
+          "state": "b"
+        },
+        {
+          "id": "04",
+          "overflow": [],
+          "state": "a"
+        },
+        {
+          "id": "04",
+          "overflow": [],
+          "state": "b"
+        },
+        {
+          "id": "05",
+          "overflow": [],
+          "state": "a"
+        },
+        {
+          "id": "05",
+          "overflow": [],
+          "state": "b"
+        },
+        {
+          "id": "06",
+          "overflow": [],
+          "state": "a"
+        },
+        {
+          "id": "06",
+          "overflow": [],
+          "state": "b"
+        }
+      ],
+      "viewport": {
+        "height": 844,
+        "scrollWidth": 390,
+        "width": 390
+      }
+    },
+    "visualInspection": {
+      "contactSheets": [
+        "captures/sheetLight1.jpg",
+        "captures/sheetLight2.jpg",
+        "captures/sheetDark1.jpg",
+        "captures/sheetDark2.jpg"
+      ],
+      "scope": "All twelve configurations in both themes, parent and geometry-author visual review; captures are computed-style SVG rasterizations, not page screenshots.",
+      "junctionCrop": "captures/detail02b4x.jpg",
+      "junctionScope": "02/b key/bar junction inspected by parent at 4x; no claim that every junction received a 4x crop."
+    },
+    "codeInspected": [
+      "Reduced-motion disables initial autoplay and transitions",
+      "Interaction, hidden-document and offscreen pause conditions",
+      "One shared data source for each captured figure readout"
+    ],
+    "limits": [
+      "Native snapshot failed on the connected client; full-page screenshot acceptance is unavailable.",
+      "Native click/key tools returned success without expected state change; controller checks used DOM-dispatched events.",
+      "Idle tour timing, offscreen pause and OS-level motion preference were not runtime-certified."
+    ]
+  },
+  "review": {
+    "allSixCovered": true,
+    "generalPurposeScope": true,
+    "productionIntegrationClaimed": false,
+    "modelBenefitClaimed": false,
+    "correction": "Replaced invented later-understanding quotation with the literal fixture accounts, interpolated from their source values; clarified source availability at expansion.",
+    "geometry": "All twelve configurations pass the builder's sampled ordering, conservative intersection, support-contact and part-budget checks. These checks are not a physics proof."
+  },
+  "inferenceCalls": 0,
+  "liveMemoryReadsForExamples": 0,
+  "productionFilesChanged": 0
+}

@@ -1,0 +1,118 @@
+{
+  "verifiedAt": "2026-10-12T02:23:42.505226+00:00",
+  "scope": "Completed research study; no production integration or deployment",
+  "accounting": {
+    "verifiedAt": "2026-10-12T02:22:33.641492+00:00",
+    "method": "Independent Python recomputation from raw calls, trial rows, frozen cases, anonymous map and scores; not report.ts output alone",
+    "observedTrials": 72,
+    "studyRequests": 96,
+    "annotationCorrect": 24,
+    "overallPasses": {
+      "baseline": 5,
+      "augmented": 6,
+      "jev": 8
+    },
+    "inputTokens": 71046,
+    "outputTokens": 20700,
+    "pairwiseRepairsRegressionsMatch": true,
+    "recordedUsageAndTimingMatch": true,
+    "allScoredArtifactHashesMatch": true,
+    "frozenSourcesUnchanged": 152,
+    "trackedChanges": 0,
+    "testCredentialPatternMatches": 0,
+    "temporaryCredentialAbsent": true
+  },
+  "aggregationImplementation": {
+    "acceptedAt": "2026-10-12T02:09:35.521646+00:00",
+    "verifier": "parent; independent of aggregator author",
+    "artifact": "/Users/jrg/circadian/research/lab/behavioral-005/report.ts",
+    "sha256": "d268fa784a1cec92b52b54596af66cf03806da1f82b532f870cac3e9a9b67590",
+    "inspection": [
+      "read complete aggregator and durable author report",
+      "independently executed exact synthetic checks",
+      "reviewed raw-call accounting, pass formula, paired comparisons, missing-usage handling and frozen-request equality"
+    ],
+    "syntheticChecks": {
+      "completeTrials": 72,
+      "completeCalls": 96,
+      "malformedGateCallsRetained": true,
+      "missingUsageNotZeroFilled": true,
+      "nearCapMalformedWithStopDetected": true,
+      "explicitStoppedStudyDetected": true,
+      "invalidEvidenceRejections": 9,
+      "modelCalls": 0
+    },
+    "scope": "Accept aggregation implementation; real semantic scores/results are still pending."
+  },
+  "independentReviews": {
+    "preRun": {
+      "artifact": "PRE-RUN-REVIEW.json",
+      "accepted": true
+    },
+    "semantic": {
+      "artifact": "SEMANTIC-REVIEW.md",
+      "scores": "run/semantic-scores.json",
+      "parentAccepted": true,
+      "scope": "72 scores; frozen required-list lengths/pass formula, artifact identity and per-case rationales checked; no rescoring"
+    },
+    "integrationBoundaries": {
+      "passed": true,
+      "findingsResolved": 2,
+      "sha256": "dbbbbdd820dbcfa6bcb1f2934c9ec404cbf37989dc61f03ff57b3365c0494539"
+    },
+    "assessment": {
+      "passed": true,
+      "requiredCorrections": 0,
+      "sha256": "8c22f1ab7b9fa0cf8d17d6f049364294f95785920b3241fcb9b6324677b7fec7"
+    }
+  },
+  "instrumentChecks": {
+    "runnerTests": 5,
+    "runnerAssertions": 222,
+    "runnerTestFailures": 0,
+    "aggregationSyntheticTrials": 72,
+    "aggregationSyntheticCalls": 96,
+    "aggregationInvalidEvidenceRejections": 9,
+    "frozenRunnerVerifyPassed": true,
+    "localDocumentLinksResolved": true
+  },
+  "artifactHashes": {
+    "ASSESSMENT.md": "8c22f1ab7b9fa0cf8d17d6f049364294f95785920b3241fcb9b6324677b7fec7",
+    "INTEGRATION-BOUNDARIES.md": "dbbbbdd820dbcfa6bcb1f2934c9ec404cbf37989dc61f03ff57b3365c0494539",
+    "PRE-RUN-REVIEW.json": "a337221f9f6584f12c1ffc404303dffabccc3a70bcefe42daede265e761b4ea5",
+    "PROTOCOL.md": "a0af95114be76f5acc7e7866f184578440db41f6c4ec103573ea44a8b6a366ae",
+    "README.md": "5531f4faabf91784b98924523c9fc5a04fe6c07ad5fc5fb85028dccc0e9bff68",
+    "RESULTS.md": "215b490a75af19f236cc818786a5dc42c3ceea173252defccca148465b7d1101",
+    "SCORING.md": "aa2fae18478531b88b9522fa5743473775a3ab30797bff8d00c9e1b021fe165e",
+    "SEMANTIC-REVIEW.md": "2912d1cb64c9bcb881a758a224c134879913f96e2728cfa703587d34ae6abd40",
+    "cases-01-03.ts": "c5f3c34089b5769a2833670040a74bcabf63702072a5c9d86d7daf16eee248e3",
+    "cases-04-06.ts": "dfc0085d85c06cf3e6d4767e40d0d52d13f25d5bdc39b57a95f1ddf0a79a36a5",
+    "contract.ts": "41e1195a86915ba110194eeae31c4b4a47bb111f24ae6472ac28d5d555175f2a",
+    "endpoint-evidence.json": "276d599198292aa087923769afb4cf36171328fedef1be8f575416709b5dc625",
+    "report.ts": "d268fa784a1cec92b52b54596af66cf03806da1f82b532f870cac3e9a9b67590",
+    "run/blind-answers.json": "f7efe3b8f60c256c79fe1798c52570b89cace50db796a7a69383b9deec045063",
+    "run/blind-map.json": "770f76b32ea81b3b10b1949e6911c5ff1c59bb9bf069b3b61ca76cea6fa4d017",
+    "run/cases.json": "c78396ce5823c168fa0ed92bf1cecee10236562fbcce7419c8f13be2f15046f8",
+    "run/jev.calls.jsonl": "a28f8c478b2e40d7abec876d03f5c37ac1b35d388b86ce22e21e624341409a05",
+    "run/jev.complete.json": "93919332bc44cee9c9271ba30ffd3e2b97f0872d99d12ba325f25e0ea2c58f42",
+    "run/jev.results.jsonl": "6ad80698b1cb700431b92edc1d13ad0e9935828e2dd03d4e0b58d39af4a899ab",
+    "run/manifest.json": "7aad59f8e22a165e7a15d98fc030957832b0f19f766f95468922f52504759a00",
+    "run/manifest.sha256": "906733315dcec05623e56e3aa1e6eabd946eb0f0922a307d1e33f674e9678b77",
+    "run/plain.calls.jsonl": "08ff66a5452fac02c4770cca552b4194c4f8b747f1402bf86b938f387201fe16",
+    "run/plain.complete.json": "3fc9dd733d665d31b96f66c979584eee306bc225557ea89cb97b8675dd2eac3b",
+    "run/plain.results.jsonl": "c89a553b2cacf648e87dd6b43f6957f289b4f308462a73f7f108dc60c77adfd7",
+    "run/requests.json": "14a55f39b14bd37141dde403fcf2581dbe0c39f64503a59aeca1752890d563ac",
+    "run/semantic-scores.json": "5594a5690660db25b6bb387a343dceed5fca5135f619c133a6699383924e3a32",
+    "run/summary.json": "94d996744b5a8d28b76108592a2ee25df4a5556701c8f6f44006de959f15384e",
+    "runner.test.ts": "73bfee98739a49da5f8b520ed9271f70ddc81d05fdb69dd7eb456a83d39ccb8a",
+    "runner.ts": "06950e84078fac8a9dce310815d85fb5e47ad559a9eb48c7821a5b63f3acd474",
+    "smoke.json": "acecc51dec3160848b303013d46e88f3c4bc45b41164d5fca0c7ae81912a50dd"
+  },
+  "boundaries": {
+    "studyHttpAccountingExcludesSetupAndReviewerComputation": true,
+    "singleBlindedSemanticReviewer": true,
+    "productionFilesChanged": false,
+    "temporaryCredentialCopyRemoved": true,
+    "noFurtherInferencePlanned": true
+  }
+}

@@ -1,0 +1,41 @@
+{
+  "observedAt": "2026-10-12T01:41:36.651310+00:00",
+  "url": "http://127.0.0.1:10240/v1/models",
+  "response": {
+    "object": "list",
+    "data": [
+      {
+        "id": "mlx-community/Qwen3-Embedding-4B-4bit-DWQ",
+        "object": "model",
+        "created": 1776560770,
+        "owned_by": "mlx-community"
+      },
+      {
+        "id": "mlx-community/Qwen3-30B-A3B-Instruct-2507-4bit",
+        "object": "model",
+        "created": 1785138564,
+        "owned_by": "mlx-community"
+      },
+      {
+        "id": "lightonai/LateOn-Code-edge",
+        "object": "model",
+        "created": 1785982154,
+        "owned_by": "lightonai"
+      },
+      {
+        "id": "mlx-community/Qwen3-4B-Instruct-2507-4bit",
+        "object": "model",
+        "created": 1784357731,
+        "owned_by": "mlx-community"
+      }
+    ]
+  },
+  "documentation": [
+    "https://docs.typesafe.ai/introduction/quickstart",
+    "https://docs.typesafe.ai/models",
+    "https://docs.typesafe.ai/api"
+  ],
+  "selectedReader": "mlx-community/Qwen3-30B-A3B-Instruct-2507-4bit",
+  "selectedAnnotationModel": "jev-1.13.0",
+  "weightRevision": null
+}

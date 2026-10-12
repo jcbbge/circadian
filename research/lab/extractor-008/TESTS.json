@@ -1,0 +1,24 @@
+{
+  "focused": {
+    "pass": 71,
+    "fail": 0,
+    "assertions": 982,
+    "receipt": "/Users/jrg/Library/Caches/circadian-research/extractor-007-cb3pwuv2/008-focused-tests.txt",
+    "sha256": "b24cdf9a45f9f689332cbf7b32f42739dadf7e98eee30e8a01167ea708a69727"
+  },
+  "repositoryBeforeServingOnlyDelta": {
+    "pass": 970,
+    "skip": 21,
+    "fail": 0,
+    "assertions": 19772,
+    "receipt": "/Users/jrg/Library/Caches/circadian-research/extractor-007-cb3pwuv2/full-tests.txt",
+    "sha256": "6986acc4deef1e3108bbe528bf4ce3e7bb3d771518a98299c8bbbcca7117b915"
+  },
+  "currentRunnerExecution": {
+    "requests": 72,
+    "cases": 18,
+    "completed": true,
+    "independentlyReviewedOutputs": 72
+  },
+  "scope": "All semantic adapter changes covered by full run; serving projection covered by six new tests and combined focused suite. 009 runner independently inspected and exercised by36calls. No model inference in automated code tests."
+}

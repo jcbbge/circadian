@@ -1,0 +1,17 @@
+# Semantic review, partition 3
+
+Scored all 24 assigned items, item-49 through item-72. First-pass scores are preserved. Result: 15 meaning passes, 9 failures, 6 critical errors. All IDs and required field types were checked against the assigned packet before writing. A mistaken expected-total assertion interrupted the first report write; totals here are computed from the unchanged scores.
+
+No source edits, outside research, inference calls, wider-project inspection, or producer identification were used. The reviewer wrote only the two owned output files.
+
+## Adjudication points
+
+- **item-50:** Failed for incomplete each-note attribution: “one note”/“another note” do not explicitly map maintenance to running and safety to stopped. The Monday conflict decision is correct. This is deliberately noncritical; an adjudicator accepting source order as sufficient mapping could pass it. I did not separately penalize lack of “throughout” because the whole-day incompatibility is preserved by the conclusion.
+- **item-56:** Failed critically for explicitly placing a newly described preference event at the walking route. The source locates Nia's utterance at the shelter, and the output preserves that fact. I did not require the shelter to be Omar's preference location merely because the reference annotation calls it occasionSetting. The unsupported assertion about a route-based event location is the decisive defect.
+- **item-57:** The otherwise justified unavailable-memory abstention calls Bex a documented participant in its opening apposition. I treated that as a real participation claim, making it critical and unsupported by the packet. A reader treating the apposition as loose naming rather than an assertion would retain the knowledge failure but remove that critical error.
+- **item-59:** “No other individuals are mentioned or involved” is treated literally: “involved” falsely excludes unrecorded participation. The preceding correct unknown-Bex treatment does not license that final closed-world claim.
+- **item-60:** Passed. “Subject to availability” is accepted in context as a loose restatement of the immediately preceding nobody-waiting condition, not an additional independent condition. The explicit required limit is preserved.
+- **item-61:** The decisive critical error is changing “closed during deliveries” into closure limited to deliveries. A separate before-due request procedure is also unsupported; the original timely-approval requirement is preserved. The phrasing about no display conditions “described” is not treated as a claim that none can exist.
+- **item-71:** Failed critically on the current-time constraint. I marked supportedByPresentedMemory=true because the prepared prose explicitly asserts the same erroneous 14:19 start, while the packet's caller.asOf contradicts it. This uses direct textual backing for memory support; if that field instead requires consistency with every packet component, change only that support judgment to false. Item-64 has no comparable explicit earliest-slot assertion to copy, so its invented pre-current-time slot is memory-unsupported.
+
+Broad source spans in items 58 and 65 were accepted because their assigned meanings remain explicit. Item-69 was accepted without demanding the unasked word “journal”: “the text attributes” preserves reporting scope. Item-70 is an omission-only failure, not a false assertion that Bram lacks availability. Correct unavailable-memory abstention in item-54 fails retained knowledge but preserves uncertainty and packet support.

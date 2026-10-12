@@ -1,0 +1,16 @@
+{
+  "server": "circadian",
+  "tools": [
+    "memory_expand",
+    "memory_history",
+    "memory_read",
+    "memory_recall",
+    "memory_request_change",
+    "memory_search",
+    "memory_status",
+    "memory_view"
+  ],
+  "toolsError": null,
+  "passed": true,
+  "modelCalled": false
+}

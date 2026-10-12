@@ -1,0 +1,59 @@
+{
+  "study_requests": 32,
+  "dispatch_intents": 32,
+  "successful_http": 32,
+  "served_models": [
+    "mlx-community/Qwen3-30B-A3B-Instruct-2507-4bit"
+  ],
+  "syntactic_json": 6,
+  "usable_structured": 1,
+  "bundles": 8,
+  "phases": {
+    "extract": {
+      "calls": 8,
+      "prompt_tokens": 5541,
+      "completion_tokens": 2046,
+      "elapsed_ms": 25581,
+      "median_ms": 2850.0
+    },
+    "plain": {
+      "calls": 8,
+      "prompt_tokens": 5525,
+      "completion_tokens": 1298,
+      "elapsed_ms": 16796,
+      "median_ms": 2329.5
+    },
+    "read-structured": {
+      "calls": 8,
+      "prompt_tokens": 2895,
+      "completion_tokens": 449,
+      "elapsed_ms": 6876,
+      "median_ms": 862.0
+    },
+    "read-plain": {
+      "calls": 8,
+      "prompt_tokens": 3090,
+      "completion_tokens": 663,
+      "elapsed_ms": 8793,
+      "median_ms": 1193.0
+    }
+  },
+  "completion_tokens_max": 515,
+  "finish_reasons": {
+    "stop": 32
+  },
+  "transformation": {
+    "status": "unavailable"
+  },
+  "rejections": {
+    "cal-01-qualified-view": "Missing field evidence: data.records.0.scope",
+    "cal-02-disjoint-contexts": "JSON Parse error: Unable to parse JSON string",
+    "cal-03-unknown-attribution": "Missing field evidence: data.reports.0.subjects",
+    "cal-04-conservatory": "Missing evidence for preferences.1.quiet",
+    "cal-05-lanterns": "JSON Parse error: Unable to parse JSON string",
+    "cal-06-journal-old": "Evidence quote not present in named source",
+    "cal-06-journal-candidate": "Evidence quote not present in named source"
+  },
+  "semantic_review": "pending",
+  "promotion": "blocked: 8/8 usable structured gate not met"
+}

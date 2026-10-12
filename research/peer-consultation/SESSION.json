@@ -1,0 +1,365 @@
+{
+  "status": "behavioral_005_complete_full_model_extractor_redesign_peer_consulted",
+  "work_name": "circadian-peer-consultation",
+  "session_id": "3f7fb1c5-76d4-4306-aca6-3905d4575466",
+  "cli": "Claude Code",
+  "cli_version": "2.1.296",
+  "requested_model": "fable",
+  "served_model": "claude-fable-5-1",
+  "started_at_utc": "2026-10-11T03:30:51.356272+00:00",
+  "finished_at_utc": "2026-10-11T03:34:34.394867+00:00",
+  "cwd": "/Users/jrg/circadian",
+  "tools": [
+    "Glob",
+    "Grep",
+    "Read"
+  ],
+  "native_session_path": "/Users/jrg/.claude/projects/-Users-jrg-circadian/3f7fb1c5-76d4-4306-aca6-3905d4575466.jsonl",
+  "private_receipts": "/Users/jrg/Library/Caches/circadian-research/peer-consultation-fuhb0my4",
+  "initial_request_sha256": "7e5e98b52627117d19eba4a07d31a99a14c0ddc165df1a46c6552c203f530ae0",
+  "followup_request_sha256": "f65b3cb085226909e09cad0c640a9aea70439774713cf93c034951a0b46e7322",
+  "initial_result": {
+    "subtype": "success",
+    "is_error": false,
+    "session_id": "3f7fb1c5-76d4-4306-aca6-3905d4575466",
+    "permission_denials": []
+  },
+  "followup_result": {
+    "subtype": "success",
+    "is_error": false,
+    "session_id": "3f7fb1c5-76d4-4306-aca6-3905d4575466",
+    "permission_denials": []
+  },
+  "followup_models": [
+    "claude-fable-5-1"
+  ],
+  "response_integrity": {
+    "initial_verbatim_copy": true,
+    "clarification_verbatim_copy": true
+  },
+  "files_sha256": {
+    "AUGMENTATION-REASSESSMENT-BRIEF.md": "885aa93cbeaa38809588274e2288838b78052d51ed52057833627ced99d0450c",
+    "BRIEF.md": "6693efc72fe47bff17dc318ebe74af73e0100faccdf0147eeacc2bfe16e0c8e0",
+    "DOSSIER.md": "a3ca9b4a73a7d7edf284951d3eb1876f7cee6e0ee6b848294922e24686cad613",
+    "FOLLOWUP.md": "f65b3cb085226909e09cad0c640a9aea70439774713cf93c034951a0b46e7322",
+    "PARENT-NOTES.md": "980762699683d20441d6483faa8b1cccd861c706155685ae43a532baeecaa223",
+    "PEER-AUGMENTATION-REASSESSMENT.md": "71659ff26b08b36ac7b59474b28800d7e78c72c6ec52661df9ee49c45d413411",
+    "PEER-CLARIFICATION.md": "e9b7062b05ae848623c6b7d7bf99b0a567266ff2a9f8df8ccde56dcfe09fbf59",
+    "PEER-RESPONSE.md": "7c3804412104effcf9a7359f861e70290397407c57b2e11266cf1c34dfe0e4c2",
+    "PEER-SCOPE-ACKNOWLEDGMENT.md": "ad9448bc5b3cf59065ccabac31755a66a793fd1518f124bd4be7371e4dca3843",
+    "PEER-SIX-REFINEMENT-RESOLUTION.md": "48913d419ba5ea9c13d7e046c68c159bbd7cfd6086c88e36c758978629483dda",
+    "PEER-WORKED-EXAMPLES.md": "44ef6ba68a10e46fb79883a707a986bfa72838d50d4a0de40a971ad1d95ab74b",
+    "README.md": "f0ddf9ef61763bc9fb9796eeac624b191e10e7c367a7ecee199f96eb8df76079",
+    "REASSESSMENT-NOTES.md": "ffff292df5ab4e5f036888d4df597f8b0e08856f6ae508b996dfefd541bd05f9",
+    "SCOPE-CORRECTION.md": "a7dcc3055927aec2b96a9005c74fe09c930ce746757f937c97a60c81f5a8e8c9",
+    "SIX-REFINEMENT-BRIEF.md": "346b99e5ba06de8e3199fdff24eacd138a87785133bb18c619d3b4f2f9d54fb5",
+    "SIX-REFINEMENT-DISCUSSION.md": "a0a53a5487ca976f78aac16b722d1e2129375cf33fbe75df49cfa60909a30749",
+    "SIX-REFINEMENT-FOLLOWUP.md": "63fd1db14f21f1cf4ae441097748587208bad61555dc5bcbc9b9196efb6bfb69",
+    "WORKED-EXAMPLES-BRIEF.md": "daea80bceae78ed3f55e225ae5c2abbf27686f5d6c16479d1846b0924cdf091c"
+  },
+  "acceptance": "Parent read both responses and launch results. Delivery accepted; recommendations remain provisional.",
+  "original_files_sha256": {
+    "DOSSIER.md": "05492a29aabe80f33bf1e7a1204f37ec267e7fa670dbd4e8300cbe6c93ca5d8e",
+    "BRIEF.md": "14e7bb88803b1583a2604a62f0f5e7135c67d24ae19ba1f11f428189e0647b10",
+    "PEER-RESPONSE.md": "7c3804412104effcf9a7359f861e70290397407c57b2e11266cf1c34dfe0e4c2",
+    "FOLLOWUP.md": "f65b3cb085226909e09cad0c640a9aea70439774713cf93c034951a0b46e7322",
+    "PEER-CLARIFICATION.md": "e9b7062b05ae848623c6b7d7bf99b0a567266ff2a9f8df8ccde56dcfe09fbf59",
+    "PARENT-NOTES.md": "cd3d1a2ffdc1fbde6568d4a2945479e431ed6957d0997efb1b8f34b6511f57f1",
+    "README.md": "9cbbbb427943c919b13ffb2eb3f02baa438f791c7c55f97c41be11ad2c28cd97"
+  },
+  "scope_correction": {
+    "recorded_at_utc": "2026-10-11T03:41:17.516472+00:00",
+    "request_file": "SCOPE-CORRECTION.md",
+    "response_file": "PEER-SCOPE-ACKNOWLEDGMENT.md",
+    "session_id": "3f7fb1c5-76d4-4306-aca6-3905d4575466",
+    "subtype": "success",
+    "is_error": false,
+    "served_models": [
+      "claude-fable-5-1"
+    ],
+    "scope": "Optional augmentation only. Baseline repair and assurance are outside this effort. All six proposals remain open."
+  },
+  "augmentation_reassessment": {
+    "status": "completed",
+    "work_name": "circadian-augmentation-reassessment",
+    "started_at_utc": "2026-10-11T03:47:45.402661+00:00",
+    "finished_at_utc": "2026-10-11T03:50:00.913216+00:00",
+    "session_id": "3f7fb1c5-76d4-4306-aca6-3905d4575466",
+    "served_model": "claude-fable-5-1",
+    "request_file": "AUGMENTATION-REASSESSMENT-BRIEF.md",
+    "response_file": "PEER-AUGMENTATION-REASSESSMENT.md",
+    "request_sha256": "885aa93cbeaa38809588274e2288838b78052d51ed52057833627ced99d0450c",
+    "response_sha256": "71659ff26b08b36ac7b59474b28800d7e78c72c6ec52661df9ee49c45d413411",
+    "verbatim_copy": true,
+    "subtype": "success",
+    "is_error": false,
+    "permission_denials": [],
+    "parent_read_response": true,
+    "qualifications_file": "REASSESSMENT-NOTES.md"
+  },
+  "worked_examples_discussion": {
+    "status": "completed",
+    "work_name": "circadian-worked-examples-discussion",
+    "started_at_utc": "2026-10-11T04:01:08.789554+00:00",
+    "finished_at_utc": "2026-10-11T04:02:18.799502+00:00",
+    "session_id": "3f7fb1c5-76d4-4306-aca6-3905d4575466",
+    "served_model": "claude-fable-5-1",
+    "request_file": "WORKED-EXAMPLES-BRIEF.md",
+    "response_file": "PEER-WORKED-EXAMPLES.md",
+    "request_sha256": "daea80bceae78ed3f55e225ae5c2abbf27686f5d6c16479d1846b0924cdf091c",
+    "response_sha256": "44ef6ba68a10e46fb79883a707a986bfa72838d50d4a0de40a971ad1d95ab74b",
+    "verbatim_copy": true,
+    "subtype": "success",
+    "is_error": false,
+    "permission_denials": [],
+    "parent_read_response": true,
+    "conclusions_file": "../worked-examples/README.md"
+  },
+  "worked_example_files_sha256": {
+    "worked-examples/01-temporary-aid.md": "7f031dad2a5e99ceb6a3bdc90e065c469cc5bd64761a1d57059e2c4e988c7de6",
+    "worked-examples/README.md": "2844626f180403d00590aab4cc336f6a56e8e27185479102b2ee6a22a677a4b5",
+    "worked-examples/02-shared-experience.md": "05659cebc75dcfc7126ce7032dcde4cd2d9f58df52b61dc978d277f35179d4c3"
+  },
+  "six_proposal_refinement": {
+    "status": "parent_accepted_design_delivery",
+    "work_name": "circadian-six-proposal-refinement",
+    "scope": "All six optional augmentations: implementation, usage, benefit and cases. No runtime implementation, benchmark run, production audit or repair.",
+    "brief_file": "SIX-REFINEMENT-BRIEF.md",
+    "responses_file": "SIX-REFINEMENT-DISCUSSION.md",
+    "separate_proposal_turns": [
+      {
+        "proposal": "01",
+        "session_id": "3f7fb1c5-76d4-4306-aca6-3905d4575466",
+        "started_at_utc": "2026-10-11T04:13:47.279973+00:00",
+        "request_sha256": "cd1b276f7c9d7539871bd44e29456bf682648d92bc1ffa7b65bff5bdc33c0e4e",
+        "exit_code": 0,
+        "finished_at_utc": "2026-10-11T04:15:22.823335+00:00",
+        "subtype": "success",
+        "is_error": false,
+        "num_turns": 6,
+        "permission_denials": [],
+        "served_models": [
+          "claude-fable-5-1"
+        ],
+        "response_sha256": "9b7bb3076e3389de114494d11dd4c37b1e932cdac3c046bfc1008b3bb5db17c4"
+      },
+      {
+        "proposal": "02",
+        "session_id": "3f7fb1c5-76d4-4306-aca6-3905d4575466",
+        "started_at_utc": "2026-10-11T04:15:22.824224+00:00",
+        "request_sha256": "487847bd4bb4e88cb4face82c7f2eac6813ac9e86cc01d2cf8952342eb5cb443",
+        "exit_code": 0,
+        "finished_at_utc": "2026-10-11T04:16:52.638639+00:00",
+        "subtype": "success",
+        "is_error": false,
+        "num_turns": 4,
+        "permission_denials": [],
+        "served_models": [
+          "claude-fable-5-1"
+        ],
+        "response_sha256": "1e43e1b263b5991d405bfe2ca8c4802052ce65d6da7f08cb1be1e89362ea0b75"
+      },
+      {
+        "proposal": "03",
+        "session_id": "3f7fb1c5-76d4-4306-aca6-3905d4575466",
+        "started_at_utc": "2026-10-11T04:16:52.639480+00:00",
+        "request_sha256": "decdd9a8dd83915561bdadf79f1cac36ac395bbdaf0e7da3da99b24a4ae0c72f",
+        "exit_code": 0,
+        "finished_at_utc": "2026-10-11T04:18:21.142955+00:00",
+        "subtype": "success",
+        "is_error": false,
+        "num_turns": 1,
+        "permission_denials": [],
+        "served_models": [
+          "claude-fable-5-1"
+        ],
+        "response_sha256": "ac77bd7667da78dd2b01a00e8411e424e14c8ae203545560c7f2df481315c2c2"
+      },
+      {
+        "proposal": "04",
+        "session_id": "3f7fb1c5-76d4-4306-aca6-3905d4575466",
+        "started_at_utc": "2026-10-11T04:18:21.143858+00:00",
+        "request_sha256": "8b78f5e34647df9aee26dcb9f0de8d0439672970906b89d5199264dd401d14e5",
+        "exit_code": 0,
+        "finished_at_utc": "2026-10-11T04:19:47.528783+00:00",
+        "subtype": "success",
+        "is_error": false,
+        "num_turns": 1,
+        "permission_denials": [],
+        "served_models": [
+          "claude-fable-5-1"
+        ],
+        "response_sha256": "76e01fd4588860c158b36371192c77645f0a4e254e23b9e4870e4110f9032d0d"
+      },
+      {
+        "proposal": "05",
+        "session_id": "3f7fb1c5-76d4-4306-aca6-3905d4575466",
+        "started_at_utc": "2026-10-11T04:19:47.529490+00:00",
+        "request_sha256": "f90bb8ada643865a5261697a15b92a0783ea60848c454e55fb436a8e6103ad15",
+        "exit_code": 0,
+        "finished_at_utc": "2026-10-11T04:21:08.351021+00:00",
+        "subtype": "success",
+        "is_error": false,
+        "num_turns": 1,
+        "permission_denials": [],
+        "served_models": [
+          "claude-fable-5-1"
+        ],
+        "response_sha256": "2f5c3faeaa493e090db70955b5d161e180e45f6e0fb71427d2a32bb3e99287c7"
+      },
+      {
+        "proposal": "06",
+        "session_id": "3f7fb1c5-76d4-4306-aca6-3905d4575466",
+        "started_at_utc": "2026-10-11T04:21:08.352170+00:00",
+        "request_sha256": "133544643a53cf180301ff80879e69a14faba80bc489e3ec87a6d30fbf1aefec",
+        "exit_code": 0,
+        "finished_at_utc": "2026-10-11T04:22:39.395624+00:00",
+        "subtype": "success",
+        "is_error": false,
+        "num_turns": 4,
+        "permission_denials": [],
+        "served_models": [
+          "claude-fable-5-1"
+        ],
+        "response_sha256": "2d104ca0e904fd76dfcbeda57465f593bf3b288ffc022f1932613ebfc3d293ef"
+      }
+    ],
+    "followup": {
+      "session_id": "3f7fb1c5-76d4-4306-aca6-3905d4575466",
+      "started_at_utc": "2026-10-11T04:29:33.763784+00:00",
+      "request_sha256": "63fd1db14f21f1cf4ae441097748587208bad61555dc5bcbc9b9196efb6bfb69",
+      "exit_code": 0,
+      "finished_at_utc": "2026-10-11T04:30:55.627362+00:00",
+      "subtype": "success",
+      "is_error": false,
+      "served_models": [
+        "claude-fable-5-1"
+      ],
+      "permission_denials": [],
+      "response_sha256": "48913d419ba5ea9c13d7e046c68c159bbd7cfd6086c88e36c758978629483dda",
+      "request_file": "SIX-REFINEMENT-FOLLOWUP.md",
+      "response_file": "PEER-SIX-REFINEMENT-RESOLUTION.md"
+    },
+    "integrated_index": "../refinements/README.md",
+    "case_counts": {
+      "01-coordinated-memory-views.md": 14,
+      "02-contextual-compatibility.md": 15,
+      "03-typed-relations-and-composition.md": 14,
+      "04-reusable-multi-input-operations.md": 16,
+      "05-joint-experiences-and-interpretations.md": 16,
+      "06-checked-memory-transformations.md": 18
+    },
+    "total_numbered_cases": 93,
+    "cases_executed": false,
+    "parent_read_all_seven_responses": true,
+    "peer_response_integrity": "Six initial replies embedded verbatim; follow-up copied byte-for-byte. Parent qualifications live separately.",
+    "case_review": {
+      "report": "/Users/jrg/Library/Caches/circadian-research/peer-consultation-fuhb0my4/refinement-case-review.md",
+      "parent_read": true,
+      "findings_incorporated": true,
+      "scope": "Read-only internal consistency of six proposed specifications; not production or empirical validation."
+    },
+    "acceptance": "All six deliverables inspected. Peer disagreements and case-review corrections incorporated or explicitly qualified in integrated index. Benefits remain hypotheses.",
+    "accepted_at_utc": "2026-10-11T04:36:21.692968+00:00"
+  },
+  "refinement_files_sha256": {
+    "refinements/01-coordinated-memory-views.md": "608662b2d238a7aef488697549b56f7f381dad7e5fcdfd167bc7e8fc0a6f1a75",
+    "refinements/02-contextual-compatibility.md": "7dd60dfae3b5fb302fc2970d3d5dd823b21e840fb064c19100a0ba40935789d1",
+    "refinements/03-typed-relations-and-composition.md": "873001287fb39f882114e4d0f50b519457857f8e3b1544c6cab2cc7c1218f155",
+    "refinements/04-reusable-multi-input-operations.md": "85247844e0b119317714d54fbcbb13d9fa83cda82c3f2d1f9b5767218fc9f1d1",
+    "refinements/05-joint-experiences-and-interpretations.md": "6cac68dafa9e5af682dcd9c01eceb6cc49d6fdfd43732d681237885ebd752174",
+    "refinements/06-checked-memory-transformations.md": "4cb39a68f98f25dc57ad686016303298d93ec5bcdce9530e5e217bb93c7e8b60",
+    "refinements/README.md": "828860b0b5ed8222d60a6de78337f72e78b37176bf0b4e1e1994f91fe6fdb8db",
+    "refinements/SOURCE-MAP.md": "066ca11a36220f208ed3b6a746d0014705c703bf7edda241219a5422021b7a94",
+    "refinements/TEST-PROTOCOL.md": "9e23c95b41a74726f416a87fad44340106e4707c68dd0f9d1e30ae5d3d46f408"
+  },
+  "refined_original_dossiers_sha256": {
+    "01-coordinated-memory-views.md": "1ccab398d2ef15ec9232f5e8e87f36f02985983ed33e6333252c3e776f853a36",
+    "02-contextual-compatibility.md": "ef1d3eb10251a0980da239293ca4f5e6116517209a03c9cb4caeddd7c3b03340",
+    "03-typed-relations-and-composition.md": "60af14302d472467dbf474cf26dde6bcd4a01f8844fdbfc9ee49b09269f47883",
+    "04-multi-input-operations.md": "da72eca176af4309602f516dd29bf59440f266f264c398a078880516f0a78925",
+    "05-higher-order-relations.md": "94970d3b20cca7b9fabd3b5961a3ebf6343555ed6fe537910fe5c48319f2a18f",
+    "06-checked-memory-transformations.md": "6ecf9ea5ae2aa56c714d6f127ded2beaa799b315e895d5fdb1c03147588842fb"
+  },
+  "pre_prototype_document_hashes": {
+    "files_sha256": {
+      "AUGMENTATION-REASSESSMENT-BRIEF.md": "885aa93cbeaa38809588274e2288838b78052d51ed52057833627ced99d0450c",
+      "BRIEF.md": "6693efc72fe47bff17dc318ebe74af73e0100faccdf0147eeacc2bfe16e0c8e0",
+      "DOSSIER.md": "a3ca9b4a73a7d7edf284951d3eb1876f7cee6e0ee6b848294922e24686cad613",
+      "FOLLOWUP.md": "f65b3cb085226909e09cad0c640a9aea70439774713cf93c034951a0b46e7322",
+      "PARENT-NOTES.md": "980762699683d20441d6483faa8b1cccd861c706155685ae43a532baeecaa223",
+      "PEER-AUGMENTATION-REASSESSMENT.md": "71659ff26b08b36ac7b59474b28800d7e78c72c6ec52661df9ee49c45d413411",
+      "PEER-CLARIFICATION.md": "e9b7062b05ae848623c6b7d7bf99b0a567266ff2a9f8df8ccde56dcfe09fbf59",
+      "PEER-RESPONSE.md": "7c3804412104effcf9a7359f861e70290397407c57b2e11266cf1c34dfe0e4c2",
+      "PEER-SCOPE-ACKNOWLEDGMENT.md": "ad9448bc5b3cf59065ccabac31755a66a793fd1518f124bd4be7371e4dca3843",
+      "PEER-SIX-REFINEMENT-RESOLUTION.md": "48913d419ba5ea9c13d7e046c68c159bbd7cfd6086c88e36c758978629483dda",
+      "PEER-WORKED-EXAMPLES.md": "44ef6ba68a10e46fb79883a707a986bfa72838d50d4a0de40a971ad1d95ab74b",
+      "README.md": "7837adbae0878162a1b1ed5e86845328f945887375f89053f3949b4a9e70e4f2",
+      "REASSESSMENT-NOTES.md": "ffff292df5ab4e5f036888d4df597f8b0e08856f6ae508b996dfefd541bd05f9",
+      "SCOPE-CORRECTION.md": "a7dcc3055927aec2b96a9005c74fe09c930ce746757f937c97a60c81f5a8e8c9",
+      "SIX-REFINEMENT-BRIEF.md": "346b99e5ba06de8e3199fdff24eacd138a87785133bb18c619d3b4f2f9d54fb5",
+      "SIX-REFINEMENT-DISCUSSION.md": "a0a53a5487ca976f78aac16b722d1e2129375cf33fbe75df49cfa60909a30749",
+      "SIX-REFINEMENT-FOLLOWUP.md": "63fd1db14f21f1cf4ae441097748587208bad61555dc5bcbc9b9196efb6bfb69",
+      "WORKED-EXAMPLES-BRIEF.md": "daea80bceae78ed3f55e225ae5c2abbf27686f5d6c16479d1846b0924cdf091c"
+    },
+    "refinement_files_sha256": {
+      "refinements/01-coordinated-memory-views.md": "2e97bd1d9223fc6b8998fa4e1b496f41f0f0d1477cee1278c829574c1542e3c1",
+      "refinements/02-contextual-compatibility.md": "592fef1453ab889e367d93ea7157a955cf55ab994f4beb0f52e7a7a1a63a0f06",
+      "refinements/03-typed-relations-and-composition.md": "42d4a76fb5f35fb0ad41edf7ddee5081a43ec8f399845b38fb8862acdbe3e4d2",
+      "refinements/04-reusable-multi-input-operations.md": "c7d16e103d95acd44521ad2ad6ca11050ffc6abb14291a341d3ecbeef8b3c4de",
+      "refinements/05-joint-experiences-and-interpretations.md": "9cb7bfe87b25b89b1593353e3499cfc6df5a8744da7804882c17bd1342f03205",
+      "refinements/06-checked-memory-transformations.md": "a36a7240d04e4ce13f224eb66aff1d54b4a647f7ef7c4df04bb493bf6fac5ed5",
+      "refinements/README.md": "fd350497852bfc919310fd6d7fbd91dd550e8024218166c9aae5767b849f5288",
+      "refinements/SOURCE-MAP.md": "066ca11a36220f208ed3b6a746d0014705c703bf7edda241219a5422021b7a94",
+      "refinements/TEST-PROTOCOL.md": "68ed14511f8b0c012cf26f60387582f1633d188916d59807efc0d2f54eeec948"
+    }
+  },
+  "prototype_implementation": {
+    "status": "deterministic_phase_complete_peer_reviewed",
+    "accepted_at_utc": "2026-10-11T22:46:00.385485+00:00",
+    "scope": "All six isolated deterministic optional-augmentation prototypes; Circadian production unchanged.",
+    "index": "../prototypes/README.md",
+    "results": "../prototypes/results.json",
+    "peer_review": "../prototypes/PEER-REVIEW.md",
+    "peer_review_receipt": "../prototypes/PEER-REVIEW-RECEIPT.json",
+    "peer_closure": "../prototypes/PEER-CLOSURE.md",
+    "peer_closure_receipt": "../prototypes/PEER-CLOSURE-RECEIPT.json",
+    "parent_resolution": "../prototypes/REVIEW-RESOLUTION.md",
+    "served_model": "claude-fable-5-1",
+    "test_count": 120,
+    "assertions": 492,
+    "failures": 0,
+    "skipped": 0,
+    "specified_cases": 93,
+    "deterministic_cases": 92,
+    "deferred_behavioral_case": "R14",
+    "behavioral_model_calls": 0,
+    "production_tracked_files_checked": 213,
+    "production_tracked_files_changed": [],
+    "parent_read_both_reviews": true,
+    "post_closure_followups": "Parent inspected the two small 05 follow-ups requested by closure: separate interpretation accounting and accurate omission label. XH06/XH07 regressions and final combined suite pass; no additional peer review claimed.",
+    "response_integrity": {
+      "initial_content_verbatim_terminal_newline_added": true,
+      "closure_exact_verbatim": true
+    },
+    "acceptance": "Parent inspected durable worker reports, actual corrected code and regressions; reproduced material counterexamples and ran the combined suite. Earlier consultation stage receipts remain historical. Semantic and behavioral benefits remain unmeasured."
+  },
+  "status_before_extractor_consultation": "six_deterministic_prototypes_complete_peer_reviewed_behavioral_benefit_unmeasured",
+  "extractor_redesign_consultation": {
+    "recorded_at_utc": "2026-10-12T03:13:07.572286+00:00",
+    "status": "peer_delivery_and_corrective_followup_accepted_design_provisional",
+    "work_name": "circadian-behavioral-005-redesign",
+    "session_id": "3f7fb1c5-76d4-4306-aca6-3905d4575466",
+    "served_model": "claude-fable-5-1",
+    "brief_file": "BEHAVIORAL-005-RESULTS-BRIEF.md",
+    "response_file": "PEER-005-REDESIGN.md",
+    "followup_file": "BEHAVIORAL-005-REDESIGN-FOLLOWUP.md",
+    "resolution_file": "PEER-005-REDESIGN-RESOLUTION.md",
+    "receipt_file": "BEHAVIORAL-005-REDESIGN-RECEIPT.json",
+    "synthesis": "../lab/EXTRACTOR-STUDY-DESIGN.md",
+    "all_six_remain_in_scope": true,
+    "parent_read_both_responses": true,
+    "new_study_inference_calls": 0,
+    "production_changes": false
+  }
+}

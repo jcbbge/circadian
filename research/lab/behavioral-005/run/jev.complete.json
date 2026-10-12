@@ -1,0 +1,10 @@
+{
+  "phase": "jev",
+  "completed": 24,
+  "planned": 24,
+  "requests": 48,
+  "infrastructureFailures": 0,
+  "outputFailures": 7,
+  "stopped": false,
+  "finishedAt": "2026-10-12T02:01:26.948Z"
+}

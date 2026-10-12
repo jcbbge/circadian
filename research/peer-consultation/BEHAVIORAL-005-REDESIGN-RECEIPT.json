@@ -1,0 +1,155 @@
+{
+  "work_name": "circadian-behavioral-005-redesign",
+  "phase": "consultation_not_experiment",
+  "started_at_utc": "2026-10-12T02:58:33.440184+00:00",
+  "session_id": "3f7fb1c5-76d4-4306-aca6-3905d4575466",
+  "cli_version": "2.1.296",
+  "requested_model": "fable",
+  "request_file": "/Users/jrg/circadian/research/peer-consultation/BEHAVIORAL-005-RESULTS-BRIEF.md",
+  "request_sha256": "2fc76b1783bfd2af98599b5129a1d06d78328cdb394f903e68f12520deb5ac89",
+  "private_receipts": "/Users/jrg/Library/Caches/circadian-research/peer-005-redesign-j1eywtf7",
+  "command": [
+    "/opt/homebrew/bin/claude",
+    "--resume",
+    "3f7fb1c5-76d4-4306-aca6-3905d4575466",
+    "--model",
+    "fable",
+    "--safe-mode",
+    "--tools",
+    "Read,Glob,Grep",
+    "--allowedTools",
+    "Read,Glob,Grep",
+    "--strict-mcp-config",
+    "--mcp-config",
+    "{\"mcpServers\":{}}",
+    "--permission-prompts",
+    "none",
+    "--print",
+    "--output-format",
+    "stream-json",
+    "--verbose",
+    "--name",
+    "Circadian 005 peer redesign"
+  ],
+  "tools": [
+    "Read",
+    "Glob",
+    "Grep"
+  ],
+  "exit_code": 0,
+  "finished_at_utc": "2026-10-12T03:00:54.705616+00:00",
+  "served_models": [
+    "claude-fable-5-1"
+  ],
+  "response_file": "research/peer-consultation/PEER-005-REDESIGN.md",
+  "response_sha256": "ee7be3890b5b78f376efbba4be368c5174dc1c40fc3173fc8e0daf9359a0db00",
+  "response_verbatim": true,
+  "result": {
+    "subtype": "success",
+    "is_error": false,
+    "session_id": "3f7fb1c5-76d4-4306-aca6-3905d4575466",
+    "num_turns": 13,
+    "permission_denials": [],
+    "total_cost_usd": 29.73827025
+  },
+  "parent_read_response": true,
+  "acceptance": "Delivery accepted. Parent read both verbatim replies, challenged overclaims, and preserved the corrective follow-up. Recommendations remain provisional; synthesized plan is separate.",
+  "followup": {
+    "work_name": "circadian-behavioral-005-redesign-resolution",
+    "phase": "consultation_not_experiment",
+    "started_at_utc": "2026-10-12T03:03:24.104648+00:00",
+    "request_file": "/Users/jrg/circadian/research/peer-consultation/BEHAVIORAL-005-REDESIGN-FOLLOWUP.md",
+    "request_sha256": "8c1aa5be819d7df0a8388a1912d9664af0a460bed7303e2c085f8c4d10dcde68",
+    "command": [
+      "/opt/homebrew/bin/claude",
+      "--resume",
+      "3f7fb1c5-76d4-4306-aca6-3905d4575466",
+      "--model",
+      "fable",
+      "--safe-mode",
+      "--tools",
+      "",
+      "--strict-mcp-config",
+      "--mcp-config",
+      "{\"mcpServers\":{}}",
+      "--permission-prompts",
+      "none",
+      "--print",
+      "--output-format",
+      "stream-json",
+      "--verbose"
+    ],
+    "tools": [],
+    "exit_code": 0,
+    "finished_at_utc": "2026-10-12T03:03:52.497145+00:00",
+    "session_id": "3f7fb1c5-76d4-4306-aca6-3905d4575466",
+    "served_models": [
+      "claude-fable-5-1"
+    ],
+    "response_file": "research/peer-consultation/PEER-005-REDESIGN-RESOLUTION.md",
+    "response_sha256": "fd7acf17717fdf7e2003151b9045ce21e9b9d2abccf9ad96f56d1bd74aa3d892",
+    "response_verbatim": true,
+    "result": {
+      "subtype": "success",
+      "is_error": false,
+      "session_id": "3f7fb1c5-76d4-4306-aca6-3905d4575466",
+      "permission_denials": [],
+      "total_cost_usd": 37.798504
+    }
+  },
+  "parent_read_followup": true,
+  "synthesis": "research/lab/EXTRACTOR-STUDY-DESIGN.md",
+  "contract_audit": "research/lab/EXTRACTOR-CONTRACT-AUDIT.md",
+  "study_inference_calls_this_assignment": 0,
+  "local_endpoint_discovery": {
+    "fetched_at_utc": "2026-10-12T03:12:27.215740+00:00",
+    "url": "http://127.0.0.1:10240/v1/models",
+    "response": {
+      "object": "list",
+      "data": [
+        {
+          "id": "mlx-community/Qwen3-Embedding-4B-4bit-DWQ",
+          "object": "model",
+          "created": 1776560770,
+          "owned_by": "mlx-community"
+        },
+        {
+          "id": "mlx-community/Qwen3-30B-A3B-Instruct-2507-4bit",
+          "object": "model",
+          "created": 1785138564,
+          "owned_by": "mlx-community"
+        },
+        {
+          "id": "lightonai/LateOn-Code-edge",
+          "object": "model",
+          "created": 1785982154,
+          "owned_by": "lightonai"
+        },
+        {
+          "id": "mlx-community/Qwen3-4B-Instruct-2507-4bit",
+          "object": "model",
+          "created": 1784357731,
+          "owned_by": "mlx-community"
+        }
+      ]
+    },
+    "inference_performed": false
+  },
+  "design_review": {
+    "reviewer": "Independent source-contract explorer",
+    "report": "/Users/jrg/Library/Caches/circadian-research/extractor-design-review.md",
+    "report_sha256": "9c5125ad9c32d5a77adecb9f1f384f97485f024b6d93aef5c851f29b2d9a20f6",
+    "parent_read_and_accepted": true,
+    "scope": "Proposal consistency only; adapters, fixtures, stopping thresholds and model settings remain pre-execution work."
+  },
+  "final_verification": {
+    "prior_study_artifact_hashes_unchanged": 30,
+    "tracked_file_changes": 0,
+    "local_links_resolve": true,
+    "all_six_in_scope": true,
+    "new_study_inference_calls": 0,
+    "synthesis_sha256": "db8692e3e3012a7111525d594fa65326051866e8570c7e7d6ec6149f01509e08",
+    "audit_sha256": "eed096ee9f0ce4647b4c860b88d1f40fcf4d5b45a1152c5238384a77231d7331",
+    "proposed_call_ceiling_verified": 380
+  }
+}

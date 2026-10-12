@@ -1,0 +1,169 @@
+{
+  "purpose": "Standalone visual explanation; comparisons replay calls to the real prototype functions.",
+  "figures": 6,
+  "capturedCases": 12,
+  "partCounts": {
+    "01": {
+      "a": 55,
+      "b": 55
+    },
+    "02": {
+      "a": 66,
+      "b": 68
+    },
+    "03": {
+      "a": 58,
+      "b": 58
+    },
+    "04": {
+      "a": 57,
+      "b": 57
+    },
+    "05": {
+      "a": 61,
+      "b": 60
+    },
+    "06": {
+      "a": 66,
+      "b": 66
+    }
+  },
+  "geometryChecks": {
+    "01": {
+      "a": {
+        "constraints": 231,
+        "mixed": [],
+        "intersections": [],
+        "unsupported": [],
+        "cycles": 0,
+        "cycleParts": []
+      },
+      "b": {
+        "constraints": 226,
+        "mixed": [],
+        "intersections": [],
+        "unsupported": [],
+        "cycles": 0,
+        "cycleParts": []
+      }
+    },
+    "02": {
+      "a": {
+        "constraints": 295,
+        "mixed": [],
+        "intersections": [],
+        "unsupported": [],
+        "cycles": 0,
+        "cycleParts": []
+      },
+      "b": {
+        "constraints": 302,
+        "mixed": [],
+        "intersections": [],
+        "unsupported": [],
+        "cycles": 0,
+        "cycleParts": []
+      }
+    },
+    "03": {
+      "a": {
+        "constraints": 227,
+        "mixed": [],
+        "intersections": [],
+        "unsupported": [],
+        "cycles": 0,
+        "cycleParts": []
+      },
+      "b": {
+        "constraints": 228,
+        "mixed": [],
+        "intersections": [],
+        "unsupported": [],
+        "cycles": 0,
+        "cycleParts": []
+      }
+    },
+    "04": {
+      "a": {
+        "constraints": 256,
+        "mixed": [],
+        "intersections": [],
+        "unsupported": [],
+        "cycles": 0,
+        "cycleParts": []
+      },
+      "b": {
+        "constraints": 248,
+        "mixed": [],
+        "intersections": [],
+        "unsupported": [],
+        "cycles": 0,
+        "cycleParts": []
+      }
+    },
+    "05": {
+      "a": {
+        "constraints": 296,
+        "mixed": [],
+        "intersections": [],
+        "unsupported": [],
+        "cycles": 0,
+        "cycleParts": []
+      },
+      "b": {
+        "constraints": 273,
+        "mixed": [],
+        "intersections": [],
+        "unsupported": [],
+        "cycles": 0,
+        "cycleParts": []
+      }
+    },
+    "06": {
+      "a": {
+        "constraints": 305,
+        "mixed": [],
+        "intersections": [],
+        "unsupported": [],
+        "cycles": 0,
+        "cycleParts": []
+      },
+      "b": {
+        "constraints": 295,
+        "mixed": [],
+        "intersections": [],
+        "unsupported": [],
+        "cycles": 0,
+        "cycleParts": []
+      }
+    }
+  },
+  "inferenceCalls": 0,
+  "liveMemoryReads": 0,
+  "sourceHashes": {
+    "model.ts": "63356cf0cc58cd1a42cf3048dc051580e189f60e2f093236dcdaeb0f354f3ea5",
+    "instrument.mjs": "f559a57dcaf3563e57983f76e0cf063eb5d894fce13892bc1eff0c47e4bc0b6a",
+    "page.html": "517ef649c545b7d4093438b72d303e1f661f4a9a5b5af48e47fcc3749ebd99c4",
+    "style.css": "9a8223624142fff7352a13ad35ee6f211ed06b3cbfdc6bc48af1e27fd8a9d9b6",
+    "app.js": "9c7db9d8f68855d656eb990bdbbcb0803c8fb691e4489c34f3b0e2253b01adbb",
+    "build.ts": "ea5d349a7dd488df66a62d93b78300d470da2dd0b0d8e3e065e1035c48c055cb",
+    "vendor/anatomy/iso-kit.mjs": "6d3ecc725d30c3b0346da309cf61dfa5a65017c23620bbd4093009d4fb104018",
+    "../prototypes/01-views/index.ts": "872350d514d48cfcd5fba98166815f1fa3177714ab1218d86c8e0e12b06508a3",
+    "../prototypes/01-views/fixtures.ts": "97feed9a4432aa8121265af6a11fc7ce4550a146420f7c8ebb4fe021e4614489",
+    "../prototypes/02-compatibility/index.ts": "d27da24b8e56d2f9702ceb850af0544f203aca42a40f1c4964227f5a06ee16db",
+    "../prototypes/02-compatibility/fixtures.ts": "c2139a9a9106e011e95bd79acc469fec83aa223522873bbfcfd0758a419db9ac",
+    "../prototypes/03-relations/index.ts": "59a6563527175f901fe9363391bb5cb2811faae0067155d5c478cce477ca1354",
+    "../prototypes/03-relations/fixtures.ts": "09ba542f7f0cab8bb3ec6a97523c4d584ec8894c8aa82e184df85d4c3bf35da5",
+    "../prototypes/04-operations/index.ts": "c6e877f71fdd2fb7fbd06a3f07e1bd4c500e998e7193e758a3495b69a46ab82f",
+    "../prototypes/04-operations/fixtures.ts": "bc348323a394fec8cbe2d47279b41e3e4226fdeafc4f4faeebbd35f49a5ed5a7",
+    "../prototypes/05-experiences/index.ts": "8e9bab2f4a9a507d4ab8668d90f83f713aed40c42ab51837d98197f3191ae987",
+    "../prototypes/05-experiences/fixtures.ts": "d9ded5c28bf4c6c418578b291fe00b9c3452816ad519cdbe879c0392941accd4",
+    "../prototypes/06-transformations/index.ts": "6c82a84e7215cae4152b0f905dd9bdbf665c301dc495131de47453b0ed671bfc",
+    "../prototypes/06-transformations/fixtures.ts": "ece77e697048f9548b4866c533a65c7b0f441a584fe0fbdcdbd83754458640ae"
+  },
+  "outputHashes": {
+    "index.html": "4e445520769913d79bbae3e0fb6085306bbd40a62c62fa172f4a5711c2bcb01d",
+    "exhibits.json": "e35fa1d3579efd54eca4e8e6b668df1e9a9a4fc556de190410f3df77a2de1273"
+  },
+  "prototypeValidation": "2026-10-11T22:45:23.873102+00:00"
+}

@@ -1,0 +1,98 @@
+[
+  {
+    "id": "H01",
+    "status": "deterministic",
+    "test": "H01 pairwise meetings do not establish a joint occasion",
+    "note": "Independent expected sets distinguish three pairwise meetings from one joint occasion. The ordinary incidence API is explicitly an alias, not independent benchmark evidence."
+  },
+  {
+    "id": "H02",
+    "status": "deterministic",
+    "test": "H02 repeated groups preserve occasion-specific roles",
+    "note": "Separate event IDs preserve the known cook at each occasion; downstream agent recall is deferred."
+  },
+  {
+    "id": "H03",
+    "status": "deterministic",
+    "test": "H03 mention leaves attendance unknown",
+    "note": "A mentioned person has unknown participation, never inferred absence."
+  },
+  {
+    "id": "H04",
+    "status": "deterministic",
+    "test": "H04 a narrator account does not become a group feeling",
+    "note": "Only the narrator receives an attributed feeling record; whether a model refrains from generalizing it is deferred."
+  },
+  {
+    "id": "H05",
+    "status": "deterministic",
+    "test": "H05 checked links connect supplied occasion interpretations",
+    "note": "The checked relation connects two supplied, explicitly occasion-linked accounts. Removing the relation omits I2 from selected-seed traversal but reports omittedFromSelectedView and incomplete coverage. Direct occasion lookup already knows I2 is relevant; no lexical discovery or retrieval-benefit claim is established."
+  },
+  {
+    "id": "H06",
+    "status": "deterministic",
+    "test": "H06 different questions reject checked revisit",
+    "note": "Different local question IDs reject checked reinterpretation traversal."
+  },
+  {
+    "id": "H07",
+    "status": "deterministic",
+    "test": "H07 equal labels do not equate local question IDs",
+    "note": "Equal question labels do not override different question IDs."
+  },
+  {
+    "id": "H08",
+    "status": "deterministic",
+    "test": "H08 ambiguous occasion stays unresolved",
+    "note": "Ambiguous occasion candidates remain unresolved and cannot enter the confirmed traversal."
+  },
+  {
+    "id": "H09",
+    "status": "deterministic",
+    "test": "H09 traversal caps and encountered cycles are distinguished",
+    "note": "Both a cycle reached inside the depth cap and a cycle hidden behind the cap terminate without duplicate accounts; only the reached cycle is identified."
+  },
+  {
+    "id": "H10",
+    "status": "deterministic",
+    "test": "H10 unavailable event does not resurrect its narrative",
+    "note": "An unavailable occasion yields no occasion narrative while separately eligible reflection sources remain accessible. This tests source eligibility, not physical erasure of sidecars."
+  },
+  {
+    "id": "H11",
+    "status": "deterministic",
+    "test": "H11 retrieval frequency creates no retirement policy",
+    "note": "The operation reads no usage or ledger decay field and introduces no rarity-based deletion."
+  },
+  {
+    "id": "H12",
+    "status": "deterministic",
+    "test": "H12 querying subgroups does not create pairwise events",
+    "note": "Pair queries return co-participation at the single existing occasion and do not mutate or generate events."
+  },
+  {
+    "id": "H13",
+    "status": "deterministic",
+    "test": "H13 shared attendance does not imply simultaneous presence",
+    "note": "Non-overlapping attendance intervals do not support simultaneous presence."
+  },
+  {
+    "id": "H14",
+    "status": "deterministic",
+    "test": "H14 changed revisions and unresolved people suppress old answers",
+    "note": "Changed supplied source revision or unresolved participant identity prevents the previous unqualified match. Revision production itself is a caller obligation."
+  },
+  {
+    "id": "H15",
+    "status": "deterministic",
+    "test": "H15 capped input never claims exhaustive coverage",
+    "note": "A proxy counts exactly 20 indexed input reads from 1000 records; incomplete coverage remains explicit."
+  },
+  {
+    "id": "H16",
+    "status": "deterministic",
+    "test": "H16 interpretation authorship does not imply attendance",
+    "note": "An attributed interpretation by Dana has a matching boundary without adding Dana to participation. Automatic author/attendance extraction remains untested."
+  }
+]

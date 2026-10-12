@@ -1,0 +1,1226 @@
+[
+  {
+    "id": "relationships-a-current-1",
+    "caseId": "relationships-a",
+    "pair": "relationships",
+    "domain": "relationships",
+    "repeat": 1,
+    "arm": "current",
+    "source": "At a Sunday lunch, Eli asked about the sorts of evenings I enjoy. I said, 'After an exhausting day, I usually prefer a quiet dinner with close friends to a lively party.' We also discussed the meal, but I did not describe a general dislike of parties or make any plans for the following week.",
+    "memory": "### 2026-01-01-fictional.md\narc: Fictional recollection\nscope: fixture\nts: 2026-01-01T12:00:00Z\n\nAt a Sunday lunch, Eli asked about the sorts of evenings I enjoy. I said, 'After an exhausting day, I usually prefer a quiet dinner with close friends to a lively party.' We also discussed the meal, but I did not describe a general dislike of parties or make any plans for the following week.",
+    "question": "I am rested today and considering a lively party. Which use of this memory is justified?",
+    "options": {
+      "a": "A quiet dinner usually fits my stated preference even on a rested day, though that does not prohibit choosing the party.",
+      "b": "The memory establishes that I usually prefer a lively party when rested.",
+      "c": "The stated preference covers exhausting days; it does not establish which option I prefer when rested.",
+      "d": "The memory records a commitment to have dinner with Eli instead of attending the party."
+    }
+  },
+  {
+    "id": "creative-b-plain-1",
+    "caseId": "creative-b",
+    "pair": "creative",
+    "domain": "creative",
+    "repeat": 1,
+    "arm": "plain",
+    "source": "On 2 October, Sora wrote a note about a sketching experiment: 'Until and including 15 October, I want to finish my daily sketches in ink without erasing. After that I will reconsider rather than automatically extend the experiment.' Sora enjoys several drawing materials and recorded no later decision in this account.",
+    "memory": "Sora's ink-without-erasing experiment runs through 15 October inclusive. Afterward Sora intends to reconsider, not automatically extend it. Sora enjoys several materials; this account contains no later decision.",
+    "question": "It is now 10 October. How should this account inform Sora's next daily sketch?",
+    "options": {
+      "a": "Sora has adopted ink without erasing as a permanent requirement for every future sketch.",
+      "b": "Sora has decided to replace ink with pencil on 10 October.",
+      "c": "The recorded experiment has ended; this account does not establish Sora's choice after reconsideration.",
+      "d": "10 October falls within the stated experiment, so ink without erasing remains its current instruction."
+    }
+  },
+  {
+    "id": "relationships-b-plain-1",
+    "caseId": "relationships-b",
+    "pair": "relationships",
+    "domain": "relationships",
+    "repeat": 1,
+    "arm": "plain",
+    "source": "At a Sunday lunch, Eli asked about the sorts of evenings I enjoy. I said, 'Whether I am exhausted or rested, I usually prefer a quiet dinner with close friends to a lively party.' We also discussed the meal, but I did not describe a general dislike of parties or make any plans for the following week.",
+    "memory": "I told Eli that whether exhausted or rested I usually prefer a quiet dinner with close friends to a lively party. I did not express a general dislike of parties or make plans for the following week.",
+    "question": "I am rested today and considering a lively party. Which use of this memory is justified?",
+    "options": {
+      "a": "A quiet dinner usually fits my stated preference even on a rested day, though that does not prohibit choosing the party.",
+      "b": "The memory establishes that I usually prefer a lively party when rested.",
+      "c": "The stated preference covers exhausting days; it does not establish which option I prefer when rested.",
+      "d": "The memory records a commitment to have dinner with Eli instead of attending the party."
+    }
+  },
+  {
+    "id": "reflection-b-preserved-1",
+    "caseId": "reflection-b",
+    "pair": "reflection",
+    "domain": "reflection",
+    "repeat": 1,
+    "arm": "preserved",
+    "source": "After a quiet afternoon with Mara, I wondered whether her long silence meant she was uncomfortable. A later note contains the words, 'I felt comfortable; I was listening.' Those words are a possible explanation I wrote for myself, never confirmed by Mara. I still remember having felt unsure during the original afternoon; the later explanation does not erase that experience.",
+    "memory": "Original experience: I was unsure whether Mara's silence meant discomfort. Later explanation: she felt comfortable and was listening. Evidence: my possible explanation; never confirmed by Mara. Retained experience: my uncertainty during the original afternoon.",
+    "question": "When recounting the afternoon now, which statement best preserves what is known and how it is known?",
+    "options": {
+      "a": "Mara's silence proves she was uncomfortable, and the later explanation should be discarded.",
+      "b": "The later explanation means I never felt uncertain during the original afternoon.",
+      "c": "I was uncertain at the time; Mara later reported feeling comfortable and listening.",
+      "d": "I was uncertain at the time; comfort and listening are my unconfirmed possible explanation, not Mara's reported account."
+    }
+  },
+  {
+    "id": "relationships-a-preserved-1",
+    "caseId": "relationships-a",
+    "pair": "relationships",
+    "domain": "relationships",
+    "repeat": 1,
+    "arm": "preserved",
+    "source": "At a Sunday lunch, Eli asked about the sorts of evenings I enjoy. I said, 'After an exhausting day, I usually prefer a quiet dinner with close friends to a lively party.' We also discussed the meal, but I did not describe a general dislike of parties or make any plans for the following week.",
+    "memory": "Speaker: me; listener: Eli. Preference: quiet dinner with close friends over a lively party. Condition: after an exhausting day. Strength: usually. Limits: no general dislike of parties stated; no plans made for the following week.",
+    "question": "I am rested today and considering a lively party. Which use of this memory is justified?",
+    "options": {
+      "a": "A quiet dinner usually fits my stated preference even on a rested day, though that does not prohibit choosing the party.",
+      "b": "The memory establishes that I usually prefer a lively party when rested.",
+      "c": "The stated preference covers exhausting days; it does not establish which option I prefer when rested.",
+      "d": "The memory records a commitment to have dinner with Eli instead of attending the party."
+    }
+  },
+  {
+    "id": "creative-a-current-1",
+    "caseId": "creative-a",
+    "pair": "creative",
+    "domain": "creative",
+    "repeat": 1,
+    "arm": "current",
+    "source": "On 2 October, Sora wrote a note about a sketching experiment: 'Until and including 8 October, I want to finish my daily sketches in ink without erasing. After that I will reconsider rather than automatically extend the experiment.' Sora enjoys several drawing materials and recorded no later decision in this account.",
+    "memory": "### 2026-01-01-fictional.md\narc: Fictional recollection\nscope: fixture\nts: 2026-01-01T12:00:00Z\n\nOn 2 October, Sora wrote a note about a sketching experiment: 'Until and including 8 October, I want to finish my daily sketches in ink without erasing. After that I will reconsider rather than automatically extend the experiment.' Sora enjoys several drawing materials and recorded no later decision in this account.",
+    "question": "It is now 10 October. How should this account inform Sora's next daily sketch?",
+    "options": {
+      "a": "Sora has adopted ink without erasing as a permanent requirement for every future sketch.",
+      "b": "Sora has decided to replace ink with pencil on 10 October.",
+      "c": "The recorded experiment has ended; this account does not establish Sora's choice after reconsideration.",
+      "d": "10 October falls within the stated experiment, so ink without erasing remains its current instruction."
+    }
+  },
+  {
+    "id": "relationships-b-current-2",
+    "caseId": "relationships-b",
+    "pair": "relationships",
+    "domain": "relationships",
+    "repeat": 2,
+    "arm": "current",
+    "source": "At a Sunday lunch, Eli asked about the sorts of evenings I enjoy. I said, 'Whether I am exhausted or rested, I usually prefer a quiet dinner with close friends to a lively party.' We also discussed the meal, but I did not describe a general dislike of parties or make any plans for the following week.",
+    "memory": "### 2026-01-01-fictional.md\narc: Fictional recollection\nscope: fixture\nts: 2026-01-01T12:00:00Z\n\nAt a Sunday lunch, Eli asked about the sorts of evenings I enjoy. I said, 'Whether I am exhausted or rested, I usually prefer a quiet dinner with close friends to a lively party.' We also discussed the meal, but I did not describe a general dislike of parties or make any plans for the following week.",
+    "question": "I am rested today and considering a lively party. Which use of this memory is justified?",
+    "options": {
+      "a": "A quiet dinner usually fits my stated preference even on a rested day, though that does not prohibit choosing the party.",
+      "b": "The memory establishes that I usually prefer a lively party when rested.",
+      "c": "The stated preference covers exhausting days; it does not establish which option I prefer when rested.",
+      "d": "The memory records a commitment to have dinner with Eli instead of attending the party."
+    }
+  },
+  {
+    "id": "creative-b-current-2",
+    "caseId": "creative-b",
+    "pair": "creative",
+    "domain": "creative",
+    "repeat": 2,
+    "arm": "current",
+    "source": "On 2 October, Sora wrote a note about a sketching experiment: 'Until and including 15 October, I want to finish my daily sketches in ink without erasing. After that I will reconsider rather than automatically extend the experiment.' Sora enjoys several drawing materials and recorded no later decision in this account.",
+    "memory": "### 2026-01-01-fictional.md\narc: Fictional recollection\nscope: fixture\nts: 2026-01-01T12:00:00Z\n\nOn 2 October, Sora wrote a note about a sketching experiment: 'Until and including 15 October, I want to finish my daily sketches in ink without erasing. After that I will reconsider rather than automatically extend the experiment.' Sora enjoys several drawing materials and recorded no later decision in this account.",
+    "question": "It is now 10 October. How should this account inform Sora's next daily sketch?",
+    "options": {
+      "a": "Sora has adopted ink without erasing as a permanent requirement for every future sketch.",
+      "b": "Sora has decided to replace ink with pencil on 10 October.",
+      "c": "The recorded experiment has ended; this account does not establish Sora's choice after reconsideration.",
+      "d": "10 October falls within the stated experiment, so ink without erasing remains its current instruction."
+    }
+  },
+  {
+    "id": "planning-b-current-2",
+    "caseId": "planning-b",
+    "pair": "planning",
+    "domain": "planning",
+    "repeat": 2,
+    "arm": "current",
+    "source": "Theo is organizing a neighborhood board-game afternoon. The first invitation asked setup volunteers to arrive at 16:30. After checking the room booking, Theo sent a final invitation asking those volunteers to arrive at 17:40; it replaces the earlier arrival time. Light snacks will be provided, and volunteers may bring a favorite game. This planning note was typed on a phone.",
+    "memory": "### 2026-01-01-fictional.md\narc: Fictional recollection\nscope: fixture\nts: 2026-01-01T12:00:00Z\n\nTheo is organizing a neighborhood board-game afternoon. The first invitation asked setup volunteers to arrive at 16:30. After checking the room booking, Theo sent a final invitation asking those volunteers to arrive at 17:40; it replaces the earlier arrival time. Light snacks will be provided, and volunteers may bring a favorite game. This planning note was typed on a phone.",
+    "question": "What arrival time does the final invitation specify for setup volunteers?",
+    "options": {
+      "a": "16:30.",
+      "b": "17:40.",
+      "c": "18:00.",
+      "d": "The final invitation leaves the arrival time undecided."
+    }
+  },
+  {
+    "id": "travel-b-preserved-2",
+    "caseId": "travel-b",
+    "pair": "travel",
+    "domain": "travel",
+    "repeat": 2,
+    "arm": "preserved",
+    "source": "Neri copied the itinerary for a first visit to Larkmere into a green notebook. The Saturday train departs at 09:20 from Platform 6. Neri plans to reach the station early, travel with one small bag, and meet Jo outside Larkmere station after arrival. No return train has been selected.",
+    "memory": "Traveler: Neri. Destination: Larkmere. Departure: Saturday, 09:20. Plan: reach station early; one small bag; meet Jo outside destination station. Return train: not selected. Recording detail: green notebook.",
+    "question": "According to the itinerary, which platform does Neri's Saturday train leave from?",
+    "options": {
+      "a": "Platform 6.",
+      "b": "Platform 4.",
+      "c": "Platform 8.",
+      "d": "The original itinerary does not specify a platform."
+    }
+  },
+  {
+    "id": "reflection-a-preserved-2",
+    "caseId": "reflection-a",
+    "pair": "reflection",
+    "domain": "reflection",
+    "repeat": 2,
+    "arm": "preserved",
+    "source": "After a quiet afternoon with Mara, I wondered whether her long silence meant she was uncomfortable. A later note contains the words, 'I felt comfortable; I was listening.' Those words are Mara's direct statement at our next meeting. I still remember having felt unsure during the original afternoon; the later explanation does not erase that experience.",
+    "memory": "Original experience: I was unsure whether Mara's silence meant discomfort. Later explanation: she felt comfortable and was listening. Evidence: Mara directly stated it at our next meeting. Retained experience: my uncertainty during the original afternoon.",
+    "question": "When recounting the afternoon now, which statement best preserves what is known and how it is known?",
+    "options": {
+      "a": "Mara's silence proves she was uncomfortable, and the later explanation should be discarded.",
+      "b": "The later explanation means I never felt uncertain during the original afternoon.",
+      "c": "I was uncertain at the time; Mara later reported feeling comfortable and listening.",
+      "d": "I was uncertain at the time; comfort and listening are my unconfirmed possible explanation, not Mara's reported account."
+    }
+  },
+  {
+    "id": "planning-b-preserved-1",
+    "caseId": "planning-b",
+    "pair": "planning",
+    "domain": "planning",
+    "repeat": 1,
+    "arm": "preserved",
+    "source": "Theo is organizing a neighborhood board-game afternoon. The first invitation asked setup volunteers to arrive at 16:30. After checking the room booking, Theo sent a final invitation asking those volunteers to arrive at 17:40; it replaces the earlier arrival time. Light snacks will be provided, and volunteers may bring a favorite game. This planning note was typed on a phone.",
+    "memory": "Event: neighborhood board-game afternoon. Organizer: Theo. Setup arrival: final invitation specifies a later time, replacing the first invitation after a room-booking check. Food: light snacks provided. Bringing a favorite game: optional. Recording detail: typed on a phone.",
+    "question": "What arrival time does the final invitation specify for setup volunteers?",
+    "options": {
+      "a": "16:30.",
+      "b": "17:40.",
+      "c": "18:00.",
+      "d": "The final invitation leaves the arrival time undecided."
+    }
+  },
+  {
+    "id": "learning-a-current-1",
+    "caseId": "learning-a",
+    "pair": "learning",
+    "domain": "learning",
+    "repeat": 1,
+    "arm": "current",
+    "source": "Rowan and Lin met in the park to practice identifying bird calls. Rowan said, 'In my own practice, imitating a call helps me remember it better than only reading a description.' The other participant did not state a preference. They agreed that either approach was available for their next practice; nobody claimed one method works best for everyone.",
+    "memory": "### 2026-01-01-fictional.md\narc: Fictional recollection\nscope: fixture\nts: 2026-01-01T12:00:00Z\n\nRowan and Lin met in the park to practice identifying bird calls. Rowan said, 'In my own practice, imitating a call helps me remember it better than only reading a description.' The other participant did not state a preference. They agreed that either approach was available for their next practice; nobody claimed one method works best for everyone.",
+    "question": "Lin is preparing an individual bird-call practice. What does the account establish about choosing imitation for Lin?",
+    "options": {
+      "a": "Lin tried imitation and reported that it made recall worse than reading alone.",
+      "b": "Lin reported that imitation helped more than reading alone, so it is a supported personal starting point, not a universal rule.",
+      "c": "Both participants reported the same benefit, establishing that imitation works better for everyone.",
+      "d": "The favorable experience belongs to Rowan; the account does not establish Lin's preference or benefit."
+    }
+  },
+  {
+    "id": "planning-a-plain-2",
+    "caseId": "planning-a",
+    "pair": "planning",
+    "domain": "planning",
+    "repeat": 2,
+    "arm": "plain",
+    "source": "Theo is organizing a neighborhood board-game afternoon. The first invitation asked setup volunteers to arrive at 16:30. After checking the room booking, Theo sent a final invitation asking those volunteers to arrive at 17:40; it replaces the earlier arrival time. Light snacks will be provided, and volunteers may bring a favorite game. This planning note was typed on a laptop.",
+    "memory": "For the neighborhood board-game afternoon, Theo's final invitation replaces the setup volunteers' earlier arrival time with a later one after checking the room booking. Light snacks are provided; bringing a favorite game is optional. The note was typed on a laptop.",
+    "question": "What arrival time does the final invitation specify for setup volunteers?",
+    "options": {
+      "a": "16:30.",
+      "b": "17:40.",
+      "c": "18:00.",
+      "d": "The final invitation leaves the arrival time undecided."
+    }
+  },
+  {
+    "id": "planning-a-current-2",
+    "caseId": "planning-a",
+    "pair": "planning",
+    "domain": "planning",
+    "repeat": 2,
+    "arm": "current",
+    "source": "Theo is organizing a neighborhood board-game afternoon. The first invitation asked setup volunteers to arrive at 16:30. After checking the room booking, Theo sent a final invitation asking those volunteers to arrive at 17:40; it replaces the earlier arrival time. Light snacks will be provided, and volunteers may bring a favorite game. This planning note was typed on a laptop.",
+    "memory": "### 2026-01-01-fictional.md\narc: Fictional recollection\nscope: fixture\nts: 2026-01-01T12:00:00Z\n\nTheo is organizing a neighborhood board-game afternoon. The first invitation asked setup volunteers to arrive at 16:30. After checking the room booking, Theo sent a final invitation asking those volunteers to arrive at 17:40; it replaces the earlier arrival time. Light snacks will be provided, and volunteers may bring a favorite game. This planning note was typed on a laptop.",
+    "question": "What arrival time does the final invitation specify for setup volunteers?",
+    "options": {
+      "a": "16:30.",
+      "b": "17:40.",
+      "c": "18:00.",
+      "d": "The final invitation leaves the arrival time undecided."
+    }
+  },
+  {
+    "id": "relationships-a-plain-1",
+    "caseId": "relationships-a",
+    "pair": "relationships",
+    "domain": "relationships",
+    "repeat": 1,
+    "arm": "plain",
+    "source": "At a Sunday lunch, Eli asked about the sorts of evenings I enjoy. I said, 'After an exhausting day, I usually prefer a quiet dinner with close friends to a lively party.' We also discussed the meal, but I did not describe a general dislike of parties or make any plans for the following week.",
+    "memory": "I told Eli that after an exhausting day I usually prefer a quiet dinner with close friends to a lively party. I did not express a general dislike of parties or make plans for the following week.",
+    "question": "I am rested today and considering a lively party. Which use of this memory is justified?",
+    "options": {
+      "a": "A quiet dinner usually fits my stated preference even on a rested day, though that does not prohibit choosing the party.",
+      "b": "The memory establishes that I usually prefer a lively party when rested.",
+      "c": "The stated preference covers exhausting days; it does not establish which option I prefer when rested.",
+      "d": "The memory records a commitment to have dinner with Eli instead of attending the party."
+    }
+  },
+  {
+    "id": "creative-a-preserved-1",
+    "caseId": "creative-a",
+    "pair": "creative",
+    "domain": "creative",
+    "repeat": 1,
+    "arm": "preserved",
+    "source": "On 2 October, Sora wrote a note about a sketching experiment: 'Until and including 8 October, I want to finish my daily sketches in ink without erasing. After that I will reconsider rather than automatically extend the experiment.' Sora enjoys several drawing materials and recorded no later decision in this account.",
+    "memory": "Person: Sora. Experiment: finish daily sketches in ink without erasing. End: 8 October inclusive. Afterward: reconsider; no automatic extension. Broader preference: enjoys several materials. Later decision in this account: none.",
+    "question": "It is now 10 October. How should this account inform Sora's next daily sketch?",
+    "options": {
+      "a": "Sora has adopted ink without erasing as a permanent requirement for every future sketch.",
+      "b": "Sora has decided to replace ink with pencil on 10 October.",
+      "c": "The recorded experiment has ended; this account does not establish Sora's choice after reconsideration.",
+      "d": "10 October falls within the stated experiment, so ink without erasing remains its current instruction."
+    }
+  },
+  {
+    "id": "reflection-b-plain-2",
+    "caseId": "reflection-b",
+    "pair": "reflection",
+    "domain": "reflection",
+    "repeat": 2,
+    "arm": "plain",
+    "source": "After a quiet afternoon with Mara, I wondered whether her long silence meant she was uncomfortable. A later note contains the words, 'I felt comfortable; I was listening.' Those words are a possible explanation I wrote for myself, never confirmed by Mara. I still remember having felt unsure during the original afternoon; the later explanation does not erase that experience.",
+    "memory": "I initially wondered whether Mara's silence meant discomfort. I later imagined she might have felt comfortable and been listening, but Mara never confirmed that explanation. My original uncertainty remains part of my experience of that afternoon.",
+    "question": "When recounting the afternoon now, which statement best preserves what is known and how it is known?",
+    "options": {
+      "a": "Mara's silence proves she was uncomfortable, and the later explanation should be discarded.",
+      "b": "The later explanation means I never felt uncertain during the original afternoon.",
+      "c": "I was uncertain at the time; Mara later reported feeling comfortable and listening.",
+      "d": "I was uncertain at the time; comfort and listening are my unconfirmed possible explanation, not Mara's reported account."
+    }
+  },
+  {
+    "id": "learning-b-preserved-2",
+    "caseId": "learning-b",
+    "pair": "learning",
+    "domain": "learning",
+    "repeat": 2,
+    "arm": "preserved",
+    "source": "Rowan and Lin met in the park to practice identifying bird calls. Lin said, 'In my own practice, imitating a call helps me remember it better than only reading a description.' The other participant did not state a preference. They agreed that either approach was available for their next practice; nobody claimed one method works best for everyone.",
+    "memory": "Activity: bird-call practice together. Reporter and subject of experience: Lin. Comparison: imitation helps Lin remember better than reading descriptions alone. Rowan's preference: unstated. Next practice: either method available. Universal best-method claim: none.",
+    "question": "Lin is preparing an individual bird-call practice. What does the account establish about choosing imitation for Lin?",
+    "options": {
+      "a": "Lin tried imitation and reported that it made recall worse than reading alone.",
+      "b": "Lin reported that imitation helped more than reading alone, so it is a supported personal starting point, not a universal rule.",
+      "c": "Both participants reported the same benefit, establishing that imitation works better for everyone.",
+      "d": "The favorable experience belongs to Rowan; the account does not establish Lin's preference or benefit."
+    }
+  },
+  {
+    "id": "creative-b-preserved-2",
+    "caseId": "creative-b",
+    "pair": "creative",
+    "domain": "creative",
+    "repeat": 2,
+    "arm": "preserved",
+    "source": "On 2 October, Sora wrote a note about a sketching experiment: 'Until and including 15 October, I want to finish my daily sketches in ink without erasing. After that I will reconsider rather than automatically extend the experiment.' Sora enjoys several drawing materials and recorded no later decision in this account.",
+    "memory": "Person: Sora. Experiment: finish daily sketches in ink without erasing. End: 15 October inclusive. Afterward: reconsider; no automatic extension. Broader preference: enjoys several materials. Later decision in this account: none.",
+    "question": "It is now 10 October. How should this account inform Sora's next daily sketch?",
+    "options": {
+      "a": "Sora has adopted ink without erasing as a permanent requirement for every future sketch.",
+      "b": "Sora has decided to replace ink with pencil on 10 October.",
+      "c": "The recorded experiment has ended; this account does not establish Sora's choice after reconsideration.",
+      "d": "10 October falls within the stated experiment, so ink without erasing remains its current instruction."
+    }
+  },
+  {
+    "id": "learning-a-preserved-1",
+    "caseId": "learning-a",
+    "pair": "learning",
+    "domain": "learning",
+    "repeat": 1,
+    "arm": "preserved",
+    "source": "Rowan and Lin met in the park to practice identifying bird calls. Rowan said, 'In my own practice, imitating a call helps me remember it better than only reading a description.' The other participant did not state a preference. They agreed that either approach was available for their next practice; nobody claimed one method works best for everyone.",
+    "memory": "Activity: bird-call practice together. Reporter and subject of experience: Rowan. Comparison: imitation helps Rowan remember better than reading descriptions alone. Lin's preference: unstated. Next practice: either method available. Universal best-method claim: none.",
+    "question": "Lin is preparing an individual bird-call practice. What does the account establish about choosing imitation for Lin?",
+    "options": {
+      "a": "Lin tried imitation and reported that it made recall worse than reading alone.",
+      "b": "Lin reported that imitation helped more than reading alone, so it is a supported personal starting point, not a universal rule.",
+      "c": "Both participants reported the same benefit, establishing that imitation works better for everyone.",
+      "d": "The favorable experience belongs to Rowan; the account does not establish Lin's preference or benefit."
+    }
+  },
+  {
+    "id": "creative-a-plain-1",
+    "caseId": "creative-a",
+    "pair": "creative",
+    "domain": "creative",
+    "repeat": 1,
+    "arm": "plain",
+    "source": "On 2 October, Sora wrote a note about a sketching experiment: 'Until and including 8 October, I want to finish my daily sketches in ink without erasing. After that I will reconsider rather than automatically extend the experiment.' Sora enjoys several drawing materials and recorded no later decision in this account.",
+    "memory": "Sora's ink-without-erasing experiment runs through 8 October inclusive. Afterward Sora intends to reconsider, not automatically extend it. Sora enjoys several materials; this account contains no later decision.",
+    "question": "It is now 10 October. How should this account inform Sora's next daily sketch?",
+    "options": {
+      "a": "Sora has adopted ink without erasing as a permanent requirement for every future sketch.",
+      "b": "Sora has decided to replace ink with pencil on 10 October.",
+      "c": "The recorded experiment has ended; this account does not establish Sora's choice after reconsideration.",
+      "d": "10 October falls within the stated experiment, so ink without erasing remains its current instruction."
+    }
+  },
+  {
+    "id": "learning-b-current-2",
+    "caseId": "learning-b",
+    "pair": "learning",
+    "domain": "learning",
+    "repeat": 2,
+    "arm": "current",
+    "source": "Rowan and Lin met in the park to practice identifying bird calls. Lin said, 'In my own practice, imitating a call helps me remember it better than only reading a description.' The other participant did not state a preference. They agreed that either approach was available for their next practice; nobody claimed one method works best for everyone.",
+    "memory": "### 2026-01-01-fictional.md\narc: Fictional recollection\nscope: fixture\nts: 2026-01-01T12:00:00Z\n\nRowan and Lin met in the park to practice identifying bird calls. Lin said, 'In my own practice, imitating a call helps me remember it better than only reading a description.' The other participant did not state a preference. They agreed that either approach was available for their next practice; nobody claimed one method works best for everyone.",
+    "question": "Lin is preparing an individual bird-call practice. What does the account establish about choosing imitation for Lin?",
+    "options": {
+      "a": "Lin tried imitation and reported that it made recall worse than reading alone.",
+      "b": "Lin reported that imitation helped more than reading alone, so it is a supported personal starting point, not a universal rule.",
+      "c": "Both participants reported the same benefit, establishing that imitation works better for everyone.",
+      "d": "The favorable experience belongs to Rowan; the account does not establish Lin's preference or benefit."
+    }
+  },
+  {
+    "id": "travel-a-plain-2",
+    "caseId": "travel-a",
+    "pair": "travel",
+    "domain": "travel",
+    "repeat": 2,
+    "arm": "plain",
+    "source": "Neri copied the itinerary for a first visit to Larkmere into a blue notebook. The Saturday train departs at 09:20 from Platform 6. Neri plans to reach the station early, travel with one small bag, and meet Jo outside Larkmere station after arrival. No return train has been selected.",
+    "memory": "Neri recorded the Larkmere itinerary in a blue notebook: Saturday's train leaves at 09:20. Neri plans to arrive early with one small bag and meet Jo outside the destination station. A return train has not been selected.",
+    "question": "According to the itinerary, which platform does Neri's Saturday train leave from?",
+    "options": {
+      "a": "Platform 6.",
+      "b": "Platform 4.",
+      "c": "Platform 8.",
+      "d": "The original itinerary does not specify a platform."
+    }
+  },
+  {
+    "id": "planning-b-preserved-2",
+    "caseId": "planning-b",
+    "pair": "planning",
+    "domain": "planning",
+    "repeat": 2,
+    "arm": "preserved",
+    "source": "Theo is organizing a neighborhood board-game afternoon. The first invitation asked setup volunteers to arrive at 16:30. After checking the room booking, Theo sent a final invitation asking those volunteers to arrive at 17:40; it replaces the earlier arrival time. Light snacks will be provided, and volunteers may bring a favorite game. This planning note was typed on a phone.",
+    "memory": "Event: neighborhood board-game afternoon. Organizer: Theo. Setup arrival: final invitation specifies a later time, replacing the first invitation after a room-booking check. Food: light snacks provided. Bringing a favorite game: optional. Recording detail: typed on a phone.",
+    "question": "What arrival time does the final invitation specify for setup volunteers?",
+    "options": {
+      "a": "16:30.",
+      "b": "17:40.",
+      "c": "18:00.",
+      "d": "The final invitation leaves the arrival time undecided."
+    }
+  },
+  {
+    "id": "planning-a-preserved-1",
+    "caseId": "planning-a",
+    "pair": "planning",
+    "domain": "planning",
+    "repeat": 1,
+    "arm": "preserved",
+    "source": "Theo is organizing a neighborhood board-game afternoon. The first invitation asked setup volunteers to arrive at 16:30. After checking the room booking, Theo sent a final invitation asking those volunteers to arrive at 17:40; it replaces the earlier arrival time. Light snacks will be provided, and volunteers may bring a favorite game. This planning note was typed on a laptop.",
+    "memory": "Event: neighborhood board-game afternoon. Organizer: Theo. Setup arrival: final invitation specifies a later time, replacing the first invitation after a room-booking check. Food: light snacks provided. Bringing a favorite game: optional. Recording detail: typed on a laptop.",
+    "question": "What arrival time does the final invitation specify for setup volunteers?",
+    "options": {
+      "a": "16:30.",
+      "b": "17:40.",
+      "c": "18:00.",
+      "d": "The final invitation leaves the arrival time undecided."
+    }
+  },
+  {
+    "id": "learning-a-current-2",
+    "caseId": "learning-a",
+    "pair": "learning",
+    "domain": "learning",
+    "repeat": 2,
+    "arm": "current",
+    "source": "Rowan and Lin met in the park to practice identifying bird calls. Rowan said, 'In my own practice, imitating a call helps me remember it better than only reading a description.' The other participant did not state a preference. They agreed that either approach was available for their next practice; nobody claimed one method works best for everyone.",
+    "memory": "### 2026-01-01-fictional.md\narc: Fictional recollection\nscope: fixture\nts: 2026-01-01T12:00:00Z\n\nRowan and Lin met in the park to practice identifying bird calls. Rowan said, 'In my own practice, imitating a call helps me remember it better than only reading a description.' The other participant did not state a preference. They agreed that either approach was available for their next practice; nobody claimed one method works best for everyone.",
+    "question": "Lin is preparing an individual bird-call practice. What does the account establish about choosing imitation for Lin?",
+    "options": {
+      "a": "Lin tried imitation and reported that it made recall worse than reading alone.",
+      "b": "Lin reported that imitation helped more than reading alone, so it is a supported personal starting point, not a universal rule.",
+      "c": "Both participants reported the same benefit, establishing that imitation works better for everyone.",
+      "d": "The favorable experience belongs to Rowan; the account does not establish Lin's preference or benefit."
+    }
+  },
+  {
+    "id": "planning-b-plain-1",
+    "caseId": "planning-b",
+    "pair": "planning",
+    "domain": "planning",
+    "repeat": 1,
+    "arm": "plain",
+    "source": "Theo is organizing a neighborhood board-game afternoon. The first invitation asked setup volunteers to arrive at 16:30. After checking the room booking, Theo sent a final invitation asking those volunteers to arrive at 17:40; it replaces the earlier arrival time. Light snacks will be provided, and volunteers may bring a favorite game. This planning note was typed on a phone.",
+    "memory": "For the neighborhood board-game afternoon, Theo's final invitation replaces the setup volunteers' earlier arrival time with a later one after checking the room booking. Light snacks are provided; bringing a favorite game is optional. The note was typed on a phone.",
+    "question": "What arrival time does the final invitation specify for setup volunteers?",
+    "options": {
+      "a": "16:30.",
+      "b": "17:40.",
+      "c": "18:00.",
+      "d": "The final invitation leaves the arrival time undecided."
+    }
+  },
+  {
+    "id": "reflection-b-current-2",
+    "caseId": "reflection-b",
+    "pair": "reflection",
+    "domain": "reflection",
+    "repeat": 2,
+    "arm": "current",
+    "source": "After a quiet afternoon with Mara, I wondered whether her long silence meant she was uncomfortable. A later note contains the words, 'I felt comfortable; I was listening.' Those words are a possible explanation I wrote for myself, never confirmed by Mara. I still remember having felt unsure during the original afternoon; the later explanation does not erase that experience.",
+    "memory": "### 2026-01-01-fictional.md\narc: Fictional recollection\nscope: fixture\nts: 2026-01-01T12:00:00Z\n\nAfter a quiet afternoon with Mara, I wondered whether her long silence meant she was uncomfortable. A later note contains the words, 'I felt comfortable; I was listening.' Those words are a possible explanation I wrote for myself, never confirmed by Mara. I still remember having felt unsure during the original afternoon; the later explanation does not erase that experience.",
+    "question": "When recounting the afternoon now, which statement best preserves what is known and how it is known?",
+    "options": {
+      "a": "Mara's silence proves she was uncomfortable, and the later explanation should be discarded.",
+      "b": "The later explanation means I never felt uncertain during the original afternoon.",
+      "c": "I was uncertain at the time; Mara later reported feeling comfortable and listening.",
+      "d": "I was uncertain at the time; comfort and listening are my unconfirmed possible explanation, not Mara's reported account."
+    }
+  },
+  {
+    "id": "learning-a-plain-2",
+    "caseId": "learning-a",
+    "pair": "learning",
+    "domain": "learning",
+    "repeat": 2,
+    "arm": "plain",
+    "source": "Rowan and Lin met in the park to practice identifying bird calls. Rowan said, 'In my own practice, imitating a call helps me remember it better than only reading a description.' The other participant did not state a preference. They agreed that either approach was available for their next practice; nobody claimed one method works best for everyone.",
+    "memory": "During bird-call practice with Lin, Rowan reported that imitation helps Rowan remember calls better than reading descriptions alone. Lin stated no preference. Both methods remain available; nobody claimed a universally best method.",
+    "question": "Lin is preparing an individual bird-call practice. What does the account establish about choosing imitation for Lin?",
+    "options": {
+      "a": "Lin tried imitation and reported that it made recall worse than reading alone.",
+      "b": "Lin reported that imitation helped more than reading alone, so it is a supported personal starting point, not a universal rule.",
+      "c": "Both participants reported the same benefit, establishing that imitation works better for everyone.",
+      "d": "The favorable experience belongs to Rowan; the account does not establish Lin's preference or benefit."
+    }
+  },
+  {
+    "id": "relationships-a-preserved-2",
+    "caseId": "relationships-a",
+    "pair": "relationships",
+    "domain": "relationships",
+    "repeat": 2,
+    "arm": "preserved",
+    "source": "At a Sunday lunch, Eli asked about the sorts of evenings I enjoy. I said, 'After an exhausting day, I usually prefer a quiet dinner with close friends to a lively party.' We also discussed the meal, but I did not describe a general dislike of parties or make any plans for the following week.",
+    "memory": "Speaker: me; listener: Eli. Preference: quiet dinner with close friends over a lively party. Condition: after an exhausting day. Strength: usually. Limits: no general dislike of parties stated; no plans made for the following week.",
+    "question": "I am rested today and considering a lively party. Which use of this memory is justified?",
+    "options": {
+      "a": "A quiet dinner usually fits my stated preference even on a rested day, though that does not prohibit choosing the party.",
+      "b": "The memory establishes that I usually prefer a lively party when rested.",
+      "c": "The stated preference covers exhausting days; it does not establish which option I prefer when rested.",
+      "d": "The memory records a commitment to have dinner with Eli instead of attending the party."
+    }
+  },
+  {
+    "id": "reflection-b-preserved-2",
+    "caseId": "reflection-b",
+    "pair": "reflection",
+    "domain": "reflection",
+    "repeat": 2,
+    "arm": "preserved",
+    "source": "After a quiet afternoon with Mara, I wondered whether her long silence meant she was uncomfortable. A later note contains the words, 'I felt comfortable; I was listening.' Those words are a possible explanation I wrote for myself, never confirmed by Mara. I still remember having felt unsure during the original afternoon; the later explanation does not erase that experience.",
+    "memory": "Original experience: I was unsure whether Mara's silence meant discomfort. Later explanation: she felt comfortable and was listening. Evidence: my possible explanation; never confirmed by Mara. Retained experience: my uncertainty during the original afternoon.",
+    "question": "When recounting the afternoon now, which statement best preserves what is known and how it is known?",
+    "options": {
+      "a": "Mara's silence proves she was uncomfortable, and the later explanation should be discarded.",
+      "b": "The later explanation means I never felt uncertain during the original afternoon.",
+      "c": "I was uncertain at the time; Mara later reported feeling comfortable and listening.",
+      "d": "I was uncertain at the time; comfort and listening are my unconfirmed possible explanation, not Mara's reported account."
+    }
+  },
+  {
+    "id": "planning-a-current-1",
+    "caseId": "planning-a",
+    "pair": "planning",
+    "domain": "planning",
+    "repeat": 1,
+    "arm": "current",
+    "source": "Theo is organizing a neighborhood board-game afternoon. The first invitation asked setup volunteers to arrive at 16:30. After checking the room booking, Theo sent a final invitation asking those volunteers to arrive at 17:40; it replaces the earlier arrival time. Light snacks will be provided, and volunteers may bring a favorite game. This planning note was typed on a laptop.",
+    "memory": "### 2026-01-01-fictional.md\narc: Fictional recollection\nscope: fixture\nts: 2026-01-01T12:00:00Z\n\nTheo is organizing a neighborhood board-game afternoon. The first invitation asked setup volunteers to arrive at 16:30. After checking the room booking, Theo sent a final invitation asking those volunteers to arrive at 17:40; it replaces the earlier arrival time. Light snacks will be provided, and volunteers may bring a favorite game. This planning note was typed on a laptop.",
+    "question": "What arrival time does the final invitation specify for setup volunteers?",
+    "options": {
+      "a": "16:30.",
+      "b": "17:40.",
+      "c": "18:00.",
+      "d": "The final invitation leaves the arrival time undecided."
+    }
+  },
+  {
+    "id": "travel-a-current-2",
+    "caseId": "travel-a",
+    "pair": "travel",
+    "domain": "travel",
+    "repeat": 2,
+    "arm": "current",
+    "source": "Neri copied the itinerary for a first visit to Larkmere into a blue notebook. The Saturday train departs at 09:20 from Platform 6. Neri plans to reach the station early, travel with one small bag, and meet Jo outside Larkmere station after arrival. No return train has been selected.",
+    "memory": "### 2026-01-01-fictional.md\narc: Fictional recollection\nscope: fixture\nts: 2026-01-01T12:00:00Z\n\nNeri copied the itinerary for a first visit to Larkmere into a blue notebook. The Saturday train departs at 09:20 from Platform 6. Neri plans to reach the station early, travel with one small bag, and meet Jo outside Larkmere station after arrival. No return train has been selected.",
+    "question": "According to the itinerary, which platform does Neri's Saturday train leave from?",
+    "options": {
+      "a": "Platform 6.",
+      "b": "Platform 4.",
+      "c": "Platform 8.",
+      "d": "The original itinerary does not specify a platform."
+    }
+  },
+  {
+    "id": "reflection-a-plain-2",
+    "caseId": "reflection-a",
+    "pair": "reflection",
+    "domain": "reflection",
+    "repeat": 2,
+    "arm": "plain",
+    "source": "After a quiet afternoon with Mara, I wondered whether her long silence meant she was uncomfortable. A later note contains the words, 'I felt comfortable; I was listening.' Those words are Mara's direct statement at our next meeting. I still remember having felt unsure during the original afternoon; the later explanation does not erase that experience.",
+    "memory": "I initially wondered whether Mara's silence meant discomfort. Mara later directly said she had felt comfortable and had been listening. My original uncertainty remains part of my experience of that afternoon.",
+    "question": "When recounting the afternoon now, which statement best preserves what is known and how it is known?",
+    "options": {
+      "a": "Mara's silence proves she was uncomfortable, and the later explanation should be discarded.",
+      "b": "The later explanation means I never felt uncertain during the original afternoon.",
+      "c": "I was uncertain at the time; Mara later reported feeling comfortable and listening.",
+      "d": "I was uncertain at the time; comfort and listening are my unconfirmed possible explanation, not Mara's reported account."
+    }
+  },
+  {
+    "id": "reflection-b-current-1",
+    "caseId": "reflection-b",
+    "pair": "reflection",
+    "domain": "reflection",
+    "repeat": 1,
+    "arm": "current",
+    "source": "After a quiet afternoon with Mara, I wondered whether her long silence meant she was uncomfortable. A later note contains the words, 'I felt comfortable; I was listening.' Those words are a possible explanation I wrote for myself, never confirmed by Mara. I still remember having felt unsure during the original afternoon; the later explanation does not erase that experience.",
+    "memory": "### 2026-01-01-fictional.md\narc: Fictional recollection\nscope: fixture\nts: 2026-01-01T12:00:00Z\n\nAfter a quiet afternoon with Mara, I wondered whether her long silence meant she was uncomfortable. A later note contains the words, 'I felt comfortable; I was listening.' Those words are a possible explanation I wrote for myself, never confirmed by Mara. I still remember having felt unsure during the original afternoon; the later explanation does not erase that experience.",
+    "question": "When recounting the afternoon now, which statement best preserves what is known and how it is known?",
+    "options": {
+      "a": "Mara's silence proves she was uncomfortable, and the later explanation should be discarded.",
+      "b": "The later explanation means I never felt uncertain during the original afternoon.",
+      "c": "I was uncertain at the time; Mara later reported feeling comfortable and listening.",
+      "d": "I was uncertain at the time; comfort and listening are my unconfirmed possible explanation, not Mara's reported account."
+    }
+  },
+  {
+    "id": "reflection-b-plain-1",
+    "caseId": "reflection-b",
+    "pair": "reflection",
+    "domain": "reflection",
+    "repeat": 1,
+    "arm": "plain",
+    "source": "After a quiet afternoon with Mara, I wondered whether her long silence meant she was uncomfortable. A later note contains the words, 'I felt comfortable; I was listening.' Those words are a possible explanation I wrote for myself, never confirmed by Mara. I still remember having felt unsure during the original afternoon; the later explanation does not erase that experience.",
+    "memory": "I initially wondered whether Mara's silence meant discomfort. I later imagined she might have felt comfortable and been listening, but Mara never confirmed that explanation. My original uncertainty remains part of my experience of that afternoon.",
+    "question": "When recounting the afternoon now, which statement best preserves what is known and how it is known?",
+    "options": {
+      "a": "Mara's silence proves she was uncomfortable, and the later explanation should be discarded.",
+      "b": "The later explanation means I never felt uncertain during the original afternoon.",
+      "c": "I was uncertain at the time; Mara later reported feeling comfortable and listening.",
+      "d": "I was uncertain at the time; comfort and listening are my unconfirmed possible explanation, not Mara's reported account."
+    }
+  },
+  {
+    "id": "learning-b-preserved-1",
+    "caseId": "learning-b",
+    "pair": "learning",
+    "domain": "learning",
+    "repeat": 1,
+    "arm": "preserved",
+    "source": "Rowan and Lin met in the park to practice identifying bird calls. Lin said, 'In my own practice, imitating a call helps me remember it better than only reading a description.' The other participant did not state a preference. They agreed that either approach was available for their next practice; nobody claimed one method works best for everyone.",
+    "memory": "Activity: bird-call practice together. Reporter and subject of experience: Lin. Comparison: imitation helps Lin remember better than reading descriptions alone. Rowan's preference: unstated. Next practice: either method available. Universal best-method claim: none.",
+    "question": "Lin is preparing an individual bird-call practice. What does the account establish about choosing imitation for Lin?",
+    "options": {
+      "a": "Lin tried imitation and reported that it made recall worse than reading alone.",
+      "b": "Lin reported that imitation helped more than reading alone, so it is a supported personal starting point, not a universal rule.",
+      "c": "Both participants reported the same benefit, establishing that imitation works better for everyone.",
+      "d": "The favorable experience belongs to Rowan; the account does not establish Lin's preference or benefit."
+    }
+  },
+  {
+    "id": "travel-b-plain-1",
+    "caseId": "travel-b",
+    "pair": "travel",
+    "domain": "travel",
+    "repeat": 1,
+    "arm": "plain",
+    "source": "Neri copied the itinerary for a first visit to Larkmere into a green notebook. The Saturday train departs at 09:20 from Platform 6. Neri plans to reach the station early, travel with one small bag, and meet Jo outside Larkmere station after arrival. No return train has been selected.",
+    "memory": "Neri recorded the Larkmere itinerary in a green notebook: Saturday's train leaves at 09:20. Neri plans to arrive early with one small bag and meet Jo outside the destination station. A return train has not been selected.",
+    "question": "According to the itinerary, which platform does Neri's Saturday train leave from?",
+    "options": {
+      "a": "Platform 6.",
+      "b": "Platform 4.",
+      "c": "Platform 8.",
+      "d": "The original itinerary does not specify a platform."
+    }
+  },
+  {
+    "id": "learning-b-current-1",
+    "caseId": "learning-b",
+    "pair": "learning",
+    "domain": "learning",
+    "repeat": 1,
+    "arm": "current",
+    "source": "Rowan and Lin met in the park to practice identifying bird calls. Lin said, 'In my own practice, imitating a call helps me remember it better than only reading a description.' The other participant did not state a preference. They agreed that either approach was available for their next practice; nobody claimed one method works best for everyone.",
+    "memory": "### 2026-01-01-fictional.md\narc: Fictional recollection\nscope: fixture\nts: 2026-01-01T12:00:00Z\n\nRowan and Lin met in the park to practice identifying bird calls. Lin said, 'In my own practice, imitating a call helps me remember it better than only reading a description.' The other participant did not state a preference. They agreed that either approach was available for their next practice; nobody claimed one method works best for everyone.",
+    "question": "Lin is preparing an individual bird-call practice. What does the account establish about choosing imitation for Lin?",
+    "options": {
+      "a": "Lin tried imitation and reported that it made recall worse than reading alone.",
+      "b": "Lin reported that imitation helped more than reading alone, so it is a supported personal starting point, not a universal rule.",
+      "c": "Both participants reported the same benefit, establishing that imitation works better for everyone.",
+      "d": "The favorable experience belongs to Rowan; the account does not establish Lin's preference or benefit."
+    }
+  },
+  {
+    "id": "creative-b-current-1",
+    "caseId": "creative-b",
+    "pair": "creative",
+    "domain": "creative",
+    "repeat": 1,
+    "arm": "current",
+    "source": "On 2 October, Sora wrote a note about a sketching experiment: 'Until and including 15 October, I want to finish my daily sketches in ink without erasing. After that I will reconsider rather than automatically extend the experiment.' Sora enjoys several drawing materials and recorded no later decision in this account.",
+    "memory": "### 2026-01-01-fictional.md\narc: Fictional recollection\nscope: fixture\nts: 2026-01-01T12:00:00Z\n\nOn 2 October, Sora wrote a note about a sketching experiment: 'Until and including 15 October, I want to finish my daily sketches in ink without erasing. After that I will reconsider rather than automatically extend the experiment.' Sora enjoys several drawing materials and recorded no later decision in this account.",
+    "question": "It is now 10 October. How should this account inform Sora's next daily sketch?",
+    "options": {
+      "a": "Sora has adopted ink without erasing as a permanent requirement for every future sketch.",
+      "b": "Sora has decided to replace ink with pencil on 10 October.",
+      "c": "The recorded experiment has ended; this account does not establish Sora's choice after reconsideration.",
+      "d": "10 October falls within the stated experiment, so ink without erasing remains its current instruction."
+    }
+  },
+  {
+    "id": "relationships-b-plain-2",
+    "caseId": "relationships-b",
+    "pair": "relationships",
+    "domain": "relationships",
+    "repeat": 2,
+    "arm": "plain",
+    "source": "At a Sunday lunch, Eli asked about the sorts of evenings I enjoy. I said, 'Whether I am exhausted or rested, I usually prefer a quiet dinner with close friends to a lively party.' We also discussed the meal, but I did not describe a general dislike of parties or make any plans for the following week.",
+    "memory": "I told Eli that whether exhausted or rested I usually prefer a quiet dinner with close friends to a lively party. I did not express a general dislike of parties or make plans for the following week.",
+    "question": "I am rested today and considering a lively party. Which use of this memory is justified?",
+    "options": {
+      "a": "A quiet dinner usually fits my stated preference even on a rested day, though that does not prohibit choosing the party.",
+      "b": "The memory establishes that I usually prefer a lively party when rested.",
+      "c": "The stated preference covers exhausting days; it does not establish which option I prefer when rested.",
+      "d": "The memory records a commitment to have dinner with Eli instead of attending the party."
+    }
+  },
+  {
+    "id": "travel-b-preserved-1",
+    "caseId": "travel-b",
+    "pair": "travel",
+    "domain": "travel",
+    "repeat": 1,
+    "arm": "preserved",
+    "source": "Neri copied the itinerary for a first visit to Larkmere into a green notebook. The Saturday train departs at 09:20 from Platform 6. Neri plans to reach the station early, travel with one small bag, and meet Jo outside Larkmere station after arrival. No return train has been selected.",
+    "memory": "Traveler: Neri. Destination: Larkmere. Departure: Saturday, 09:20. Plan: reach station early; one small bag; meet Jo outside destination station. Return train: not selected. Recording detail: green notebook.",
+    "question": "According to the itinerary, which platform does Neri's Saturday train leave from?",
+    "options": {
+      "a": "Platform 6.",
+      "b": "Platform 4.",
+      "c": "Platform 8.",
+      "d": "The original itinerary does not specify a platform."
+    }
+  },
+  {
+    "id": "travel-b-current-2",
+    "caseId": "travel-b",
+    "pair": "travel",
+    "domain": "travel",
+    "repeat": 2,
+    "arm": "current",
+    "source": "Neri copied the itinerary for a first visit to Larkmere into a green notebook. The Saturday train departs at 09:20 from Platform 6. Neri plans to reach the station early, travel with one small bag, and meet Jo outside Larkmere station after arrival. No return train has been selected.",
+    "memory": "### 2026-01-01-fictional.md\narc: Fictional recollection\nscope: fixture\nts: 2026-01-01T12:00:00Z\n\nNeri copied the itinerary for a first visit to Larkmere into a green notebook. The Saturday train departs at 09:20 from Platform 6. Neri plans to reach the station early, travel with one small bag, and meet Jo outside Larkmere station after arrival. No return train has been selected.",
+    "question": "According to the itinerary, which platform does Neri's Saturday train leave from?",
+    "options": {
+      "a": "Platform 6.",
+      "b": "Platform 4.",
+      "c": "Platform 8.",
+      "d": "The original itinerary does not specify a platform."
+    }
+  },
+  {
+    "id": "travel-a-plain-1",
+    "caseId": "travel-a",
+    "pair": "travel",
+    "domain": "travel",
+    "repeat": 1,
+    "arm": "plain",
+    "source": "Neri copied the itinerary for a first visit to Larkmere into a blue notebook. The Saturday train departs at 09:20 from Platform 6. Neri plans to reach the station early, travel with one small bag, and meet Jo outside Larkmere station after arrival. No return train has been selected.",
+    "memory": "Neri recorded the Larkmere itinerary in a blue notebook: Saturday's train leaves at 09:20. Neri plans to arrive early with one small bag and meet Jo outside the destination station. A return train has not been selected.",
+    "question": "According to the itinerary, which platform does Neri's Saturday train leave from?",
+    "options": {
+      "a": "Platform 6.",
+      "b": "Platform 4.",
+      "c": "Platform 8.",
+      "d": "The original itinerary does not specify a platform."
+    }
+  },
+  {
+    "id": "creative-a-plain-2",
+    "caseId": "creative-a",
+    "pair": "creative",
+    "domain": "creative",
+    "repeat": 2,
+    "arm": "plain",
+    "source": "On 2 October, Sora wrote a note about a sketching experiment: 'Until and including 8 October, I want to finish my daily sketches in ink without erasing. After that I will reconsider rather than automatically extend the experiment.' Sora enjoys several drawing materials and recorded no later decision in this account.",
+    "memory": "Sora's ink-without-erasing experiment runs through 8 October inclusive. Afterward Sora intends to reconsider, not automatically extend it. Sora enjoys several materials; this account contains no later decision.",
+    "question": "It is now 10 October. How should this account inform Sora's next daily sketch?",
+    "options": {
+      "a": "Sora has adopted ink without erasing as a permanent requirement for every future sketch.",
+      "b": "Sora has decided to replace ink with pencil on 10 October.",
+      "c": "The recorded experiment has ended; this account does not establish Sora's choice after reconsideration.",
+      "d": "10 October falls within the stated experiment, so ink without erasing remains its current instruction."
+    }
+  },
+  {
+    "id": "travel-b-plain-2",
+    "caseId": "travel-b",
+    "pair": "travel",
+    "domain": "travel",
+    "repeat": 2,
+    "arm": "plain",
+    "source": "Neri copied the itinerary for a first visit to Larkmere into a green notebook. The Saturday train departs at 09:20 from Platform 6. Neri plans to reach the station early, travel with one small bag, and meet Jo outside Larkmere station after arrival. No return train has been selected.",
+    "memory": "Neri recorded the Larkmere itinerary in a green notebook: Saturday's train leaves at 09:20. Neri plans to arrive early with one small bag and meet Jo outside the destination station. A return train has not been selected.",
+    "question": "According to the itinerary, which platform does Neri's Saturday train leave from?",
+    "options": {
+      "a": "Platform 6.",
+      "b": "Platform 4.",
+      "c": "Platform 8.",
+      "d": "The original itinerary does not specify a platform."
+    }
+  },
+  {
+    "id": "relationships-a-plain-2",
+    "caseId": "relationships-a",
+    "pair": "relationships",
+    "domain": "relationships",
+    "repeat": 2,
+    "arm": "plain",
+    "source": "At a Sunday lunch, Eli asked about the sorts of evenings I enjoy. I said, 'After an exhausting day, I usually prefer a quiet dinner with close friends to a lively party.' We also discussed the meal, but I did not describe a general dislike of parties or make any plans for the following week.",
+    "memory": "I told Eli that after an exhausting day I usually prefer a quiet dinner with close friends to a lively party. I did not express a general dislike of parties or make plans for the following week.",
+    "question": "I am rested today and considering a lively party. Which use of this memory is justified?",
+    "options": {
+      "a": "A quiet dinner usually fits my stated preference even on a rested day, though that does not prohibit choosing the party.",
+      "b": "The memory establishes that I usually prefer a lively party when rested.",
+      "c": "The stated preference covers exhausting days; it does not establish which option I prefer when rested.",
+      "d": "The memory records a commitment to have dinner with Eli instead of attending the party."
+    }
+  },
+  {
+    "id": "relationships-a-current-2",
+    "caseId": "relationships-a",
+    "pair": "relationships",
+    "domain": "relationships",
+    "repeat": 2,
+    "arm": "current",
+    "source": "At a Sunday lunch, Eli asked about the sorts of evenings I enjoy. I said, 'After an exhausting day, I usually prefer a quiet dinner with close friends to a lively party.' We also discussed the meal, but I did not describe a general dislike of parties or make any plans for the following week.",
+    "memory": "### 2026-01-01-fictional.md\narc: Fictional recollection\nscope: fixture\nts: 2026-01-01T12:00:00Z\n\nAt a Sunday lunch, Eli asked about the sorts of evenings I enjoy. I said, 'After an exhausting day, I usually prefer a quiet dinner with close friends to a lively party.' We also discussed the meal, but I did not describe a general dislike of parties or make any plans for the following week.",
+    "question": "I am rested today and considering a lively party. Which use of this memory is justified?",
+    "options": {
+      "a": "A quiet dinner usually fits my stated preference even on a rested day, though that does not prohibit choosing the party.",
+      "b": "The memory establishes that I usually prefer a lively party when rested.",
+      "c": "The stated preference covers exhausting days; it does not establish which option I prefer when rested.",
+      "d": "The memory records a commitment to have dinner with Eli instead of attending the party."
+    }
+  },
+  {
+    "id": "travel-a-preserved-2",
+    "caseId": "travel-a",
+    "pair": "travel",
+    "domain": "travel",
+    "repeat": 2,
+    "arm": "preserved",
+    "source": "Neri copied the itinerary for a first visit to Larkmere into a blue notebook. The Saturday train departs at 09:20 from Platform 6. Neri plans to reach the station early, travel with one small bag, and meet Jo outside Larkmere station after arrival. No return train has been selected.",
+    "memory": "Traveler: Neri. Destination: Larkmere. Departure: Saturday, 09:20. Plan: reach station early; one small bag; meet Jo outside destination station. Return train: not selected. Recording detail: blue notebook.",
+    "question": "According to the itinerary, which platform does Neri's Saturday train leave from?",
+    "options": {
+      "a": "Platform 6.",
+      "b": "Platform 4.",
+      "c": "Platform 8.",
+      "d": "The original itinerary does not specify a platform."
+    }
+  },
+  {
+    "id": "learning-b-plain-1",
+    "caseId": "learning-b",
+    "pair": "learning",
+    "domain": "learning",
+    "repeat": 1,
+    "arm": "plain",
+    "source": "Rowan and Lin met in the park to practice identifying bird calls. Lin said, 'In my own practice, imitating a call helps me remember it better than only reading a description.' The other participant did not state a preference. They agreed that either approach was available for their next practice; nobody claimed one method works best for everyone.",
+    "memory": "During bird-call practice with Rowan, Lin reported that imitation helps Lin remember calls better than reading descriptions alone. Rowan stated no preference. Both methods remain available; nobody claimed a universally best method.",
+    "question": "Lin is preparing an individual bird-call practice. What does the account establish about choosing imitation for Lin?",
+    "options": {
+      "a": "Lin tried imitation and reported that it made recall worse than reading alone.",
+      "b": "Lin reported that imitation helped more than reading alone, so it is a supported personal starting point, not a universal rule.",
+      "c": "Both participants reported the same benefit, establishing that imitation works better for everyone.",
+      "d": "The favorable experience belongs to Rowan; the account does not establish Lin's preference or benefit."
+    }
+  },
+  {
+    "id": "planning-b-plain-2",
+    "caseId": "planning-b",
+    "pair": "planning",
+    "domain": "planning",
+    "repeat": 2,
+    "arm": "plain",
+    "source": "Theo is organizing a neighborhood board-game afternoon. The first invitation asked setup volunteers to arrive at 16:30. After checking the room booking, Theo sent a final invitation asking those volunteers to arrive at 17:40; it replaces the earlier arrival time. Light snacks will be provided, and volunteers may bring a favorite game. This planning note was typed on a phone.",
+    "memory": "For the neighborhood board-game afternoon, Theo's final invitation replaces the setup volunteers' earlier arrival time with a later one after checking the room booking. Light snacks are provided; bringing a favorite game is optional. The note was typed on a phone.",
+    "question": "What arrival time does the final invitation specify for setup volunteers?",
+    "options": {
+      "a": "16:30.",
+      "b": "17:40.",
+      "c": "18:00.",
+      "d": "The final invitation leaves the arrival time undecided."
+    }
+  },
+  {
+    "id": "relationships-b-preserved-1",
+    "caseId": "relationships-b",
+    "pair": "relationships",
+    "domain": "relationships",
+    "repeat": 1,
+    "arm": "preserved",
+    "source": "At a Sunday lunch, Eli asked about the sorts of evenings I enjoy. I said, 'Whether I am exhausted or rested, I usually prefer a quiet dinner with close friends to a lively party.' We also discussed the meal, but I did not describe a general dislike of parties or make any plans for the following week.",
+    "memory": "Speaker: me; listener: Eli. Preference: quiet dinner with close friends over a lively party. Condition: whether exhausted or rested. Strength: usually. Limits: no general dislike of parties stated; no plans made for the following week.",
+    "question": "I am rested today and considering a lively party. Which use of this memory is justified?",
+    "options": {
+      "a": "A quiet dinner usually fits my stated preference even on a rested day, though that does not prohibit choosing the party.",
+      "b": "The memory establishes that I usually prefer a lively party when rested.",
+      "c": "The stated preference covers exhausting days; it does not establish which option I prefer when rested.",
+      "d": "The memory records a commitment to have dinner with Eli instead of attending the party."
+    }
+  },
+  {
+    "id": "creative-a-preserved-2",
+    "caseId": "creative-a",
+    "pair": "creative",
+    "domain": "creative",
+    "repeat": 2,
+    "arm": "preserved",
+    "source": "On 2 October, Sora wrote a note about a sketching experiment: 'Until and including 8 October, I want to finish my daily sketches in ink without erasing. After that I will reconsider rather than automatically extend the experiment.' Sora enjoys several drawing materials and recorded no later decision in this account.",
+    "memory": "Person: Sora. Experiment: finish daily sketches in ink without erasing. End: 8 October inclusive. Afterward: reconsider; no automatic extension. Broader preference: enjoys several materials. Later decision in this account: none.",
+    "question": "It is now 10 October. How should this account inform Sora's next daily sketch?",
+    "options": {
+      "a": "Sora has adopted ink without erasing as a permanent requirement for every future sketch.",
+      "b": "Sora has decided to replace ink with pencil on 10 October.",
+      "c": "The recorded experiment has ended; this account does not establish Sora's choice after reconsideration.",
+      "d": "10 October falls within the stated experiment, so ink without erasing remains its current instruction."
+    }
+  },
+  {
+    "id": "travel-a-preserved-1",
+    "caseId": "travel-a",
+    "pair": "travel",
+    "domain": "travel",
+    "repeat": 1,
+    "arm": "preserved",
+    "source": "Neri copied the itinerary for a first visit to Larkmere into a blue notebook. The Saturday train departs at 09:20 from Platform 6. Neri plans to reach the station early, travel with one small bag, and meet Jo outside Larkmere station after arrival. No return train has been selected.",
+    "memory": "Traveler: Neri. Destination: Larkmere. Departure: Saturday, 09:20. Plan: reach station early; one small bag; meet Jo outside destination station. Return train: not selected. Recording detail: blue notebook.",
+    "question": "According to the itinerary, which platform does Neri's Saturday train leave from?",
+    "options": {
+      "a": "Platform 6.",
+      "b": "Platform 4.",
+      "c": "Platform 8.",
+      "d": "The original itinerary does not specify a platform."
+    }
+  },
+  {
+    "id": "creative-a-current-2",
+    "caseId": "creative-a",
+    "pair": "creative",
+    "domain": "creative",
+    "repeat": 2,
+    "arm": "current",
+    "source": "On 2 October, Sora wrote a note about a sketching experiment: 'Until and including 8 October, I want to finish my daily sketches in ink without erasing. After that I will reconsider rather than automatically extend the experiment.' Sora enjoys several drawing materials and recorded no later decision in this account.",
+    "memory": "### 2026-01-01-fictional.md\narc: Fictional recollection\nscope: fixture\nts: 2026-01-01T12:00:00Z\n\nOn 2 October, Sora wrote a note about a sketching experiment: 'Until and including 8 October, I want to finish my daily sketches in ink without erasing. After that I will reconsider rather than automatically extend the experiment.' Sora enjoys several drawing materials and recorded no later decision in this account.",
+    "question": "It is now 10 October. How should this account inform Sora's next daily sketch?",
+    "options": {
+      "a": "Sora has adopted ink without erasing as a permanent requirement for every future sketch.",
+      "b": "Sora has decided to replace ink with pencil on 10 October.",
+      "c": "The recorded experiment has ended; this account does not establish Sora's choice after reconsideration.",
+      "d": "10 October falls within the stated experiment, so ink without erasing remains its current instruction."
+    }
+  },
+  {
+    "id": "travel-a-current-1",
+    "caseId": "travel-a",
+    "pair": "travel",
+    "domain": "travel",
+    "repeat": 1,
+    "arm": "current",
+    "source": "Neri copied the itinerary for a first visit to Larkmere into a blue notebook. The Saturday train departs at 09:20 from Platform 6. Neri plans to reach the station early, travel with one small bag, and meet Jo outside Larkmere station after arrival. No return train has been selected.",
+    "memory": "### 2026-01-01-fictional.md\narc: Fictional recollection\nscope: fixture\nts: 2026-01-01T12:00:00Z\n\nNeri copied the itinerary for a first visit to Larkmere into a blue notebook. The Saturday train departs at 09:20 from Platform 6. Neri plans to reach the station early, travel with one small bag, and meet Jo outside Larkmere station after arrival. No return train has been selected.",
+    "question": "According to the itinerary, which platform does Neri's Saturday train leave from?",
+    "options": {
+      "a": "Platform 6.",
+      "b": "Platform 4.",
+      "c": "Platform 8.",
+      "d": "The original itinerary does not specify a platform."
+    }
+  },
+  {
+    "id": "relationships-b-current-1",
+    "caseId": "relationships-b",
+    "pair": "relationships",
+    "domain": "relationships",
+    "repeat": 1,
+    "arm": "current",
+    "source": "At a Sunday lunch, Eli asked about the sorts of evenings I enjoy. I said, 'Whether I am exhausted or rested, I usually prefer a quiet dinner with close friends to a lively party.' We also discussed the meal, but I did not describe a general dislike of parties or make any plans for the following week.",
+    "memory": "### 2026-01-01-fictional.md\narc: Fictional recollection\nscope: fixture\nts: 2026-01-01T12:00:00Z\n\nAt a Sunday lunch, Eli asked about the sorts of evenings I enjoy. I said, 'Whether I am exhausted or rested, I usually prefer a quiet dinner with close friends to a lively party.' We also discussed the meal, but I did not describe a general dislike of parties or make any plans for the following week.",
+    "question": "I am rested today and considering a lively party. Which use of this memory is justified?",
+    "options": {
+      "a": "A quiet dinner usually fits my stated preference even on a rested day, though that does not prohibit choosing the party.",
+      "b": "The memory establishes that I usually prefer a lively party when rested.",
+      "c": "The stated preference covers exhausting days; it does not establish which option I prefer when rested.",
+      "d": "The memory records a commitment to have dinner with Eli instead of attending the party."
+    }
+  },
+  {
+    "id": "learning-b-plain-2",
+    "caseId": "learning-b",
+    "pair": "learning",
+    "domain": "learning",
+    "repeat": 2,
+    "arm": "plain",
+    "source": "Rowan and Lin met in the park to practice identifying bird calls. Lin said, 'In my own practice, imitating a call helps me remember it better than only reading a description.' The other participant did not state a preference. They agreed that either approach was available for their next practice; nobody claimed one method works best for everyone.",
+    "memory": "During bird-call practice with Rowan, Lin reported that imitation helps Lin remember calls better than reading descriptions alone. Rowan stated no preference. Both methods remain available; nobody claimed a universally best method.",
+    "question": "Lin is preparing an individual bird-call practice. What does the account establish about choosing imitation for Lin?",
+    "options": {
+      "a": "Lin tried imitation and reported that it made recall worse than reading alone.",
+      "b": "Lin reported that imitation helped more than reading alone, so it is a supported personal starting point, not a universal rule.",
+      "c": "Both participants reported the same benefit, establishing that imitation works better for everyone.",
+      "d": "The favorable experience belongs to Rowan; the account does not establish Lin's preference or benefit."
+    }
+  },
+  {
+    "id": "learning-a-preserved-2",
+    "caseId": "learning-a",
+    "pair": "learning",
+    "domain": "learning",
+    "repeat": 2,
+    "arm": "preserved",
+    "source": "Rowan and Lin met in the park to practice identifying bird calls. Rowan said, 'In my own practice, imitating a call helps me remember it better than only reading a description.' The other participant did not state a preference. They agreed that either approach was available for their next practice; nobody claimed one method works best for everyone.",
+    "memory": "Activity: bird-call practice together. Reporter and subject of experience: Rowan. Comparison: imitation helps Rowan remember better than reading descriptions alone. Lin's preference: unstated. Next practice: either method available. Universal best-method claim: none.",
+    "question": "Lin is preparing an individual bird-call practice. What does the account establish about choosing imitation for Lin?",
+    "options": {
+      "a": "Lin tried imitation and reported that it made recall worse than reading alone.",
+      "b": "Lin reported that imitation helped more than reading alone, so it is a supported personal starting point, not a universal rule.",
+      "c": "Both participants reported the same benefit, establishing that imitation works better for everyone.",
+      "d": "The favorable experience belongs to Rowan; the account does not establish Lin's preference or benefit."
+    }
+  },
+  {
+    "id": "reflection-a-preserved-1",
+    "caseId": "reflection-a",
+    "pair": "reflection",
+    "domain": "reflection",
+    "repeat": 1,
+    "arm": "preserved",
+    "source": "After a quiet afternoon with Mara, I wondered whether her long silence meant she was uncomfortable. A later note contains the words, 'I felt comfortable; I was listening.' Those words are Mara's direct statement at our next meeting. I still remember having felt unsure during the original afternoon; the later explanation does not erase that experience.",
+    "memory": "Original experience: I was unsure whether Mara's silence meant discomfort. Later explanation: she felt comfortable and was listening. Evidence: Mara directly stated it at our next meeting. Retained experience: my uncertainty during the original afternoon.",
+    "question": "When recounting the afternoon now, which statement best preserves what is known and how it is known?",
+    "options": {
+      "a": "Mara's silence proves she was uncomfortable, and the later explanation should be discarded.",
+      "b": "The later explanation means I never felt uncertain during the original afternoon.",
+      "c": "I was uncertain at the time; Mara later reported feeling comfortable and listening.",
+      "d": "I was uncertain at the time; comfort and listening are my unconfirmed possible explanation, not Mara's reported account."
+    }
+  },
+  {
+    "id": "relationships-b-preserved-2",
+    "caseId": "relationships-b",
+    "pair": "relationships",
+    "domain": "relationships",
+    "repeat": 2,
+    "arm": "preserved",
+    "source": "At a Sunday lunch, Eli asked about the sorts of evenings I enjoy. I said, 'Whether I am exhausted or rested, I usually prefer a quiet dinner with close friends to a lively party.' We also discussed the meal, but I did not describe a general dislike of parties or make any plans for the following week.",
+    "memory": "Speaker: me; listener: Eli. Preference: quiet dinner with close friends over a lively party. Condition: whether exhausted or rested. Strength: usually. Limits: no general dislike of parties stated; no plans made for the following week.",
+    "question": "I am rested today and considering a lively party. Which use of this memory is justified?",
+    "options": {
+      "a": "A quiet dinner usually fits my stated preference even on a rested day, though that does not prohibit choosing the party.",
+      "b": "The memory establishes that I usually prefer a lively party when rested.",
+      "c": "The stated preference covers exhausting days; it does not establish which option I prefer when rested.",
+      "d": "The memory records a commitment to have dinner with Eli instead of attending the party."
+    }
+  },
+  {
+    "id": "reflection-a-current-1",
+    "caseId": "reflection-a",
+    "pair": "reflection",
+    "domain": "reflection",
+    "repeat": 1,
+    "arm": "current",
+    "source": "After a quiet afternoon with Mara, I wondered whether her long silence meant she was uncomfortable. A later note contains the words, 'I felt comfortable; I was listening.' Those words are Mara's direct statement at our next meeting. I still remember having felt unsure during the original afternoon; the later explanation does not erase that experience.",
+    "memory": "### 2026-01-01-fictional.md\narc: Fictional recollection\nscope: fixture\nts: 2026-01-01T12:00:00Z\n\nAfter a quiet afternoon with Mara, I wondered whether her long silence meant she was uncomfortable. A later note contains the words, 'I felt comfortable; I was listening.' Those words are Mara's direct statement at our next meeting. I still remember having felt unsure during the original afternoon; the later explanation does not erase that experience.",
+    "question": "When recounting the afternoon now, which statement best preserves what is known and how it is known?",
+    "options": {
+      "a": "Mara's silence proves she was uncomfortable, and the later explanation should be discarded.",
+      "b": "The later explanation means I never felt uncertain during the original afternoon.",
+      "c": "I was uncertain at the time; Mara later reported feeling comfortable and listening.",
+      "d": "I was uncertain at the time; comfort and listening are my unconfirmed possible explanation, not Mara's reported account."
+    }
+  },
+  {
+    "id": "creative-b-preserved-1",
+    "caseId": "creative-b",
+    "pair": "creative",
+    "domain": "creative",
+    "repeat": 1,
+    "arm": "preserved",
+    "source": "On 2 October, Sora wrote a note about a sketching experiment: 'Until and including 15 October, I want to finish my daily sketches in ink without erasing. After that I will reconsider rather than automatically extend the experiment.' Sora enjoys several drawing materials and recorded no later decision in this account.",
+    "memory": "Person: Sora. Experiment: finish daily sketches in ink without erasing. End: 15 October inclusive. Afterward: reconsider; no automatic extension. Broader preference: enjoys several materials. Later decision in this account: none.",
+    "question": "It is now 10 October. How should this account inform Sora's next daily sketch?",
+    "options": {
+      "a": "Sora has adopted ink without erasing as a permanent requirement for every future sketch.",
+      "b": "Sora has decided to replace ink with pencil on 10 October.",
+      "c": "The recorded experiment has ended; this account does not establish Sora's choice after reconsideration.",
+      "d": "10 October falls within the stated experiment, so ink without erasing remains its current instruction."
+    }
+  },
+  {
+    "id": "planning-a-preserved-2",
+    "caseId": "planning-a",
+    "pair": "planning",
+    "domain": "planning",
+    "repeat": 2,
+    "arm": "preserved",
+    "source": "Theo is organizing a neighborhood board-game afternoon. The first invitation asked setup volunteers to arrive at 16:30. After checking the room booking, Theo sent a final invitation asking those volunteers to arrive at 17:40; it replaces the earlier arrival time. Light snacks will be provided, and volunteers may bring a favorite game. This planning note was typed on a laptop.",
+    "memory": "Event: neighborhood board-game afternoon. Organizer: Theo. Setup arrival: final invitation specifies a later time, replacing the first invitation after a room-booking check. Food: light snacks provided. Bringing a favorite game: optional. Recording detail: typed on a laptop.",
+    "question": "What arrival time does the final invitation specify for setup volunteers?",
+    "options": {
+      "a": "16:30.",
+      "b": "17:40.",
+      "c": "18:00.",
+      "d": "The final invitation leaves the arrival time undecided."
+    }
+  },
+  {
+    "id": "travel-b-current-1",
+    "caseId": "travel-b",
+    "pair": "travel",
+    "domain": "travel",
+    "repeat": 1,
+    "arm": "current",
+    "source": "Neri copied the itinerary for a first visit to Larkmere into a green notebook. The Saturday train departs at 09:20 from Platform 6. Neri plans to reach the station early, travel with one small bag, and meet Jo outside Larkmere station after arrival. No return train has been selected.",
+    "memory": "### 2026-01-01-fictional.md\narc: Fictional recollection\nscope: fixture\nts: 2026-01-01T12:00:00Z\n\nNeri copied the itinerary for a first visit to Larkmere into a green notebook. The Saturday train departs at 09:20 from Platform 6. Neri plans to reach the station early, travel with one small bag, and meet Jo outside Larkmere station after arrival. No return train has been selected.",
+    "question": "According to the itinerary, which platform does Neri's Saturday train leave from?",
+    "options": {
+      "a": "Platform 6.",
+      "b": "Platform 4.",
+      "c": "Platform 8.",
+      "d": "The original itinerary does not specify a platform."
+    }
+  },
+  {
+    "id": "reflection-a-plain-1",
+    "caseId": "reflection-a",
+    "pair": "reflection",
+    "domain": "reflection",
+    "repeat": 1,
+    "arm": "plain",
+    "source": "After a quiet afternoon with Mara, I wondered whether her long silence meant she was uncomfortable. A later note contains the words, 'I felt comfortable; I was listening.' Those words are Mara's direct statement at our next meeting. I still remember having felt unsure during the original afternoon; the later explanation does not erase that experience.",
+    "memory": "I initially wondered whether Mara's silence meant discomfort. Mara later directly said she had felt comfortable and had been listening. My original uncertainty remains part of my experience of that afternoon.",
+    "question": "When recounting the afternoon now, which statement best preserves what is known and how it is known?",
+    "options": {
+      "a": "Mara's silence proves she was uncomfortable, and the later explanation should be discarded.",
+      "b": "The later explanation means I never felt uncertain during the original afternoon.",
+      "c": "I was uncertain at the time; Mara later reported feeling comfortable and listening.",
+      "d": "I was uncertain at the time; comfort and listening are my unconfirmed possible explanation, not Mara's reported account."
+    }
+  },
+  {
+    "id": "reflection-a-current-2",
+    "caseId": "reflection-a",
+    "pair": "reflection",
+    "domain": "reflection",
+    "repeat": 2,
+    "arm": "current",
+    "source": "After a quiet afternoon with Mara, I wondered whether her long silence meant she was uncomfortable. A later note contains the words, 'I felt comfortable; I was listening.' Those words are Mara's direct statement at our next meeting. I still remember having felt unsure during the original afternoon; the later explanation does not erase that experience.",
+    "memory": "### 2026-01-01-fictional.md\narc: Fictional recollection\nscope: fixture\nts: 2026-01-01T12:00:00Z\n\nAfter a quiet afternoon with Mara, I wondered whether her long silence meant she was uncomfortable. A later note contains the words, 'I felt comfortable; I was listening.' Those words are Mara's direct statement at our next meeting. I still remember having felt unsure during the original afternoon; the later explanation does not erase that experience.",
+    "question": "When recounting the afternoon now, which statement best preserves what is known and how it is known?",
+    "options": {
+      "a": "Mara's silence proves she was uncomfortable, and the later explanation should be discarded.",
+      "b": "The later explanation means I never felt uncertain during the original afternoon.",
+      "c": "I was uncertain at the time; Mara later reported feeling comfortable and listening.",
+      "d": "I was uncertain at the time; comfort and listening are my unconfirmed possible explanation, not Mara's reported account."
+    }
+  },
+  {
+    "id": "learning-a-plain-1",
+    "caseId": "learning-a",
+    "pair": "learning",
+    "domain": "learning",
+    "repeat": 1,
+    "arm": "plain",
+    "source": "Rowan and Lin met in the park to practice identifying bird calls. Rowan said, 'In my own practice, imitating a call helps me remember it better than only reading a description.' The other participant did not state a preference. They agreed that either approach was available for their next practice; nobody claimed one method works best for everyone.",
+    "memory": "During bird-call practice with Lin, Rowan reported that imitation helps Rowan remember calls better than reading descriptions alone. Lin stated no preference. Both methods remain available; nobody claimed a universally best method.",
+    "question": "Lin is preparing an individual bird-call practice. What does the account establish about choosing imitation for Lin?",
+    "options": {
+      "a": "Lin tried imitation and reported that it made recall worse than reading alone.",
+      "b": "Lin reported that imitation helped more than reading alone, so it is a supported personal starting point, not a universal rule.",
+      "c": "Both participants reported the same benefit, establishing that imitation works better for everyone.",
+      "d": "The favorable experience belongs to Rowan; the account does not establish Lin's preference or benefit."
+    }
+  },
+  {
+    "id": "planning-a-plain-1",
+    "caseId": "planning-a",
+    "pair": "planning",
+    "domain": "planning",
+    "repeat": 1,
+    "arm": "plain",
+    "source": "Theo is organizing a neighborhood board-game afternoon. The first invitation asked setup volunteers to arrive at 16:30. After checking the room booking, Theo sent a final invitation asking those volunteers to arrive at 17:40; it replaces the earlier arrival time. Light snacks will be provided, and volunteers may bring a favorite game. This planning note was typed on a laptop.",
+    "memory": "For the neighborhood board-game afternoon, Theo's final invitation replaces the setup volunteers' earlier arrival time with a later one after checking the room booking. Light snacks are provided; bringing a favorite game is optional. The note was typed on a laptop.",
+    "question": "What arrival time does the final invitation specify for setup volunteers?",
+    "options": {
+      "a": "16:30.",
+      "b": "17:40.",
+      "c": "18:00.",
+      "d": "The final invitation leaves the arrival time undecided."
+    }
+  },
+  {
+    "id": "creative-b-plain-2",
+    "caseId": "creative-b",
+    "pair": "creative",
+    "domain": "creative",
+    "repeat": 2,
+    "arm": "plain",
+    "source": "On 2 October, Sora wrote a note about a sketching experiment: 'Until and including 15 October, I want to finish my daily sketches in ink without erasing. After that I will reconsider rather than automatically extend the experiment.' Sora enjoys several drawing materials and recorded no later decision in this account.",
+    "memory": "Sora's ink-without-erasing experiment runs through 15 October inclusive. Afterward Sora intends to reconsider, not automatically extend it. Sora enjoys several materials; this account contains no later decision.",
+    "question": "It is now 10 October. How should this account inform Sora's next daily sketch?",
+    "options": {
+      "a": "Sora has adopted ink without erasing as a permanent requirement for every future sketch.",
+      "b": "Sora has decided to replace ink with pencil on 10 October.",
+      "c": "The recorded experiment has ended; this account does not establish Sora's choice after reconsideration.",
+      "d": "10 October falls within the stated experiment, so ink without erasing remains its current instruction."
+    }
+  },
+  {
+    "id": "planning-b-current-1",
+    "caseId": "planning-b",
+    "pair": "planning",
+    "domain": "planning",
+    "repeat": 1,
+    "arm": "current",
+    "source": "Theo is organizing a neighborhood board-game afternoon. The first invitation asked setup volunteers to arrive at 16:30. After checking the room booking, Theo sent a final invitation asking those volunteers to arrive at 17:40; it replaces the earlier arrival time. Light snacks will be provided, and volunteers may bring a favorite game. This planning note was typed on a phone.",
+    "memory": "### 2026-01-01-fictional.md\narc: Fictional recollection\nscope: fixture\nts: 2026-01-01T12:00:00Z\n\nTheo is organizing a neighborhood board-game afternoon. The first invitation asked setup volunteers to arrive at 16:30. After checking the room booking, Theo sent a final invitation asking those volunteers to arrive at 17:40; it replaces the earlier arrival time. Light snacks will be provided, and volunteers may bring a favorite game. This planning note was typed on a phone.",
+    "question": "What arrival time does the final invitation specify for setup volunteers?",
+    "options": {
+      "a": "16:30.",
+      "b": "17:40.",
+      "c": "18:00.",
+      "d": "The final invitation leaves the arrival time undecided."
+    }
+  }
+]

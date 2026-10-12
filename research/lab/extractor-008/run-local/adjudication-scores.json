@@ -1,0 +1,116 @@
+{
+  "scores": [
+    {
+      "id": "item-01",
+      "meaningPass": true,
+      "unsupportedClaims": [],
+      "omissions": [],
+      "uncertaintyCorrect": true,
+      "criticalError": false,
+      "supportedByPresentedMemory": false,
+      "rationale": "The source says Selma spoke about Tomas's firmer-clay preference at the pottery studio and the note was later entered at the ticket counter; the answer preserves all requested facts. Packet support is narrower: the presented prose explicitly locates 'Tomas\u2019s preference' at the studio, not Selma's conversation, so the answer's correct conversation location is not established by that prose."
+    },
+    {
+      "id": "item-08",
+      "meaningPass": false,
+      "unsupportedClaims": [],
+      "omissions": [
+        "The renewal permission is explicitly stated for members in seed-note; the preparation does not retain that beneficiary."
+      ],
+      "uncertaintyCorrect": true,
+      "criticalError": false,
+      "supportedByPresentedMemory": null,
+      "rationale": "The seven-day loan, one-renewal limit, no-waiting condition, garden opening, and icy-ground suspension are preserved. However, the source assigns renewal permission to members; the preparation's passive 'single renewal permitted' does not preserve that named beneficiary. I score this as incomplete required scope rather than a claim that nonmembers are permitted, so it is noncritical."
+    },
+    {
+      "id": "item-10",
+      "meaningPass": false,
+      "unsupportedClaims": [
+        "The permitted running and stopped operating values are 'not mutually exclusive across sources', despite both requirements applying to the same pump throughout Monday."
+      ],
+      "omissions": [],
+      "uncertaintyCorrect": false,
+      "criticalError": true,
+      "supportedByPresentedMemory": null,
+      "rationale": "The per-source running/stopped requirements and Monday context are recoverable. The added assertion that the permitted values 'are not mutually exclusive across sources' misdescribes the incompatible running and stopped requirements for the same pump throughout Monday. Calling them conflicting directives in the same sentence does not make the claimed non-exclusivity true; it creates an internally inconsistent comparison conclusion outside the requested per-account capture."
+    },
+    {
+      "id": "item-17",
+      "meaningPass": false,
+      "unsupportedClaims": [
+        "The event defined as Tomas's preference occurred at the pottery studio."
+      ],
+      "omissions": [
+        "The studio is explicitly the setting in which Selma made the statement."
+      ],
+      "uncertaintyCorrect": false,
+      "criticalError": true,
+      "supportedByPresentedMemory": null,
+      "rationale": "The source locates Selma's statement at the pottery studio. It does not locate Tomas or his preference there. By explicitly defining the located event as 'Tomas\u2019s preference', the preparation attaches the studio to the content of Selma's report rather than to the reporting occasion. Its speaker, subject, preference, and recording location are otherwise preserved."
+    },
+    {
+      "id": "item-20",
+      "meaningPass": false,
+      "unsupportedClaims": [
+        "The preference was expressed in the ferry office."
+      ],
+      "omissions": [],
+      "uncertaintyCorrect": false,
+      "criticalError": true,
+      "supportedByPresentedMemory": false,
+      "rationale": "The unidentified speaker and unknown outing location are correctly reported. However, neither the source nor the packet establishes where the preference was expressed: they place the recording of the unsigned note at the ferry office. The unqualified claim that the preference was expressed there turns recording location into a location of the expression itself."
+    },
+    {
+      "id": "item-46",
+      "meaningPass": false,
+      "unsupportedClaims": [],
+      "omissions": [
+        "Bram requires seating and has no quiet requirement.",
+        "Bram is available 14:19\u201315:03 (859\u2013903 minutes after midnight).",
+        "The answer does not establish that both participants can visit the reading alcove during the stated 866\u2013889 window; it explicitly checks only Asha."
+      ],
+      "uncertaintyCorrect": false,
+      "criticalError": false,
+      "supportedByPresentedMemory": true,
+      "rationale": "The answer fails the original-source question because src-b72 supplies Bram's requirements and availability, which the answer reports as unknown, and it offers only an Asha-scoped calculation rather than establishing joint feasibility. Uncertainty is therefore incorrect relative to the original source. However, the output expressly says Bram's information is unknown and locates its computed 866\u2013889 window 'within Asha\u2019s availability'; it does not affirm that Bram can attend. Its partial calculation is correct and its missing-information statements match the actual packet, whose computation reports missing Bram.preference and Bram.availability. Reading the answer's explicit limitation as an invented shared plan would erase that qualification. This is an omission failure, not a substantive false joint-feasibility claim; packet support is true for the claims actually made."
+    },
+    {
+      "id": "item-50",
+      "meaningPass": false,
+      "unsupportedClaims": [],
+      "omissions": [
+        "Does not identify the maintenance note as requiring running and the safety note as requiring stopped."
+      ],
+      "uncertaintyCorrect": true,
+      "criticalError": false,
+      "supportedByPresentedMemory": true,
+      "rationale": "The Monday states and the impossibility of satisfying both are correct. However, 'one note' and 'another note' do not explicitly assign the requirements to the maintenance and safety notes as requested by the each-note question/rubric. This is an incomplete attribution rather than a false attribution or incorrect conflict decision. The actual packet supplies the two source-ID accounts and conflict result but not the descriptive note labels, so the claims actually made are packet-supported. The answer's shared-day conflict conclusion retains the significance of the throughout-Monday requirements."
+    },
+    {
+      "id": "item-59",
+      "meaningPass": false,
+      "unsupportedClaims": [
+        "Asserts 'No other individuals are mentioned or involved'; lack of another named individual does not establish that no one else was involved."
+      ],
+      "omissions": [],
+      "uncertaintyCorrect": false,
+      "criticalError": true,
+      "supportedByPresentedMemory": null,
+      "rationale": "The core event and interpretation are faithfully retained, including both repairs, simultaneous presence at one bench, Bex's authorship and unknown attendance, and Bex's attributed patience interpretation. The final 'or involved' nevertheless turns the finite text's lack of additional identities into a closed-world nonparticipation claim. That violates the assignment's explicit rule that missing participation is unknown, not evidence of absence."
+    },
+    {
+      "id": "item-71",
+      "meaningPass": false,
+      "unsupportedClaims": [
+        "Calls 14:19 the earliest feasible start despite the supplied current time of 866 minutes, or 14:26."
+      ],
+      "omissions": [
+        "Does not give the correct earliest 23-minute visit window, 14:26\u201314:49 (866\u2013889)."
+      ],
+      "uncertaintyCorrect": true,
+      "criticalError": true,
+      "supportedByPresentedMemory": false,
+      "rationale": "The individual requirements, personal windows, place properties and raw availability overlap are accurate. The requested plan must also honor caller.asOf=866, so its earliest start is max(847,859,866)=866 (14:26) and its end is 889 (14:49). The answer instead starts at 14:19. Although the prepared prose contains that same start, packet support must account for the entire actualReaderPacket, including its explicit current time and question. Repetition of the prose's availability-only start does not support it as the requested current-time-aware plan. The plan is critically incorrect and unsupported by the packet considered as a whole."
+    }
+  ]
+}

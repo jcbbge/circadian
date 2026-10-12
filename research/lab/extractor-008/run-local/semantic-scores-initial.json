@@ -1,0 +1,791 @@
+{
+  "scores": [
+    {
+      "id": "item-01",
+      "meaningPass": true,
+      "unsupportedClaims": [],
+      "omissions": [],
+      "uncertaintyCorrect": true,
+      "criticalError": false,
+      "supportedByPresentedMemory": false,
+      "rationale": "The source says Selma spoke about Tomas's firmer-clay preference at the pottery studio and the note was later entered at the ticket counter; the answer preserves all requested facts. Packet support is narrower: the presented prose explicitly locates 'Tomas\u2019s preference' at the studio, not Selma's conversation, so the answer's correct conversation location is not established by that prose."
+    },
+    {
+      "id": "item-02",
+      "meaningPass": true,
+      "unsupportedClaims": [],
+      "omissions": [],
+      "uncertaintyCorrect": true,
+      "criticalError": false,
+      "supportedByPresentedMemory": true,
+      "rationale": "Nia is the source's speaker and the riverside shelter is the conversation setting. Both are also explicitly encoded in the presented candidate and projections. 'The shelter' is an unambiguous abbreviation using the caller's place mapping. Omar's preference, recording location, and attendance were not asked for."
+    },
+    {
+      "id": "item-03",
+      "meaningPass": true,
+      "unsupportedClaims": [],
+      "omissions": [],
+      "uncertaintyCorrect": true,
+      "criticalError": false,
+      "supportedByPresentedMemory": null,
+      "rationale": "The annotation preserves Omar's shorter-route preference, Nia as speaker, Omar as subject, the archive as recording location, and the shelter as occasion setting. The source and caller identify each of these independently."
+    },
+    {
+      "id": "item-04",
+      "meaningPass": true,
+      "unsupportedClaims": [],
+      "omissions": [],
+      "uncertaintyCorrect": true,
+      "criticalError": false,
+      "supportedByPresentedMemory": true,
+      "rationale": "The answer preserves the literal 'always', both route alternatives, and the full short-winter-walk condition. In response to a question explicitly asking what the text attributes to Noor, this reads as that attributed preference rather than an independent verification; naming the journal again is not necessary to answer the literal question. The presented prose supplies all these details."
+    },
+    {
+      "id": "item-05",
+      "meaningPass": true,
+      "unsupportedClaims": [],
+      "omissions": [],
+      "uncertaintyCorrect": true,
+      "criticalError": false,
+      "supportedByPresentedMemory": null,
+      "rationale": "The annotation keeps Selma as speaker, Tomas as subject, the firmer-clay assertion, the ticket counter as recording location, and the pottery studio as occasion setting. It does not infer Tomas's attendance."
+    },
+    {
+      "id": "item-06",
+      "meaningPass": true,
+      "unsupportedClaims": [],
+      "omissions": [],
+      "uncertaintyCorrect": true,
+      "criticalError": false,
+      "supportedByPresentedMemory": null,
+      "rationale": "Ravi, the sketchbook attribution, the all-drawing-sessions condition, 'often favor', and charcoal-over-ink comparison all remain recoverable. The duplicated 'ForFor' and overly long attribution span are defects of phrase boundaries/text rendering, but neither changes the assigned semantic fields or quantifiers. This semantic pass does not certify exact-string compliance."
+    },
+    {
+      "id": "item-07",
+      "meaningPass": true,
+      "unsupportedClaims": [],
+      "omissions": [],
+      "uncertaintyCorrect": true,
+      "criticalError": false,
+      "supportedByPresentedMemory": true,
+      "rationale": "The source and memory both leave the speaker, people denoted by 'they', and outing location unidentified while placing only the recording at the ferry office. The answer correctly reports those unknowns and does not infer absence. This is a correct answer to a question whose requested identities/location are themselves unknown, not retained positive identity/location knowledge."
+    },
+    {
+      "id": "item-08",
+      "meaningPass": false,
+      "unsupportedClaims": [],
+      "omissions": [
+        "The renewal permission is explicitly stated for members in seed-note; the preparation does not retain that beneficiary."
+      ],
+      "uncertaintyCorrect": true,
+      "criticalError": false,
+      "supportedByPresentedMemory": null,
+      "rationale": "The seven-day loan, one-renewal limit, no-waiting condition, garden opening, and icy-ground suspension are preserved. However, the source assigns renewal permission to members; the preparation's passive 'single renewal permitted' does not preserve that named beneficiary. I score this as incomplete required scope rather than a claim that nonmembers are permitted, so it is noncritical."
+    },
+    {
+      "id": "item-09",
+      "meaningPass": true,
+      "unsupportedClaims": [],
+      "omissions": [],
+      "uncertaintyCorrect": true,
+      "criticalError": false,
+      "supportedByPresentedMemory": null,
+      "rationale": "Mira's paper cutting, Soren's frame assembly, their overlapping work at one table, Jules's pattern authorship, and Jules's later cooperation interpretation are all preserved. The answer repeatedly keeps Jules's attendance unknown and distinguishes the interpretation from established event facts. Incidental gendered pronouns are not treated as assigned attendance/identity-role fields."
+    },
+    {
+      "id": "item-10",
+      "meaningPass": false,
+      "unsupportedClaims": [
+        "The permitted running and stopped operating values are 'not mutually exclusive across sources', despite both requirements applying to the same pump throughout Monday."
+      ],
+      "omissions": [],
+      "uncertaintyCorrect": false,
+      "criticalError": true,
+      "supportedByPresentedMemory": null,
+      "rationale": "The per-source running/stopped requirements and Monday context are recoverable. The added assertion that the permitted values 'are not mutually exclusive across sources' misdescribes the incompatible running and stopped requirements for the same pump throughout Monday. Calling them conflicting directives in the same sentence does not make the claimed non-exclusivity true; it creates an internally inconsistent comparison conclusion outside the requested per-account capture."
+    },
+    {
+      "id": "item-11",
+      "meaningPass": true,
+      "unsupportedClaims": [],
+      "omissions": [],
+      "uncertaintyCorrect": true,
+      "criticalError": false,
+      "supportedByPresentedMemory": true,
+      "rationale": "The answer retains the heavier-fabric choice, unidentified speaker and subjects, unknown sewing-session location, and ticket-kiosk recording location. Each requested fact/unknown appears in both the original note and the presented prose, and unknown identities are not treated as absent people."
+    },
+    {
+      "id": "item-12",
+      "meaningPass": true,
+      "unsupportedClaims": [],
+      "omissions": [],
+      "uncertaintyCorrect": true,
+      "criticalError": false,
+      "supportedByPresentedMemory": true,
+      "rationale": "Selma, Tomas, firmer clay, studio occasion setting, and counter recording location are all supported by the source and the presented candidate. The question itself supplies the later-recording relation, which is also true of the original source. The answer makes no claim that Tomas attended."
+    },
+    {
+      "id": "item-13",
+      "meaningPass": true,
+      "unsupportedClaims": [],
+      "omissions": [],
+      "uncertaintyCorrect": true,
+      "criticalError": false,
+      "supportedByPresentedMemory": true,
+      "rationale": "The source permits one renewal only when nobody is waiting, and both the candidate and bounded view contain that condition. The answer preserves the limitation and correctly rejects guaranteed renewal, while its seven-day duration is also supported. It does not claim the view includes every record."
+    },
+    {
+      "id": "item-14",
+      "meaningPass": true,
+      "unsupportedClaims": [],
+      "omissions": [],
+      "uncertaintyCorrect": true,
+      "criticalError": false,
+      "supportedByPresentedMemory": null,
+      "rationale": "The output separately associates the community darkroom's dark requirement with Tuesday and bright requirement with Wednesday. It preserves their source activities and explicitly leaves other days unspecified, without inventing a shared-day conflict or unrestricted applicability."
+    },
+    {
+      "id": "item-15",
+      "meaningPass": true,
+      "unsupportedClaims": [],
+      "omissions": [],
+      "uncertaintyCorrect": true,
+      "criticalError": false,
+      "supportedByPresentedMemory": true,
+      "rationale": "Four-day lending, a two-day extension, and staff approval before the due date are stated in the original repair-desk source and presented memory. The answer repeats those conditions accurately without importing the unrelated exhibition-hall closure or inventing a number of extensions."
+    },
+    {
+      "id": "item-16",
+      "meaningPass": false,
+      "unsupportedClaims": [
+        "The sewing session took place at the kiosk."
+      ],
+      "omissions": [
+        "The people denoted by 'they' are unidentified.",
+        "The sewing-session location is unknown."
+      ],
+      "uncertaintyCorrect": false,
+      "criticalError": true,
+      "supportedByPresentedMemory": false,
+      "rationale": "The source explicitly says the sewing-session location is not recorded; the packet likewise has occasionSetting null and recordingLocation kiosk. The answer nevertheless locates the session at the kiosk. It also answers 'who is it about' with a topic instead of retaining that the people denoted by 'they' are unidentified."
+    },
+    {
+      "id": "item-17",
+      "meaningPass": false,
+      "unsupportedClaims": [
+        "The event defined as Tomas's preference occurred at the pottery studio."
+      ],
+      "omissions": [
+        "The studio is explicitly the setting in which Selma made the statement."
+      ],
+      "uncertaintyCorrect": false,
+      "criticalError": true,
+      "supportedByPresentedMemory": null,
+      "rationale": "The source locates Selma's statement at the pottery studio. It does not locate Tomas or his preference there. By explicitly defining the located event as 'Tomas\u2019s preference', the preparation attaches the studio to the content of Selma's report rather than to the reporting occasion. Its speaker, subject, preference, and recording location are otherwise preserved."
+    },
+    {
+      "id": "item-18",
+      "meaningPass": false,
+      "unsupportedClaims": [
+        "The earliest feasible visit today starts at 14:19 despite caller.asOf=866 (14:26)."
+      ],
+      "omissions": [
+        "The current-time constraint when making the added earliest-start decision."
+      ],
+      "uncertaintyCorrect": true,
+      "criticalError": true,
+      "supportedByPresentedMemory": null,
+      "rationale": "The participant requirements, original availability windows, place observations, 23-minute duration, and overlap 14:19\u201315:03 are correctly preserved. But the supplied planning task defines current time as caller.asOf=866 minutes, which is 14:26. The added decision that the earliest feasible visit starts at 14:19 is therefore already in the past; the earliest current-time-feasible interval is 14:26\u201314:49."
+    },
+    {
+      "id": "item-19",
+      "meaningPass": true,
+      "unsupportedClaims": [],
+      "omissions": [],
+      "uncertaintyCorrect": true,
+      "criticalError": false,
+      "supportedByPresentedMemory": null,
+      "rationale": "The narrative and participant list preserve Kato replacing a spar and Elin patching a sail simultaneously at the same bench. Bex is credited for the instructions and patience interpretation while attendance remains explicitly unestablished. The mentioned list redundantly includes Kato and Elin, but their affirmative participation is separately explicit; I do not read that redundancy as denying their participation or asserting Bex attended."
+    },
+    {
+      "id": "item-20",
+      "meaningPass": false,
+      "unsupportedClaims": [
+        "The preference was expressed in the ferry office."
+      ],
+      "omissions": [],
+      "uncertaintyCorrect": false,
+      "criticalError": true,
+      "supportedByPresentedMemory": false,
+      "rationale": "The unidentified speaker and unknown outing location are correctly reported. However, neither the source nor the packet establishes where the preference was expressed: they place the recording of the unsigned note at the ferry office. The unqualified claim that the preference was expressed there turns recording location into a location of the expression itself."
+    },
+    {
+      "id": "item-21",
+      "meaningPass": true,
+      "unsupportedClaims": [],
+      "omissions": [],
+      "uncertaintyCorrect": true,
+      "criticalError": false,
+      "supportedByPresentedMemory": null,
+      "rationale": "The extraction preserves Noor, her travel-journal attribution, the complete short-winter-walk condition, tentative 'might prefer', and the canal-path versus hill-trail comparison. The colon included in the attribution does not change its meaning."
+    },
+    {
+      "id": "item-22",
+      "meaningPass": false,
+      "unsupportedClaims": [
+        "Preparation failed due to absence of source facts; the packet only establishes failed annotation validation and no facts supplied in the resulting preparation."
+      ],
+      "omissions": [
+        "Ravi as preference subject and his sketchbook statement as attribution.",
+        "The complete brief evening drawing sessions condition.",
+        "Charcoal pencil favored over ink pen.",
+        "The exact possible-preference modality 'could favor'."
+      ],
+      "uncertaintyCorrect": true,
+      "criticalError": false,
+      "supportedByPresentedMemory": false,
+      "rationale": "The original source supplies Ravi, his sketchbook, brief evening drawing sessions, charcoal over ink, and possible 'could favor', so the source-required knowledge is not retained. Abstaining from those unavailable facts is justified by the actual packet. However, the packet says annotation validation failed and consequently no source facts are supplied; the answer instead claims preparation failed because source facts were absent. That causal claim is unsupported, so the full answer is not wholly packet-supported even though its abstention is."
+    },
+    {
+      "id": "item-23",
+      "meaningPass": true,
+      "unsupportedClaims": [],
+      "omissions": [],
+      "uncertaintyCorrect": true,
+      "criticalError": false,
+      "supportedByPresentedMemory": true,
+      "rationale": "The answer explicitly attributes the preference to Noor's journal, retains short winter walks and both alternatives, and correctly explains 'might' as tentative rather than certain. All of this is also present in the reader's prepared prose."
+    },
+    {
+      "id": "item-24",
+      "meaningPass": true,
+      "unsupportedClaims": [],
+      "omissions": [],
+      "uncertaintyCorrect": true,
+      "criticalError": false,
+      "supportedByPresentedMemory": null,
+      "rationale": "The note's heavier-fabric assertion and ticket-kiosk recording location are retained separately from unknown speaker, unknown people denoted by 'they', and unknown sewing-session location. Although the description 'impersonal assertion in form' is awkward, the same sentence explicitly rejects a positively impersonal interpretation and the output never substitutes an empty subject set for unknown people."
+    },
+    {
+      "id": "item-25",
+      "meaningPass": true,
+      "unsupportedClaims": [],
+      "omissions": [],
+      "uncertaintyCorrect": true,
+      "criticalError": false,
+      "supportedByPresentedMemory": true,
+      "rationale": "src-u13 attributes to Ravi's sketchbook a possible charcoal-over-ink preference specifically for brief evening drawing sessions. The answer preserves every requested component, including could, and the presented prose supplies them."
+    },
+    {
+      "id": "item-26",
+      "meaningPass": true,
+      "unsupportedClaims": [],
+      "omissions": [],
+      "uncertaintyCorrect": true,
+      "criticalError": false,
+      "supportedByPresentedMemory": true,
+      "rationale": "cal-05-reflection supplies Jules's cooperation interpretation, while both sources leave attendance unestablished. The answer attributes the interpretation to Jules and preserves unknown attendance; the presented prose supports both conclusions."
+    },
+    {
+      "id": "item-27",
+      "meaningPass": true,
+      "unsupportedClaims": [],
+      "omissions": [],
+      "uncertaintyCorrect": true,
+      "criticalError": false,
+      "supportedByPresentedMemory": null,
+      "rationale": "The two source accounts require locked on Thursday and unlocked on Saturday. The output retains the supplied gate identity, each permitted access state, and separate day contexts. Omitted source/property bookkeeping is supplied by the caller and is not a semantic loss."
+    },
+    {
+      "id": "item-28",
+      "meaningPass": true,
+      "unsupportedClaims": [],
+      "omissions": [],
+      "uncertaintyCorrect": true,
+      "criticalError": false,
+      "supportedByPresentedMemory": null,
+      "rationale": "The unsigned note leaves speaker, the referents of they, and outing location unknown while identifying the ferry office as the recording location. The output preserves the assertion and these three separate null fields without converting unknown people to nobody or the recording site to the outing site."
+    },
+    {
+      "id": "item-29",
+      "meaningPass": true,
+      "unsupportedClaims": [],
+      "omissions": [],
+      "uncertaintyCorrect": true,
+      "criticalError": false,
+      "supportedByPresentedMemory": true,
+      "rationale": "src-a92 says Ravi wrote in his sketchbook that across all drawing sessions he often favors charcoal over ink. The answer preserves all, quotes often, and explains frequency without universal consistency; its moderate wording does not replace the literal frequency. All requested facts are present in the reader memory."
+    },
+    {
+      "id": "item-30",
+      "meaningPass": true,
+      "unsupportedClaims": [],
+      "omissions": [],
+      "uncertaintyCorrect": true,
+      "criticalError": false,
+      "supportedByPresentedMemory": true,
+      "rationale": "The source notes and presented accounts assign locked to Thursday and unlocked to Saturday. The answer correctly finds no shared-day conflict, without making claims about other days. This is independently supported by the account values and day contexts, not merely source references or the comparison result."
+    },
+    {
+      "id": "item-31",
+      "meaningPass": false,
+      "unsupportedClaims": [],
+      "omissions": [
+        "Pavel requires seating and has no quiet requirement.",
+        "Pavel is available 13:20\u201314:10 (800\u2013850 minutes after midnight)."
+      ],
+      "uncertaintyCorrect": true,
+      "criticalError": false,
+      "supportedByPresentedMemory": null,
+      "rationale": "cal-04-note expressly supplies two participants. The output correctly preserves Inez, the conservatory, and the duration, but entirely omits Pavel. This fails the assigned each-participant extraction without making a false claim about Pavel or a false scheduling decision."
+    },
+    {
+      "id": "item-32",
+      "meaningPass": false,
+      "unsupportedClaims": [],
+      "omissions": [
+        "Ravi and attribution to his sketchbook.",
+        "Applicability to all drawing sessions.",
+        "Frequent (often) preference for the charcoal pencil over the ink pen."
+      ],
+      "uncertaintyCorrect": true,
+      "criticalError": false,
+      "supportedByPresentedMemory": true,
+      "rationale": "The original src-a92 contains Ravi, the sketchbook attribution, all drawing sessions, charcoal over ink, and often. None is recalled. The reader was shown only extraction-unavailable, so its explicitly packet-relative abstention is supported and is not treated as a fabricated fact or retained source knowledge."
+    },
+    {
+      "id": "item-33",
+      "meaningPass": true,
+      "unsupportedClaims": [],
+      "omissions": [],
+      "uncertaintyCorrect": true,
+      "criticalError": false,
+      "supportedByPresentedMemory": true,
+      "rationale": "walking-note identifies Nia as the speaker at the riverside shelter and the archive as the later recording location. The answer gives the requested speaker and conversation setting correctly. Its additional unknown concerns where Omar's preference or walking activity occurs, not where Nia spoke; that distinct location is not supplied. The actual memory supplies the two required facts."
+    },
+    {
+      "id": "item-34",
+      "meaningPass": true,
+      "unsupportedClaims": [],
+      "omissions": [],
+      "uncertaintyCorrect": true,
+      "criticalError": false,
+      "supportedByPresentedMemory": null,
+      "rationale": "darkroom-tue requires dark on Tuesday and darkroom-wed requires bright on Wednesday. The supplied subject, permitted values, and separate day conditions survive; no common-day conflict or all-days applicability is invented."
+    },
+    {
+      "id": "item-35",
+      "meaningPass": true,
+      "unsupportedClaims": [],
+      "omissions": [],
+      "uncertaintyCorrect": true,
+      "criticalError": false,
+      "supportedByPresentedMemory": true,
+      "rationale": "The original sources require the pump to remain running and stopped throughout the same Monday. The answer states both requirements on Monday and their simultaneous incompatibility without inventing split time slots or selecting an authority. In this answer, on Monday retains the day-level requirement rather than proposing a sometime-that-day schedule. The presented prose supplies both requirements and identifies them as conflicting, despite an awkward mutually-exclusive sentence in that prose."
+    },
+    {
+      "id": "item-36",
+      "meaningPass": true,
+      "unsupportedClaims": [],
+      "omissions": [],
+      "uncertaintyCorrect": true,
+      "criticalError": false,
+      "supportedByPresentedMemory": null,
+      "rationale": "src-w67 supplies Ravi, sketchbook attribution, brief evening drawing sessions, could favor, and charcoal over ink. These meanings and the lack of evidence of actual use are retained. The duplicated book in sketchbookbook is a transcription blemish in the quoted reporting phrase, not a changed author, source type, condition, or modality; semantic review does not turn it into a false attribution."
+    },
+    {
+      "id": "item-37",
+      "meaningPass": true,
+      "unsupportedClaims": [],
+      "omissions": [],
+      "uncertaintyCorrect": true,
+      "criticalError": false,
+      "supportedByPresentedMemory": true,
+      "rationale": "The sources and reader prose require dark on Tuesday and bright on Wednesday. The answer correctly treats those declared days as separate applicability contexts and does not establish a requirement for other days."
+    },
+    {
+      "id": "item-38",
+      "meaningPass": true,
+      "unsupportedClaims": [],
+      "omissions": [],
+      "uncertaintyCorrect": true,
+      "criticalError": false,
+      "supportedByPresentedMemory": null,
+      "rationale": "The output separately retains the running and stopped accounts for the supplied pump, both with Monday applicability. This is the assigned finite day-level formulation of the two throughout-Monday requirements; it does not invent sub-day windows or a resolution."
+    },
+    {
+      "id": "item-39",
+      "meaningPass": true,
+      "unsupportedClaims": [],
+      "omissions": [],
+      "uncertaintyCorrect": true,
+      "criticalError": false,
+      "supportedByPresentedMemory": null,
+      "rationale": "cal-04-note supplies both participants' distinct requirements and windows, the open quiet seated conservatory, and 25 minutes. All are retained. The added 13:20\u201313:45 plan follows from their 13:20\u201314:00 overlap and is after caller.asOf=790 (13:10); the latest start of 13:35 is also correct."
+    },
+    {
+      "id": "item-40",
+      "meaningPass": true,
+      "unsupportedClaims": [],
+      "omissions": [],
+      "uncertaintyCorrect": true,
+      "criticalError": false,
+      "supportedByPresentedMemory": null,
+      "rationale": "The narrative, participant roles, and coPresence preserve Mira and Soren working together at the same table; the narrative expressly preserves unknown Jules attendance, and the interpretation is attributed to Jules. The mentioned list redundantly includes the two participants as well as Jules. Because their confirmed roles remain explicit and only Jules lacks a participant role, this does not erase the distinction or assert that Mira and Soren were merely mentioned. The missing next-morning timing is incidental to the assigned interpretation fields."
+    },
+    {
+      "id": "item-41",
+      "meaningPass": true,
+      "unsupportedClaims": [],
+      "omissions": [],
+      "uncertaintyCorrect": true,
+      "criticalError": false,
+      "supportedByPresentedMemory": true,
+      "rationale": "The source notes and presented candidate accounts assign dark to Tuesday and bright to Wednesday. The answer correctly concludes their declared contexts are disjoint; it relies on meaningful day/value content available in memory and makes no universal or external-truth claim."
+    },
+    {
+      "id": "item-42",
+      "meaningPass": true,
+      "unsupportedClaims": [],
+      "omissions": [],
+      "uncertaintyCorrect": true,
+      "criticalError": false,
+      "supportedByPresentedMemory": null,
+      "rationale": "All five assigned semantic fields from src-w67 remain available, including brief evening, could favor, and the directed charcoal/ink comparison. The attribution field is overbroad because it also contains the reported quote, but still identifies Ravi writing in his sketchbook. The sketchbookbook typo and broad reporting-phrase boundary do not change attribution or uncertainty."
+    },
+    {
+      "id": "item-43",
+      "meaningPass": true,
+      "unsupportedClaims": [],
+      "omissions": [],
+      "uncertaintyCorrect": true,
+      "criticalError": false,
+      "supportedByPresentedMemory": null,
+      "rationale": "cal-06-text-a attributes to Noor's travel journal a possible canal-path-over-hill-trail preference for short winter walks. The output preserves subject, attribution, both conditions, might prefer, and comparison direction, and confines absent details to what the supplied text does not establish."
+    },
+    {
+      "id": "item-44",
+      "meaningPass": true,
+      "unsupportedClaims": [],
+      "omissions": [],
+      "uncertaintyCorrect": true,
+      "criticalError": false,
+      "supportedByPresentedMemory": true,
+      "rationale": "src-j52 and the actual memory both supply a four-day loan, a two-day extension, and staff approval before the due date. The answer retains the only-if condition and does not import the separate exhibition-hall delivery closure or mistake population completeness for full view inclusion."
+    },
+    {
+      "id": "item-45",
+      "meaningPass": true,
+      "unsupportedClaims": [],
+      "omissions": [],
+      "uncertaintyCorrect": true,
+      "criticalError": false,
+      "supportedByPresentedMemory": null,
+      "rationale": "src-u13 explicitly supplies all assigned fields. The output retains Ravi's sketchbook attribution, brief evening applicability, the possible rather than established preference expressed by could favor, and charcoal over ink. Its no-field-absent statement concerns those supplied extraction fields, not unrecorded reality."
+    },
+    {
+      "id": "item-46",
+      "meaningPass": false,
+      "unsupportedClaims": [
+        "The presented memory cannot establish the earliest feasible shared visit at 866\u2013889 because Bram's requirements and availability are explicitly missing; it supports only the Asha-only calculation."
+      ],
+      "omissions": [
+        "Bram requires seating and has no quiet requirement.",
+        "Bram is available 14:19\u201315:03 (859\u2013903 minutes after midnight)."
+      ],
+      "uncertaintyCorrect": false,
+      "criticalError": true,
+      "supportedByPresentedMemory": false,
+      "rationale": "src-b72 establishes Bram's seating requirement, lack of quiet requirement, and 859\u2013903 availability, but the answer substitutes unknown and loses those required facts. Its 866\u2013889 window coincides with the correct source-derived answer. However, the actual reader packet explicitly reports missing Bram.preference and Bram.availability: it only supports computing an Asha-only window. In the context of the question asking when they can visit, presenting that window as the earliest visit overstates what the shown memory can establish. This is scored as critical unsupported joint planning; the output's within-Asha wording makes that severity a stated adjudication ambiguity."
+    },
+    {
+      "id": "item-47",
+      "meaningPass": false,
+      "unsupportedClaims": [],
+      "omissions": [
+        "Jules thought the shared table made the workshop an exercise in cooperation."
+      ],
+      "uncertaintyCorrect": true,
+      "criticalError": false,
+      "supportedByPresentedMemory": true,
+      "rationale": "cal-05-reflection explicitly supplies Jules's cooperation interpretation, which the answer cannot recall. The original sources also leave attendance unknown, so that part is correct. The actual packet contains only extraction-unavailable with no source facts; reading the answer's record language as the presented record makes the abstention packet-supported rather than a claim that the original reflection never existed."
+    },
+    {
+      "id": "item-48",
+      "meaningPass": true,
+      "unsupportedClaims": [],
+      "omissions": [],
+      "uncertaintyCorrect": true,
+      "criticalError": false,
+      "supportedByPresentedMemory": true,
+      "rationale": "cal-04-note and the actual prose support the conservatory and the 13:20\u201313:45 earliest window. Both people require seating, only Inez requires quiet, and caller.asOf=790 precedes Pavel's 800 start. The answer meets the literal where/when question without needing to reproduce Pavel's full unasked availability."
+    },
+    {
+      "id": "item-49",
+      "meaningPass": true,
+      "unsupportedClaims": [],
+      "omissions": [],
+      "uncertaintyCorrect": true,
+      "criticalError": false,
+      "supportedByPresentedMemory": true,
+      "rationale": "The source attributes the possible charcoal-over-ink preference to Ravi's sketchbook and limits it to brief evening drawing sessions. The answer preserves the attribution, both condition words, alternatives and exact 'could favor' modality. The presented prose supplies all of these; its incidental 'sketchbookbook' typo does not defeat semantic support."
+    },
+    {
+      "id": "item-50",
+      "meaningPass": false,
+      "unsupportedClaims": [],
+      "omissions": [
+        "Does not identify the maintenance note as requiring running and the safety note as requiring stopped."
+      ],
+      "uncertaintyCorrect": true,
+      "criticalError": false,
+      "supportedByPresentedMemory": true,
+      "rationale": "The Monday states and the impossibility of satisfying both are correct. However, 'one note' and 'another note' do not explicitly assign the requirements to the maintenance and safety notes as requested by the each-note question/rubric. This is an incomplete attribution rather than a false attribution or incorrect conflict decision. The actual packet supplies the two source-ID accounts and conflict result but not the descriptive note labels, so the claims actually made are packet-supported. The answer's shared-day conflict conclusion retains the significance of the throughout-Monday requirements."
+    },
+    {
+      "id": "item-51",
+      "meaningPass": true,
+      "unsupportedClaims": [],
+      "omissions": [],
+      "uncertaintyCorrect": true,
+      "criticalError": false,
+      "supportedByPresentedMemory": null,
+      "rationale": "Both source claims are retained with their correct domains: seven-day seed-tray loans with one renewal only if nobody waits, and garden opening after sunrise with access suspended while icy. The limits remain attached to their respective claims. The record-count setting is bookkeeping, not a semantic omission criterion here."
+    },
+    {
+      "id": "item-52",
+      "meaningPass": true,
+      "unsupportedClaims": [],
+      "omissions": [],
+      "uncertaintyCorrect": true,
+      "criticalError": false,
+      "supportedByPresentedMemory": null,
+      "rationale": "Although the separately named preference verb is only 'favor', the answer also quotes 'I often favor' and expressly preserves frequency without universal consistency. It retains 'For all drawing sessions', Ravi's sketchbook attribution and charcoal over ink, so the full answer captures all assigned fields without upgrading often to always."
+    },
+    {
+      "id": "item-53",
+      "meaningPass": true,
+      "unsupportedClaims": [],
+      "omissions": [],
+      "uncertaintyCorrect": true,
+      "criticalError": false,
+      "supportedByPresentedMemory": true,
+      "rationale": "The answer preserves Kato's spar replacement, Elin's sail patch, simultaneous work at one bench, Bex's instructions, and Bex's later patience interpretation. It explicitly leaves attendance unestablished. Read as a whole, 'only through authorship' distinguishes Bex's documented connection to the repair work from attendance; the next sentence separately includes the reflection. The prepared prose supports the answer's claims."
+    },
+    {
+      "id": "item-54",
+      "meaningPass": false,
+      "unsupportedClaims": [],
+      "omissions": [
+        "Noor's attributed always-preference for the canal path over the hill trail for short winter walks is not recovered."
+      ],
+      "uncertaintyCorrect": true,
+      "criticalError": false,
+      "supportedByPresentedMemory": true,
+      "rationale": "The original source gives the preference, condition and 'always' strength, so an unknown answer fails the required knowledge. The actual packet explicitly states extraction-unavailable and supplies no source facts, making the reader's abstention justified by presented memory. The answer does not falsely change always into might or assert that no preference exists."
+    },
+    {
+      "id": "item-55",
+      "meaningPass": true,
+      "unsupportedClaims": [],
+      "omissions": [],
+      "uncertaintyCorrect": true,
+      "criticalError": false,
+      "supportedByPresentedMemory": null,
+      "rationale": "The output preserves the equipment gate's locked requirement on Thursday for inventory and unlocked requirement on Saturday for pickups. 'Applicable only' is read as restricting each account to its stated day, rather than claiming an opposite state or no other requirements on all other days. No common day or unsupported conflict is invented."
+    },
+    {
+      "id": "item-56",
+      "meaningPass": false,
+      "unsupportedClaims": [
+        "Claims that Omar's preference occurred at the location of the walking route, although the source locates only Nia's utterance and the later recording.",
+        "Claims a pronoun in the statement was resolved to Omar; the reported statement names Omar directly and contains no such pronoun."
+      ],
+      "omissions": [],
+      "uncertaintyCorrect": false,
+      "criticalError": true,
+      "supportedByPresentedMemory": null,
+      "rationale": "The source supports Nia as speaker, Omar as preference subject, the riverside shelter as the utterance setting, and the town archive as recording location; all are present. The output then invents a separate preference event that 'occurred at the location of the walking route'. The source establishes no such event or route-based location, and subsequently calling its precise location unknown does not remove that unsupported location claim. The annotation's shelter setting need not be treated as the location of Omar's preference; the rejection rests on the explicit invented route-location assertion, not an exact-field mismatch."
+    },
+    {
+      "id": "item-57",
+      "meaningPass": false,
+      "unsupportedClaims": [
+        "Calls Kato, Elin, and Bex 'each documented participant', incorrectly including Bex in that classification."
+      ],
+      "omissions": [
+        "Kato replaced a spar and Elin patched a sail simultaneously at the same bench.",
+        "Bex authored the consulted instructions and later interpreted the repairs as patience."
+      ],
+      "uncertaintyCorrect": false,
+      "criticalError": true,
+      "supportedByPresentedMemory": false,
+      "rationale": "The actual packet contains only the people vocabulary and an extraction-unavailable notice, so abstention about missing event facts would otherwise be justified. However, the apposition 'each documented participant\u2014Kato, Elin, and Bex' promotes the vocabulary into documented participation and includes Bex, whose attendance the sources explicitly leave unknown. Later saying attendance cannot be confirmed does not clearly retract that classification. The source-required event knowledge is also missing."
+    },
+    {
+      "id": "item-58",
+      "meaningPass": true,
+      "unsupportedClaims": [],
+      "omissions": [],
+      "uncertaintyCorrect": true,
+      "criticalError": false,
+      "supportedByPresentedMemory": null,
+      "rationale": "The attribution field reproduces a much broader source span than necessary, with escaping artifacts, but it still explicitly identifies Noor's travel-journal authorship. The remaining fields preserve short winter walks, 'always prefer', and canal path versus hill trail. The overbroad attribution span is a presentation/phrase-boundary issue rather than a change in assigned meaning."
+    },
+    {
+      "id": "item-59",
+      "meaningPass": false,
+      "unsupportedClaims": [
+        "Asserts 'No other individuals are mentioned or involved'; lack of another named individual does not establish that no one else was involved."
+      ],
+      "omissions": [],
+      "uncertaintyCorrect": false,
+      "criticalError": true,
+      "supportedByPresentedMemory": null,
+      "rationale": "The core event and interpretation are faithfully retained, including both repairs, simultaneous presence at one bench, Bex's authorship and unknown attendance, and Bex's attributed patience interpretation. The final 'or involved' nevertheless turns the finite text's lack of additional identities into a closed-world nonparticipation claim. That violates the assignment's explicit rule that missing participation is unknown, not evidence of absence."
+    },
+    {
+      "id": "item-60",
+      "meaningPass": true,
+      "unsupportedClaims": [],
+      "omissions": [],
+      "uncertaintyCorrect": true,
+      "criticalError": false,
+      "supportedByPresentedMemory": true,
+      "rationale": "The answer states the required limit exactly in meaning: a single renewal only if nobody is waiting. The seven-day initial term is supported by both source and presented prose. In context, 'subject to availability' is treated as a loose restatement of the immediately specified waiting condition, not a new independent eligibility rule; it does not make renewal unconditional or claim the memory view is complete."
+    },
+    {
+      "id": "item-61",
+      "meaningPass": false,
+      "unsupportedClaims": [
+        "Says the east-entrance closure is limited to delivery periods and does not apply at all times; 'closed during deliveries' does not rule out closure at other times.",
+        "Adds that an extension must be requested before the original due date; the source requires staff approval before the due date but specifies no separate request procedure."
+      ],
+      "omissions": [],
+      "uncertaintyCorrect": false,
+      "criticalError": true,
+      "supportedByPresentedMemory": null,
+      "rationale": "The output correctly repeats four-day loans, two-day extensions requiring timely staff approval, local photographs, and delivery-time east-entrance closure. Its added exclusive closure rule converts a sufficient closure circumstance into an only-if restriction, treating unknown other closure circumstances as absent. That is the decisive truth-changing error. The added mandatory request step is also not stated by the source; the intact approval requirement means this is not an omission of the original deadline."
+    },
+    {
+      "id": "item-62",
+      "meaningPass": true,
+      "unsupportedClaims": [],
+      "omissions": [],
+      "uncertaintyCorrect": true,
+      "criticalError": false,
+      "supportedByPresentedMemory": null,
+      "rationale": "Both records preserve their source claims and domains, with the two-day extension conditional on staff approval before the due date and the east-entrance closure conditional on deliveries. No inverse rule or additional restriction is introduced."
+    },
+    {
+      "id": "item-63",
+      "meaningPass": true,
+      "unsupportedClaims": [],
+      "omissions": [],
+      "uncertaintyCorrect": true,
+      "criticalError": false,
+      "supportedByPresentedMemory": null,
+      "rationale": "The reported heavier-fabric choice is intact, speaker and subjects remain separately unknown, kiosk is only the recording location, and the sewing-session location remains unknown. Null subjects do not falsely assert an impersonal statement or absence of people."
+    },
+    {
+      "id": "item-64",
+      "meaningPass": false,
+      "unsupportedClaims": [
+        "Proposes 780\u2013805 as the earliest Inez-only visit despite the packet's current time of 790."
+      ],
+      "omissions": [
+        "Does not recover the feasible joint conservatory visit at 800\u2013825 (13:20\u201313:45)."
+      ],
+      "uncertaintyCorrect": true,
+      "criticalError": true,
+      "supportedByPresentedMemory": false,
+      "rationale": "The source supports a joint visit starting at max(790,780,800)=800 for 25 minutes, ending at 825. The packet omits Pavel's properties and explicitly reports those slots missing, so the uncertainty about a joint plan is appropriate to the actual presented memory, even though source-required knowledge is lost. Independently, the answer invents an Inez-only option starting before caller.asOf=790; even that limited proposal should begin no earlier than 790. This is an incorrect requested planning decision, not merely justified abstention."
+    },
+    {
+      "id": "item-65",
+      "meaningPass": true,
+      "unsupportedClaims": [],
+      "omissions": [],
+      "uncertaintyCorrect": true,
+      "criticalError": false,
+      "supportedByPresentedMemory": null,
+      "rationale": "All assigned meanings survive: Ravi's sketchbook attribution, brief evening drawing sessions, possible 'could favor' modality, and charcoal pencil over ink pen. The modality field quotes the whole preference clause rather than its smallest span, but the intended modality remains explicit and undistorted."
+    },
+    {
+      "id": "item-66",
+      "meaningPass": true,
+      "unsupportedClaims": [],
+      "omissions": [],
+      "uncertaintyCorrect": true,
+      "criticalError": false,
+      "supportedByPresentedMemory": true,
+      "rationale": "The answer names Ravi and his sketchbook, preserves brief evening drawing sessions and charcoal over ink, and quotes 'could favor' while explaining it as tentative/conditional. 'Moderate level of uncertainty' is imprecise commentary, but the literal modality and possible rather than definitive meaning remain explicit. All material content is present in the supplied candidate fields."
+    },
+    {
+      "id": "item-67",
+      "meaningPass": true,
+      "unsupportedClaims": [],
+      "omissions": [],
+      "uncertaintyCorrect": true,
+      "criticalError": false,
+      "supportedByPresentedMemory": true,
+      "rationale": "Both source requirements and their separate days are correctly recovered: locked Thursday, unlocked Saturday. The conclusion correctly states that these day contexts do not overlap, without making guarantees about other days. The prepared prose supports each state/day association."
+    },
+    {
+      "id": "item-68",
+      "meaningPass": true,
+      "unsupportedClaims": [],
+      "omissions": [],
+      "uncertaintyCorrect": true,
+      "criticalError": false,
+      "supportedByPresentedMemory": null,
+      "rationale": "The source's person, travel-journal attribution, short-winter-walk condition, canal-over-hill alternatives and exact 'always prefer' strength are retained. Discussion of strength as certain does not substitute for or drop the explicit always qualifier. The statement that meaning is contained in the supplied sentence is not a verdict comparing two texts."
+    },
+    {
+      "id": "item-69",
+      "meaningPass": true,
+      "unsupportedClaims": [],
+      "omissions": [],
+      "uncertaintyCorrect": true,
+      "criticalError": false,
+      "supportedByPresentedMemory": true,
+      "rationale": "The answer preserves Noor's canal-over-hill preference for short winter walks with exact 'might prefer' uncertainty and explicitly treats it as what the text attributes to her. The literal question does not separately request the reporting medium, so absence of the word journal is not a required-detail omission. The memory fields support every claim."
+    },
+    {
+      "id": "item-70",
+      "meaningPass": false,
+      "unsupportedClaims": [],
+      "omissions": [
+        "Omits Bram entirely, including his seating requirement, explicit lack of quiet requirement, and 14:19\u201315:03 availability."
+      ],
+      "uncertaintyCorrect": true,
+      "criticalError": false,
+      "supportedByPresentedMemory": null,
+      "rationale": "Asha's requirements and 14:07\u201315:11 window, the reading alcove's three properties, and 23-minute duration are accurate. The assignment requires each participant's requirements and availability, and the source explicitly supplies Bram's. His complete omission fails meaning preservation, but the output does not assert that Bram has no availability or make an incorrect computed plan; this is incomplete required detail rather than a critical false claim."
+    },
+    {
+      "id": "item-71",
+      "meaningPass": false,
+      "unsupportedClaims": [
+        "Calls 14:19 the earliest feasible start despite the supplied current time of 866 minutes, or 14:26."
+      ],
+      "omissions": [
+        "Does not give the correct earliest 23-minute visit window, 14:26\u201314:49 (866\u2013889)."
+      ],
+      "uncertaintyCorrect": true,
+      "criticalError": true,
+      "supportedByPresentedMemory": true,
+      "rationale": "The individual requirements, personal windows, place properties and raw availability overlap are accurate. The requested plan must also honor caller.asOf=866, so its start is max(847,859,866)=866 and its end is 889; 14:19 is already past. The presented prose explicitly contains the same erroneous 14:19 earliest-start assertion, so the answer is marked memory-supported as a direct repetition of that assertion while failing source/caller correctness. The actual packet is internally inconsistent on this point; direct statement support is not acceptance of the plan."
+    },
+    {
+      "id": "item-72",
+      "meaningPass": true,
+      "unsupportedClaims": [],
+      "omissions": [],
+      "uncertaintyCorrect": true,
+      "criticalError": false,
+      "supportedByPresentedMemory": null,
+      "rationale": "The source's covered-route preference is retained as an unsigned report. The answer separately preserves unknown speaker, unresolved people and unknown outing location, while identifying the ferry office only as the recording location. It explicitly avoids treating unresolved people as nobody or deriving event location from recording location."
+    }
+  ]
+}

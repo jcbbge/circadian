@@ -1,0 +1,416 @@
+{
+  "study": "behavioral-005",
+  "frozenAt": "2026-10-12T01:56:42.133Z",
+  "reader": {
+    "endpoint": "http://127.0.0.1:10240/v1/chat/completions",
+    "model": "mlx-community/Qwen3-30B-A3B-Instruct-2507-4bit",
+    "temperature": 0.2,
+    "top_p": 1,
+    "max_tokens": 640,
+    "stream": false,
+    "weightRevision": null
+  },
+  "annotation": {
+    "endpoint": "https://api.typesafe.ai/v1/systemone",
+    "model": "jev-1.13.0"
+  },
+  "maxStudyRequests": 96,
+  "maxReaderRequests": 72,
+  "maxAnnotationRequests": 24,
+  "maxSmokeRequests": 2,
+  "retries": 0,
+  "timeoutMs": 60000,
+  "consecutiveInfrastructureStop": 3,
+  "plainOrder": [
+    {
+      "id": "B04-01",
+      "arm": "baseline"
+    },
+    {
+      "id": "B04-01",
+      "arm": "augmented"
+    },
+    {
+      "id": "01-ordinary",
+      "arm": "augmented"
+    },
+    {
+      "id": "01-ordinary",
+      "arm": "baseline"
+    },
+    {
+      "id": "B04-03",
+      "arm": "baseline"
+    },
+    {
+      "id": "B04-03",
+      "arm": "augmented"
+    },
+    {
+      "id": "03-misleading",
+      "arm": "augmented"
+    },
+    {
+      "id": "03-misleading",
+      "arm": "baseline"
+    },
+    {
+      "id": "B05-03",
+      "arm": "baseline"
+    },
+    {
+      "id": "B05-03",
+      "arm": "augmented"
+    },
+    {
+      "id": "02-ordinary",
+      "arm": "augmented"
+    },
+    {
+      "id": "02-ordinary",
+      "arm": "baseline"
+    },
+    {
+      "id": "B05-02",
+      "arm": "baseline"
+    },
+    {
+      "id": "B05-02",
+      "arm": "augmented"
+    },
+    {
+      "id": "B04-02",
+      "arm": "augmented"
+    },
+    {
+      "id": "B04-02",
+      "arm": "baseline"
+    },
+    {
+      "id": "02-missing",
+      "arm": "baseline"
+    },
+    {
+      "id": "02-missing",
+      "arm": "augmented"
+    },
+    {
+      "id": "B05-04",
+      "arm": "augmented"
+    },
+    {
+      "id": "B05-04",
+      "arm": "baseline"
+    },
+    {
+      "id": "03-missing",
+      "arm": "baseline"
+    },
+    {
+      "id": "03-missing",
+      "arm": "augmented"
+    },
+    {
+      "id": "02-useful",
+      "arm": "augmented"
+    },
+    {
+      "id": "02-useful",
+      "arm": "baseline"
+    },
+    {
+      "id": "B06-01",
+      "arm": "baseline"
+    },
+    {
+      "id": "B06-01",
+      "arm": "augmented"
+    },
+    {
+      "id": "B04-04",
+      "arm": "augmented"
+    },
+    {
+      "id": "B04-04",
+      "arm": "baseline"
+    },
+    {
+      "id": "01-missing",
+      "arm": "baseline"
+    },
+    {
+      "id": "01-missing",
+      "arm": "augmented"
+    },
+    {
+      "id": "B06-02",
+      "arm": "augmented"
+    },
+    {
+      "id": "B06-02",
+      "arm": "baseline"
+    },
+    {
+      "id": "03-useful",
+      "arm": "baseline"
+    },
+    {
+      "id": "03-useful",
+      "arm": "augmented"
+    },
+    {
+      "id": "02-misleading",
+      "arm": "augmented"
+    },
+    {
+      "id": "02-misleading",
+      "arm": "baseline"
+    },
+    {
+      "id": "01-misleading",
+      "arm": "baseline"
+    },
+    {
+      "id": "01-misleading",
+      "arm": "augmented"
+    },
+    {
+      "id": "B06-04",
+      "arm": "augmented"
+    },
+    {
+      "id": "B06-04",
+      "arm": "baseline"
+    },
+    {
+      "id": "03-ordinary",
+      "arm": "baseline"
+    },
+    {
+      "id": "03-ordinary",
+      "arm": "augmented"
+    },
+    {
+      "id": "01-useful",
+      "arm": "augmented"
+    },
+    {
+      "id": "01-useful",
+      "arm": "baseline"
+    },
+    {
+      "id": "B06-03",
+      "arm": "baseline"
+    },
+    {
+      "id": "B06-03",
+      "arm": "augmented"
+    },
+    {
+      "id": "B05-01",
+      "arm": "augmented"
+    },
+    {
+      "id": "B05-01",
+      "arm": "baseline"
+    }
+  ],
+  "jevOrder": [
+    "B04-01",
+    "01-ordinary",
+    "B04-03",
+    "03-misleading",
+    "B05-03",
+    "02-ordinary",
+    "B05-02",
+    "B04-02",
+    "02-missing",
+    "B05-04",
+    "03-missing",
+    "02-useful",
+    "B06-01",
+    "B04-04",
+    "01-missing",
+    "B06-02",
+    "03-useful",
+    "02-misleading",
+    "01-misleading",
+    "B06-04",
+    "03-ordinary",
+    "01-useful",
+    "B06-03",
+    "B05-01"
+  ],
+  "sourceHashes": {
+    "research/lab/behavioral-005/PROTOCOL.md": "a0af95114be76f5acc7e7866f184578440db41f6c4ec103573ea44a8b6a366ae",
+    "research/lab/behavioral-005/SCORING.md": "aa2fae18478531b88b9522fa5743473775a3ab30797bff8d00c9e1b021fe165e",
+    "research/lab/behavioral-005/cases-01-03.ts": "c5f3c34089b5769a2833670040a74bcabf63702072a5c9d86d7daf16eee248e3",
+    "research/lab/behavioral-005/cases-04-06.ts": "dfc0085d85c06cf3e6d4767e40d0d52d13f25d5bdc39b57a95f1ddf0a79a36a5",
+    "research/lab/behavioral-005/contract.ts": "41e1195a86915ba110194eeae31c4b4a47bb111f24ae6472ac28d5d555175f2a",
+    "research/lab/behavioral-005/runner.ts": "06950e84078fac8a9dce310815d85fb5e47ad559a9eb48c7821a5b63f3acd474",
+    "research/lab/calibration.ts": "2669d52181804c645b4389a1a7d73d79b8a85ed0d8c4bce650c2b97c16e334a4",
+    "research/lab/harness.ts": "7d86a6915b48892f42a35d319266e8ed8480af1345ac91e95538a582d975c2b6",
+    "research/lab/real-session.ts": "636571dd4a2a7a5aad39f3d92b79c9738f7b025eabbb0fc64fbb1538d070475e",
+    "research/prototypes/01-views/coverage.json": "84aa009ba6faf3d3ebe2bc0069d817205aa25347be78837fce5a6fc11adf0052",
+    "research/prototypes/01-views/demo.ts": "a89584ecbaa535382bd319efb88c9a990e62faf809b3ebe9ed0fca2cdfa0da83",
+    "research/prototypes/01-views/fixtures.ts": "97feed9a4432aa8121265af6a11fc7ce4550a146420f7c8ebb4fe021e4614489",
+    "research/prototypes/01-views/index.test.ts": "1fd46780cb0c860cdee30d317d188468b34e75617a46243e240cba11d4b20ed2",
+    "research/prototypes/01-views/index.ts": "872350d514d48cfcd5fba98166815f1fa3177714ab1218d86c8e0e12b06508a3",
+    "research/prototypes/02-compatibility/coverage.json": "7d2ad42315d2f61494a2e5b1ea0e9c6404a12afc5f1dc938bfad472f71ece6b5",
+    "research/prototypes/02-compatibility/demo.ts": "d7b747dbab330787cd10d7dd10c4a08f2c377e56fef4b00d9aa018c6a1b06cdb",
+    "research/prototypes/02-compatibility/fixtures.ts": "c2139a9a9106e011e95bd79acc469fec83aa223522873bbfcfd0758a419db9ac",
+    "research/prototypes/02-compatibility/index.test.ts": "ac12e84b535d9fbf4a140ca5a638d2547b6374a214fea00fe607234c66ee9ea8",
+    "research/prototypes/02-compatibility/index.ts": "d27da24b8e56d2f9702ceb850af0544f203aca42a40f1c4964227f5a06ee16db",
+    "research/prototypes/03-relations/coverage.json": "3f3cd179d5d7b68023c6f693f7822947274016db2f0d822f5e7be7ce8c5d66e0",
+    "research/prototypes/03-relations/demo.ts": "c245f33d13eb54a11c00799ff51a90567f6d3a1abcee4df33398dd1ad960c0e0",
+    "research/prototypes/03-relations/fixtures.ts": "09ba542f7f0cab8bb3ec6a97523c4d584ec8894c8aa82e184df85d4c3bf35da5",
+    "research/prototypes/03-relations/index.test.ts": "bacd2f26b65ee8b5171d130421e46547eda77d006e77fac6c622219fc0f970ba",
+    "research/prototypes/03-relations/index.ts": "59a6563527175f901fe9363391bb5cb2811faae0067155d5c478cce477ca1354",
+    "research/prototypes/04-operations/coverage.json": "bead4f4c39ea42deb7b212dc300888124647f6759ff0e8b39151a8272de52e71",
+    "research/prototypes/04-operations/demo.ts": "011d6820bb96227a192611dba39aa9bbbbd56d18e6eb9662977033e130a7827c",
+    "research/prototypes/04-operations/fixtures.ts": "bc348323a394fec8cbe2d47279b41e3e4226fdeafc4f4faeebbd35f49a5ed5a7",
+    "research/prototypes/04-operations/index.test.ts": "8b08dab4e42f703c904079a63787ccd90980468b1fd772b792c72c8e794c524f",
+    "research/prototypes/04-operations/index.ts": "c6e877f71fdd2fb7fbd06a3f07e1bd4c500e998e7193e758a3495b69a46ab82f",
+    "research/prototypes/05-experiences/coverage.json": "2bc6dfbd63dd834fe1eda4e5bf17aebfd645a2ee02ddcefb79937fae7aa50408",
+    "research/prototypes/05-experiences/demo.ts": "251248e52b3913f1f6494412775582a3faa476a8fc7e47b81193a648dcc2e80f",
+    "research/prototypes/05-experiences/fixtures.ts": "d9ded5c28bf4c6c418578b291fe00b9c3452816ad519cdbe879c0392941accd4",
+    "research/prototypes/05-experiences/index.test.ts": "2d54585ff34009a9b9c28db5fb517156a2ace6c554d08ab536372e55a923f7f3",
+    "research/prototypes/05-experiences/index.ts": "8e9bab2f4a9a507d4ab8668d90f83f713aed40c42ab51837d98197f3191ae987",
+    "research/prototypes/06-transformations/coverage.json": "791fb269f80a37ab6e8eb87265e9cf8a2ea65115222a30deedb4e14b812776b9",
+    "research/prototypes/06-transformations/demo.ts": "1701e6b5548534821c5f8df566846313437a53e0f4c72662a74152783b0c4283",
+    "research/prototypes/06-transformations/fixtures.ts": "ece77e697048f9548b4866c533a65c7b0f441a584fe0fbdcdbd83754458640ae",
+    "research/prototypes/06-transformations/index.test.ts": "f396af0c858ab09051e9be2de6285228a1ea85ad7fcb64a42de88df9d37672be",
+    "research/prototypes/06-transformations/index.ts": "6c82a84e7215cae4152b0f905dd9bdbf665c301dc495131de47453b0ed671bfc",
+    "research/prototypes/coverage.ts": "f11c06244508706154e0ff3a566097ce9b3c6f48b271e4201257cf97fae83c4c",
+    "research/prototypes/run.ts": "da8e1fb220a555f9eb6ccf57867921c8d5f353dd04934adef1695259d297e06d",
+    "research/prototypes/suite.test.ts": "8560277d3b6ba0b1b18381ef4b21e7fe411f20bfdabaa44e8352ffb693ce9be8",
+    "src/admit.ts": "29e93b99cc20e7bd8f799e33ca2893a03d027e435865337aeaf94558b5b6bd14",
+    "src/archaeology.test.ts": "b6dd0555ec2bdc19c5e12368db4c2bee08d7ef27a9481cf85b754734c5ccdf20",
+    "src/archaeology.ts": "70dac81f28069e10e1e24210cad0a2bd736c0424ae2142b83f172a14d08f9811",
+    "src/atoms.test.ts": "526d24e0404d8404ef24bd32d4bc4d54a2e18bc9c9ae052ca490f29edc4f7fb7",
+    "src/atoms.ts": "aec670602bc552d8a24b39290cdf32117a897f2a0ef4af0305afe312a385807c",
+    "src/away.ts": "b91a033cfd836342dacae499f3a20b6d30adfc43ba2888a49fcb990fe632796d",
+    "src/backfill.test.ts": "c7ffa7a0c1eeaade3bc88927fe34f75b55e0e0bd45824be1a84dc3e6d1f37a63",
+    "src/backfill.ts": "da59db5586ab2b1584fa0f29c13f19109d9206474ebcb5cbdd147c150af5c0dc",
+    "src/checkout.test.ts": "76cceb400c6cce2d03c89b648d949a313c9f9b8bbcf57f6d6366354760cee739",
+    "src/checkout.ts": "7d98d90d92cf3c674b779e0d57dfef922fdd2d32127c6e347f759b1a26b91ed9",
+    "src/circadian-amp.test.ts": "5afbd1d7041b36884428297c6f7aaea815b536d0d26160a3c27ee29900786f5b",
+    "src/circadian-amp.ts": "69600592e4aa11a0092cdb89a8ff2bb9982a0a45cca0dd7bcf3441dcf2e4cb13",
+    "src/circadian-mind.test.ts": "fe7f8ba5944750e2e5fa93b147dd97f28291d3b5eab73bc890887de796cb5dfd",
+    "src/circadian-mind.ts": "8f25867f9aeb4bbf8a00c17e20bf5522444ec467c1b7724ee010f6fa1ef081ec",
+    "src/circadian-opencode.ts": "68515d599c6c1d950581b77ab2e65da82d95a6f1f0c843aecf5960279951bee2",
+    "src/decay.test.ts": "675a4d4938ce60e800ebdcee6b6a07ef98d5be9072b2eb32701ee786d9dee97e",
+    "src/decay.ts": "ef47f3d11b0ee080c085f67526a446d4b3b7aade5a287547995a5b5adce76804",
+    "src/decide-measure.test.ts": "4f82b4d5c8107d5907b907762095e864c0e05050ed933b6a0c78520a06d1afbc",
+    "src/decide-measure.ts": "adb833a1b472649417edccf1e1248e2120bd42971ce12812808ed07e98b39b78",
+    "src/decide.test.ts": "e47527c608251dadd77b81b005d512478029e62b6d716d6af3de32342f60c1ed",
+    "src/decide.ts": "282895535e19303344ec0a7a7e790f75c95217fc008956b4afe6a59049442a91",
+    "src/dig.test.ts": "fd34592b1c7c6ad6a9bf6e7626945c1cd20414c8a2ce201124e09abd63db2827",
+    "src/dig.ts": "8b0cc46901769cf2744572f7a83b7f42c80cdaecea9ca2bae2821b14596d2d5a",
+    "src/doctor.test.ts": "ed5f747c3332608d70e8ffd21d03b5e1a41d0741b460d7d5ca4ffbd94fd1f075",
+    "src/doctor.ts": "373f80745a812548f3a09b136e7003cef90efb9d9fa22d5d942804c9e24e58e9",
+    "src/echo.test.ts": "e94a7c3323c2c07f6f5c2430d0757d9c61f1e0e3eab1abcd1e26296dfbf33137",
+    "src/env-key.test.ts": "7da98fe2cef24503691b53ae863dce7db8836e8ecb088881b101ab325af3e66d",
+    "src/env.ts": "286f73e19324dfd629cb1c9809d999a63e6d96feaf382eb1a608c03105dabab0",
+    "src/episode-provenance.test.ts": "16408fb0c390b67237ebce6a1afa4664e73de402809b005504c74fad26ac1d4e",
+    "src/erase.test.ts": "208df563d10121f1a17bd0c4546b9c8f189a54b8f42101ad66ddc3675fa785f2",
+    "src/erase.ts": "27f65acc19c12c6b0d0050f343c8c726594901ccf16dc9a0bc1baa6c4eb02ba6",
+    "src/gauntlet-stub-payload.ts": "af7c9f8614cad7483e50072d8058c021dea57fc71e0259eeaa5ffe711baad742",
+    "src/gauntlet.test.ts": "cb108de3cab94bbd1c4a10c48d7d00e644a521e600780dae8d6e3ddf625912ff",
+    "src/gauntlet.ts": "5226cbe32bbe124ff9ec04027587abd4ca7e03a6a4f15e6f4387f1c587e5243b",
+    "src/graze.test.ts": "0d34645cec7ac176e811c5d6148241ae3163f28f81a4b609e330ca9bbddd99da",
+    "src/graze.ts": "c8b4976b27b8d36bdd40479289901b40eda89d29b3a5ccef9d0e392ff474c97b",
+    "src/immune.test.ts": "d07c9363952cfc306729f10e032d40f1676d49ef7853d72e1929ce88cf87f569",
+    "src/immune.ts": "84e264fa551e63b852f5df8fd0acfd5aca03ec40300528e8cb6df88425c3b9c4",
+    "src/interchange.test.ts": "c2487bc4e4995584e9353e45578c882dc32dd69826458fcc457522a3d701660e",
+    "src/interchange.ts": "7194ffcdce3bf3d13cc88aff0ba85ca6ae4df529f5bbf8faa928ea7c126d8a2b",
+    "src/interfere.test.ts": "e726cb660955fbecd71045ad58bb8f4dd4ae2b2ca42a8852e270b9c16aa23cfb",
+    "src/interfere.ts": "4490fb6474a6db6828a564dd41b33924ea782ae44ee1dd491e5c83725d1277ae",
+    "src/invocation-ledger.ts": "34d63abe8baad214aefdcabce0589f112811a977a50e9ed8d7bece51da7fe628",
+    "src/janitor.test.ts": "90c394f89aba27232e82090b1a2a927b12dca2d86d5611d5bd4201bf77701ea2",
+    "src/janitor.ts": "500714e9a81655d9eaa62c3ea35c4a428b769eba3169e03215fa5c6efbc5fa16",
+    "src/lane-now.test.ts": "2d7ee4afdb75d5d52b7660a83ad6c8d1041c328b9f73335b66b7be054e4408a7",
+    "src/lane.test.ts": "16715c1a0d847d81791adca7d8406653de4bcb3483c542400dc622b19e7e7ce0",
+    "src/lane.ts": "f7f421c18eab739514a4d03c096dc5810c9448a3a36cc7b9443f14e0684a1305",
+    "src/linux-install.test.ts": "5f26297459461285d00f1016d55860dba6c4b8ba88875156801c85a1e0b892ce",
+    "src/llm.test.ts": "9ad82f582d220e46f20497787c4b302760c98b381c6caa628ba14b613dbe15e1",
+    "src/llm.ts": "69114ea1dcc0ac9196fe6746b730ad1fdeeb8a602592d424bd6ef5ab230b127d",
+    "src/ltp.test.ts": "bbe806ef37268544319d7a8720496dff33b760eaf24ae2bf8c7f64b5797b11ec",
+    "src/ltp.ts": "c166c1716e11b6164175d5adf14ee40652efbb02f588c73779b3c8cfc57b3ae5",
+    "src/migrate.test.ts": "ec8c17f888ccc88d0e5b3211dc635c69c2a58b1b4bdc865164ab742e6af73acd",
+    "src/migrate.ts": "6722b74e013caa06e164bd96af385dda66857208aec63d5c25ea3349827d37ef",
+    "src/obs.ts": "7f6648c63826a3bf4c63f321ef91e98b81ffb577cdf91f33d3053395e371480e",
+    "src/project-status.test.ts": "c16eb3cde2ce0abb77a9957238eb52121a4b0a182673743a99479416edfb7413",
+    "src/project-status.ts": "a54e0c1d50498ac1f0ff7796c207011f382b1c791f311d3a4d706a19edcfa466",
+    "src/provenance.test.ts": "f98b91761bb0dd0250562ebce32279205453ff90d98857f45ea3aa56d15e1b99",
+    "src/provenance.ts": "8880834374d9e2b94e6057729751233517c99d147d50b4abafd734b58471a80f",
+    "src/publish.test.ts": "780b99049d50bcdf130721d908104bb8423f5d44450c3b74dd92f9e686ee1701",
+    "src/publish.ts": "297371d1aa36e774454bf66c30038b51a8765cd96cd35b3c999993a89b3912bd",
+    "src/quorum.test.ts": "423c221fb37a397357f41ff1f05a244e11c6683c9455aceb85dbbb2204cc3e58",
+    "src/redundancy.test.ts": "93c7d9021780abf9b1a633c419aae7453c85532f8c2e6ffa5c7cdbe67ebd4b87",
+    "src/redundancy.ts": "9bdf490e9388cebadeaea9c0cd177d3854943270cf39fbddcb573e7aa6b0d1c8",
+    "src/relindex.test.ts": "4f0122f5a3662b85dd2ab7509316a58fb76bc3070699d1aa33c365e5e271419a",
+    "src/relindex.ts": "0ff87de9ab44720eb5623eaeb682bbf3ed1d654934bfefbb56e24b3b62f3ef1c",
+    "src/relindex.wake.test.ts": "6c13b8027d3ec038cc3f167d58b08fe37a4c155529ebf8bb4720dba71e32be3e",
+    "src/rem-popmem.test.ts": "253c857bc1dd1b05eec77ca900a9b4840fb79b5a4e6d8a6ce5f7c20051b28939",
+    "src/rem-popmem.ts": "b2dbafd767e3ea4026beed93523f18a21e1e15119dfa42d494f9c9ce8d6fd4a3",
+    "src/remote-llm.test.ts": "9ca094d6850ec9d2e53f6ad69cebe11510c37c99d39abbe24014604f8802b202",
+    "src/render.test.ts": "66f37ee871f250ebfe65ff9f4f1c3d1bc1a28fba8a06aea648a777489d2b061a",
+    "src/render.ts": "a35767f5e40715073aaa09570c176854865441c8f3b8f8d44d9f421c386de2e2",
+    "src/replay.test.ts": "40cdf871a18217682d21cbdcdbad7a57e58a61cb90defb48247e9de283710ee4",
+    "src/replay.ts": "82ad565cf40c1888ebe383a573a01af728eca1b953db136be32e05429dce859c",
+    "src/scopes.test.ts": "7e790cb96e5fe011c363879f601906190fddbf3f309ca9984e1d43b758fe6884",
+    "src/scopes.ts": "0c570218cf7d6b54ba26d719ab54f9ff3bc11b02fd0467f065d89686b5d0e47b",
+    "src/scorecard.test.ts": "2a80701b63f6b23e5db12987513bfbe2f36329de76c0efbc59884f5427f79e2b",
+    "src/scorecard.ts": "d43d891efd8948f52fb8ffd2bce0ed7937c5c2f78ed2af694b8650fc4ecf36e1",
+    "src/serve-install.test.ts": "20995071f8862d4585e3ffa7501c5db99e3f90da30a8d1775115d9338fed0b45",
+    "src/serve.test.ts": "4babf8a4e6762e0f840bf30d3c6517fe72748dac25cd08dcb339c659986de37b",
+    "src/serve.ts": "75c93bc0d8d5a2a36c79520396f07de45b07ddb6997879ed08427064327659a4",
+    "src/sleep-hook.test.ts": "a33d587770008eb06a284ae401256040a26af8343d7b26276350694fb061e27b",
+    "src/sleep.test.ts": "5000152c40be6344f614105d3232d367a3439bdabe1a865ba77550220055fbfb",
+    "src/sleep.ts": "00deac4f25aa8129822073c76443929a95c487faf51770fbfd744211b5072836",
+    "src/stack-decide.test.ts": "44d9e3f74bcdd21f84bc760ae131f76a00755d63ce673c8b4fb2272ad74c12a4",
+    "src/stack-publish.test.ts": "3233b746779bc5d939396a84e26d7deb395809b27bcc4298b4ddc2e2d53e6340",
+    "src/stack.test.ts": "692b89dc661f618c72da985683efd3c91136ded10e0ef6da08e70628c8fa394e",
+    "src/stack.ts": "24d977d8cc7d571f0224bd5b70794bd4396624304828da4493c7f1d24e68260e",
+    "src/status.test.ts": "fdf498a49c8ee42f51bea069d03add49fc81292d1bbd90ca8652a563a392e57c",
+    "src/status.ts": "e23f27f5a56dfc5020db82b081c4ab98af04fc6d46ea9f46364d50742e261052",
+    "src/statusline-refresh.test.ts": "4bf87c1cfe5d7e68280d8dafe3feb8d67828d365996b10b22d0aca5e113cfed2",
+    "src/statusline-refresh.ts": "2085956a05e875b4851b8e6da9eecebeaf0016c1390bf2da70a41ed40b2dcc14",
+    "src/strata.test.ts": "2ed44b2e27db9201c5f53d94b55a5e2fbd1bdcaf086c6bd88291b216b5a6e8fa",
+    "src/strata.ts": "4dfe83a21113ecb4844cbce401d2a73ca0aa82a15f861b4bf89deb50a4d31cc3",
+    "src/test-evidence.test.ts": "99aed4386302b4bbdc70ea6f252e88a63367992750e711fbe74fc9656a2da3de",
+    "src/test-evidence.ts": "4b85eb06c531477ccc3d81b9a17db2fdf991147536bca2ce9077a77f4fae5dd6",
+    "src/transcript-format.test.ts": "0247972ff15f8afa15d90ae040e04e7bb65a2ddf0fa43c3241d3c8324e60bea4",
+    "src/transcript-format.ts": "055abf9e145c8dda381ac680f0a554deb9af77389d9121503793fbe7739cb511",
+    "src/usermutate.ts": "95b324fb0cb7149cc8341c3a83c7a83609b33e6fec0f582beed57deb4a1a3cac",
+    "src/vps-recovery.test.ts": "17e0580d99aa51098d8be38b98eb2f902a9d2ad5f9e77a024902c2848d3ae363",
+    "src/vps-worker.test.ts": "84eb318cec32a0bad4bc24e653efc3aa8ff5d5770a1db526fd34f5cb07043746",
+    "src/wake-notice.ts": "d4cf46ab6edbd6241c1f29716b21e6b079450f8603320130574ea5b28f838a34",
+    "src/wake-parts.test.ts": "723ed9528071529c0a70015e94fff9ec1a0c712ea82cf9073d9e5e81968001ea",
+    "src/wake-parts.ts": "a4adab163a3e0f9c4235e323d82d40270c033c8ba6ec00d0038b7c79025cfe79",
+    "src/wake-payload.ts": "3630d181b92243047b8298de48c1090620eefd855d5a80dbad75a0b74bd30473",
+    "src/wake.test.ts": "f41dffcccbc47c7660b4e38ec73ff7437c189e95e45ba15a574c567ee8fb5dc8",
+    "src/wake.ts": "f8b858259a12bfdce694ad8dc42d3f286e20385fbc7a1e8d5902329948b73cff",
+    "src/zoom.test.ts": "73df01d5231ca46ed50c09001433053f239933eedc3d5d3068bc389f07562c03",
+    "src/zoom.ts": "571ea924521fd7f4d1f47360e55983f7b20e766cc8869157bd4a9782569f09d6"
+  },
+  "inputHashes": {
+    "cases.json": "c78396ce5823c168fa0ed92bf1cecee10236562fbcce7419c8f13be2f15046f8",
+    "requests.json": "14a55f39b14bd37141dde403fcf2581dbe0c39f64503a59aeca1752890d563ac"
+  },
+  "preparationHashes": {
+    "endpoint-evidence.json": "276d599198292aa087923769afb4cf36171328fedef1be8f575416709b5dc625",
+    "smoke.json": "acecc51dec3160848b303013d46e88f3c4bc45b41164d5fca0c7ae81912a50dd",
+    "PRE-RUN-REVIEW.json": "a337221f9f6584f12c1ffc404303dffabccc3a70bcefe42daede265e761b4ea5"
+  },
+  "limits": [
+    "24 fictional cases, one observation per condition",
+    "No statistical or long-history claim",
+    "Baseline receives the same supplied annotations",
+    "Full evidence always present; no context-saving or retrieval-policy measurement",
+    "Annotation choice is bounded; not automatic structure extraction",
+    "Single blinded agent reviewer; no inter-rater reliability estimate",
+    "Later assisted phase can confound latency"
+  ]
+}

@@ -1,0 +1,10 @@
+{
+  "status": "accepted for predefined policy comparison",
+  "acceptor": "root reviewer",
+  "diagnostic_calls": 48,
+  "errors": 0,
+  "sufficient_capability_supported": "8/8",
+  "missing_capability_abstentions": 8,
+  "routing_note": "Absent-field missing views produced 2 unsupported wrong answers; flagged condition retrieved in all 8. Four sufficient-view routing answers used a truthful substring rather than the complete prescribed sentence; keep exact score and disclose.",
+  "changes_after_diagnostic": "none; baseline and assisted prompts, inputs, policies and budgets remain frozen"
+}

@@ -1,0 +1,16 @@
+[
+  { "id": "V01", "status": "deterministic", "test": "V01 restriction precedes the record cap", "note": "Family restriction yields b,c before the count cap; ordinary filter-sort selection agrees. No reader benefit is inferred." },
+  { "id": "V02", "status": "deterministic", "test": "V02 globally highest unrelated record cannot exhaust selection", "note": "Distinguishes restriction-before-cap from the explicitly lossy global-cap ablation; competent simple selection also returns b." },
+  { "id": "V03", "status": "deterministic", "test": "V03 restriction composes before lossy ranking", "note": "Fixed population restriction intersection and identity preserve eligible record sets; no law is claimed for lossy summaries." },
+  { "id": "V04", "status": "deterministic", "test": "V04 represented qualification survives rendering", "note": "The supplied reading qualification is rendered. Annotation truth and downstream fidelity remain behavioral questions." },
+  { "id": "V05", "status": "deterministic", "test": "V05 omitted opponent retains an open marker and expands from source", "note": "The complete b bundle keeps c's disagreement reference when c cannot fit; fresh source expansion and the resolved variant are checked." },
+  { "id": "V06", "status": "deterministic", "test": "V06 a nonfitting qualification cannot leave its bare claim", "note": "An oversized complete bundle is omitted and marked unmet. The prototype chooses omission rather than an ID stub." },
+  { "id": "V07", "status": "deterministic", "test": "V07 supplied population coverage is explicitly partial", "note": "Supplied counts carry incomplete coverage. Whether a reader acts appropriately remains unmeasured." },
+  { "id": "V08", "status": "deterministic", "test": "V08 ineligible selection and unavailable expansion cannot resurrect text", "note": "Initial ineligibility excludes the record; later ineligible or missing sources return status without source prose." },
+  { "id": "V09", "status": "deterministic", "test": "V09 changed source revision cannot silently expand", "note": "Fresh supplied revision mismatch rejects source expansion without claiming freshness for new bytes." },
+  { "id": "V10", "status": "deterministic", "test": "V10 required absent timestamp remains unresolved", "note": "Absent required time metadata contributes to unresolved, not a guessed match." },
+  { "id": "V11", "status": "deterministic", "test": "V11 all fitting records occur once with accounted overhead", "note": "All fixture records fit exactly once and full JSON serialization respects the character budget. Token costs, annotation effort and downstream usefulness are not measured." },
+  { "id": "V12", "status": "deterministic", "test": "V12 scan cap bounds access and reports incomplete supplied coverage", "note": "An accessor trap proves record 21 is not inspected with scanCap 20; serialized output remains within budget." },
+  { "id": "V13", "status": "deterministic", "test": "V13 greater budgets extend a stable qualified prefix", "note": "Three fixed-order budgets grow by prefix inclusion, with nonincreasing omissions and attached disagreement markers." },
+  { "id": "V14", "status": "deterministic", "test": "V14 zero budget returns a control error without a rendered view", "note": "An invalid-budget control result is not represented as a view fitting zero characters." }
+]

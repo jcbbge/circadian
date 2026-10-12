@@ -1,0 +1,38 @@
+{
+  "purpose": "transport smoke; excluded from pilot scoring",
+  "request": {
+    "model": "mlx-community/Qwen3-30B-A3B-Instruct-2507-4bit",
+    "messages": [
+      {
+        "role": "user",
+        "content": "Return exactly this JSON: {\"action\":\"answer\",\"choice\":\"a\",\"explanation\":\"Transport check.\"}"
+      }
+    ],
+    "temperature": 0.2,
+    "top_p": 1,
+    "max_tokens": 192,
+    "stream": false
+  },
+  "response": {
+    "id": "chatcmpl-6fd0e2de50",
+    "object": "chat.completion",
+    "created": 1791678815,
+    "model": "mlx-community/Qwen3-30B-A3B-Instruct-2507-4bit",
+    "choices": [
+      {
+        "index": 0,
+        "message": {
+          "role": "assistant",
+          "content": "{\"action\":\"answer\",\"choice\":\"a\",\"explanation\":\"Transport check.\"}"
+        },
+        "finish_reason": "stop"
+      }
+    ],
+    "usage": {
+      "prompt_tokens": 29,
+      "completion_tokens": 16,
+      "total_tokens": 45
+    }
+  },
+  "elapsedMs": 3411
+}

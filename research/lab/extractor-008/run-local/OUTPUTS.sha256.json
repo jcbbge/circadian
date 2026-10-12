@@ -1,0 +1,22 @@
+{
+  "adjudication-scores.json": "aa4d9cec75e7223c120f3394a2b8578abd9015e49ec7607cd1f804554f3989b7",
+  "assessment.json": "70e49b2ee9b134b0d76de735606fdf0a6cd6142ae254ae9aedbeebdcff886dc5",
+  "blind-review-1.json": "d1e9f8068c0e263971ed1c1415d9fcb2144d0fa084f541ba2828e655de4d3e48",
+  "blind-review-2.json": "e561b1531ff413cab6a3e0b1cf7c736584f820abf5bcd158a8bbfb2348c18eab",
+  "blind-review-3.json": "2f414b26ff3e6de59e8c2825d6cec66ce799a2484e922fec09ce6add780c94fe",
+  "calls.jsonl": "6b6399aced2fbd72b815ff070278e3201441ee7a70bdcc4dc0448859539274a9",
+  "complete.json": "dc7e109404c1639ca127b57fd1724dd8cc3582c68d61ae5112ee1f73feaa3ea6",
+  "config.json": "dacdff21e2e3ca544bdcbcf5c849cc1b4fc1700bf17aec3a7531072cad21077c",
+  "dispatch.jsonl": "3a0e7f92a0c5a37204de1a1038a12df8ec97b18562ff8902a14e735f9bd0350f",
+  "fixtures.json": "42f597f6ac77083463ca97ba52e342e433aafd0ef3c7b0bd5596041952c7a406",
+  "jobs.json": "3d1b8a812c13ebfc88a68692a60322a7ea19bf480fdc119621546335a734dae1",
+  "manifest.json": "b1d49bea25ccd2ed86427a5d6d3db88d1986d8daefdf58fd86564293558a147b",
+  "manifest.sha256": "ab2160abbef0366ec9a5b1de0f399962b22c9b98a48fd2593fbc26fba9a2b3f2",
+  "pairs.json": "b365fd5876c77167969a3169e4978cb1367b8e6ef8bdfe1b488314a7443e680e",
+  "results.jsonl": "137d850fe0af3e8fc6414245a32c3dd61edeef2e7e5f1822096bdb7008dea10d",
+  "review-map.json": "43ca0355c2a7803e9de516f9983fbd8d691287ca63cca142f74d545f685749ec",
+  "semantic-scores-initial.json": "e83dea5faac5663df53eae1d812f6583bb68e49353c02bef231654a0753a3a98",
+  "semantic-scores.json": "b710668127df069344041dd10719b5b2bfa154b222dc307cfa81d6fec1c30034",
+  "started.json": "5e6641c9a3926bccebc9be67fbf45b8f7f5479f49cb04f3577a681f564d3d91e",
+  "transformations.json": "4a74b55eb73f76d4b23d02d4e84b85bde2a104739b2ed99c36d61cefa5e2e6fd"
+}

@@ -1,0 +1,10 @@
+{
+  "phase": "plain",
+  "completed": 48,
+  "planned": 48,
+  "requests": 48,
+  "infrastructureFailures": 0,
+  "outputFailures": 22,
+  "stopped": false,
+  "finishedAt": "2026-10-12T01:59:42.191Z"
+}

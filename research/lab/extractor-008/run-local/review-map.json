@@ -1,0 +1,650 @@
+[
+  {
+    "id": "item-01",
+    "caseId": "confirm-d57",
+    "mechanism": "03",
+    "cohort": "confirmation",
+    "form": "plain",
+    "stage": "reader",
+    "callId": "confirm-d57/read-plain"
+  },
+  {
+    "id": "item-02",
+    "caseId": "cal-03-speaker-subject",
+    "mechanism": "03",
+    "cohort": "development",
+    "form": "structured",
+    "stage": "reader",
+    "callId": "cal-03-speaker-subject/read-structured"
+  },
+  {
+    "id": "item-03",
+    "caseId": "cal-03-speaker-subject",
+    "mechanism": "03",
+    "cohort": "development",
+    "form": "structured",
+    "stage": "preparation",
+    "callId": "cal-03-speaker-subject/extract"
+  },
+  {
+    "id": "item-04",
+    "caseId": "cal-06-journal-candidate",
+    "mechanism": "06",
+    "cohort": "development",
+    "form": "plain",
+    "stage": "reader",
+    "callId": "cal-06-journal-candidate/read-plain"
+  },
+  {
+    "id": "item-05",
+    "caseId": "confirm-d57",
+    "mechanism": "03",
+    "cohort": "confirmation",
+    "form": "structured",
+    "stage": "preparation",
+    "callId": "confirm-d57/extract"
+  },
+  {
+    "id": "item-06",
+    "caseId": "confirm-n24",
+    "mechanism": "06",
+    "cohort": "confirmation",
+    "form": "structured",
+    "stage": "preparation",
+    "callId": "confirm-n24/extract"
+  },
+  {
+    "id": "item-07",
+    "caseId": "cal-03-unknown-attribution",
+    "mechanism": "03",
+    "cohort": "development",
+    "form": "plain",
+    "stage": "reader",
+    "callId": "cal-03-unknown-attribution/read-plain"
+  },
+  {
+    "id": "item-08",
+    "caseId": "cal-01-qualified-view",
+    "mechanism": "01",
+    "cohort": "development",
+    "form": "plain",
+    "stage": "preparation",
+    "callId": "cal-01-qualified-view/plain"
+  },
+  {
+    "id": "item-09",
+    "caseId": "cal-05-lanterns",
+    "mechanism": "05",
+    "cohort": "development",
+    "form": "plain",
+    "stage": "preparation",
+    "callId": "cal-05-lanterns/plain"
+  },
+  {
+    "id": "item-10",
+    "caseId": "confirm-v26",
+    "mechanism": "02",
+    "cohort": "confirmation",
+    "form": "plain",
+    "stage": "preparation",
+    "callId": "confirm-v26/plain"
+  },
+  {
+    "id": "item-11",
+    "caseId": "confirm-m93",
+    "mechanism": "03",
+    "cohort": "confirmation",
+    "form": "plain",
+    "stage": "reader",
+    "callId": "confirm-m93/read-plain"
+  },
+  {
+    "id": "item-12",
+    "caseId": "confirm-d57",
+    "mechanism": "03",
+    "cohort": "confirmation",
+    "form": "structured",
+    "stage": "reader",
+    "callId": "confirm-d57/read-structured"
+  },
+  {
+    "id": "item-13",
+    "caseId": "cal-01-qualified-view",
+    "mechanism": "01",
+    "cohort": "development",
+    "form": "structured",
+    "stage": "reader",
+    "callId": "cal-01-qualified-view/read-structured"
+  },
+  {
+    "id": "item-14",
+    "caseId": "cal-02-disjoint-contexts",
+    "mechanism": "02",
+    "cohort": "development",
+    "form": "plain",
+    "stage": "preparation",
+    "callId": "cal-02-disjoint-contexts/plain"
+  },
+  {
+    "id": "item-15",
+    "caseId": "confirm-h31",
+    "mechanism": "01",
+    "cohort": "confirmation",
+    "form": "plain",
+    "stage": "reader",
+    "callId": "confirm-h31/read-plain"
+  },
+  {
+    "id": "item-16",
+    "caseId": "confirm-m93",
+    "mechanism": "03",
+    "cohort": "confirmation",
+    "form": "structured",
+    "stage": "reader",
+    "callId": "confirm-m93/read-structured"
+  },
+  {
+    "id": "item-17",
+    "caseId": "confirm-d57",
+    "mechanism": "03",
+    "cohort": "confirmation",
+    "form": "plain",
+    "stage": "preparation",
+    "callId": "confirm-d57/plain"
+  },
+  {
+    "id": "item-18",
+    "caseId": "confirm-t68",
+    "mechanism": "04",
+    "cohort": "confirmation",
+    "form": "plain",
+    "stage": "preparation",
+    "callId": "confirm-t68/plain"
+  },
+  {
+    "id": "item-19",
+    "caseId": "confirm-c42",
+    "mechanism": "05",
+    "cohort": "confirmation",
+    "form": "structured",
+    "stage": "preparation",
+    "callId": "confirm-c42/extract"
+  },
+  {
+    "id": "item-20",
+    "caseId": "cal-03-unknown-attribution",
+    "mechanism": "03",
+    "cohort": "development",
+    "form": "structured",
+    "stage": "reader",
+    "callId": "cal-03-unknown-attribution/read-structured"
+  },
+  {
+    "id": "item-21",
+    "caseId": "cal-06-journal-old",
+    "mechanism": "06",
+    "cohort": "development",
+    "form": "structured",
+    "stage": "preparation",
+    "callId": "cal-06-journal-old/extract"
+  },
+  {
+    "id": "item-22",
+    "caseId": "confirm-b76",
+    "mechanism": "06",
+    "cohort": "confirmation",
+    "form": "structured",
+    "stage": "reader",
+    "callId": "confirm-b76/read-structured"
+  },
+  {
+    "id": "item-23",
+    "caseId": "cal-06-journal-old",
+    "mechanism": "06",
+    "cohort": "development",
+    "form": "plain",
+    "stage": "reader",
+    "callId": "cal-06-journal-old/read-plain"
+  },
+  {
+    "id": "item-24",
+    "caseId": "confirm-m93",
+    "mechanism": "03",
+    "cohort": "confirmation",
+    "form": "plain",
+    "stage": "preparation",
+    "callId": "confirm-m93/plain"
+  },
+  {
+    "id": "item-25",
+    "caseId": "confirm-r15",
+    "mechanism": "06",
+    "cohort": "confirmation",
+    "form": "plain",
+    "stage": "reader",
+    "callId": "confirm-r15/read-plain"
+  },
+  {
+    "id": "item-26",
+    "caseId": "cal-05-lanterns",
+    "mechanism": "05",
+    "cohort": "development",
+    "form": "plain",
+    "stage": "reader",
+    "callId": "cal-05-lanterns/read-plain"
+  },
+  {
+    "id": "item-27",
+    "caseId": "confirm-p84",
+    "mechanism": "02",
+    "cohort": "confirmation",
+    "form": "structured",
+    "stage": "preparation",
+    "callId": "confirm-p84/extract"
+  },
+  {
+    "id": "item-28",
+    "caseId": "cal-03-unknown-attribution",
+    "mechanism": "03",
+    "cohort": "development",
+    "form": "structured",
+    "stage": "preparation",
+    "callId": "cal-03-unknown-attribution/extract"
+  },
+  {
+    "id": "item-29",
+    "caseId": "confirm-n24",
+    "mechanism": "06",
+    "cohort": "confirmation",
+    "form": "plain",
+    "stage": "reader",
+    "callId": "confirm-n24/read-plain"
+  },
+  {
+    "id": "item-30",
+    "caseId": "confirm-p84",
+    "mechanism": "02",
+    "cohort": "confirmation",
+    "form": "structured",
+    "stage": "reader",
+    "callId": "confirm-p84/read-structured"
+  },
+  {
+    "id": "item-31",
+    "caseId": "cal-04-conservatory",
+    "mechanism": "04",
+    "cohort": "development",
+    "form": "structured",
+    "stage": "preparation",
+    "callId": "cal-04-conservatory/extract"
+  },
+  {
+    "id": "item-32",
+    "caseId": "confirm-n24",
+    "mechanism": "06",
+    "cohort": "confirmation",
+    "form": "structured",
+    "stage": "reader",
+    "callId": "confirm-n24/read-structured"
+  },
+  {
+    "id": "item-33",
+    "caseId": "cal-03-speaker-subject",
+    "mechanism": "03",
+    "cohort": "development",
+    "form": "plain",
+    "stage": "reader",
+    "callId": "cal-03-speaker-subject/read-plain"
+  },
+  {
+    "id": "item-34",
+    "caseId": "cal-02-disjoint-contexts",
+    "mechanism": "02",
+    "cohort": "development",
+    "form": "structured",
+    "stage": "preparation",
+    "callId": "cal-02-disjoint-contexts/extract"
+  },
+  {
+    "id": "item-35",
+    "caseId": "confirm-v26",
+    "mechanism": "02",
+    "cohort": "confirmation",
+    "form": "plain",
+    "stage": "reader",
+    "callId": "confirm-v26/read-plain"
+  },
+  {
+    "id": "item-36",
+    "caseId": "confirm-b76",
+    "mechanism": "06",
+    "cohort": "confirmation",
+    "form": "plain",
+    "stage": "preparation",
+    "callId": "confirm-b76/plain"
+  },
+  {
+    "id": "item-37",
+    "caseId": "cal-02-disjoint-contexts",
+    "mechanism": "02",
+    "cohort": "development",
+    "form": "plain",
+    "stage": "reader",
+    "callId": "cal-02-disjoint-contexts/read-plain"
+  },
+  {
+    "id": "item-38",
+    "caseId": "confirm-v26",
+    "mechanism": "02",
+    "cohort": "confirmation",
+    "form": "structured",
+    "stage": "preparation",
+    "callId": "confirm-v26/extract"
+  },
+  {
+    "id": "item-39",
+    "caseId": "cal-04-conservatory",
+    "mechanism": "04",
+    "cohort": "development",
+    "form": "plain",
+    "stage": "preparation",
+    "callId": "cal-04-conservatory/plain"
+  },
+  {
+    "id": "item-40",
+    "caseId": "cal-05-lanterns",
+    "mechanism": "05",
+    "cohort": "development",
+    "form": "structured",
+    "stage": "preparation",
+    "callId": "cal-05-lanterns/extract"
+  },
+  {
+    "id": "item-41",
+    "caseId": "cal-02-disjoint-contexts",
+    "mechanism": "02",
+    "cohort": "development",
+    "form": "structured",
+    "stage": "reader",
+    "callId": "cal-02-disjoint-contexts/read-structured"
+  },
+  {
+    "id": "item-42",
+    "caseId": "confirm-b76",
+    "mechanism": "06",
+    "cohort": "confirmation",
+    "form": "structured",
+    "stage": "preparation",
+    "callId": "confirm-b76/extract"
+  },
+  {
+    "id": "item-43",
+    "caseId": "cal-06-journal-old",
+    "mechanism": "06",
+    "cohort": "development",
+    "form": "plain",
+    "stage": "preparation",
+    "callId": "cal-06-journal-old/plain"
+  },
+  {
+    "id": "item-44",
+    "caseId": "confirm-h31",
+    "mechanism": "01",
+    "cohort": "confirmation",
+    "form": "structured",
+    "stage": "reader",
+    "callId": "confirm-h31/read-structured"
+  },
+  {
+    "id": "item-45",
+    "caseId": "confirm-r15",
+    "mechanism": "06",
+    "cohort": "confirmation",
+    "form": "plain",
+    "stage": "preparation",
+    "callId": "confirm-r15/plain"
+  },
+  {
+    "id": "item-46",
+    "caseId": "confirm-t68",
+    "mechanism": "04",
+    "cohort": "confirmation",
+    "form": "structured",
+    "stage": "reader",
+    "callId": "confirm-t68/read-structured"
+  },
+  {
+    "id": "item-47",
+    "caseId": "cal-05-lanterns",
+    "mechanism": "05",
+    "cohort": "development",
+    "form": "structured",
+    "stage": "reader",
+    "callId": "cal-05-lanterns/read-structured"
+  },
+  {
+    "id": "item-48",
+    "caseId": "cal-04-conservatory",
+    "mechanism": "04",
+    "cohort": "development",
+    "form": "plain",
+    "stage": "reader",
+    "callId": "cal-04-conservatory/read-plain"
+  },
+  {
+    "id": "item-49",
+    "caseId": "confirm-b76",
+    "mechanism": "06",
+    "cohort": "confirmation",
+    "form": "plain",
+    "stage": "reader",
+    "callId": "confirm-b76/read-plain"
+  },
+  {
+    "id": "item-50",
+    "caseId": "confirm-v26",
+    "mechanism": "02",
+    "cohort": "confirmation",
+    "form": "structured",
+    "stage": "reader",
+    "callId": "confirm-v26/read-structured"
+  },
+  {
+    "id": "item-51",
+    "caseId": "cal-01-qualified-view",
+    "mechanism": "01",
+    "cohort": "development",
+    "form": "structured",
+    "stage": "preparation",
+    "callId": "cal-01-qualified-view/extract"
+  },
+  {
+    "id": "item-52",
+    "caseId": "confirm-n24",
+    "mechanism": "06",
+    "cohort": "confirmation",
+    "form": "plain",
+    "stage": "preparation",
+    "callId": "confirm-n24/plain"
+  },
+  {
+    "id": "item-53",
+    "caseId": "confirm-c42",
+    "mechanism": "05",
+    "cohort": "confirmation",
+    "form": "plain",
+    "stage": "reader",
+    "callId": "confirm-c42/read-plain"
+  },
+  {
+    "id": "item-54",
+    "caseId": "cal-06-journal-candidate",
+    "mechanism": "06",
+    "cohort": "development",
+    "form": "structured",
+    "stage": "reader",
+    "callId": "cal-06-journal-candidate/read-structured"
+  },
+  {
+    "id": "item-55",
+    "caseId": "confirm-p84",
+    "mechanism": "02",
+    "cohort": "confirmation",
+    "form": "plain",
+    "stage": "preparation",
+    "callId": "confirm-p84/plain"
+  },
+  {
+    "id": "item-56",
+    "caseId": "cal-03-speaker-subject",
+    "mechanism": "03",
+    "cohort": "development",
+    "form": "plain",
+    "stage": "preparation",
+    "callId": "cal-03-speaker-subject/plain"
+  },
+  {
+    "id": "item-57",
+    "caseId": "confirm-c42",
+    "mechanism": "05",
+    "cohort": "confirmation",
+    "form": "structured",
+    "stage": "reader",
+    "callId": "confirm-c42/read-structured"
+  },
+  {
+    "id": "item-58",
+    "caseId": "cal-06-journal-candidate",
+    "mechanism": "06",
+    "cohort": "development",
+    "form": "structured",
+    "stage": "preparation",
+    "callId": "cal-06-journal-candidate/extract"
+  },
+  {
+    "id": "item-59",
+    "caseId": "confirm-c42",
+    "mechanism": "05",
+    "cohort": "confirmation",
+    "form": "plain",
+    "stage": "preparation",
+    "callId": "confirm-c42/plain"
+  },
+  {
+    "id": "item-60",
+    "caseId": "cal-01-qualified-view",
+    "mechanism": "01",
+    "cohort": "development",
+    "form": "plain",
+    "stage": "reader",
+    "callId": "cal-01-qualified-view/read-plain"
+  },
+  {
+    "id": "item-61",
+    "caseId": "confirm-h31",
+    "mechanism": "01",
+    "cohort": "confirmation",
+    "form": "plain",
+    "stage": "preparation",
+    "callId": "confirm-h31/plain"
+  },
+  {
+    "id": "item-62",
+    "caseId": "confirm-h31",
+    "mechanism": "01",
+    "cohort": "confirmation",
+    "form": "structured",
+    "stage": "preparation",
+    "callId": "confirm-h31/extract"
+  },
+  {
+    "id": "item-63",
+    "caseId": "confirm-m93",
+    "mechanism": "03",
+    "cohort": "confirmation",
+    "form": "structured",
+    "stage": "preparation",
+    "callId": "confirm-m93/extract"
+  },
+  {
+    "id": "item-64",
+    "caseId": "cal-04-conservatory",
+    "mechanism": "04",
+    "cohort": "development",
+    "form": "structured",
+    "stage": "reader",
+    "callId": "cal-04-conservatory/read-structured"
+  },
+  {
+    "id": "item-65",
+    "caseId": "confirm-r15",
+    "mechanism": "06",
+    "cohort": "confirmation",
+    "form": "structured",
+    "stage": "preparation",
+    "callId": "confirm-r15/extract"
+  },
+  {
+    "id": "item-66",
+    "caseId": "confirm-r15",
+    "mechanism": "06",
+    "cohort": "confirmation",
+    "form": "structured",
+    "stage": "reader",
+    "callId": "confirm-r15/read-structured"
+  },
+  {
+    "id": "item-67",
+    "caseId": "confirm-p84",
+    "mechanism": "02",
+    "cohort": "confirmation",
+    "form": "plain",
+    "stage": "reader",
+    "callId": "confirm-p84/read-plain"
+  },
+  {
+    "id": "item-68",
+    "caseId": "cal-06-journal-candidate",
+    "mechanism": "06",
+    "cohort": "development",
+    "form": "plain",
+    "stage": "preparation",
+    "callId": "cal-06-journal-candidate/plain"
+  },
+  {
+    "id": "item-69",
+    "caseId": "cal-06-journal-old",
+    "mechanism": "06",
+    "cohort": "development",
+    "form": "structured",
+    "stage": "reader",
+    "callId": "cal-06-journal-old/read-structured"
+  },
+  {
+    "id": "item-70",
+    "caseId": "confirm-t68",
+    "mechanism": "04",
+    "cohort": "confirmation",
+    "form": "structured",
+    "stage": "preparation",
+    "callId": "confirm-t68/extract"
+  },
+  {
+    "id": "item-71",
+    "caseId": "confirm-t68",
+    "mechanism": "04",
+    "cohort": "confirmation",
+    "form": "plain",
+    "stage": "reader",
+    "callId": "confirm-t68/read-plain"
+  },
+  {
+    "id": "item-72",
+    "caseId": "cal-03-unknown-attribution",
+    "mechanism": "03",
+    "cohort": "development",
+    "form": "plain",
+    "stage": "preparation",
+    "callId": "cal-03-unknown-attribution/plain"
+  }
+]
