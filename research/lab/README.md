@@ -4,6 +4,8 @@
 
 This directory preserves the successive bounded experiments. Pilot 001 compares three memory presentations, first without an auxiliary model and then with Jev checking whether source expansion is needed. It does not change Circadian's runtime or private memory. No dependency installation is required.
 
+[Prospective input-contract repairs](input-contracts/README.md) provide executable label/span adapters and separately reviewed event/participation gates for the confirmed 009 defects, plus an aid-retirement invariant. These deterministic engineering changes are not another inference study or production promotion; completed studies remain unchanged.
+
 [Pilot 001 results](RESULTS.md): both rounds completed. Both scored 72/72; Jev matched all sufficiency labels but added overhead under the tested policy. The report explains why universal source expansion limits what this result establishes.
 
 [Diagnostic 002 results](DIAGNOSTIC-RESULTS.md): separated compact-memory capability from retrieval decisions, then compared reader-only routing, unconditional source delivery and Jev-assisted selection. Final policy accuracy was 13/16, 16/16 and 16/16 respectively. Its [separate frozen protocol](DIAGNOSTIC.md) and runner preserve Pilot 001 unchanged. The design below describes Pilot 001 only.
