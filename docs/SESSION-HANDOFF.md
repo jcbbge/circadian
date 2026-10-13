@@ -1,18 +1,20 @@
 # Circadian session handoff — 2026-10-13
 
-## Current state: ready for guarded publication
+## Current state: published and live-checked
 
-The reviewed closeout branch `origin/circ/circadian-close-final` at `1b0033f2c8dd44d1d11fcf6fef1ecfa2474d3142` has been imported into publication branch `circ/circadian-publish-20261013`, based on main `5df695dfe265a90dfbadbd762b4a912560e34a71`.
+The preserved research and closeout were landed on `main` at `19c8872`, pushed to GitHub, and installed on both the M5 and hive. Both installations reported views ON and a passing real view/expansion check after synchronization. All 333 original research files match the preserved archive; the research index was intentionally updated. The original Mac folder is retained as a historical backup under `~/Library/Caches/circadian-research/reconcile-20261013-i4n2pw/research-original`.
 
-The earlier landing refusal is historical, not the current deployment state. It is preserved verbatim in `research/session-close/operational-metadata.md`: `the spine shows no activity for this worker, so its grounding cannot be shown (are its hooks loading? hive doctor)`. Do not erase that receipt, fabricate substitute activity, or treat it as a Circadian product defect.
+Verification: the full M5 run passed 1,005 tests with 21 skips and zero failures. The publication worktree's required VPS gate passed 939 tests with 93 skips and zero failures. These are actual run counts, not a claim that skipped checks ran or that models use memory correctly.
 
-Parent still owns acceptance, land, push, synchronization, and live installation checks. Until parent lands this branch, pulls the real installations, and reruns `circadian extensions status` plus `circadian extensions check views` where required, operational deployment closure remains pending. Parent-provided receipts say Mac and hive already had views ON and live check PASS before this publication pass; this worker did not re-verify post-landing installations because landing/push/sync are outside scope.
+The earlier missing-activity refusal remains preserved in `research/session-close/operational-metadata.md`. The installed native session adapter was repaired to normalize tool names and pass worker identity to every helper. Fresh sessions recorded real reads, grounding and completed writes; no historical events were fabricated. The moved credential guard was restored through its canonical installer/path.
 
-The prior closeout project gate receipt is preserved: `/home/jrg/concierge/bin/gate sh -c 'bun test'` passed with 939 pass, 93 skip, 0 fail. The publication worker's current gate and changed-path report live outside source at `/home/jrg/concierge/data/circadian-publish-20261013/report.md`.
+The publication review completed the top-level/documentation checks but exhausted its budget on the historical research archive. Its partial archive check reported 14 `weak_task_relation` warnings. Publication used the landing tool's explicit `--land-unreviewed --accept-findings` path, recorded as such in the landing receipt; the archive was not represented as fully re-reviewed. Existing prototype/peer evidence and frozen failures remain intact. Receipt: `worker events circadian-publish-20261013` on hive.
 
-## Parent pickup after land/sync
+Hive's Claude login separately reported logged out. Operator sign-in was requested; this account-access issue does not block the working Pi route, CLI or shipped reader. Do not claim that client's authentication is repaired without a fresh status check.
 
-After the parent lands and pushes this branch, then pulls it where Circadian is installed:
+## Next-session entry
+
+From the installed checkout:
 
 ```sh
 cd ~/circadian && git pull --ff-only && circadian extensions status && circadian extensions check views

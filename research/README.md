@@ -1,6 +1,6 @@
 # Circadian pre-plan research dossiers
 
-**Start here for publication pickup:** [definitive session handoff](../docs/SESSION-HANDOFF.md). The only shipped production addition from this research is the bounded optional reader described in [Coordinated memory views](../docs/COORDINATED-VIEWS.md); the remaining five proposals are preserved as research prototypes and evidence.
+**Current state and next work:** [definitive session handoff](../docs/SESSION-HANDOFF.md). The only shipped production addition from this research is the bounded optional reader described in [Coordinated memory views](../docs/COORDINATED-VIEWS.md); the remaining five proposals are preserved as research prototypes and evidence.
 
 For a first-principles explanation of all six additions, open the [interactive Anatomy explainer](explainer/index.html) or its [written companion](explainer/EXPLAINER.md). Each example separates the demonstrated mechanism from the benefit still to be measured.
 
