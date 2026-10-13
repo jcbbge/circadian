@@ -53,6 +53,8 @@ Current `src/extensions.ts` exposes only the `views` boolean. A generalized plug
 
 **P1 — finite real-use observation of existing views.** For the next five relevant ordinary memory requests in normal sessions, record only: whether the view tool was called when wake/ordinary recall lacked context; whether needed evidence was present; whether the answer was source-correct after expansion; and context/tool overhead versus ordinary recall. Stop after five relevant requests and summarize. Do not manufacture a new broad benchmark first.
 
+The manual [observation record](VIEWS-OBSERVATION.md) is ready with counting rules and an excluded native setup probe. No qualifying request has been counted yet. Continue it during ordinary work; no background collector or new inference service is installed.
+
 **P2 — narrowly fix confirmed model-input contract defects before further promotion.** Fix only when work resumes: retain human source labels for 02; require affirmative event-location and attendance evidence for 03/05; bind exact source spans with code for 06; separate useful temporary aid retirement from memory retention for 04. Defer 04 R14 total-cost comparison.
 
 **P3 — choose one next optional integration after P1.** Recommend 02, or a small 03 attribution seam if P1 failures show attribution/location confusion. Do not integrate all six at once; preserve all six and avoid another scope-loss spiral.
