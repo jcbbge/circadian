@@ -12,7 +12,7 @@ The supporting tooling repair is committed and installed on hive at `620cc25` in
 
 The publication review completed the top-level/documentation checks but exhausted its budget on the historical research archive. Its partial archive check reported 14 `weak_task_relation` warnings. Publication used the landing tool's explicit `--land-unreviewed --accept-findings` path, recorded as such in the landing receipt; the archive was not represented as fully re-reviewed. Existing prototype/peer evidence and frozen failures remain intact. Receipt: `worker events circadian-publish-20261013` on hive.
 
-Hive's Claude login separately reported logged out. Operator sign-in was requested; this account-access issue does not block the working Pi route, CLI or shipped reader. Do not claim that client's authentication is repaired without a fresh status check.
+Hive's Claude login was restored by the operator. The fresh native `claude auth status --json` check returned exit 0, `loggedIn: true` and `authMethod: claude.ai`; native `claude mcp list` returned exit 0 and confirmed Circadian connected. The installed Claude settings retain Circadian SessionStart wake/status, UserPromptSubmit/PostToolUse graze and SessionEnd sleep hooks. This verifies authentication and MCP connectivity, plus hook registration; it does not certify a complete lifecycle run or model use of memory.
 
 ## Next-session entry
 
