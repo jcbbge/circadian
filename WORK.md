@@ -1,44 +1,35 @@
 # WORK.md — Circadian
 
-**Phase:** Verify (wave merged; tonight's REM is the production proof)
-**Project:** Population-memory substrate — live, self-healing, truth-telling as of 2026-08-04
+**Canonical current handoff:** `docs/SESSION-HANDOFF.md`
 
-## DONE
+## CURRENT PUBLICATION STATE
 
-- [x] b01 — spec promotion: population-memory spec is authoritative `MIND-SPEC.md`; live mind contract updated — 2026-08-04
-- [x] b02 — compost.md dedup (lossless, mind repo `fccb667`) — 2026-08-04
-- [x] b03 — janitor phase in REM (meals/state sweep, 6h window, pending-sleep guard) — 2026-08-04
-- [x] b04+05 — doctor: semantic-stutter check + harness-aware hooks (CC + pi) — 2026-08-04
-- [x] b06 — REM distill phase (5 clusters → 15 supersedes live), truthful commit subjects, comment sweep — 2026-08-04
-- [x] r01 — Zero-Mem research artifact (`docs/ZEROMEM-RESEARCH.md`) — 2026-08-04
-- [x] b07 — relindex (entity–context index, 160 units/807 entities/31ms, zero-dep) + wake evidence slice — 2026-08-04
+- Publication branch: `circ/circadian-publish-20261013`.
+- Imported source: `origin/circ/circadian-close-final` at `1b0033f2c8dd44d1d11fcf6fef1ecfa2474d3142`.
+- Parent owns land, push, synchronization and live installation verification after acceptance.
+- No current deployment block is recorded here; the prior missing-activity landing refusal is preserved as history in `research/session-close/operational-metadata.md`.
 
 ## ACTIVE
 
-- [ ] Tonight's 21:00 REM review (tomorrow morning): janitor first sweep, distill maintenance, 3 pending episodes absorbed, first relindex build (phase 8)
-- [ ] `spine-lab-verify` verdict — parked awaiting one word from jrg (schedule or drop)
+None in this source tree. Use `docs/SESSION-HANDOFF.md` for the current shipped state, evidence paths and next planned work.
 
-## BACKLOG
+## ACTIONABLE PLANNED WORK
 
-- Brief 08 — extraction-time paraphrase rejection (`immune.ts` overlap machinery at the stacker write path; prevention vs b06's cure)
-- Brief 09 — dense+lexical detector fusion (research agent rec D; land after 08, separately measurable)
-- Janitor scope extension — `logs/.status-snap-*.json` litter (30+ files)
+1. Observe the next five relevant ordinary memory requests in normal sessions, using the existing optional views only when wake/ordinary recall lacks context; record source-correctness after expansion and overhead versus ordinary recall, then stop and summarize.
+2. Before promoting any other proposal, fix only the confirmed model-input contract defects: retain human source labels for proposal 02; require affirmative event-location evidence for 03; require affirmative attendance/participation evidence for 05; bind exact source spans in code for 06; separate useful temporary-aid retirement from underlying memory retention for 04. Defer 04 R14 total-cost comparison.
+3. After the five-request observation, choose one next opt-in integration based on actual use. Prefer proposal 02, or a small 03 attribution seam only if real failures show attribution/location confusion. Do not integrate all six at once.
 
-### Fringe wave (2026-09-23) — from the VPS comparison with `mem`; briefs 10–20 in `briefs/`
-Design language for all of these: one intelligence, many instantiations; the substrate closes the gap.
-- [x] Brief 10 — reconstitution is a checkout (the ref is the handoff; wake is narration) — `0e658654d785e26f35eb84bde8fae26266d772dc`
-- [x] Brief 11 — stratigraphy: depth tiers alongside decay; `dig` reads below the floor — `ca2b1e1fd00d7af39f32bd7f225f22ceac2f744d`
-- [x] Brief 12 — belief interchange format (atom shape as protocol; reader for mem-shaped stores) — `94041ae578ce6ae4e11057e455ac050f5b0a8d18`
-- [x] Brief 13 — stigmergic memory on worker branches (lanes; landing consolidates; conflicts escalate) — `8bd1b29041370c06641b4d53b01444777843819d`
-- [x] Brief 14 — decision-boundary split (COMPARE and every fixed choice on a decision-only transport); code landed at a7eafb2; acceptance measurement pending — needs the recorded pair set from a real mind and a configured decision endpoint
-- [x] Brief 15 — quorum write gate for concurrent instantiations — `e1152198732ffeff8e4a3cb46208c0056aa236ba`
-- [x] Brief 16 — contradiction graph (persist doubt) — `0cc99326236dbca2e1637e0163ad8a60b83baf42`
-- [x] Brief 17 — archaeology command (`when`, `bisect`) — `03df36c`
-- [x] Brief 18 — compare-and-swap publication (graft from mem; prerequisite for 13, 15) — `1b610cb850c24f82a6eca81f226f9cecc56dd77d`
-- [x] Brief 19 — on-demand read surface over MCP (graft from mem) — `940cbd3`
-- [x] Brief 20 — backfill from transcripts + hard `erase` (graft from mem) — `270c254`
-Suggested order: 18 → 14 → 10 → 12 → 19 → 11 → 17 → 16 → 13 → 15 → 20. Brief 09 stays reserved for dense+lexical fusion.
+## HISTORICAL / UNVERIFIED BACKLOG FROM OLDER SNAPSHOT
 
-## BLOCKED
+These items survived from the August/September `WORK.md` snapshot. They are not current ACTIVE claims and are not silently marked done here; verify against git history, briefs and current operator intent before resuming any of them.
 
-- none
+- `spine-lab-verify` verdict — historical parked decision awaiting an operator schedule/drop ruling in the old snapshot.
+- Brief 08 — extraction-time paraphrase rejection at the stacker write path.
+- Brief 09 — dense+lexical detector fusion after Brief 08, separately measurable.
+- Janitor scope extension — `logs/.status-snap-*.json` litter.
+- Brief 14 acceptance measurement — code landed historically, but acceptance still needs the recorded pair set from a real mind and a configured decision endpoint.
+- Fringe wave briefs 10–20 — completed work belongs in git history and the `briefs/` sources; this file no longer treats the old suggested order as live work.
+
+## DONE HISTORY POINTERS
+
+Earlier done lists and commit hashes remain in git history. Do not use this file as a second source of truth for completed work; committed code, docs and receipts are authoritative.

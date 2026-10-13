@@ -1,7 +1,7 @@
 {
   "name": "circadian",
   "version": "0.1.0",
-  "description": "A file-based memory substrate for AI coding agents — plain markdown in git, metabolism in small processes.",
+  "description": "A general-purpose file-based memory substrate for AI agents — plain markdown in git, metabolism in small processes.",
   "license": "MIT",
   "type": "module",
   "repository": {

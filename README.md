@@ -1,8 +1,8 @@
 # Circadian
 
-**A file-based memory substrate for AI coding agents.** Plain markdown in git;
-all intelligence lives in six small processes around it. One install per
-machine, private by construction.
+**A general-purpose file-based memory substrate for AI agents.** Plain markdown
+in git; all intelligence lives in six small processes around it. One install
+per machine, private by construction.
 
 The design contract lives in `templates/MIND-SPEC.md` — *"storage dumb,
 metabolism smart."* If a process conflicts with that one page, the process is
@@ -12,9 +12,11 @@ wrong.
 
 ## Who
 
-For anyone running AI coding agents — Claude Code, cursor, pi.dev, prime,
-opencode, any harness that can fire a hook or load an extension — who is tired
-of their agent starting every session with amnesia.
+For anyone running AI agents who need continuity across sessions: coding,
+research, writing, planning, personal context, creative work, or any other
+memory-bearing collaboration. Claude Code, cursor, pi.dev, prime, opencode,
+and other hookable harnesses are concrete integration examples, not the limit
+of what Circadian is for.
 
 One central install spans your whole machine: every project, every directory.
 The cloned repo is the program, not a project dependency; local installation

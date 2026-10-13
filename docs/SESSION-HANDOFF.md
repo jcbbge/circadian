@@ -1,14 +1,18 @@
-# Circadian session handoff — 2026-10-12
+# Circadian session handoff — 2026-10-13
 
-## Current state: PARKED
+## Current state: ready for guarded publication
 
-This closeout is parked on branch `circ/circadian-close-final` pending box/tooling-owner repair of the missing activity hooks and the sanctioned landing path. The required worker land command refused with: `the spine shows no activity for this worker, so its grounding cannot be shown (are its hooks loading? hive doctor)`. Do not bypass that refusal, fabricate events, retry landing from this worker, or change machine tooling from Circadian work.
+The reviewed closeout branch `origin/circ/circadian-close-final` at `1b0033f2c8dd44d1d11fcf6fef1ecfa2474d3142` has been imported into publication branch `circ/circadian-publish-20261013`, based on main `5df695dfe265a90dfbadbd762b4a912560e34a71`.
 
-Main remains `5df695dfe265a90dfbadbd762b4a912560e34a71`. Views remain ON/PASS on both checked machines. The completed project gate receipt is preserved: `/home/jrg/concierge/bin/gate sh -c 'bun test'` passed with 939 pass, 93 skip, 0 fail.
+The earlier landing refusal is historical, not the current deployment state. It is preserved verbatim in `research/session-close/operational-metadata.md`: `the spine shows no activity for this worker, so its grounding cannot be shown (are its hooks loading? hive doctor)`. Do not erase that receipt, fabricate substitute activity, or treat it as a Circadian product defect.
 
-## Starting command after tooling repair and landing
+Parent still owns acceptance, land, push, synchronization, and live installation checks. Until parent lands this branch, pulls the real installations, and reruns `circadian extensions status` plus `circadian extensions check views` where required, operational deployment closure remains pending. Parent-provided receipts say Mac and hive already had views ON and live check PASS before this publication pass; this worker did not re-verify post-landing installations because landing/push/sync are outside scope.
 
-After the sanctioned landing path is repaired, this branch is landed, and the result is pulled where you work:
+The prior closeout project gate receipt is preserved: `/home/jrg/concierge/bin/gate sh -c 'bun test'` passed with 939 pass, 93 skip, 0 fail. The publication worker's current gate and changed-path report live outside source at `/home/jrg/concierge/data/circadian-publish-20261013/report.md`.
+
+## Parent pickup after land/sync
+
+After the parent lands and pushes this branch, then pulls it where Circadian is installed:
 
 ```sh
 cd ~/circadian && git pull --ff-only && circadian extensions status && circadian extensions check views
@@ -43,17 +47,20 @@ Current `src/extensions.ts` exposes only the `views` boolean. A generalized plug
 
 ## Priorities
 
-**P1 — finite real-use observation of existing views.** For the next five relevant memory requests in normal sessions, record only: whether the view tool was called when wake/ordinary recall lacked context; whether needed evidence was present; whether the answer was source-correct after expansion; and context/tool overhead versus ordinary recall. Stop after five relevant requests and summarize. No new broad benchmark is needed first.
+**P1 — finite real-use observation of existing views.** For the next five relevant ordinary memory requests in normal sessions, record only: whether the view tool was called when wake/ordinary recall lacked context; whether needed evidence was present; whether the answer was source-correct after expansion; and context/tool overhead versus ordinary recall. Stop after five relevant requests and summarize. Do not manufacture a new broad benchmark first.
 
 **P2 — narrowly fix confirmed model-input contract defects before further promotion.** Fix only when work resumes: retain human source labels for 02; require affirmative event-location and attendance evidence for 03/05; bind exact source spans with code for 06; separate useful temporary aid retirement from memory retention for 04. Defer 04 R14 total-cost comparison.
 
 **P3 — choose one next optional integration after P1.** Recommend 02, or a small 03 attribution seam if P1 failures show attribution/location confusion. Do not integrate all six at once; preserve all six and avoid another scope-loss spiral.
 
-## Research results to carry forward
+## Research results and frozen limits to carry forward
 
 - Prototypes: 120 deterministic tests, 492 assertions, 93 specification IDs mapped; 92 deterministic checks and R14 deferred.
+- Proposed first behavioral comparison in the refinement protocol: 24 initial reader calls with one explicitly selected model, each allowing at most one follow-up model invocation, for 48 reader calls maximum. That design was not executed as written; a second model would be a separate bounded choice.
 - Behavioral 005: 24 frozen scenarios and 72 reader trials; strict passes were baseline 5/24, augmented 6/24, assisted 8/24. Useful signal is limited by output/schema failures and a strict rubric.
-- Local extractor 008+009: 108 study calls. In 009, 15/18 structured records were consumable, 12/18 reader answers were question-correct, and 11/18 passed every recorded acceptance dimension. The runs exposed case-level failures and a historical comparator; they do not establish universal superiority.
+- Extractor 008: inherited the repaired semantic contracts and ran the 72-call battery with existing local model/settings, no remote inference, retry, output repair or new package; serving grammar omitted finite string `maxLength` only, while prompt and local binders retained the limits.
+- Extractor 009: all eighteen 008 cases were exposed development material; it authorized exactly 36 new calls, sequential, one structured extraction and one structured reader per case, with no retries, repair, winner selection, source-span normalization, data repair or weaker validation.
+- Local extractor 008+009 total: 108 study calls. In 009, 15/18 structured records were consumable, 12/18 reader answers were question-correct, and 11/18 passed every recorded acceptance dimension. The runs exposed case-level failures and a historical comparator; they do not establish universal superiority.
 
 ## Operational boundaries
 
@@ -77,4 +84,4 @@ What fell short: experimentation sprawled, scope drifted, and the operator/agent
 - Lab contract: `research/lab/AGENTS.md`
 - Operational receipts: `research/session-close/delivery-report.md`, `research/session-close/review-report.md`, `research/session-close/codex-discovery-receipt.json`, `research/session-close/operational-metadata.md`
 
-No fresh experiments are required to resume. After tooling repair, sanctioned landing and pull, start with P1 observation in real use.
+No fresh experiments are required to resume. After parent land, push, synchronization and live installation checks, start with P1 observation in real use.
