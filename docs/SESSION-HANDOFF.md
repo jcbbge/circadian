@@ -1,6 +1,6 @@
 # Circadian session handoff — 2026-10-13
 
-## Current state: published and live-checked
+## Current state: coordinated views published; memory checks implemented
 
 The preserved research and closeout were landed on `main` at `19c8872`, pushed to GitHub, and installed on both the M5 and hive. Both installations reported views ON and a passing real view/expansion check after synchronization. All 333 original research files match the preserved archive; the research index was intentionally updated. The original Mac folder is retained as a historical backup under `~/Library/Caches/circadian-research/reconcile-20261013-i4n2pw/research-original`.
 
@@ -19,24 +19,32 @@ Hive's Claude login was restored by the operator. The fresh native `claude auth 
 From the installed checkout:
 
 ```sh
-cd ~/circadian && git pull --ff-only && circadian extensions status && circadian extensions check views
+cd ~/circadian && git pull --ff-only && circadian extensions status && circadian extensions check views && circadian extensions check checks
 ```
 
 Then read this file, `docs/COORDINATED-VIEWS.md`, and `research/README.md`. Do not rerun the completed research studies for pickup; use the evidence paths below.
 
 ## What is shipped
 
-Shipped production behavior is the bounded optional coordinated memory view from proposal 01. It uses existing atoms, episodes and the belief ledger; it adds no model call, database, service, timer or new inference endpoint. It is opt-in per machine. When disabled, ordinary Circadian wake/recall/graze/sleep/REM behavior is unchanged.
+Production now includes the bounded optional coordinated memory view from proposal 01 and the separate default-off [memory checks](MEMORY-CHECKS.md) addition. Both use existing atoms, episodes and the belief ledger; they add no database, service, timer or new inference endpoint. Checks changes the existing extraction encoding to code-bound source selectors and exposes `memory_check` through CLI, MCP and Pi. It adds no extraction model call; the read-check handler calls no model. When disabled, the original extraction prompt/decoder and ordinary Circadian behavior remain unchanged.
 
 The shipped reader returns bounded whole records with coverage counts, omissions and unresolved records. Expansion requires the returned `{id, revision}` and rechecks current eligibility, source availability and source revisions before returning atom/source text; stale, ineligible, unavailable and over-budget cases are explicit. Controls are `circadian extensions status`, `circadian extensions check views`, `circadian extensions enable views`, `circadian extensions disable views`, plus `circadian view` and `circadian expand`. The live check reads and expands real memory, checks bounds and file bytes, and writes only an operational receipt.
 
 Enabled wake adds a short usage note outside remembered data; disabled wake is unchanged. Native Pi and MCP expose `memory_view` and `memory_expand` when enabled, rechecking the flag on every call. Existing MCP sessions need reconnect/new session and Pi needs `/reload` or a new session to discover newly registered tools; CLI use is immediate. Codex registration here is MCP tools only, not wake/sleep lifecycle certification.
 
+Checks-enabled wake explains `memory_check` and its evidence limits; `checks ON` is visible in status. Controls are `circadian extensions enable checks`, `disable checks`, `check checks` and `circadian check --input <JSON file|->`. For the complete read workflow, enable views as well. Typed recording-location, event-location and participation outputs are candidates with semantic UNKNOWN. Fields/contexts results are comparisons within supplied annotations, not independent proof of source meaning. The source selector path binds exact original spans and rejects invalid/oversized ranges; its 4,096-character, eight-selection and 32 KiB encoded-quote limits also leave an explicit whole-atom size guard before publication.
+
+M5 rejection diagnosis: the retained 12 EXTRACT calls in the 2026-10-14 04:19–04:21 UTC absorption batch reproduced 40 accepted and 20 rejected candidates: 19 non-verbatim quotes and one malformed quote line. All stored prompts matched current source bytes, ruling out source drift. The original validation guard was correct and remains in place. No rejected historical output was rewritten or published by these probes.
+
+Four fresh local Qwen probe calls were made during implementation: one synthetic extraction and three successive probes of one original failing source. The first whole-line attempt rejected all five candidates because its source line was 2,420 characters, exceeding the initial 2,000-character cap. Segmentation alone accepted one and rejected four spanning-range selections. The final declared 4,096-character/32 KiB bounded format accepted all five, rejected zero and copied every quote exactly. That result was also validated against the final escape-aware decoder without another model call. This is an exact-symptom reproduction, not a held-out study or proof of semantic accuracy. One synthetic receipt initially inspected string quotes as objects; a separate correction record preserves that reporting error and the unchanged raw response. Private request/response evidence is under ignored `logs/checks-probes/`, not in the public repository.
+
+Parent's final full M5 code gate: 1,051 pass, 21 skip, zero failures, 20,649 assertions across 89 files. Two visible implementation agents delivered disjoint changes; the independent reviewer identified prototype-key lookup, checks-only guidance, leading-whitespace diagnostics and escaped-quote size issues, all fixed with regressions before publication. The existing extraction prompt remains byte-identical when checks are disabled. CLI, MCP and native Pi integration tests exercise actual handlers, immediate disable and bounded evidence without live-mind writes. M5's explicit live source check passed after enabling checks; deployment parity is recorded after synchronization below.
+
 ## What remains research-only
 
 Everything under `research/` is preserved research evidence unless a later brief explicitly promotes a bounded part. The six dossiers, refinements, prototypes, peer work, fictional lab receipts and visual explainer are not production extensions. There is no claim of a general category-theory engine, universal ontology, measured superiority, or automatic model use.
 
-Current `src/extensions.ts` exposes only the `views` boolean. A generalized plugin loader is not implemented. If a second extension is added later, it should add only the smallest independently disabled and fallback-preserving contract rather than broadening this one into an extension framework.
+Current `src/extensions.ts` exposes the independent `views` and `checks` booleans. A generalized plugin loader is not implemented. Further additions should retain the smallest independently disabled and fallback-preserving contract rather than broadening these into an extension framework.
 
 ## Six original proposals: status and next action
 
@@ -59,7 +67,7 @@ The manual [observation record](VIEWS-OBSERVATION.md) is ready with counting rul
 
 Verification for these repairs: parent full M5 suite returned 1,026 pass, 21 skip, zero failures; final focused boundary suite returned 21 pass, 140 assertions, zero failures. Two visible implementation agents delivered disjoint files and a third independently reviewed the new research code with no blocking findings. Synthetic test approvals do not constitute actual independent semantic review. No new inference requests were dispatched. Production and frozen 006–009 paths were unchanged.
 
-**P3 — choose one next optional integration after P1.** Recommend 02, or a small 03 attribution seam if P1 failures show attribution/location confusion. Do not integrate all six at once; preserve all six and avoid another scope-loss spiral.
+**P3 — bounded checks integration selected by the operator.** The operator explicitly authorized implementation without waiting for P1. The new runtime includes source labels, exact spans, annotated field/context comparisons and separately typed relation candidates. It does not promote the research-only approval gate into automatic semantic truth or add a temporary-aid runtime. Further additions should follow real-use evidence and preserve all six proposals and default behavior.
 
 ## Research results and frozen limits to carry forward
 

@@ -25,7 +25,7 @@ import { computeVerdictStreak } from "./status.ts";
 import { resolveScope, recallScope } from "./scopes.ts";
 import { whileAway } from "./away.ts";
 import { readExtensions } from "./extensions.ts";
-import { viewsInstructions } from "./views-usage.ts";
+import { viewsInstructions, checksInstructions } from "./views-usage.ts";
 import {
   CAP_TOKENS,
   STALE_MS,
@@ -294,7 +294,7 @@ async function runHook(): Promise<void> {
   const scopedNow = view.now || (scope === "global" ? files["NOW.md"] : "");
   const payload = buildPayload({
     scope, here: view.here, elsewhere: view.elsewhere,
-    capabilities: readExtensions(CIRCADIAN_HOME).views ? viewsInstructions(scope) : undefined,
+    capabilities: (() => { const state = readExtensions(CIRCADIAN_HOME); return [state.views ? viewsInstructions(scope) : "", state.checks ? checksInstructions(state.views) : ""].filter(Boolean).join("\n\n") || undefined; })(),
     away: whileAway(CIRCADIAN_HOME, scope, Date.now(), process.env.CIRCADIAN_SESSION || "", process.env.CIRCADIAN_LANE || ""),
     self: "", // scope-specific atom origins live in <mind:here>; global has no local beliefs
     user: files["USER.md"],

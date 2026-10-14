@@ -10,3 +10,15 @@ export function viewsInstructions(scope = "global"): string {
     "Operator controls: circadian extensions status; circadian extensions check views; circadian extensions disable views.",
   ].join("\n");
 }
+
+/** Separate opt-in evidence capability; not remembered data or a semantic oracle. */
+export function checksInstructions(viewsEnabled = true): string {
+  return [
+    "[Circadian capability] Memory checks ON.",
+    ...(viewsEnabled ? [] : ["Coordinated views are OFF. Source-line extraction still works, but fresh read-check references require circadian extensions enable views and a reconnect/reload. Do not call unavailable memory_view or memory_expand tools."]),
+    "When quoting remembered evidence or comparing accounts, use memory_check with refs and exact source selections from memory_expand. It returns source-bound text and document labels; optional fields/contexts comparisons apply only to your supplied annotations.",
+    "Keep recording location, event location and participation distinct. Source presence does not establish entailment; semantic truth remains UNKNOWN until assessed against the source. Unknown participation is not absence. Do not infer absence from incomplete results.",
+    "During normal memory extraction, code binds quote-lines selectors to original source lines instead of asking the model to recopy quotes. Existing shape and quote validation still apply.",
+    "Controls: circadian extensions status; circadian extensions check checks; circadian extensions disable checks. CLI: circadian check --input <JSON file> (or --input - for stdin). Reconnect MCP or /reload Pi for discovery.",
+  ].join("\n");
+}

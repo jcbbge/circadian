@@ -715,6 +715,7 @@ function buildLine(vitals: ReturnType<typeof collectVitals>, scoreboard: ScoreEv
   const extensions = readExtensions(CIRCADIAN_HOME);
   if (extensions.error) parts.push("views CONFIG ERROR");
   else if (extensions.views) parts.push("views ON");
+  if (extensions.checks) parts.push("checks ON");
 
   return `circadian · ${parts.join(" · ")}`;
 }

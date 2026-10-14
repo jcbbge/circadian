@@ -17,7 +17,8 @@ import { collectEpisodes, matchEpisodes, parseQuery, selfLinesForDate, taughtLin
 import { statusSnapshot } from "./status.ts";
 import { recallScope } from "./scopes.ts";
 import { ok, idle, degraded, correlation } from "./obs.ts";
-import { readExtensions, requireViews } from "./extensions.ts";
+import { readExtensions, requireViews, requireChecks } from "./extensions.ts";
+import { memoryCheck, memoryCheckSchema } from "./memory-check.ts";
 
 const tools = [
   { name: "memory_search", description: "Search provenance-pinned mind evidence; depth >= 0 includes deeper and below-floor atoms via dig (0 searches all atoms).", inputSchema: { type: "object", properties: { query: { type: "string" }, k: { type: "integer", minimum: 1, maximum: 50 }, depth: { type: "integer", minimum: 0 } }, required: ["query"], additionalProperties: false } },
@@ -36,7 +37,8 @@ const viewTools = [
 
 /** Shared discovery for MCP and the existing native extension. Calls recheck the flag. */
 export function enabledViewTools(home: string) {
-  return readExtensions(home).views ? viewTools : [];
+  const state = readExtensions(home);
+  return [ ...(state.views ? viewTools : []), ...(state.checks ? [{ name: "memory_check", description: "Before quoting remembered evidence or comparing interpretations, select exact source spans from memory_expand; acquiring fresh refs requires coordinated views enabled. Rechecks atom eligibility and source revisions, retains document labels, compares explicitly supplied fields/contexts and keeps recording location, event location and participation separate. Matching source bytes is not entailment: semantic truth remains UNKNOWN. Never infer absence from incomplete evidence. Does not write memory or call a model.", inputSchema: memoryCheckSchema }] : []) ];
 }
 
 type Args = Record<string, unknown>;
@@ -57,6 +59,7 @@ function safeId(id: string): boolean {
 /** Tool dispatcher exported for deterministic tests; server calls it without a write-capable publication path. */
 export async function callTool(home: string, name: string, args: Args): Promise<unknown> {
   const mind = path.join(home, "mind");
+  if (name === "memory_check") { requireChecks(home); return memoryCheck(mind, args); }
   const optional = viewTools.some(t => t.name === name);
   if (optional) requireViews(home);
   else if (!tools.some(t => t.name === name)) throw new Error(`unknown tool: ${name}`);
@@ -160,9 +163,9 @@ export async function handle(home: string, request: Request): Promise<object | n
       const start = performance.now();
       try {
         const data = await callTool(home, name, request.params?.arguments ?? {});
-        const optional = viewTools.some(t => t.name === name);
+        const optional = name === "memory_check" || viewTools.some(t => t.name === name);
         const view = optional ? data as { kind: string; reason?: string; coverage?: { complete: boolean; inspected: number; included: number; omitted: number; unresolved: number }; complete?: boolean; inspected?: number; entries?: { status: string; sources?: { status: string }[] }[] } : undefined;
-        const rejected = !!view && !["view", "expansion"].includes(view.kind);
+        const rejected = !!view && !["view", "expansion", "check"].includes(view.kind);
         const partial = view?.coverage?.complete === false || view?.complete === false || view?.entries?.some(entry => entry.status !== "available" || entry.sources?.some(source => source.status !== "available"));
         const count = Array.isArray(data) ? data.length : 1;
         const counts = view?.coverage ? view.coverage : view?.entries ? { inspected: view.inspected, entries: view.entries.length, available: view.entries.filter(entry => entry.status === "available").length } : {};

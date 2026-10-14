@@ -5,6 +5,8 @@ see what was left out, and expand a selected memory into its recorded evidence.
 It uses Circadian's existing atoms, episodes, and belief ledger. It makes no
 model calls and adds no database or background process.
 
+The separate optional [memory checks](MEMORY-CHECKS.md) addition provides exact source selections and bounded annotation comparisons after expansion, plus code-bound quotes during normal extraction. It has its own on/off setting.
+
 Ordinary recall already exists. What this adds is a budget over the complete
 JSON response, explicit coverage, and a reference that is checked against the
 current files and eligibility before expansion. This is the first production

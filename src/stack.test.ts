@@ -10,6 +10,7 @@ import { tmpdir } from "os";
 import { spawnSync } from "node:child_process";
 import type { CircadianEvent } from "./obs.ts";
 import {
+  stackEpisode,
   MAX_CANDIDATES,
   BAND_LOW,
   BAND_HIGH,
@@ -34,7 +35,7 @@ import {
   type ExistingAtomView,
   type ExposureClass,
 } from "./stack.ts";
-import { atomId, foldWeights, type LedgerEvent } from "./atoms.ts";
+import { atomId, foldWeights, readAtoms, type LedgerEvent } from "./atoms.ts";
 import { significantTokens, jaccard } from "./ltp.ts";
 import { collectAllEpisodesAt } from "./replay.ts";
 import { repoRoot, missingMindRevision, evidenceName } from "./test-evidence.ts";
@@ -835,4 +836,74 @@ describe("poison quarantine — the actual poison episode (LIVE-LLM gated, fact 
       }
     }
   );
+});
+
+
+describe("optional source selectors — stackEpisode wiring without inference", () => {
+  test("checks config chooses selectors, stores exact evidence and preserves raw completion", async () => {
+    for (const enabled of [false, true]) {
+      const home = fs.mkdtempSync(path.join(tmpdir(), "circadian-stack-lines-"));
+      const previousHome = process.env.CIRCADIAN_HOME;
+      process.env.CIRCADIAN_HOME = home;
+      const mindDir = path.join(home, "mind"), beliefsDir = path.join(mindDir, "beliefs");
+      const ledgerPath = path.join(mindDir, "beliefs.jsonl"), ioLogPath = path.join(home, "logs", "stacker-io.jsonl");
+      const evidence = 'Carefully preserve uncertainty 🪁 and "context".';
+      const completion = `kind: doctrine\nclaim: "Preserve uncertainty."\nwhy: "Qualification matters."\n${enabled ? 'quote-lines: 4-4' : `quote: ${JSON.stringify(evidence)}`}\n`;
+      try {
+        fs.mkdirSync(path.join(mindDir, "episodes"), { recursive: true });
+        fs.mkdirSync(beliefsDir);
+        fs.writeFileSync(ledgerPath, "");
+        fs.writeFileSync(path.join(mindDir, "episodes", "sample.md"), `---\ndate: 2026-10-14\n---\n${evidence}\n`);
+        fs.writeFileSync(path.join(home, "extensions.json"), JSON.stringify({ checks: enabled }));
+        for (const args of [["init", "-q"], ["config", "user.name", "Test"], ["config", "user.email", "test@localhost"], ["add", "."], ["commit", "-qm", "seed"]])
+          expect(spawnSync("git", ["-C", mindDir, ...args]).status).toBe(0);
+        const result = await stackEpisode({ mindDir, beliefsDir, ledgerPath, ioLogPath, filename: "sample.md", correlationId: "source-lines-test", laneViews: [mindDir],
+          extract: async prompt => { expect(prompt.includes('quote-lines: N-M')).toBe(enabled); return completion; },
+          compare: async () => { throw new Error("Unexpected inference comparison"); } });
+        expect(result.counts?.new).toBe(1);
+        expect(result.counts?.rejected).toBe(0);
+        expect(readAtoms(beliefsDir)[0]!.quotes[0]!.text).toBe(evidence);
+        const entry = JSON.parse(fs.readFileSync(ioLogPath, "utf8").trim());
+        expect(entry.completion).toBe(completion);
+      } finally {
+        if (previousHome === undefined) delete process.env.CIRCADIAN_HOME; else process.env.CIRCADIAN_HOME = previousHome;
+        fs.rmSync(home, { recursive: true, force: true });
+      }
+    }
+  });
+});
+
+
+test("checks rejects an oversized serialized birth before atom, ledger or publication intent writes", async () => {
+  const home = fs.mkdtempSync(path.join(tmpdir(), "circadian-stack-atom-budget-"));
+  const previousHome = process.env.CIRCADIAN_HOME;
+  process.env.CIRCADIAN_HOME = home;
+  const mindDir = path.join(home, "mind"), beliefsDir = path.join(mindDir, "beliefs");
+  const ledgerPath = path.join(mindDir, "beliefs.jsonl"), ioLogPath = path.join(home, "logs", "stacker-io.jsonl");
+  try {
+    fs.mkdirSync(path.join(mindDir, "episodes"), { recursive: true });
+    fs.mkdirSync(beliefsDir);
+    fs.writeFileSync(ledgerPath, "");
+    fs.writeFileSync(path.join(mindDir, "episodes", "sample.md"), '---\ndate: 2026-10-14\n---\nKeep qualifications.\n');
+    fs.writeFileSync(path.join(home, "extensions.json"), JSON.stringify({ checks: true }));
+    for (const args of [["init", "-q"], ["config", "user.name", "Test"], ["config", "user.email", "test@localhost"], ["add", "."], ["commit", "-qm", "seed"]])
+      expect(spawnSync("git", ["-C", mindDir, ...args]).status).toBe(0);
+    const result = await stackEpisode({ mindDir, beliefsDir, ledgerPath, ioLogPath, filename: "sample.md", correlationId: "atom-budget-test", laneViews: [mindDir],
+      extract: async () => `kind: doctrine\nclaim: "Keep qualifications."\nwhy: ${JSON.stringify("x".repeat(65536))}\nquote-lines: 4-4\n`,
+      compare: async () => { throw new Error("Unexpected inference comparison"); } });
+    expect(result.counts?.rejected).toBe(1);
+    expect(result.counts?.new).toBe(0);
+    expect(readAtoms(beliefsDir)).toEqual([]);
+    expect(fs.readFileSync(ledgerPath, "utf8")).toBe("");
+    expect(fs.existsSync(path.join(mindDir, "intents"))).toBe(false);
+    expect(fs.existsSync(path.join(mindDir, "receipts"))).toBe(false);
+    expect(spawnSync("git", ["-C", mindDir, "rev-list", "--count", "HEAD"], { encoding: "utf8" }).stdout.trim()).toBe("1");
+    const notice = readCircadianEvents(home).find(e => e.phase === "candidate-size");
+    expect(notice?.outcome).toBe("degraded");
+    expect(notice?.context?.limit).toBe(65536);
+    expect(Object.keys(notice?.context ?? {}).sort()).toEqual(["bytes", "limit"]);
+  } finally {
+    if (previousHome === undefined) delete process.env.CIRCADIAN_HOME; else process.env.CIRCADIAN_HOME = previousHome;
+    fs.rmSync(home, { recursive: true, force: true });
+  }
 });

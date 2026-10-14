@@ -2,7 +2,7 @@ import { test, expect } from "bun:test";
 import * as fs from "node:fs";
 import * as os from "node:os";
 import * as path from "node:path";
-import { readExtensions, requireViews, setViewsEnabled } from "./extensions.ts";
+import { readExtensions, requireViews, setViewsEnabled, requireChecks, setChecksEnabled } from "./extensions.ts";
 
 function fixture(run: (home: string, file: string) => void): void {
   const home = fs.mkdtempSync(path.join(os.tmpdir(), "circadian-extensions-"));
@@ -11,7 +11,7 @@ function fixture(run: (home: string, file: string) => void): void {
 }
 
 test("optional views start off, toggle persistently, and preserve other config", () => fixture((home, file) => {
-  expect(readExtensions(home)).toEqual({ views: false });
+  expect(readExtensions(home)).toEqual({ views: false, checks: false });
   expect(() => requireViews(home)).toThrow("circadian extensions enable views");
   expect(fs.existsSync(file)).toBe(false);
   fs.writeFileSync(file, JSON.stringify({ unrelated: { keep: "yes" } }));
@@ -19,9 +19,22 @@ test("optional views start off, toggle persistently, and preserve other config",
   expect(() => requireViews(home)).not.toThrow();
   expect(fs.statSync(file).mode & 0o777).toBe(0o600);
   expect(setViewsEnabled(home, false)).toEqual({ views: false });
-  expect(readExtensions(home)).toEqual({ views: false });
+  expect(readExtensions(home)).toEqual({ views: false, checks: false });
   expect(JSON.parse(fs.readFileSync(file, "utf8"))).toEqual({ unrelated: { keep: "yes" }, views: false });
   expect(fs.readdirSync(home)).toEqual(["extensions.json"]);
+}));
+
+test("checks are independently opt-in and preserve the views setting", () => fixture((home, file) => {
+  expect(() => requireChecks(home)).toThrow("extensions enable checks");
+  setViewsEnabled(home, true);
+  expect(setChecksEnabled(home, true)).toEqual({ checks: true });
+  expect(readExtensions(home)).toEqual({ views: true, checks: true });
+  expect(() => requireChecks(home)).not.toThrow();
+  setChecksEnabled(home, false);
+  expect(readExtensions(home)).toEqual({ views: true, checks: false });
+  fs.writeFileSync(file, '{"views":true,"checks":"yes"}');
+  expect(readExtensions(home).checks).toBe(false);
+  expect(() => setChecksEnabled(home, true)).toThrow();
 }));
 
 test("invalid config disables only the optional capability and is never overwritten", () => fixture((home, file) => {

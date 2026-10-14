@@ -19,7 +19,7 @@ export function viewsStatus(home: string) {
     if (start) lines.shift(); // never parse a partial first event
     for (const line of lines.reverse()) {
       let event; try { event = JSON.parse(line); } catch { continue; }
-      const match = typeof event?.phase === "string" && /^(cli|mcp|pi)-(?:memory_)?(view|expand)$/.exec(event.phase);
+      const match = typeof event?.phase === "string" && /^(cli|mcp|pi)-(?:memory_)?(view|expand|check)$/.exec(event.phase);
       if (!match || typeof event.ts !== "string" || typeof event.outcome !== "string") continue;
       lastRequest = { at: event.ts, operation: match[2], surface: match[1], outcome: event.outcome };
       break;

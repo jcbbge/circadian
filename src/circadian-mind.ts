@@ -144,7 +144,7 @@ export default function circadianMind(pi: ExtensionAPI) {
         try {
           const value = await callTool(CIRCADIAN_HOME, name, params);
           const view = optional ? value as { kind: string; coverage?: { complete: boolean }; complete?: boolean; entries?: { status: string; sources?: { status: string }[] }[] } : undefined;
-          if (view && !["view", "expansion"].includes(view.kind)) throw new Error(JSON.stringify(value));
+          if (view && !["view", "expansion", "check"].includes(view.kind)) throw new Error(JSON.stringify(value));
           const partial = view?.coverage?.complete === false || view?.complete === false || view?.entries?.some(entry => entry.status !== "available" || entry.sources?.some(source => source.status !== "available"));
           const event = { process: "ops" as const, phase: `pi-${name}`, summary: partial ? `${name} returned partial coverage` : `${name} completed`, context: piContext({ results: Array.isArray(value) ? value.length : 1, ...(partial ? { complete: false } : {}) }) };
           ok(event);

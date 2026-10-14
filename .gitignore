@@ -22,6 +22,8 @@ logs/wake-parts/
 logs/opencode-transcripts/
 # Operator memory-change proposals are private runtime data, not source.
 logs/change-requests/
+# Explicit source-selection probes retain private source/request/response evidence.
+logs/checks-probes/
 # backups/archives of mind state may contain private memory — never publish
 logs/*.bak
 logs/*scoreboard*
