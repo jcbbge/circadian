@@ -4,6 +4,7 @@ import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { acquireNativeSessionFile } from "./circadian-mind.ts";
 import { WAKE_NOT_DELIVERED } from "./wake-notice.ts";
+import { buildIndex, saveIndex } from "./relindex.ts";
 
 // Exercise the installed harness, not a stand-in for its persistence behavior.
 const pi = Bun.which("pi");
@@ -92,13 +93,37 @@ function circadianHome(opts: { withSrc: boolean }): { home: string; project: str
 
 /** Start pi with only this extension, collect every notify it sends while
  * the session starts, then end the session. */
-async function piNotifies(home: string, cwd: string): Promise<{ message: string; notifyType?: string }[]> {
+async function piNotifies(home: string, cwd: string, probeTools = false): Promise<{ message: string; notifyType?: string }[]> {
   const env: Record<string, string> = { ...(process.env as Record<string, string>), CIRCADIAN_HOME: home,
     PI_CODING_AGENT_DIR: join(home, "pi-agent"), CIRCADIAN_INVOCATION_LEDGER: "off", CIRCADIAN_STATUSLINE_CACHE: "off" };
   for (const k of ["CIRCADIAN_ROLE", "CIRCADIAN_SCOPE", "CIRCADIAN_LANE", "CIRCADIAN_INTERNAL", "CIRCADIAN_SESSION"]) delete env[k];
-  const child = Bun.spawn([pi!, "--mode", "rpc", "--no-session", "--offline", "--no-extensions", "-e", join(import.meta.dir, "circadian-mind.ts"),
-    "--no-skills", "--no-context-files", "--no-prompt-templates", "--no-themes"], { cwd, env, stdin: "pipe", stdout: "pipe", stderr: "ignore" });
+  let extension = join(import.meta.dir, "circadian-mind.ts");
+  if (probeTools) {
+    extension = join(home, "probe.ts");
+    // Wrap the real API only to retain the registered tool definitions. Pi
+    // still loads the extension, runs its events and renders every UI request.
+    writeFileSync(extension, `
+      import circadianMind from ${JSON.stringify(join(import.meta.dir, "circadian-mind.ts"))};
+      export default function(pi) {
+        const tools = new Map();
+        circadianMind({ ...pi, registerTool(tool) { tools.set(tool.name, tool); pi.registerTool(tool); } });
+        pi.registerCommand("circadian-memory-probe", { handler: async (_args, ctx) => {
+          await tools.get("memory_search").execute("probe-search", { query: "fixture", k: 1 });
+          let rejected = false;
+          try { await tools.get("memory_view").execute("probe-view", { scope: "global", chars: 0 }); }
+          catch { rejected = true; }
+          if (!rejected) throw new Error("invalid view budget was not rejected");
+          ctx.ui.notify("circadian-memory-probe-done", "info");
+        } });
+      }
+    `);
+  }
+  const child = Bun.spawn([pi!, "--mode", "rpc", "--no-session", "--offline", "--no-extensions", "-e", extension,
+    "--no-skills", "--no-context-files", "--no-prompt-templates", "--no-themes"], { cwd, env, stdin: "pipe", stdout: "pipe", stderr: "pipe" });
+  const stderr = new Response(child.stderr).text();
   const notifies: { message: string; notifyType?: string }[] = [];
+  const statuses: string[] = [];
+  const errors: string[] = [];
   const reader = child.stdout.getReader();
   const decoder = new TextDecoder();
   let buf = "";
@@ -114,17 +139,34 @@ async function piNotifies(home: string, cwd: string): Promise<{ message: string;
         try {
           const msg = JSON.parse(line);
           if (msg.type === "extension_ui_request" && msg.method === "notify") notifies.push(msg);
+          if (msg.type === "extension_ui_request" && msg.method === "setStatus") statuses.push(JSON.stringify(msg));
+          if ((msg.type === "response" && msg.success === false) || msg.type === "extension_error") errors.push(JSON.stringify(msg));
         } catch { /* not a JSON record */ }
       }
     }
   })();
   const deadline = Date.now() + 20_000;
   while (notifies.length === 0 && Date.now() < deadline) await Bun.sleep(50);
+  if (probeTools) {
+    child.stdin.write(JSON.stringify({ type: "prompt", message: "/circadian-memory-probe" }) + "\n");
+    while (!notifies.some(n => n.message === "circadian-memory-probe-done") && errors.length === 0 && Date.now() < deadline) await Bun.sleep(50);
+  }
   await Bun.sleep(1500); // room for a second notify, which must not come
   child.stdin.end();
   await Promise.race([collect, Bun.sleep(5000)]);
   child.kill();
   await child.exited;
+  // In-process diagnostics must use Pi's UI, never paint over its editor.
+  expect(await stderr).not.toMatch(/[✓•!✗] circadian /);
+  const events = readFileSync(join(home, "logs", "circadian.events.jsonl"), "utf8").trim().split("\n").map(line => JSON.parse(line));
+  expect(events.some(event => event.context?.harness === "pi")).toBe(true);
+  if (probeTools) {
+    expect(errors).toEqual([]);
+    expect(statuses.join("\n")).toContain("memory_search completed");
+    expect(statuses.join("\n")).toContain("memory_view failed");
+    expect(events.some(event => event.phase === "pi-memory_search" && event.outcome === "ok")).toBe(true);
+    expect(events.some(event => event.phase === "pi-memory_view" && event.outcome === "degraded")).toBe(true);
+  }
   return notifies;
 }
 
@@ -140,4 +182,15 @@ piTest("a wake that gave no output notifies once, loudly, as an error", async ()
   const { home, project } = circadianHome({ withSrc: false }); // no src/wake.ts to run
   const notifies = await piNotifies(home, project);
   expect(notifies).toEqual([expect.objectContaining({ message: WAKE_NOT_DELIVERED, notifyType: "error" })]);
+}, 40000);
+
+piTest("native memory success and failure use Pi status UI and retain their ledger, never raw stderr", async () => {
+  const { home, project } = circadianHome({ withSrc: true });
+  writeFileSync(join(home, "extensions.json"), JSON.stringify({ views: true }));
+  const mind = join(home, "mind");
+  mkdirSync(join(mind, "episodes"), { recursive: true });
+  writeFileSync(join(mind, "episodes", "2026-01-01-fixture.md"), "# Fixture\nA fixture memory for the terminal-output regression.\n");
+  saveIndex(mind, (await buildIndex(mind)).index, null);
+  const notifies = await piNotifies(home, project, true);
+  expect(notifies.some(notice => notice.message === "circadian-memory-probe-done")).toBe(true);
 }, 40000);

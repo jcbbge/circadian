@@ -51,6 +51,11 @@ into the event rather than letting it pass clean. Fix the call site.
 Every `emit()` writes to all three at once — you do nothing extra:
 
 1. **stderr** — one formatted line, instantly visible in any Herdr pane or log.
+   Inside Pi, the extension routes that line through `ctx.ui.setStatus` instead:
+   Pi owns the terminal, so direct stderr writes would paint over its input area.
+   Headless extension calls retain the ledger without writing terminal diagnostics.
+   CLI processes keep their ordinary stderr output. Event-log write failures use
+   the same selected human surface; they are not silently discarded.
 2. **`logs/circadian.events.jsonl`** — append-only machine ledger (the truth).
 3. **the tower bus** (`~/.tower/board.jsonl`) — only for `degraded`/`failed`, so
    a discontinuity event reaches the human in their next session unprompted.

@@ -10,7 +10,7 @@
  *   to act without spelunking.
  *
  * Every event surfaces to TWO places at once:
- *   1. stderr  — a single formatted line, visible immediately in any pane/log.
+ *   1. stderr (or the owning harness UI) — a formatted human-readable line.
  *   2. logs/circadian.events.jsonl — append-only, machine-readable, the ledger.
  *
  * The anima frame: this system exists so a pattern survives instantiation-death.
@@ -56,6 +56,9 @@ export interface CircadianEvent {
 
 const ICON: Record<Outcome, string> = { ok: "✓", idle: "•", degraded: "!", failed: "✗" };
 
+type EventOutput = (message: string) => void;
+const stderr: EventOutput = (message) => { process.stderr.write(message); };
+
 function line(e: CircadianEvent): string {
   const ctx = e.context && Object.keys(e.context).length ? " " + JSON.stringify(e.context) : "";
   const cause = e.cause ? ` cause=${JSON.stringify(e.cause)}` : "";
@@ -69,7 +72,7 @@ function line(e: CircadianEvent): string {
  * Validates the doctrine's hard rule: degraded/failed MUST carry cause + next_action.
  * A violation is itself surfaced (loudly) rather than swallowed.
  */
-export function emit(e: Omit<CircadianEvent, "ts"> & { ts?: string }): CircadianEvent {
+export function emit(e: Omit<CircadianEvent, "ts"> & { ts?: string }, output: EventOutput = stderr): CircadianEvent {
   const ev: CircadianEvent = { ts: new Date().toISOString(), ...e };
 
   if ((ev.outcome === "failed" || ev.outcome === "degraded") && (!ev.cause || !ev.next_action)) {
@@ -80,13 +83,13 @@ export function emit(e: Omit<CircadianEvent, "ts"> & { ts?: string }): Circadian
       ev.next_action || "(DOCTRINE VIOLATION: emitted without a next_action — fix the call site)";
   }
 
-  process.stderr.write(line(ev) + "\n");
+  output(line(ev) + "\n");
   try {
     const log = eventLog();
     mkdirSync(dirname(log), { recursive: true });
     appendFileSync(log, JSON.stringify(ev) + "\n");
   } catch (err) {
-    process.stderr.write(
+    output(
       `✗ circadian obs/event-log FAILED: could not append to ${eventLog()}: ${(err as Error).message}\n`
     );
   }
@@ -108,9 +111,9 @@ export function fail(
 }
 
 /** ok/idle/degraded convenience wrappers — same surfacing, clearer call sites. */
-export const ok = (e: Omit<CircadianEvent, "ts" | "outcome">) => emit({ ...e, outcome: "ok" });
-export const idle = (e: Omit<CircadianEvent, "ts" | "outcome">) => emit({ ...e, outcome: "idle" });
-export const degraded = (e: Omit<CircadianEvent, "ts" | "outcome">) => emit({ ...e, outcome: "degraded" });
+export const ok = (e: Omit<CircadianEvent, "ts" | "outcome">, output?: EventOutput) => emit({ ...e, outcome: "ok" }, output);
+export const idle = (e: Omit<CircadianEvent, "ts" | "outcome">, output?: EventOutput) => emit({ ...e, outcome: "idle" }, output);
+export const degraded = (e: Omit<CircadianEvent, "ts" | "outcome">, output?: EventOutput) => emit({ ...e, outcome: "degraded" }, output);
 
 /** A short correlation id for tying one run's events together. */
 export function correlation(prefix = "run"): string {

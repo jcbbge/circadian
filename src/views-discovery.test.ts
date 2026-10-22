@@ -127,10 +127,10 @@ test("native extension registers views on load, delivers real wake guidance and 
   const script = `
     import extension from ${JSON.stringify(join(import.meta.dir, "circadian-mind.ts"))};
     import { setViewsEnabled } from ${JSON.stringify(join(import.meta.dir, "extensions.ts"))};
-    const tools = new Map(), handlers = new Map(), notices = [];
+    const tools = new Map(), handlers = new Map(), notices = [], statuses = [];
     extension({ registerTool: t => tools.set(t.name, t), on: (name, handler) => handlers.set(name, handler) });
     const registered = [...tools.keys()];
-    const context = { hasUI: true, ui: { notify: message => notices.push(message) }, sessionManager: { getSessionId: () => "views-discovery", getSessionFile: () => undefined } };
+    const context = { hasUI: true, ui: { notify: message => notices.push(message), setStatus: (key, text) => statuses.push({ key, text }) }, sessionManager: { getSessionId: () => "views-discovery", getSessionFile: () => undefined } };
     await handlers.get("session_start")({ reason: "new" }, context);
     const first = await handlers.get("before_agent_start")({}, context);
     const second = await handlers.get("before_agent_start")({}, context);
@@ -142,7 +142,7 @@ test("native extension registers views on load, delivers real wake guidance and 
     try { await tools.get("memory_view").execute("disabled", { scope: "travel" }); } catch (e) { disabledError = e.message; }
     const afterReload = [];
     extension({ registerTool: t => afterReload.push(t.name), on: () => {} });
-    console.log(JSON.stringify({ registered, payload: first?.message.content, second: second ?? null, notices, included: viewed.coverage.included, expansion: expanded.entries[0].status, budgetError, disabledError, afterReload }));
+    console.log(JSON.stringify({ registered, payload: first?.message.content, second: second ?? null, notices, statuses, included: viewed.coverage.included, expansion: expanded.entries[0].status, budgetError, disabledError, afterReload }));
   `;
   const actual = JSON.parse(await run(home, ["-e", script], project));
   const baseline = ["memory_search", "memory_read", "memory_history", "memory_status", "memory_request_change"];
@@ -153,6 +153,8 @@ test("native extension registers views on load, delivers real wake guidance and 
   expect(actual.second).toBeNull();
   expect(actual.notices).toHaveLength(1);
   expect(actual.notices[0]).toContain("views ON");
+  expect(actual.statuses.some((status: { key: string; text: string }) => status.key === "circadian-ops" && status.text.includes("pi-memory_view OK"))).toBe(true);
+  expect(actual.statuses.some((status: { key: string; text: string }) => status.key === "circadian-ops" && status.text.includes("memory_view failed"))).toBe(true);
   expect(actual.included).toBe(1);
   expect(actual.expansion).toBe("available");
   expect(JSON.parse(actual.budgetError).kind).toBe("invalid-budget");

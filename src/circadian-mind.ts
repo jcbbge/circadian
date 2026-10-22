@@ -29,7 +29,7 @@ import { spawn } from "node:child_process";
 import { existsSync, statSync, readFileSync, mkdirSync, writeFileSync } from "node:fs";
 import { homedir } from "node:os";
 import { join, resolve } from "node:path";
-import { ok, degraded, correlation } from "./obs.ts";
+import { ok as recordOk, degraded as recordDegraded, correlation } from "./obs.ts";
 import { callTool, enabledViewTools } from "./serve.ts";
 import { resolveScope, sessionLocation } from "./scopes.ts";
 import { payloadScope, wakeNotice } from "./wake-notice.ts";
@@ -131,6 +131,13 @@ async function notifyWake(
 }
 
 export default function circadianMind(pi: ExtensionAPI) {
+  // Pi owns the terminal. Keep the event ledger, but send human diagnostics
+  // through its renderer instead of writing over the editor on stderr.
+  let showStatus: ((message: string) => void) | undefined;
+  const output = (message: string) => showStatus?.(message.replace(/[\r\n]+/g, " ").trim());
+  const ok = (event: Parameters<typeof recordOk>[0]) => recordOk(event, output);
+  const degraded = (event: Parameters<typeof recordDegraded>[0]) => recordDegraded(event, output);
+
   // Module-level state for this extension instance.
   // On /reload, the extension is re-instantiated, so these reset.
   // Pi has no built-in MCP client: expose the same five server operations as
@@ -180,6 +187,8 @@ export default function circadianMind(pi: ExtensionAPI) {
   // (composes with strudel's handler which manages the tool surface).
   // -----------------------------------------------------------------------
   pi.on("session_start", async (event, ctx) => {
+    showStatus = ctx.hasUI ? (message) => ctx.ui.setStatus("circadian-ops", message) : undefined;
+    // Bind the current UI even on reload; only memory injection is skipped.
     // Skip reload — the session is already in progress, no need to re-inject.
     if (event.reason === "reload") return;
 
