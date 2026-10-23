@@ -1,5 +1,5 @@
 #!/bin/sh
-[ "${PI_DURABLE_WORKER:-}" = 1 ] && exit 0
+[ "${MW_WORKER:-}" = 1 ] && exit 0
 # circadian-graze-gate — the graze hook's cheap front door. NO RUNTIME BOOT
 # unless a checkpoint is actually due.
 #
