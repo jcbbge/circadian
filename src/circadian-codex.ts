@@ -196,7 +196,8 @@ function resolveCodexTranscript(event: HookEvent): string | null {
 async function runWake(event: HookEvent): Promise<void> {
   const payload = JSON.stringify({ ...event, hook_event_name: "SessionStart", session_id: sessionIdOf(event), cwd: stringField(event, ["cwd"]) || process.cwd() });
   const result = await runScript("wake.ts", [], payload);
-  if (result.stdout) process.stdout.write(result.stdout);
+  if (!result.stdout) return;
+  process.stdout.write(JSON.stringify({ hookSpecificOutput: { hookEventName: "SessionStart", additionalContext: result.stdout } }) + "\n");
 }
 
 async function runGraze(event: HookEvent): Promise<void> {
