@@ -4,7 +4,7 @@ import * as path from "node:path";
 import * as os from "node:os";
 import { spawnSync } from "node:child_process";
 
-test("fresh Linux install enables a visible persistent twice-daily user timer; reinstall preserves units", () => {
+test("fresh Linux install enables persistent nightly user timers; reinstall preserves units", () => {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), "circ-linux-install-"));
   try {
     const home = path.join(root, "home"), config = path.join(root, "config"), install = path.join(root, "install"), bin = path.join(root, "bin");
@@ -21,12 +21,18 @@ test("fresh Linux install enables a visible persistent twice-daily user timer; r
     const dir = path.join(config, "systemd/user");
     const service = fs.readFileSync(path.join(dir, "circadian-rem.service"), "utf8");
     const timer = fs.readFileSync(path.join(dir, "circadian-rem.timer"), "utf8");
-    expect(service).toContain(`ExecStart=${process.execPath} ${install}/src/rem-popmem.ts`);
+    const doctorService = fs.readFileSync(path.join(dir, "circadian-doctor.service"), "utf8");
+    const doctorTimer = fs.readFileSync(path.join(dir, "circadian-doctor.timer"), "utf8");
+    expect(service).toContain(`ExecStart=${process.execPath} ${install}/src/harvest.ts`);
+    expect(service).toContain(`ExecStart=${process.execPath} ${install}/src/rem-popmem.ts --drain`);
+    expect(service).toContain(`ExecStart=${process.execPath} ${install}/src/doctor.ts --alert`);
     expect(service).toContain(`Environment=CIRCADIAN_HOME=${install}`);
     expect(service).toContain(`Environment=CIRCADIAN_BUN_BIN=${process.execPath}`);
-    expect(timer).toContain("OnCalendar=*-*-* 09:00:00");
-    expect(timer).toContain("OnCalendar=*-*-* 21:00:00");
+    expect(timer).toContain("OnCalendar=*-*-* 4:30:00");
     expect(timer).toContain("Persistent=true");
+    expect(doctorService).toContain(`ExecStart=${process.execPath} ${install}/src/doctor.ts --alert`);
+    expect(doctorTimer).toContain("OnCalendar=*-*-* 9:5:00");
+    expect(doctorTimer).toContain("Persistent=true");
     expect(spawnSync("systemctl", ["--user", "list-timers"], { env, encoding: "utf8" }).stdout).toContain("circadian-rem.timer");
     expect(fs.readlinkSync(path.join(home, ".local/bin/circadian"))).toBe(path.join(install, "bin/circadian"));
     expect(run().status).toBe(0);

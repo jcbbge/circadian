@@ -25,7 +25,7 @@ test("installer merges MCP registration and Pi extension without clobbering exis
     const settings = JSON.parse(fs.readFileSync(file, "utf8"));
     const registry = JSON.parse(fs.readFileSync(path.join(home, ".claude.json"), "utf8"));
     expect(registry.mcpServers.existing.command).toBe("other");
-    expect(registry.mcpServers.circadian).toEqual({ command: process.execPath, args: [path.join(install, "src/serve.ts")], env: { CIRCADIAN_HOME: install } });
+    expect(registry.mcpServers.circadian).toEqual({ command: process.execPath, args: [path.join(install, "src/serve.ts")], env: { CIRCADIAN_HOME: install, CIRCADIAN_LLM_BASE_URL: "http://127.0.0.1:10240/v1" } });
     expect(settings.hooks.Custom[0].hooks[0].command).toBe("keep");
     // WAKE is wired as WAKE_PARTS SessionStart slots: part 1, then --part 2..N.
     const wakeCommands = settings.hooks.SessionStart.flatMap((g: any) => g.hooks.map((h: any) => h.command)).filter((c: string) => c.includes("/src/wake.ts"));
