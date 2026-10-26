@@ -125,6 +125,9 @@ const ABSORB_PACE_MS = Math.max(
   0,
   Number.parseInt(process.env.CIRCADIAN_ABSORB_PACE_MS || "1500", 10) || 1500,
 );
+function envFlag(name: string): boolean {
+  return /^(1|true|yes|on)$/i.test(process.env[name] ?? "");
+}
 const MIND_DIR = path.join(CIRCADIAN_HOME, "mind");
 const BELIEFS_DIR = path.join(MIND_DIR, "beliefs");
 const LEDGER_PATH = path.join(MIND_DIR, "beliefs.jsonl");
@@ -1006,6 +1009,7 @@ async function main() {
   const dryRun = args.includes("--dry-run");
   const ifDue = args.includes("--if-due");
   const distillOnly = args.includes("--distill-only");
+  const drainMode = args.includes("--drain") || envFlag("CIRCADIAN_REM_DRAIN");
   const corr = correlation("rem");
 
   // Standalone DISTILL verification path (brief §4/§5): a minimal wave that
@@ -1157,15 +1161,36 @@ async function main() {
     return;
   }
 
+  const pendingSleepPath = path.join(CIRCADIAN_HOME, "logs", "pending-sleep.jsonl");
+  const pendingSleepQueued = readOrEmpty(pendingSleepPath).trim().length > 0;
+  let digestedHashes = loadDigestedHashes(DIGESTED_PATH);
+  let newEpisodes = findNewEpisodes(EPISODES_DIR, digestedHashes);
+  if (!pendingSleepQueued && newEpisodes.length === 0) {
+    const { newRemCount } = computePotentiateEvents(
+      readLedger(LEDGER_PATH),
+      readScoreboardRemEvents(SCOREBOARD_PATH),
+      readManifestFile(MANIFEST_PATH) ?? [],
+      new Date().toISOString(),
+    );
+    if (newRemCount === 0) {
+      idle({
+        process: "rem", phase: "skip-empty", correlation_id: corr,
+        summary: "nothing to consolidate -- no pending sleeps, new episodes, or unprocessed rem events",
+        context: { dry_run: dryRun },
+      });
+      return;
+    }
+  }
+
   // Do not consume an episode or a due slot when no model can answer. Both
   // pending transcripts and unabsorbed episodes remain in place for the next
   // REM; a healthy endpoint can be configured by changing only the env.
-  if (!dryRun && readOrEmpty(path.join(CIRCADIAN_HOME, "logs", "pending-sleep.jsonl")).trim()) {
+  if (!dryRun && pendingSleepQueued) {
     try { await probeModel(); }
     catch (err) {
       degraded({ process: "rem", phase: "model-absent", correlation_id: corr,
         summary: "REM deferred: undigested work remains queued until a model answers",
-        context: { pending_queue: path.join(CIRCADIAN_HOME, "logs", "pending-sleep.jsonl") },
+        context: { pending_queue: pendingSleepPath },
         cause: (err as Error).message,
         next_action: "set CIRCADIAN_LLM_BASE_URL to an answering OpenAI-compatible endpoint and rerun REM; pending sleeps drain before episode absorption",
       });
@@ -1191,7 +1216,7 @@ async function main() {
   // A drain failure must never block consolidation: the queue is a recovery
   // path, and absorb has its own work to do regardless.
   // -------------------------------------------------------------------
-  if (!dryRun) {
+  if (!dryRun && pendingSleepQueued) {
     try {
       const drain = spawnSync(BUN_BIN, [path.join(CIRCADIAN_HOME, "src/sleep.ts"), "--drain"], {
         encoding: "utf8",
@@ -1217,8 +1242,9 @@ async function main() {
   // -------------------------------------------------------------------
   // 1. ABSORB
   // -------------------------------------------------------------------
-  const digestedHashes = loadDigestedHashes(DIGESTED_PATH);
-  const newEpisodes = findNewEpisodes(EPISODES_DIR, digestedHashes);
+  digestedHashes = loadDigestedHashes(DIGESTED_PATH);
+  newEpisodes = findNewEpisodes(EPISODES_DIR, digestedHashes);
+  const absorbMaxEpisodes = drainMode ? Math.max(ABSORB_MAX_EPISODES, newEpisodes.length) : ABSORB_MAX_EPISODES;
 
   const aggCounts: StackCounts = {
     new: 0, superseded: 0, stacked: 0, bumped: 0, rejected: 0, droppedOverCap: 0, compareCalls: 0, compareInvalid: 0,
@@ -1235,11 +1261,11 @@ async function main() {
   let absorbed = 0;
   for (const ep of newEpisodes) {
     if (dryRun) continue;
-    if (absorbed >= ABSORB_MAX_EPISODES) {
+    if (absorbed >= absorbMaxEpisodes) {
       idle({
         process: "rem", phase: "absorb-batch-cap", correlation_id: corr,
         summary: `absorb batch cap reached: ${absorbed} episode(s) this pass, ${newEpisodes.length - absorbed} deferred to the next slot`,
-        context: { cap: ABSORB_MAX_EPISODES, absorbed, deferred: newEpisodes.length - absorbed },
+        context: { cap: absorbMaxEpisodes, drain_mode: drainMode, absorbed, deferred: newEpisodes.length - absorbed },
       });
       break;
     }
