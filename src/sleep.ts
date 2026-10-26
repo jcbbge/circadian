@@ -109,7 +109,7 @@ function withQueueWriteLock<T>(action: () => T): T {
   throw new Error("pending queue write lock busy");
 }
 
-const DRAFT_ATTEMPTS = 2; // LLM tries per drafting round (live worker or one drain pass)
+export const DRAFT_ATTEMPTS = 2; // LLM tries per drafting round (live worker or one drain pass)
 // The stuck policy lives here because doctor imports sleep.ts and sleep has no doctor dependency.
 // BULK-DRAIN THROTTLE (added 2026-08-23). The drain loop had no batch limit
 // and no pacing: it ran every queued entry back to back, each one a full LLM
@@ -665,17 +665,34 @@ function extractTranscriptText(transcriptPath: string, capChars: number): string
     } catch {
       continue; // tolerate a partial trailing line from a live transcript
     }
-    const role = entry?.message?.role ?? entry?.role;
+    let role = entry?.message?.role ?? entry?.role ?? entry?.payload?.role;
+    let content = entry?.message?.content ?? entry?.content ?? entry?.payload?.content;
+
+    // Codex event stores retain completed user/agent items outside the message shape.
+    const item = entry?.payload?.item;
+    if (!role && item?.type === "UserMessage") role = "user";
+    if (!role && item?.type === "AgentMessage") role = "assistant";
+    if (!content && item?.content) content = item.content;
+
+    // Slate traces do not retain all chat messages as message-role objects, but
+    // their text/tool events are still the only session letter left on disk.
+    if (!role && (entry?.type === "text" || entry?.type === "tool_call" || entry?.type === "tool_result")) role = "assistant";
+    if (!content && typeof entry?.summary === "string") content = entry.summary;
+
     if (role !== "user" && role !== "assistant") continue;
 
-    const content = entry?.message?.content ?? entry?.content;
     const blocks = Array.isArray(content) ? content : [{ type: "text", text: String(content ?? "") }];
     // normalizeTurnText strips harness envelopes (cursor's
     // <timestamp>/<user_query> wrapper) — a no-op for Claude Code and pi.
     const text = normalizeTurnText(
       blocks
-        .filter((b: any) => b?.type === "text" && typeof b.text === "string")
-        .map((b: any) => b.text)
+        .map((b: any) => {
+          if (typeof b === "string") return b;
+          if (typeof b?.text === "string") return b.text;
+          if (typeof b?.content === "string") return b.content;
+          return "";
+        })
+        .filter(Boolean)
         .join("\n")
         .trim()
     );
@@ -980,13 +997,30 @@ export function episodeMetadata(lane: string | undefined, provenance: Record<str
   ].join("\n");
 }
 
-async function draftSessionEpisode(opts: {
+export function hasEpisodeForSession(sessionId: string): boolean {
+  if (!sessionId || !existsSync(EPISODES_DIR)) return false;
+  const sessionKey = createHash("sha256").update(sessionId).digest("hex").slice(0, 16);
+  const escaped = sessionId.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  const frontmatterSession = new RegExp(`^session:\\s*${escaped}\\s*$`, "m");
+  for (const file of readdirSync(EPISODES_DIR)) {
+    if (!file.endsWith(".md")) continue;
+    if (file.endsWith(`-${sessionKey}.md`)) return true;
+    try {
+      if (frontmatterSession.test(readFileSync(join(EPISODES_DIR, file), "utf8"))) return true;
+    } catch {
+      /* tolerate a raced/missing episode file */
+    }
+  }
+  return false;
+}
+
+export async function draftSessionEpisode(opts: {
   transcriptPath: string | undefined;
   sessionId: string;
   corr: string;
   queueOnFailure: boolean;
   queueAttempts: number; // cumulative queue attempts INCLUDING this round (event context only)
-  mode: "worker" | "drain";
+  mode: "worker" | "drain" | "harvest";
   scope?: string;
   lane?: string;
   provenance?: Record<string, string>;
@@ -994,6 +1028,10 @@ async function draftSessionEpisode(opts: {
   const { transcriptPath, sessionId, corr, mode } = opts;
   const scope = opts.scope || resolveScope(MIND, CIRCADIAN_HOME);
   if (!DRY_RUN && existsSync(join(MIND, ".git"))) recoverPublications(MIND);
+  if (!DRY_RUN && hasEpisodeForSession(sessionId)) {
+    slog(mode, "skip: episode already exists for session", { sessionId });
+    return { status: "written" };
+  }
 
   // PROVENANCE GUARD (2026-07-24 contamination post-mortem): bench/eval
   // harness sessions (pi-spine bench-greeting, bench-compaction, anything
@@ -1126,13 +1164,17 @@ async function draftSessionEpisode(opts: {
         corr
       );
     }
-    slog(mode, `no valid draft after ${DRAFT_ATTEMPTS} attempts — queued, not lost`);
+    slog(mode, opts.queueOnFailure ? `no valid draft after ${DRAFT_ATTEMPTS} attempts — queued, not lost` : `no valid draft after ${DRAFT_ATTEMPTS} attempts`);
     degraded({
       process: "sleep", phase: "llm-draft", correlation_id: corr, session_id: sessionId,
-      summary: `episode draft failed ${DRAFT_ATTEMPTS} times; queued in logs/pending-sleep.jsonl for a later drain`,
-      context: { transcript_chars: transcriptText.length, attempts: DRAFT_ATTEMPTS, queued: true, queue_attempts: opts.queueAttempts },
+      summary: opts.queueOnFailure
+        ? `episode draft failed ${DRAFT_ATTEMPTS} times; queued in logs/pending-sleep.jsonl for a later drain`
+        : `episode draft failed ${DRAFT_ATTEMPTS} times; no episode written`,
+      context: { transcript_chars: transcriptText.length, attempts: DRAFT_ATTEMPTS, queued: opts.queueOnFailure, queue_attempts: opts.queueAttempts },
       cause: lastReason || "LLM produced no parseable EPISODE/NOW blocks on either attempt",
-      next_action: "restore or set CIRCADIAN_LLM_BASE_URL to an answering endpoint; the queue drains via `bun src/sleep.ts --drain` (REM runs it before digesting)",
+      next_action: opts.queueOnFailure
+        ? "restore or set CIRCADIAN_LLM_BASE_URL to an answering endpoint; the queue drains via `bun src/sleep.ts --drain` (REM runs it before digesting)"
+        : "restore or set CIRCADIAN_LLM_BASE_URL to an answering endpoint; re-run the caller to try this session again",
     });
     return { status: "draft-failed", lastError: lastReason };
   }
@@ -1171,7 +1213,7 @@ async function draftSessionEpisode(opts: {
   // the publishers has checked out its commit yet.
   const sessionKey = createHash("sha256").update(sessionId).digest("hex").slice(0, 16);
   const filename = `${date}-${baseSlug}-${sessionKey}.md`;
-  if (existsSync(join(EPISODES_DIR, filename))) return { status: "written" };
+  if (hasEpisodeForSession(sessionId)) return { status: "written" };
   const epPath = join(EPISODES_DIR, filename);
   const self = existsSync(join(MIND, "SELF.md")) ? readFileSync(join(MIND, "SELF.md"), "utf8") : "";
   const tokens = Math.ceil(self.length / 4);

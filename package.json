@@ -27,6 +27,7 @@
     "circadian-status": "./src/status.ts",
     "circadian-doctor": "./src/doctor.ts",
     "circadian-dig": "./src/dig.ts",
+    "circadian-harvest": "./src/harvest.ts",
     "circadian": "./src/archaeology.ts"
   },
   "scripts": {
