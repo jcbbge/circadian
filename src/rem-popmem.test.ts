@@ -19,6 +19,7 @@ import {
   loadDigestedHashes,
   recordDigested,
   findNewEpisodes,
+  effectiveAbsorbCap,
   enumerateNowItems,
   enumeratePropagationAddresses,
   parsePropagationResponse,
@@ -187,6 +188,23 @@ describe("digested ledger helpers", () => {
 
   test("findNewEpisodes on a missing directory returns empty, never throws", () => {
     expect(findNewEpisodes(path.join(tmpDir(), "nope"), new Set())).toEqual([]);
+  });
+});
+
+// ---------------------------------------------------------------------
+// absorb cap
+// ---------------------------------------------------------------------
+describe("effectiveAbsorbCap", () => {
+  test("plain mode caps at the base cap when backlog exceeds it", () => {
+    expect(effectiveAbsorbCap(false, 135, 12)).toBe(12);
+  });
+
+  test("plain mode returns the backlog when it is below the base cap", () => {
+    expect(effectiveAbsorbCap(false, 5, 12)).toBe(5);
+  });
+
+  test("drain mode returns the full backlog when it exceeds the base cap", () => {
+    expect(effectiveAbsorbCap(true, 135, 12)).toBe(135);
   });
 });
 

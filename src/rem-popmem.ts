@@ -128,6 +128,9 @@ const ABSORB_PACE_MS = Math.max(
 function envFlag(name: string): boolean {
   return /^(1|true|yes|on)$/i.test(process.env[name] ?? "");
 }
+export function effectiveAbsorbCap(drainMode: boolean, newEpisodeCount: number, baseCap = ABSORB_MAX_EPISODES): number {
+  return drainMode ? newEpisodeCount : Math.min(baseCap, newEpisodeCount);
+}
 const MIND_DIR = path.join(CIRCADIAN_HOME, "mind");
 const BELIEFS_DIR = path.join(MIND_DIR, "beliefs");
 const LEDGER_PATH = path.join(MIND_DIR, "beliefs.jsonl");
@@ -1244,7 +1247,7 @@ async function main() {
   // -------------------------------------------------------------------
   digestedHashes = loadDigestedHashes(DIGESTED_PATH);
   newEpisodes = findNewEpisodes(EPISODES_DIR, digestedHashes);
-  const absorbMaxEpisodes = drainMode ? Math.max(ABSORB_MAX_EPISODES, newEpisodes.length) : ABSORB_MAX_EPISODES;
+  const absorbMaxEpisodes = effectiveAbsorbCap(drainMode, newEpisodes.length);
 
   const aggCounts: StackCounts = {
     new: 0, superseded: 0, stacked: 0, bumped: 0, rejected: 0, droppedOverCap: 0, compareCalls: 0, compareInvalid: 0,
