@@ -20,6 +20,7 @@ logs/fleet/
 logs/wake-parts/
 # exports from the session-lifecycle bridge, fed to sleep --worker
 logs/opencode-transcripts/
+logs/codex-transcripts/
 # Operator memory-change proposals are private runtime data, not source.
 logs/change-requests/
 # Explicit source-selection probes retain private source/request/response evidence.
