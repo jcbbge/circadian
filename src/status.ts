@@ -845,5 +845,7 @@ function main() {
 // became importable (popmem WS-0 needs computeVerdictStreak reused by
 // scorecard.ts and status.test.ts) — a plain top-level `main()` would render
 // vitals and emit an obs event on import.
+// Made Well workers start clean: no wake, no capture, no sleep. Silent by design.
+if (import.meta.main && process.env.MW_WORKER === "1") process.exit(0);
 if (import.meta.main) logInvocation({ script: "status" });
 if (import.meta.main) main();

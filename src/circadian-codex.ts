@@ -226,6 +226,8 @@ export async function runCodexAdapter(raw: string, argv = process.argv.slice(2))
   if (organ === "sleep") return runSleep(event);
 }
 
+// Made Well workers start clean: no wake, no capture, no sleep. Silent by design.
+if (import.meta.main && process.env.MW_WORKER === "1") process.exit(0);
 if (import.meta.main) {
   runCodexAdapter(await readStdinText()).catch((error) => {
     process.stderr.write(`${(error as Error).message}\n`);

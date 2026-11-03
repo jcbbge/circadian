@@ -1477,6 +1477,8 @@ async function runDrain(): Promise<void> {
 // import.meta.main guard: sleep.ts became importable (redactMindEcho is
 // tested against real transcripts) — a bare import must never fall into
 // hook mode and hang on stdin.
+// Made Well workers start clean: no wake, no capture, no sleep. Silent by design.
+if (import.meta.main && process.env.MW_WORKER === "1") process.exit(0);
 if (import.meta.main) {
   logInvocation({ script: "sleep", ...(process.argv.includes("--worker") || DRY_RUN ? { cwd: CIRCADIAN_HOME } : {}) });
   if (process.argv.includes("--worker") || DRY_RUN) {

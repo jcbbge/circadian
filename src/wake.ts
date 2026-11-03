@@ -492,6 +492,8 @@ async function runHook(): Promise<void> {
 // the current session. Detached — never delays wake injection.
 // `wake.ts --part k` is hook slot k of a Claude Code wake (circ-29); plain
 // `wake.ts` is part 1, which composes and delivers the wake.
+// Made Well workers start clean: no wake, no capture, no sleep. Silent by design.
+if (process.env.MW_WORKER === "1") process.exit(0);
 const partFlag = process.argv.indexOf("--part");
 const PART = partFlag >= 0 ? Number(process.argv[partFlag + 1]) : 1;
 if (Number.isInteger(PART) && PART >= 2) {
