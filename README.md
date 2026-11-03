@@ -75,6 +75,13 @@ registration does not relabel older memories. For detail on demand, use
 `bun bin/circadian recall <slug> --depth deep` or the `memory_recall` MCP tool.
 The registry contains machine-local paths; it is not a portable memory identity.
 
+For optional dictated input at wake, see [Dictation inbox](docs/DICTATION-INBOX.md).
+Activate with `CIRCADIAN_INBOX_URL` in the existing private environment file;
+remove it to disable. Progress lives in `logs/inbox/state.json`. Delivery is
+at least once, with qualified backlog counts and visible unavailable/checkpoint
+notices. Memory remains available without Rivet. Activation and shipment have
+not occurred as part of this change.
+
 For optional whole-record views with omission counts and revision-checked
 evidence expansion, see [Coordinated memory views](docs/COORDINATED-VIEWS.md).
 Enable with `circadian extensions enable views`, inspect ON/OFF and recent use

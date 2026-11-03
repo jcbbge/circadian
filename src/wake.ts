@@ -1,6 +1,6 @@
 #!/usr/bin/env bun
 // Circadian WAKE — SessionStart hook. See mind/MIND-SPEC.md (Law 7: file
-// reads only; the mind must never take a session down with it). Every
+// reads for memory; optional supplemental inbox fetching is bounded to one second). Every
 // decision point now writes a context-bound event to the obs ledger
 // (logs/circadian.events.jsonl) so a cold reader can see exactly what
 // happened — no silent skips, no swallowed catches.
@@ -32,11 +32,11 @@ import {
   extractLastSleep,
   classifyFleetTier,
   buildPayload,
-  hookOutputs,
   HOOK_OUTPUT_LIMIT,
   WAKE_PARTS,
   type FleetTier,
 } from "./wake-payload.ts";
+import { readInbox, prepareInbox, acknowledgeInbox, INBOX_UNAVAILABLE, CHECKPOINT_UNAVAILABLE, type InboxDelivery, type InboxRead } from "./inbox.ts";
 import { SPOOL_SKEW_MS, outputForSlot, pruneSpool, spoolDir, spoolPath, waitForSpool, writeSpool } from "./wake-parts.ts";
 
 // Path resolution (single-source, distributable): CIRCADIAN_HOME overrides;
@@ -73,8 +73,36 @@ const SPOOL_MAX_AGE_MS = 24 * 60 * 60 * 1000;
 // Bounded wait for part 1, inside install.sh's 10s hook timeout.
 const PART_WAIT_MS = Number(process.env.CIRCADIAN_WAKE_PART_WAIT_MS) || 8000;
 
+/** Completion of stdout, rather than queueing a write, is the delivery boundary. */
+function writeOutput(text: string): Promise<void> {
+  return new Promise((resolve, reject) => {
+    const onError = (error: Error) => { process.stdout.off("error", onError); reject(error); };
+    process.stdout.once("error", onError);
+    process.stdout.write(text, error => {
+      if (error) { reject(error); return; }
+      process.stdout.off("error", onError);
+      resolve();
+    });
+  });
+}
+
+async function deliverOutput(out: string, delivery: InboxDelivery | undefined, part: number): Promise<boolean> {
+  try { await writeOutput(out + "\n"); } catch { return false; }
+  if (delivery?.candidates.some(candidate => candidate.parts.includes(part)) && process.env.MW_WORKER !== "1" && process.env.CIRCADIAN_INTERNAL !== "1" && process.env.CIRCADIAN_INBOX_SKIP !== "1" && process.env.CIRCADIAN_INBOX_URL) {
+    try { acknowledgeInbox(CIRCADIAN_HOME, delivery, part); }
+    catch {
+      try { await writeOutput(CHECKPOINT_UNAVAILABLE + "\n"); } catch {}
+      try {
+        degraded({ process: "wake", phase: "inbox-checkpoint", summary: "inbox checkpoint unavailable; shown notes may repeat",
+          context: { part }, cause: "receipt or cursor persistence failed", next_action: "check private inbox state permissions" });
+      } catch {}
+    }
+  }
+  return true;
+}
+
 /** `wake.ts --part k` (k >= 2): print part k of this session's wake, as
- * part 1 published it. Composes nothing and writes nothing but telemetry. */
+ * part 1 published it. Composes nothing; records delivery only after its own stdout completes. */
 async function runPart(k: number): Promise<void> {
   const started = Date.now();
   const raw = await readStdin();
@@ -96,7 +124,7 @@ async function runPart(k: number): Promise<void> {
     process.exit(0);
   }
   const out = outputForSlot(spool.outputs, k, WAKE_PARTS);
-  if (out) process.stdout.write(out + "\n");
+  if (out) await deliverOutput(out, spool.inbox, k);
   process.exit(0);
 }
 
@@ -394,13 +422,31 @@ async function runHook(): Promise<void> {
   // wake is cut into ordered parts: this process prints part 1 (the scoped
   // sections) and publishes every part to the spool for the `--part k` slots.
   // Everyone else (pi, a manual run) gets the whole payload in one piece.
-  let outputs = [finalPayload];
+  const memoryPayload = finalPayload;
+  let inbox: InboxRead;
+  try { inbox = await readInbox(CIRCADIAN_HOME); }
+  catch { inbox = { notice: INBOX_UNAVAILABLE, reason: "preparation", duration: 0 }; }
+  const inboxSpool = hookEvent ? spoolPath(CIRCADIAN_HOME, hookEvent.session_id || "") : undefined;
+  let prepared: ReturnType<typeof prepareInbox>;
+  try { prepared = prepareInbox(inbox, memoryPayload, inboxSpool); }
+  catch { prepared = prepareInbox({ notice: INBOX_UNAVAILABLE, reason: "layout", duration: 0 }, memoryPayload, inboxSpool); }
+  let delivery = prepared.delivery;
+  finalPayload = prepared.payload;
+  let outputs = prepared.outputs;
+  try {
+    if (inbox.reason !== "disabled") {
+      const event = { process: "wake" as const, phase: "inbox", correlation_id: corr,
+        summary: inbox.notice ? "inbox unavailable; memory continues" : "inbox snapshot prepared",
+        context: { reason: inbox.reason, unread: inbox.notes?.length ?? 0, selected: delivery?.candidates.filter(c => c.cursor.delivered.length > 0 || c.cursor.offset !== inbox.cursor?.offset).length ?? 0, duration_ms: inbox.duration } };
+      if (inbox.notice) degraded({ ...event, cause: inbox.reason, next_action: "check inbox configuration and Rivet availability" });
+      else ok(event);
+    }
+  } catch {}
   if (hookEvent) {
-    const spool = spoolPath(CIRCADIAN_HOME, hookEvent.session_id || "");
-    outputs = hookOutputs(finalPayload, spool);
+    const spool = inboxSpool!;
     try {
       pruneSpool(spoolDir(CIRCADIAN_HOME), SPOOL_MAX_AGE_MS);
-      writeSpool(spool, outputs, Date.now(), scope);
+      writeSpool(spool, outputs, Date.now(), scope, delivery);
     } catch (e) {
       // No spool, no parts 2..n: print the whole payload instead. Claude Code
       // then keeps all of it in its own saved file behind a preview that
@@ -412,6 +458,8 @@ async function runHook(): Promise<void> {
         cause: (e as Error).message,
         next_action: `verify ${spoolDir(CIRCADIAN_HOME)} is writable`,
       });
+      if (inbox.cursor || inbox.notice) finalPayload = INBOX_UNAVAILABLE + "\n\n" + memoryPayload;
+      delivery = undefined;
       outputs = [finalPayload];
     }
     if (outputs.length > WAKE_PARTS) {
@@ -426,7 +474,7 @@ async function runHook(): Promise<void> {
   }
 
   // Deliver the injection. Law 7: wake must always deliver, even when degraded.
-  process.stdout.write(outputForSlot(outputs, 1, WAKE_PARTS) + "\n");
+  if (!await deliverOutput(outputForSlot(outputs, 1, WAKE_PARTS), delivery, 1)) return;
 
   // Scoreboard append (MIND-SPEC schema — kept for status.ts to read).
   try {

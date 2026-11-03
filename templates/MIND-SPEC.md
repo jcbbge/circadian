@@ -45,8 +45,10 @@ in git history. The full blueprint is `docs/POPULATION-MEMORY.md`.
 6. **Motion is the metric.** Propagation re-potentiates an atom; a
    never-moving atom decays below the render floor. Memory that sits inert
    is not memory, it is inventory.
-7. **The mind survives infra death.** Wake is file reads only. No step in
-   WAKE may depend on a running service. The ref is the reconstitution; every
+7. **The mind survives infra death.** Wake memory is file-based and independent
+   of running services. An optional inbox may spend at most one second fetching
+   supplemental input; failure is visible and never withholds memory. No database
+   enters the critical path of mind/. The ref is the reconstitution; every
    process after `checkout` is presentation.
 8. **Anchor-aware.** Greetings orient to the work — the current arc, the
    live tension, the next move — never to the memory system itself.

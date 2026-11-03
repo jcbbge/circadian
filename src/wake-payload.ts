@@ -78,15 +78,26 @@ export function splitForHook(payload: string, budget = HOOK_OUTPUT_LIMIT - PART_
  * parts 2..n open with a continuation marker. Every output (plus the newline
  * the hook prints after it) is within HOOK_OUTPUT_LIMIT. */
 export function hookOutputs(payload: string, spoolPath: string): string[] {
-  if (utf8Bytes(payload) + 1 <= HOOK_OUTPUT_LIMIT) return [payload];
-  const bodies = splitForHook(payload, HOOK_OUTPUT_LIMIT - PART_MARKER_BYTES - utf8Bytes(spoolPath));
+  return hookLayout(payload, spoolPath).outputs;
+}
+
+/** Payload character ranges mapped to the hook slots carrying their bytes.
+ * Reservation is for a checkpoint warning appended after successful output. */
+export function hookLayout(payload: string, spoolPath: string, ranges: { start: number; end: number }[] = [], reserve = 0): { outputs: string[]; ranges: number[][] } {
+  const bodies = utf8Bytes(payload) + 1 + reserve <= HOOK_OUTPUT_LIMIT
+    ? [payload]
+    : splitForHook(payload, HOOK_OUTPUT_LIMIT - PART_MARKER_BYTES - utf8Bytes(spoolPath) - reserve);
   const n = bodies.length;
-  return bodies.map((body, i) => {
+  const outputs = bodies.map((body, i) => {
+    if (n === 1) return body;
     const sep = body.endsWith("\n") ? "" : "\n";
     return i === 0
       ? `${body}${sep}[Circadian] WAKE part 1/${n} ends here — Claude Code caps each hook output at ${HOOK_OUTPUT_LIMIT} characters, so parts 2..${n} (the rest, including the constitutions) arrive as separate SessionStart outputs from \`wake.ts --part k\`. If any part is absent from your context, the whole wake is in ${spoolPath}.`
       : `[Circadian] WAKE part ${i + 1}/${n} — continues part ${i} verbatim.\n${body}${sep}[Circadian] WAKE part ${i + 1}/${n} ends here.`;
   });
+  let position = 0;
+  const spans = bodies.map(body => { const start = position; position += body.length; return { start, end: position }; });
+  return { outputs, ranges: ranges.map(range => spans.flatMap((span, i) => range.start < span.end && range.end > span.start ? [i + 1] : [])) };
 }
 export const STALE_MS = 48 * 60 * 60 * 1000;
 

@@ -43,7 +43,7 @@ function spawnScriptDetached(script: string): void {
     const child = spawn(BUN_BIN, ["run", join(CIRCADIAN_HOME, "src", script)], {
       detached: true,
       stdio: ["ignore", "ignore", "ignore"],
-      env: { ...process.env, CIRCADIAN_HOME, CIRCADIAN_BUN_BIN: BUN_BIN },
+      env: { ...process.env, CIRCADIAN_HOME, CIRCADIAN_BUN_BIN: BUN_BIN, ...(script === "wake.ts" ? { CIRCADIAN_INBOX_SKIP: "1" } : {}) },
     });
     child.unref();
   } catch {

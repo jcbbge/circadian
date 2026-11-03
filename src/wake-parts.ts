@@ -7,14 +7,16 @@
 // Part 1 (`wake.ts`) is the only one that composes the payload — it alone
 // reads the scoreboard it then appends to — and it writes every part here
 // once; parts 2..n only read. One composition, so the parts can never
-// disagree about where a cut fell. File I/O only (Law 7: no network).
+// disagree about where a cut fell. File I/O only; supplemental inbox fetching belongs to primary wake.
 
-import { mkdirSync, readFileSync, readdirSync, renameSync, statSync, unlinkSync, writeFileSync } from "node:fs";
+import { randomUUID } from "node:crypto";
+import type { InboxDelivery } from "./inbox.ts";
+import { chmodSync, mkdirSync, readFileSync, readdirSync, renameSync, statSync, unlinkSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 
 /** `scope` is the scope this wake resolved (the SessionStart notice names
  * it); spools written before it existed carry none, and readers accept that. */
-export type Spool = { written_at: number; outputs: string[]; scope?: string };
+export type Spool = { written_at: number; outputs: string[]; scope?: string; inbox?: InboxDelivery };
 
 // A reader accepts only a spool written by this wake's part 1: the
 // SessionStart slots start together, so one written well before the reader
@@ -32,11 +34,14 @@ export function spoolPath(circadianHome: string, sessionId: string): string {
 }
 
 /** Atomic write (tmp + rename): a reading slot sees the whole spool or none. */
-export function writeSpool(path: string, outputs: string[], nowMs = Date.now(), scope?: string): void {
-  mkdirSync(join(path, ".."), { recursive: true });
-  const tmp = `${path}.${process.pid}.tmp`;
-  writeFileSync(tmp, JSON.stringify({ written_at: nowMs, outputs, ...(scope ? { scope } : {}) } satisfies Spool));
-  renameSync(tmp, path);
+export function writeSpool(path: string, outputs: string[], nowMs = Date.now(), scope?: string, inbox?: InboxDelivery): void {
+  mkdirSync(join(path, ".."), { recursive: true, mode: 0o700 });
+  chmodSync(join(path, ".."), 0o700);
+  const tmp = `${path}.${randomUUID()}.tmp`;
+  try {
+    writeFileSync(tmp, JSON.stringify({ written_at: nowMs, outputs, ...(scope ? { scope } : {}), ...(inbox ? { inbox } : {}) } satisfies Spool), { mode: 0o600 });
+    renameSync(tmp, path);
+  } finally { try { unlinkSync(tmp); } catch {} }
 }
 
 /** The spool at `path` if it was written at or after `notBeforeMs`, else
