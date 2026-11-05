@@ -487,6 +487,20 @@ export function parsePropagationResponse(raw: string, validAddresses: string[]):
   return { propagated: [...new Set(propagated)], malformed: false, unrecognizedCount };
 }
 
+// Publish a union only after every batch has a valid judgment. A later
+// malformed response or thrown transport/admission error cannot leak a partial result.
+export async function collectPropagationJudgments(outputs: AsyncIterable<string>, valid: string[]) {
+  const propagated = new Set<string>();
+  let unrecognizedCount = 0;
+  for await (const raw of outputs) {
+    const judgment = parsePropagationResponse(raw, valid);
+    if (judgment.malformed) return { ...judgment, raw };
+    for (const address of judgment.propagated) propagated.add(address);
+    unrecognizedCount += judgment.unrecognizedCount;
+  }
+  return { propagated: [...propagated], malformed: false, unrecognizedCount, raw: "" };
+}
+
 const PROPAGATION_TIMEOUT_MS = 90 * 1000;
 
 /** Response budget for the propagation judgment. The artifact is BOUNDED by
@@ -503,11 +517,27 @@ export function propagationMaxTokens(itemCount: number): number {
   return Math.max(500, itemCount * 12 + 64);
 }
 
-// A full nightly drain must not turn the entire backlog into one GPU request.
+// Bound the entire UTF-8 prompt, including repeated beliefs/instructions.
+// This is an admission ceiling, not a tokenizer estimate; never truncate evidence.
+export const PROPAGATION_MAX_PROMPT_BYTES = 32 * 1024;
 export function* buildPropagationPrompts(items: AddressedItem[], episodes: EpisodeFile[]): Generator<string> {
-  for (let i = 0; i < episodes.length; i += 12) {
-    yield buildPropagationPrompt(items, episodes.slice(i, i + 12));
+  let batch: EpisodeFile[] = [];
+  let prompt = "";
+  for (const episode of episodes) {
+    let candidate = buildPropagationPrompt(items, [...batch, episode]);
+    if (batch.length && (batch.length === 12 || Buffer.byteLength(candidate, "utf8") > PROPAGATION_MAX_PROMPT_BYTES)) {
+      yield prompt;
+      batch = [];
+      candidate = buildPropagationPrompt(items, [episode]);
+    }
+    const bytes = Buffer.byteLength(candidate, "utf8");
+    if (bytes > PROPAGATION_MAX_PROMPT_BYTES) {
+      throw new Error(`propagation prompt for ${episode.filename} exceeds ${PROPAGATION_MAX_PROMPT_BYTES} bytes (${bytes}); evidence was not truncated`);
+    }
+    batch.push(episode);
+    prompt = candidate;
   }
+  if (batch.length) yield prompt;
 }
 
 function buildPropagationPrompt(items: AddressedItem[], newEpisodes: EpisodeFile[]): string {
@@ -1376,30 +1406,23 @@ async function main() {
     } else {
       const maxTokens = propagationMaxTokens(items.length);
       try {
-        const propagated = new Set<string>();
-        let unrecognizedCount = 0;
-        let malformed = false;
-        for (const prompt of buildPropagationPrompts(items, absorbedEpisodes)) {
-          const raw = await complete(prompt, { timeoutMs: PROPAGATION_TIMEOUT_MS, maxTokens, temperature: 0 });
-          const judgment = parsePropagationResponse(raw, items.map((it) => it.address));
-          if (judgment.malformed) {
-            malformed = true;
-            degraded({
-              process: "rem", phase: "propagation", correlation_id: corr,
-              // Retain completion evidence for diagnosing malformed judgments.
-              summary: "propagation judgment completion was malformed; treated as empty (no retry)",
-              context: { items: items.length, max_tokens: maxTokens, raw_head: raw.slice(0, 200), raw_tail: raw.slice(-120), raw_length: raw.length },
-              cause: "LLM response did not parse as a JSON array",
-              next_action: "read raw_head/raw_tail in this event's context; a tail cut off mid-string means the response budget is still short of items x 12",
-            });
-            break;
+        const outputs = (async function* () {
+          for (const prompt of buildPropagationPrompts(items, absorbedEpisodes)) {
+            yield await complete(prompt, { timeoutMs: PROPAGATION_TIMEOUT_MS, maxTokens, temperature: 0 });
           }
-          for (const address of judgment.propagated) propagated.add(address);
-          unrecognizedCount += judgment.unrecognizedCount;
-        }
-        // Partial judgments must not masquerade as a complete observed cycle.
-        if (!malformed) {
-          propagatedAddresses = [...propagated];
+        })();
+        const judgment = await collectPropagationJudgments(outputs, items.map((it) => it.address));
+        const { raw, unrecognizedCount } = judgment;
+        if (judgment.malformed) {
+          degraded({
+            process: "rem", phase: "propagation", correlation_id: corr,
+            summary: "propagation judgment completion was malformed; treated as empty (no retry)",
+            context: { items: items.length, max_tokens: maxTokens, raw_head: raw.slice(0, 200), raw_tail: raw.slice(-120), raw_length: raw.length },
+            cause: "LLM response did not parse as a JSON array",
+            next_action: "read raw_head/raw_tail in this event's context; a tail cut off mid-string means the response budget is still short of items x 12",
+          });
+        } else {
+          propagatedAddresses = judgment.propagated;
           propagationJudged = true;
           ok({
             process: "rem", phase: "propagation", correlation_id: corr,

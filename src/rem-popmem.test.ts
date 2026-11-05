@@ -21,6 +21,8 @@ import {
   findNewEpisodes,
   effectiveAbsorbCap,
   buildPropagationPrompts,
+  collectPropagationJudgments,
+  PROPAGATION_MAX_PROMPT_BYTES,
   enumerateNowItems,
   enumeratePropagationAddresses,
   parsePropagationResponse,
@@ -296,6 +298,43 @@ describe("bounded propagation prompts", () => {
       expect(prompts.filter((p) => p.includes(`--- ${ep.filename} ---`))).toHaveLength(1);
     }
     expect([...buildPropagationPrompts([], [])]).toEqual([]);
+  });
+});
+
+describe("propagation byte admission and atomic results", () => {
+  const episode = (content: string) => ({ filename: "episode.md", filepath: "", content, hash: "h" });
+  test("UTF-8 size, not character count, splits requests below the episode-count cap", () => {
+    const prompts = [...buildPropagationPrompts([], Array.from({ length: 5 }, () => episode("界".repeat(5000))))];
+    expect(prompts).toHaveLength(3);
+    for (const prompt of prompts) expect(Buffer.byteLength(prompt)).toBeLessThanOrEqual(PROPAGATION_MAX_PROMPT_BYTES);
+  });
+  test("oversized evidence and oversized repeated items fail without truncation", () => {
+    expect(() => [...buildPropagationPrompts([], [episode("x".repeat(1000000))])]).toThrow("evidence was not truncated");
+    expect(() => [...buildPropagationPrompts([{ address: "NOW.Arc[1]", text: "x".repeat(PROPAGATION_MAX_PROMPT_BYTES) }], [episode("small")])]).toThrow("exceeds");
+  });
+  test("all valid batches produce a deduplicated union", async () => {
+    async function* outputs() { yield '["A"]'; yield '["A","B","unknown"]'; }
+    expect(await collectPropagationJudgments(outputs(), ["A", "B"]))
+      .toEqual({ propagated: ["A", "B"], malformed: false, unrecognizedCount: 1, raw: "" });
+  });
+  test("a later malformed batch discards earlier successful judgments and stops consumption", async () => {
+    async function* outputs() { yield '["A"]'; yield 'not JSON'; throw new Error("must not consume"); }
+    const result = await collectPropagationJudgments(outputs(), ["A"]);
+    expect(result.malformed).toBe(true);
+    expect(result.propagated).toEqual([]);
+  });
+  test("a later thrown transport failure cannot publish a partial union", async () => {
+    async function* outputs() { yield '["A"]'; throw new Error("connection reset"); }
+    await expect(collectPropagationJudgments(outputs(), ["A"])).rejects.toThrow("connection reset");
+  });
+  test("a later oversized episode cannot publish a partial union", async () => {
+    async function* outputs() {
+      for (const prompt of buildPropagationPrompts([], [episode("small"), episode("x".repeat(1000000))])) {
+        expect(prompt).toContain("small");
+        yield '["A"]';
+      }
+    }
+    await expect(collectPropagationJudgments(outputs(), ["A"])).rejects.toThrow("evidence was not truncated");
   });
 });
 
