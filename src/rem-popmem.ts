@@ -1433,10 +1433,10 @@ async function main() {
       } catch (err) {
         degraded({
           process: "rem", phase: "propagation", correlation_id: corr,
-          summary: "propagation judgment LLM call failed; treated as empty",
+          summary: "propagation judgment failed; treated as empty",
           context: { items: items.length, max_tokens: maxTokens },
           cause: (err as Error).message,
-          next_action: "check the local LLM at CIRCADIAN_LLM_BASE_URL; this cycle records zero propagation AND judged:false, so R7 reads it as an unobserved cycle rather than a failed greeting",
+          next_action: "inspect cause: review oversized evidence without truncating it, or restore the local model for transport failures; this cycle records zero propagation AND judged:false, not a failed greeting",
         });
       }
     }
