@@ -503,6 +503,13 @@ export function propagationMaxTokens(itemCount: number): number {
   return Math.max(500, itemCount * 12 + 64);
 }
 
+// A full nightly drain must not turn the entire backlog into one GPU request.
+export function* buildPropagationPrompts(items: AddressedItem[], episodes: EpisodeFile[]): Generator<string> {
+  for (let i = 0; i < episodes.length; i += 12) {
+    yield buildPropagationPrompt(items, episodes.slice(i, i + 12));
+  }
+}
+
 function buildPropagationPrompt(items: AddressedItem[], newEpisodes: EpisodeFile[]): string {
   const itemLines = items.map((it) => `${it.address}: ${it.text}`).join("\n");
   const episodeBlocks = newEpisodes
@@ -1262,6 +1269,7 @@ async function main() {
   let failureEpisode: string | undefined;
 
   let absorbed = 0;
+  const absorbedEpisodes: EpisodeFile[] = [];
   for (const ep of newEpisodes) {
     if (dryRun) continue;
     if (absorbed >= absorbMaxEpisodes) {
@@ -1313,6 +1321,7 @@ async function main() {
       if (result.counts.rejected > 0 || result.counts.compareInvalid > 0) anyRejected = true;
     }
     recordDigested(DIGESTED_PATH, [{ ts: new Date().toISOString(), hash: ep.hash, filename: ep.filename, disposition: "absorbed" }]);
+    absorbedEpisodes.push(ep);
   }
 
   if (newEpisodes.length === 0) {
@@ -1322,11 +1331,11 @@ async function main() {
       context: { dry_run: dryRun },
     });
   } else {
-    const context = { episodes: newEpisodes.length, ...aggCounts, dry_run: dryRun };
+    const context = { episodes: absorbedEpisodes.length, attempted: absorbed, held_aside: absorbed - absorbedEpisodes.length, deferred: newEpisodes.length - absorbed, ...aggCounts, dry_run: dryRun };
     if (anyRejected) {
       degraded({
         process: "rem", phase: "absorb", correlation_id: corr,
-        summary: `absorbed ${newEpisodes.length} episode(s) with ${aggCounts.rejected} rejected candidate(s) / ${aggCounts.compareInvalid} invalid COMPARE token(s)`,
+        summary: `absorbed ${absorbedEpisodes.length} episode(s) with ${aggCounts.rejected} rejected candidate(s) / ${aggCounts.compareInvalid} invalid COMPARE token(s)`,
         context,
         cause: "one or more candidates failed shape/counterfeit-quote at extraction, or a COMPARE call returned an unrecognized token",
         next_action: "inspect logs/stacker-io.jsonl for the raw completions behind this correlation id",
@@ -1334,7 +1343,7 @@ async function main() {
     } else {
       ok({
         process: "rem", phase: "absorb", correlation_id: corr,
-        summary: `absorbed ${newEpisodes.length} episode(s): ${aggCounts.new} new atom(s), ${aggCounts.stacked + aggCounts.bumped} weight bump(s)`,
+        summary: `absorbed ${absorbedEpisodes.length} episode(s): ${aggCounts.new} new atom(s), ${aggCounts.stacked + aggCounts.bumped} weight bump(s)`,
         context,
       });
     }
@@ -1351,7 +1360,7 @@ async function main() {
   // back malformed — because in every one of those cases nothing was
   // observed, and R7 must not read an unobserved cycle as a dead greeting.
   let propagationJudged = false;
-  if (newEpisodes.length > 0 && !dryRun) {
+  if (absorbedEpisodes.length > 0 && !dryRun) {
     const atomsForPropagation = readAtoms(BELIEFS_DIR);
     const atomsById = new Map(atomsForPropagation.map((a) => [a.id, a]));
     const oldManifest = readManifestFile(MANIFEST_PATH);
@@ -1367,28 +1376,35 @@ async function main() {
     } else {
       const maxTokens = propagationMaxTokens(items.length);
       try {
-        const prompt = buildPropagationPrompt(items, newEpisodes);
-        const raw = await complete(prompt, { timeoutMs: PROPAGATION_TIMEOUT_MS, maxTokens, temperature: 0 });
-        const judgment = parsePropagationResponse(raw, items.map((it) => it.address));
-        propagatedAddresses = judgment.propagated;
-        if (judgment.malformed) {
-          degraded({
-            process: "rem", phase: "propagation", correlation_id: corr,
-            // The raw completion travels IN the event. The old next_action
-            // told a reader to "inspect the raw completion under this
-            // correlation id" and then never recorded one, so three malformed
-            // runs (2026-08-12..14) left nothing to diagnose them with.
-            summary: "propagation judgment completion was malformed; treated as empty (no retry)",
-            context: { items: items.length, max_tokens: maxTokens, raw_head: raw.slice(0, 200), raw_tail: raw.slice(-120), raw_length: raw.length },
-            cause: "LLM response did not parse as a JSON array",
-            next_action: "read raw_head/raw_tail in this event's context; a tail cut off mid-string means the response budget is still short of items x 12",
-          });
-        } else {
+        const propagated = new Set<string>();
+        let unrecognizedCount = 0;
+        let malformed = false;
+        for (const prompt of buildPropagationPrompts(items, absorbedEpisodes)) {
+          const raw = await complete(prompt, { timeoutMs: PROPAGATION_TIMEOUT_MS, maxTokens, temperature: 0 });
+          const judgment = parsePropagationResponse(raw, items.map((it) => it.address));
+          if (judgment.malformed) {
+            malformed = true;
+            degraded({
+              process: "rem", phase: "propagation", correlation_id: corr,
+              // Retain completion evidence for diagnosing malformed judgments.
+              summary: "propagation judgment completion was malformed; treated as empty (no retry)",
+              context: { items: items.length, max_tokens: maxTokens, raw_head: raw.slice(0, 200), raw_tail: raw.slice(-120), raw_length: raw.length },
+              cause: "LLM response did not parse as a JSON array",
+              next_action: "read raw_head/raw_tail in this event's context; a tail cut off mid-string means the response budget is still short of items x 12",
+            });
+            break;
+          }
+          for (const address of judgment.propagated) propagated.add(address);
+          unrecognizedCount += judgment.unrecognizedCount;
+        }
+        // Partial judgments must not masquerade as a complete observed cycle.
+        if (!malformed) {
+          propagatedAddresses = [...propagated];
           propagationJudged = true;
           ok({
             process: "rem", phase: "propagation", correlation_id: corr,
-            summary: `propagation judgment: ${propagatedAddresses.length}/${items.length} item(s) propagated${judgment.unrecognizedCount ? `, ${judgment.unrecognizedCount} unrecognized address(es) dropped` : ""}`,
-            context: { items: items.length, propagated: propagatedAddresses.length, unrecognized: judgment.unrecognizedCount, max_tokens: maxTokens },
+            summary: `propagation judgment: ${propagatedAddresses.length}/${items.length} item(s) propagated${unrecognizedCount ? `, ${unrecognizedCount} unrecognized address(es) dropped` : ""}`,
+            context: { items: items.length, episodes: absorbedEpisodes.length, propagated: propagatedAddresses.length, unrecognized: unrecognizedCount, max_tokens: maxTokens },
           });
         }
       } catch (err) {

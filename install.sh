@@ -150,9 +150,8 @@ install_macos_jobs() {
     <string>com.circadian.rem</string>
     <key>ProgramArguments</key>
     <array>
-        <string>/bin/sh</string>
-        <string>-lc</string>
-        <string>$BUN_BIN $CIRCADIAN_HOME/src/harvest.ts &amp;&amp; $BUN_BIN $CIRCADIAN_HOME/src/rem-popmem.ts --drain &amp;&amp; $BUN_BIN $CIRCADIAN_HOME/src/doctor.ts --alert</string>
+        <string>$BUN_BIN</string>
+        <string>$CIRCADIAN_HOME/src/nightly.ts</string>
     </array>
 $(plist_calendar "$CIRCADIAN_MAC_NIGHTLY_HOUR" "$CIRCADIAN_MAC_NIGHTLY_MINUTE")
     <key>RunAtLoad</key>
@@ -237,9 +236,7 @@ Environment=CIRCADIAN_HOME=$CIRCADIAN_HOME
 Environment=CIRCADIAN_BUN_BIN=$BUN_BIN
 Environment=PATH=$CIRCADIAN_JOB_PATH
 TimeoutStartSec=0
-ExecStart=$BUN_BIN $CIRCADIAN_HOME/src/harvest.ts
-ExecStart=$BUN_BIN $CIRCADIAN_HOME/src/rem-popmem.ts --drain
-ExecStart=$BUN_BIN $CIRCADIAN_HOME/src/doctor.ts --alert
+ExecStart=$BUN_BIN $CIRCADIAN_HOME/src/nightly.ts
 StandardOutput=append:$LOG_DIR/nightly-consolidation.log
 StandardError=append:$LOG_DIR/nightly-consolidation.error.log
 EOF

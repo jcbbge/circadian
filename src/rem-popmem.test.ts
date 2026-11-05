@@ -20,6 +20,7 @@ import {
   recordDigested,
   findNewEpisodes,
   effectiveAbsorbCap,
+  buildPropagationPrompts,
   enumerateNowItems,
   enumeratePropagationAddresses,
   parsePropagationResponse,
@@ -282,6 +283,22 @@ describe("enumeratePropagationAddresses", () => {
 // ---------------------------------------------------------------------
 // structural validation of LLM call (a): propagation judgment
 // ---------------------------------------------------------------------
+describe("bounded propagation prompts", () => {
+  test("a 301-episode drain produces bounded, non-overlapping requests", () => {
+    const episodes = Array.from({ length: 301 }, (_, i) => ({
+      filename: `episode-${i}.md`, filepath: "", content: `body-${i}`, hash: `${i}`,
+    }));
+    const prompts = [...buildPropagationPrompts([], episodes)];
+    expect(prompts).toHaveLength(26);
+    expect(prompts.map((p) => [...p.matchAll(/--- episode-\d+\.md ---/g)].length))
+      .toEqual([...Array(25).fill(12), 1]);
+    for (const ep of episodes) {
+      expect(prompts.filter((p) => p.includes(`--- ${ep.filename} ---`))).toHaveLength(1);
+    }
+    expect([...buildPropagationPrompts([], [])]).toEqual([]);
+  });
+});
+
 describe("propagationMaxTokens", () => {
   // The judge's answer is bounded by its input: at most one address per item.
   // The live flatline was a 69-item run against a flat 500-token budget, so
@@ -967,7 +984,7 @@ describe("wave-2 hardening: slot guard, singleton lock, failure budget", () => {
   function runRem(home: string, args: string[]) {
     return spawnSync(process.execPath, [REM_SCRIPT, ...args], {
       cwd: PROJECT_ROOT,
-      env: { ...process.env, CIRCADIAN_HOME: home, ...DEAD_LLM_ENV },
+      env: { ...process.env, CIRCADIAN_HOME: home, ...DEAD_LLM_ENV, CIRCADIAN_ABSORB_PACE_MS: "1" },
       encoding: "utf8",
     });
   }
@@ -1111,6 +1128,23 @@ describe("wave-2 hardening: slot guard, singleton lock, failure budget", () => {
     });
   });
 
+  test("catch-up reports 12 successes and leaves the thirteenth episode undigested", () => {
+    const home = makeCliHome();
+    const mind = path.join(home, "mind");
+    for (let i = 0; i < 13; i++) {
+      const filename = `2026-08-01-${String(i).padStart(2, "0")}.md`;
+      fs.writeFileSync(path.join(mind, "episodes", filename), `---\ndate: 2026-08-01\n---\nfixture ${i}\n`);
+      appendLedger(path.join(mind, "beliefs.jsonl"), { ev: "stack", ep: filename, ts: "2026-08-01T00:00:00.000Z" });
+    }
+    expect(runRem(home, ["--if-due"]).status).toBe(0);
+    expect(readJsonl(path.join(mind, "digested.jsonl"))).toHaveLength(12);
+    const events = readJsonl(path.join(home, "logs", "circadian.events.jsonl"));
+    const summary = events.find((e) => e.phase === "absorb" && e.context?.episodes !== undefined);
+    expect(summary.context.episodes).toBe(12);
+    expect(summary.context.deferred).toBe(1);
+    expect(summary.summary).toStartWith("absorbed 12 episode(s)");
+  }, 30000);
+
   describe("episode-level failure no longer wedges the pass (work items 4 and 5)", () => {
     test("one malformed episode is held aside; the remaining episodes still process and successes are recorded digested", () => {
       const home = makeCliHome();
@@ -1143,6 +1177,10 @@ describe("wave-2 hardening: slot guard, singleton lock, failure budget", () => {
       const digestedFilenames = readJsonl(path.join(mindDir, "digested.jsonl")).map((e) => e.filename);
       expect(digestedFilenames).toContain(GOOD_BEFORE);
       expect(digestedFilenames).toContain(GOOD_AFTER);
+      const events = readJsonl(path.join(home, "logs", "circadian.events.jsonl"));
+      const summary = events.find((e) => e.phase === "absorb" && e.context?.episodes !== undefined);
+      expect(summary.context.episodes).toBe(2);
+      expect(summary.context.held_aside).toBe(1);
     });
   });
 });

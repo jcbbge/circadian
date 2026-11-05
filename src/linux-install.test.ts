@@ -23,9 +23,8 @@ test("fresh Linux install enables persistent nightly user timers; reinstall pres
     const timer = fs.readFileSync(path.join(dir, "circadian-rem.timer"), "utf8");
     const doctorService = fs.readFileSync(path.join(dir, "circadian-doctor.service"), "utf8");
     const doctorTimer = fs.readFileSync(path.join(dir, "circadian-doctor.timer"), "utf8");
-    expect(service).toContain(`ExecStart=${process.execPath} ${install}/src/harvest.ts`);
-    expect(service).toContain(`ExecStart=${process.execPath} ${install}/src/rem-popmem.ts --drain`);
-    expect(service).toContain(`ExecStart=${process.execPath} ${install}/src/doctor.ts --alert`);
+    expect(service).toContain(`ExecStart=${process.execPath} ${install}/src/nightly.ts`);
+    expect(service.match(/^ExecStart=/gm)).toHaveLength(1);
     expect(service).toContain(`Environment=CIRCADIAN_HOME=${install}`);
     expect(service).toContain(`Environment=CIRCADIAN_BUN_BIN=${process.execPath}`);
     expect(timer).toContain("OnCalendar=*-*-* 4:30:00");
