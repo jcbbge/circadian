@@ -5,11 +5,30 @@ import { spawnSync } from "node:child_process";
 import * as fs from "fs";
 import * as path from "path";
 import { tmpdir } from "os";
-import { ccSettingsMissingHooks, ccSettingsMissingHooksFromPath } from "./doctor.ts";
+import { ccSettingsMissingHooks, ccSettingsMissingHooksFromPath, latestEpisodeProgress } from "./doctor.ts";
 import { WAKE_PARTS } from "./wake-payload.ts";
 import { renderSelf } from "./render.ts";
 
 const dirs: string[] = [];
+
+describe("episode progress schema", () => {
+  const base = { ts: "2026-11-05T04:50:00Z", process: "rem" as const, outcome: "ok" as const, summary: "fixture" };
+  test("latest real absorption wins over older capped and dry-run events", () => {
+    expect(latestEpisodeProgress([
+      { ...base, phase: "absorb-batch-cap", context: { absorbed: 5, deferred: 285 } },
+      { ...base, phase: "absorb", context: { episodes: 317, deferred: 0 } },
+      { ...base, phase: "absorb", context: { episodes: 1, deferred: 999, dry_run: true } },
+      { ...base, phase: "commit", context: { stacked: 196 } },
+    ])).toEqual({ absorbed: 317, shed: 0, backlog: 0 });
+  });
+  test("supports legacy commit fields and reports current deferrals", () => {
+    expect(latestEpisodeProgress([{ ...base, phase: "commit", context: { absorbed: 7, shed: 2, backlog_remaining: 9 } }]))
+      .toEqual({ absorbed: 7, shed: 2, backlog: 9 });
+    expect(latestEpisodeProgress([{ ...base, phase: "absorb", context: { episodes: 12, deferred: 289 } }]))
+      .toEqual({ absorbed: 12, shed: 0, backlog: 289 });
+    expect(latestEpisodeProgress([])).toBeNull();
+  });
+});
 
 function writeSettings(content: string): string {
   const d = fs.mkdtempSync(path.join(tmpdir(), "doctor-cc-settings-"));

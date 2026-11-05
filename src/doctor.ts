@@ -678,6 +678,19 @@ function checkSemanticStutter(): void {
   }
 }
 
+export function latestEpisodeProgress(events: CircadianEvent[]) {
+  const event = [...events].reverse().find((e) => e.process === "rem" && !e.context?.dry_run && (
+    (e.phase === "absorb" && e.context?.episodes !== undefined) ||
+    e.context?.absorbed !== undefined || e.context?.shed !== undefined
+  ));
+  if (!event) return null;
+  return {
+    absorbed: (event.context?.episodes ?? event.context?.absorbed ?? 0) as number,
+    shed: (event.context?.shed ?? 0) as number,
+    backlog: (event.context?.deferred ?? event.context?.backlog_remaining ?? 0) as number,
+  };
+}
+
 function checkEpisodes(events: CircadianEvent[]): void {
   let waiting: string[] = [];
   try {
@@ -697,17 +710,14 @@ function checkEpisodes(events: CircadianEvent[]): void {
     return;
   }
 
-  // Find the last rem event with commit context (absorbed/shed)
-  const lastCommit = [...remEvents].reverse().find((e) => e.context?.absorbed !== undefined || e.context?.shed !== undefined);
-  if (!lastCommit) {
+  const progress = latestEpisodeProgress(remEvents);
+  if (!progress) {
     const last = remEvents[remEvents.length - 1];
     add("episode pipeline", "IDLE", `no episodes waiting; last rem event: ${last.phase} ${last.outcome}`);
     return;
   }
 
-  const absorbed = (lastCommit.context?.absorbed as number) ?? 0;
-  const shed = (lastCommit.context?.shed as number) ?? 0;
-  const backlog = (lastCommit.context?.backlog_remaining as number) ?? 0;
+  const { absorbed, shed, backlog } = progress;
 
   if (waiting.length === 0) {
     add("episode pipeline", "IDLE", `no episodes waiting to digest; last rem: absorbed ${absorbed}, shed ${shed}, backlog ${backlog}`);
