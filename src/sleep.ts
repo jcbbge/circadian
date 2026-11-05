@@ -193,6 +193,21 @@ function readPendingQueue(): PendingSleep[] {
   return entries;
 }
 
+// Harvest must not bypass the drain's retry budget, including dead letters.
+export function queuedSleepSessionIds(): Set<string> {
+  const ids = new Set<string>();
+  for (const path of [PENDING_QUEUE, PENDING_DEAD_QUEUE]) {
+    if (!existsSync(path)) continue;
+    for (const line of readFileSync(path, "utf8").split("\n")) {
+      try {
+        const entry = JSON.parse(line);
+        if (typeof entry.session_id === "string") ids.add(entry.session_id);
+      } catch { /* malformed lines remain on disk for inspection */ }
+    }
+  }
+  return ids;
+}
+
 // Append is atomic enough for JSONL (single write, O_APPEND). A queue-write
 // failure must NEVER be swallowed: this line is the episode's only surviving
 // handle, so losing it silently IS the original bug. fail() loud instead —
@@ -978,11 +993,11 @@ type DraftResult =
   | { status: "written" }
   | { status: "no-transcript" }
   | { status: "empty-transcript" }
-  | { status: "draft-failed"; lastError: string };
+  | { status: "draft-failed"; lastError: string; attempts: number };
 
 // The drafting core shared by the live SessionEnd worker and --drain:
 // identical episode format, NOW.md write, meal fold-and-delete, scoreboard
-// append. queueOnFailure is true ONLY for the live worker — the drain
+// append. queueOnFailure is true for the live worker and harvest — the drain
 // replays lines that are already queued, so re-enqueueing would duplicate
 // them (and mask the attempts ratchet).
 export function shouldGateWorker(firstTurn: string, transcriptPath?: string, lane?: string): boolean {
@@ -1124,15 +1139,19 @@ export async function draftSessionEpisode(opts: {
 
   let draft: ReturnType<typeof parseDraft> = null;
   let lastReason = "";
+  let attempts = 0;
   for (let attempt = 0; attempt < DRAFT_ATTEMPTS && !draft; attempt += 1) {
     slog(mode, "LLM draft attempt", { attempt: attempt + 1 });
     let output: string;
-    try { output = await draftViaLLM(prompt); }
+    attempts += 1;
+    const retryHint = attempt === 0 ? "" : "\nYour previous reply could not be parsed. Return both complete artifacts with exact delimiter lines === EPISODE ===, === NOW ===, === END === and an ARC: line. Be concise; keep all quote and evidence requirements above. No commentary or code fences.\n";
+    try { output = await draftViaLLM(prompt + retryHint); }
     catch (e) {
       lastReason = (e as Error).message;
       slog(mode, lastReason, { attempt: attempt + 1 });
-      if (/LLM down:|LLM busy:|llm busy, deferred:/.test(lastReason)) break;
-      continue;
+      // complete() already owns transport retries and rejects truncation or
+      // reasoning-only replies without retry. Never multiply that budget here.
+      break;
     }
     draft = parseDraft(output);
     if (!draft) {
@@ -1154,7 +1173,7 @@ export async function draftSessionEpisode(opts: {
           session_id: sessionId,
           transcript_path: transcriptPath,
           transcript_chars: transcriptText.length,
-          attempts: endpointUnavailable(lastReason) ? 0 : DRAFT_ATTEMPTS,
+          attempts: endpointUnavailable(lastReason) ? 0 : attempts,
           last_error: lastReason,
           queued_at: new Date().toISOString(),
           scope,
@@ -1164,19 +1183,20 @@ export async function draftSessionEpisode(opts: {
         corr
       );
     }
-    slog(mode, opts.queueOnFailure ? `no valid draft after ${DRAFT_ATTEMPTS} attempts — queued, not lost` : `no valid draft after ${DRAFT_ATTEMPTS} attempts`);
+    const queued = opts.queueOnFailure && !DRY_RUN;
+    slog(mode, queued ? `no valid draft after ${attempts} attempts — queued, not lost` : `no valid draft after ${attempts} attempts`);
     degraded({
       process: "sleep", phase: "llm-draft", correlation_id: corr, session_id: sessionId,
-      summary: opts.queueOnFailure
-        ? `episode draft failed ${DRAFT_ATTEMPTS} times; queued in logs/pending-sleep.jsonl for a later drain`
-        : `episode draft failed ${DRAFT_ATTEMPTS} times; no episode written`,
-      context: { transcript_chars: transcriptText.length, attempts: DRAFT_ATTEMPTS, queued: opts.queueOnFailure, queue_attempts: opts.queueAttempts },
+      summary: queued
+        ? `episode draft failed ${attempts} times; queued in logs/pending-sleep.jsonl for a later drain`
+        : `episode draft failed ${attempts} times; no episode written`,
+      context: { transcript_chars: transcriptText.length, attempts, queued, queue_attempts: opts.queueAttempts },
       cause: lastReason || "LLM produced no parseable EPISODE/NOW blocks on either attempt",
       next_action: opts.queueOnFailure
         ? "restore or set CIRCADIAN_LLM_BASE_URL to an answering endpoint; the queue drains via `bun src/sleep.ts --drain` (REM runs it before digesting)"
         : "restore or set CIRCADIAN_LLM_BASE_URL to an answering endpoint; re-run the caller to try this session again",
     });
-    return { status: "draft-failed", lastError: lastReason };
+    return { status: "draft-failed", lastError: lastReason, attempts };
   }
 
   const now = new Date();
@@ -1419,7 +1439,8 @@ async function runDrain(): Promise<void> {
             const lastError =
               result.status === "draft-failed" ? result.lastError : "transcript yielded no user/assistant text";
             const unavailable = endpointUnavailable(lastError);
-            const updated = { ...entry, attempts: entry.attempts + (unavailable ? 0 : DRAFT_ATTEMPTS), last_error: lastError };
+            const spent = result.status === "draft-failed" ? result.attempts : DRAFT_ATTEMPTS;
+            const updated = { ...entry, attempts: entry.attempts + (unavailable ? 0 : spent), last_error: lastError };
             if (isPendingEntryStuck(updated)) {
               deadLetter(entry, updated.attempts, lastError);
             } else {

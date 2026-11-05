@@ -9,7 +9,7 @@ import { existsSync, readdirSync, realpathSync, statSync } from "node:fs";
 import { homedir } from "node:os";
 import { basename, join } from "node:path";
 import { correlation } from "./obs.ts";
-import { DRAFT_ATTEMPTS, DRAIN_PACE_MS, draftSessionEpisode, hasEpisodeForSession } from "./sleep.ts";
+import { DRAFT_ATTEMPTS, DRAIN_PACE_MS, draftSessionEpisode, hasEpisodeForSession, queuedSleepSessionIds } from "./sleep.ts";
 import { resolveEpisodeProvenance } from "./provenance.ts";
 
 export type HarnessName = "Claude" | "Pi" | "Codex" | "Slate";
@@ -146,12 +146,18 @@ export async function runHarvest(argv = process.argv.slice(2)): Promise<void> {
   const sessions = collectHarvestSessions(day).filter((session) => !hasEpisodeForSession(session.sessionId));
   console.log(`harvest ${day.day}: ${sessions.length} new session(s)`);
 
+  const queued = queuedSleepSessionIds();
+  let deferred = 0;
   let drafted = 0;
   let skipped = 0;
   let failed = 0;
   let attempts = 0;
 
   for (const session of sessions) {
+    if (queued.has(session.sessionId)) {
+      deferred += 1;
+      continue; // drain (or human dead-letter review) owns recovery
+    }
     if (attempts > 0 && DRAIN_PACE_MS > 0) await new Promise((r) => setTimeout(r, DRAIN_PACE_MS));
     attempts += 1;
     console.log(`${session.harness}: drafting ${session.sessionId}`);
@@ -159,7 +165,7 @@ export async function runHarvest(argv = process.argv.slice(2)): Promise<void> {
       transcriptPath: session.transcriptPath,
       sessionId: session.sessionId,
       corr,
-      queueOnFailure: false,
+      queueOnFailure: true,
       queueAttempts: DRAFT_ATTEMPTS,
       mode: "harvest",
       scope: "global",
@@ -173,8 +179,8 @@ export async function runHarvest(argv = process.argv.slice(2)): Promise<void> {
     else failed += 1;
   }
 
-  console.log(`harvest complete: ${drafted} drafted/already-written, ${skipped} skipped, ${failed} failed`);
-  if (failed > 0) process.exitCode = 1;
+  console.log(`harvest complete: ${drafted} drafted/already-written, ${skipped} skipped, ${failed} failed, ${deferred} queued/dead-lettered`);
+  if (failed > 0 || deferred > 0) process.exitCode = 1;
 }
 
 if (import.meta.main) {
