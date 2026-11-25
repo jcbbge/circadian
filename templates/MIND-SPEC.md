@@ -5,12 +5,16 @@ every process that reads or writes this repo (wake, graze, sleep, rem,
 status, zoom, replay). If a process's behavior conflicts with this document,
 the process is wrong.
 
-The mind repo is a plain git repository. It has no remote, ever. `USER.md` is
+The mind repo is a plain git repository with no configured remote. No remote off
+Josh's own machines. An opt-in join uses a separate transfer-only repo for
+additive projections of approved beliefs, ledgers, and episodes, never source
+mind history. Hive does not initiate connections to the M5. `USER.md` is
 private relational memory and never leaves this machine. `erase` is the only
 process allowed to rewrite mind history: with an explicit reason and `--yes`,
 it removes an atom, redacts its text in episodes and all reachable commits,
 prunes unreachable objects, and records only the id and reason in compost.md.
-No remote force-push is supported.
+No remote force-push is supported. A local erase does not erase another
+machine's copies or previously exported records.
 
 This one page is the whole design. If a change doesn't fit on this page, the
 change is wrong (Doctrine[1]: the cliff is complexity accretion). This is the
@@ -47,7 +51,9 @@ in git history. The full blueprint is `docs/POPULATION-MEMORY.md`.
    is not memory, it is inventory.
 7. **The mind survives infra death.** Wake memory is file-based and independent
    of running services. An optional inbox may spend at most one second fetching
-   supplemental input; failure is visible and never withholds memory. No database
+   supplemental input. An opt-in M5 wake may spend up to 1.5 seconds fetching an
+   approved-records ref over SSH; it never lands or renders from that ref at
+   wake. Failure is visible and never withholds local memory. No database
    enters the critical path of mind/. The ref is the reconstitution; every
    process after `checkout` is presentation.
 8. **Anchor-aware.** Greetings orient to the work — the current arc, the

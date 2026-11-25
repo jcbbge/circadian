@@ -1,7 +1,7 @@
 #!/usr/bin/env bun
 /** Build additive transfer refs from approved committed records. This is Git
  * object plumbing, not a merge: no checkout or original ancestor is copied. */
-import { spawnSync } from "node:child_process";
+import { spawn, spawnSync } from "node:child_process";
 import { randomUUID } from "node:crypto";
 import { rmSync } from "node:fs";
 import { join } from "node:path";
@@ -10,7 +10,7 @@ export const approvedMindPath = (path: string): boolean =>
   path === "beliefs.jsonl" || path === "digested.jsonl" ||
   /^beliefs\/[a-f0-9]{12}\.md$/.test(path) || /^episodes\/[a-zA-Z0-9][a-zA-Z0-9_.-]*\.md$/.test(path);
 type Entry = { mode: string; kind: string; id: string; path: string };
-type Side = "hive" | "m5";
+export type Side = "hive" | "m5";
 
 function git(repo: string, args: string[], options: { input?: string; index?: string; optional?: boolean } = {}): string {
   const env = { ...process.env, GIT_NO_REPLACE_OBJECTS: "1", GIT_OPTIONAL_LOCKS: "0",
@@ -48,6 +48,49 @@ function validate(repo: string, tip: string, forbidden: Set<string>): void {
     if (parents.length > 1 || tree(repo, commit).some(entry => !approved(entry, forbidden)))
       throw new Error("transfer ancestry contains a non-approved object");
   }
+}
+
+export function incomingMind(repo: string, side: Side): string {
+  if (side !== "hive" && side !== "m5") throw new Error("invalid transfer side");
+  const tip = git(repo, ["rev-parse", "--verify", `refs/circadian/import/${side}^{commit}`]).trim();
+  validate(repo, tip, userObjects(repo));
+  return tip;
+}
+
+export const HIVE_FETCH_MS = 1500;
+const hiveImport = "refs/circadian/import/hive";
+
+/** Opt in on the M5 only, with Josh's verified SSH URL for a transfer-only
+ * repository. No remote, tags, FETCH_HEAD, or local history negotiation. */
+export function hiveTransfer(repo: string): string {
+  return git(repo, ["config", "--local", "--get-all", "circadian.hiveTransfer"], { optional: true }).trim();
+}
+
+export async function fetchHive(repo: string, url: string): Promise<boolean> {
+  if (!/^ssh:\/\/(?:[\w.-]+@)?[a-zA-Z0-9][\w.-]*(?::\d+)?\/[\w./-]+$/.test(url)) return false;
+  const pending = `refs/circadian/pending/${randomUUID()}`;
+  try {
+    const fetched = await new Promise<boolean>(resolve => {
+      const child = spawn("git", ["-C", repo, "-c", "protocol.allow=never", "-c", "protocol.ssh.allow=always",
+        "-c", "fetch.negotiationAlgorithm=noop", "-c", "core.sshCommand=ssh -o BatchMode=yes -o StrictHostKeyChecking=yes",
+        "fetch", "--no-tags", "--no-recurse-submodules", "--no-write-fetch-head", "--no-auto-maintenance", "--refmap=",
+        "--", url, `refs/circadian/export/hive:${pending}`], {
+        detached: true, stdio: "ignore", env: { ...process.env, GIT_TERMINAL_PROMPT: "0", GIT_NO_REPLACE_OBJECTS: "1" },
+      });
+      const timer = setTimeout(() => {
+        if (child.pid) try { process.kill(-child.pid, "SIGKILL"); } catch { /* already exited */ }
+      }, HIVE_FETCH_MS);
+      child.once("error", () => { clearTimeout(timer); resolve(false); });
+      child.once("close", code => { clearTimeout(timer); resolve(code === 0); });
+    });
+    if (!fetched) return false;
+    const tip = git(repo, ["rev-parse", "--verify", `${pending}^{commit}`]).trim();
+    const before = git(repo, ["rev-parse", "--verify", hiveImport], { optional: true }).trim();
+    if (before) git(repo, ["merge-base", "--is-ancestor", before, tip]);
+    git(repo, ["update-ref", hiveImport, tip, before]);
+    return true;
+  } catch { return false; }
+  finally { git(repo, ["update-ref", "-d", pending], { optional: true }); }
 }
 
 export function exportMind(repo: string, side: Side): string {

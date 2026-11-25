@@ -26,8 +26,8 @@ never touches project source.
 
 - **Storage.** `mind/` is plain markdown in git. No database sits in the
   critical path of reading or writing it. Templates seed a fresh `mind/`;
-  `install.sh` scaffolds it as a **private local git repo with no remote —
-  your memory never leaves your machine**.
+  `install.sh` scaffolds it as a **private local git repo with no remote**.
+  Only the opt-in projection below can carry approved records between your own machines.
 - **Metabolism.** All intelligence lives in small processes:
 
   | Process | File | Runs |
@@ -93,9 +93,31 @@ systems need a separately configured scheduler.
 
 - **Program:** `~/circadian` (this repo, cloned once).
 - **Memory:** `~/circadian/mind/` — a separate git repository, **no remote,
-  ever**. `USER.md` is private relational memory and never leaves this machine.
+  configured**. `USER.md` is private relational memory and never leaves this machine.
 - **LLM:** any OpenAI-compatible endpoint, used only for drafting and
   consolidation. Default `http://127.0.0.1:10240/v1` (see **Configuration**).
+
+### Optional mind transfer
+
+No remote off Josh's own machines. A joined setup uses an SSH URL for a
+**separate transfer-only repository** on hive; never expose either live mind
+checkout as a Git endpoint. The M5 initiates network traffic in both directions.
+Only projected `beliefs.jsonl`, `digested.jsonl`, `beliefs/<id>.md`, and
+`episodes/*.md` travel. `USER.md`, local render and scope files, and the
+source mind's Git history stay home. This is not a backup or a history merge.
+
+`bun src/mind-transfer.ts hive|m5 <mind repo>` creates the corresponding
+`refs/circadian/export/<side>`. Transfer only that ref, without force. On the
+receiver, use `refs/circadian/import/<side>` and run `circadian lane import <side>`
+then `circadian lane land <side>` to integrate validated records. Land needs a
+clean mind; don't clear pre-existing edits to satisfy it. Land re-renders SELF.
+
+With `circadian.hiveTransfer` set in the M5 mind's local Git config, wake fetches
+only hive's export ref, with a 1.5-second transport deadline, and always renders
+the local working copy. A failed fetch is logged and leaves the prior import ref
+in place. This wake does not touch the index or worktree or start REM. Removing
+that key disables the optional fetch. Setting it alone does not wire sleep-time
+publication or change either machine's scheduled REM job.
 
 ## Why
 
@@ -103,7 +125,7 @@ systems need a separately configured scheduler.
   durable, truthful, compoundable memory — and it self-hosts: the first data
   in the store is the store's own backlog, so the system has been running its
   own loop since day one.
-- **Private by construction.** No cloud, no account, no remote. Memory is a
+- **Private by construction.** No vendor-hosted mind store. Memory is a
   plain git repo you own.
 - **You stay in control.** Memory degrades gracefully (nightly decay), every
   claim is an atom with provenance, and nothing is hidden in a vector index
@@ -313,7 +335,7 @@ circadian-doctor        # same as: bun src/doctor.ts
   `circadian-graze`, `circadian-status`, `circadian-doctor`.
 - **License:** MIT.
 - **Privacy boundary for distribution:** everything personal lives in `mind/`
-  (a separate repo with no remote, ever) and `logs/` — both gitignored. The
+  (a separate repo with no configured remote) and `logs/` — both gitignored. The
   shipped product is `src/`, `templates/`, `install.sh`, `docs/`. See
   `docs/RELEASE.md` for the release checklist.
 

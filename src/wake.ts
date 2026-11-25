@@ -24,6 +24,7 @@ import { loadIndex, retrieveForWake } from "./relindex.ts";
 import { computeVerdictStreak } from "./status.ts";
 import { resolveScope, recallScope, scopeNowPath } from "./scopes.ts";
 import { whileAway } from "./away.ts";
+import { fetchHive, hiveTransfer } from "./mind-transfer.ts";
 import { readExtensions } from "./extensions.ts";
 import { viewsInstructions, checksInstructions } from "./views-usage.ts";
 import {
@@ -158,6 +159,17 @@ async function runHook(): Promise<void> {
   // CIRCADIAN_INTERNAL=1) must not receive the injection: the mind payload
   // would contaminate their strict-format outputs, and they are not wakes.
   if (process.env.CIRCADIAN_INTERNAL === "1") process.exit(0);
+  const upstream = hiveTransfer(MIND);
+  if (upstream) {
+    const fetched = await fetchHive(MIND, upstream);
+    const event = { process: "wake" as const, phase: "mind-transfer", correlation_id: corr,
+      summary: fetched ? "hive transfer ref fetched; wake renders the local mind" : "hive transfer unavailable; wake uses the last local mind",
+      context: { fetched } };
+    try {
+      if (fetched) ok(event);
+      else degraded({ ...event, cause: "fetch failed or timed out", next_action: "check the configured Circadian hive transfer URL and SSH reachability" });
+    } catch { /* telemetry may not withhold the local wake */ }
+  }
   const tier = detectFleetTier();
   const leanOperator = !tier.tier;
   const scope = resolveScope(MIND, sessionCwd);
@@ -485,7 +497,8 @@ async function runHook(): Promise<void> {
   // Deliver the injection. Law 7: wake must always deliver, even when degraded.
   if (!await deliverOutput(outputForSlot(outputs, 1, WAKE_PARTS), delivery, 1)) return;
 
-  // Scoreboard append (MIND-SPEC schema — kept for status.ts to read).
+  // A fetch-only wake leaves the mind untouched; its wake event is recorded
+  // in logs/ below instead of appending to the tracked scoreboard.
   try {
     const event = {
       ts: new Date().toISOString(),
@@ -494,7 +507,7 @@ async function runHook(): Promise<void> {
       lane: process.env.CIRCADIAN_LANE || "",
       worldview_tokens: selfTokens,
     };
-    appendFileSync(join(MIND, "scoreboard.jsonl"), JSON.stringify(event) + "\n");
+    if (!upstream) appendFileSync(join(MIND, "scoreboard.jsonl"), JSON.stringify(event) + "\n");
   } catch {
     // scoreboard append failure must never withhold the injection above
   }
@@ -523,8 +536,9 @@ async function runHook(): Promise<void> {
   // Fire REM in --if-due mode, fully detached, AFTER the injection is already
   // on stdout — it must never delay or block session start. --if-due exits
   // immediately when a run isn't owed, and can never double-run a slot, so
-  // this is safe to fire on every single wake.
-  try {
+  // this is safe to fire on ordinary wakes. A fetch-only wake must not start
+  // a mind writer; the separate scheduler remains independent of wake.
+  if (!upstream) try {
     const bun = process.env.CIRCADIAN_BUN_BIN || join(homedir(), ".bun/bin/bun");
     // popmem WS-F switchover: rem.ts's editor-grammar wave is retired; the
     // scheduled payload is now rem-popmem.ts (stack -> propagation judgment

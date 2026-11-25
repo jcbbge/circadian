@@ -8,6 +8,9 @@ import { createHash } from "node:crypto";
 import { readAtoms, readLedger, foldBeliefs, type LedgerEvent } from "./atoms.ts";
 import { renderSelf } from "./render.ts";
 import { correlation, fail, ok, idle } from "./obs.ts";
+import { incomingMind, type Side } from "./mind-transfer.ts";
+
+const ledgerDriver = `merge.circadian-ledger.driver=${JSON.stringify(process.execPath)} ${JSON.stringify(import.meta.filename)} merge-driver %O %A %B`;
 
 function git(repo: string, ...args: string[]): string {
   return execFileSync("git", ["-C", repo, ...args], { encoding: "utf8", stdio: ["pipe", "pipe", "pipe"] }).trim();
@@ -89,14 +92,40 @@ export function openLane(mindPath: string, id: string): string {
   // Attributes are part of the mind ref, so any future merge knows its ledger semantics.
   const attrs = path.join(mind, ".gitattributes");
   const current = fs.existsSync(attrs) ? fs.readFileSync(attrs, "utf8") : "";
-  if (!current.split("\n").includes("beliefs.jsonl merge=circadian-ledger")) {
-    fs.writeFileSync(attrs, current + (current && !current.endsWith("\n") ? "\n" : "") + "beliefs.jsonl merge=circadian-ledger\n");
+  const missing = ["beliefs.jsonl", "digested.jsonl"].map(p => `${p} merge=circadian-ledger`)
+    .filter(line => !current.split("\n").includes(line));
+  if (missing.length) {
+    fs.writeFileSync(attrs, current + (current && !current.endsWith("\n") ? "\n" : "") + missing.join("\n") + "\n");
     git(mind, "add", ".gitattributes");
     git(mind, "commit", "-m", "mind: enable deterministic ledger union for worker lanes");
   }
   fs.mkdirSync(path.dirname(dest), { recursive: true });
   git(mind, "worktree", "add", "-b", ref, dest, "main");
   return dest;
+}
+
+/** Validate before creating a lane. The ordinary land operation, not the
+ * transfer, brings the projected records onto main. */
+export function importLane(mindPath: string, side: Side): boolean {
+  const mind = root(mindPath);
+  requireMain(mind);
+  const tip = incomingMind(mind, side), ref = branch(side);
+  const exists = Boolean(git(mind, "branch", "--list", ref));
+  const dest = exists ? lanePath(mind, side) : openLane(mind, side);
+  if (exists && !fs.existsSync(dest)) git(mind, "worktree", "add", dest, ref);
+  if (git(dest, "rev-parse", "--path-format=absolute", "--git-common-dir") !==
+      git(mind, "rev-parse", "--path-format=absolute", "--git-common-dir") ||
+      git(dest, "branch", "--show-current") !== ref) throw new Error(`expected ${ref} checked out at ${dest}`);
+  clean(dest);
+  if (Bun.spawnSync(["git", "-C", dest, "merge-base", "--is-ancestor", tip, ref]).exitCode === 0) return false;
+  try {
+    git(dest, "-c", ledgerDriver, "merge", "--allow-unrelated-histories", "--no-commit", "--no-ff", tip);
+    git(dest, "commit", "-m", `lane: import approved ${side} records`);
+    return true;
+  } catch (e) {
+    try { git(dest, "merge", "--abort"); } catch { /* no merge began */ }
+    throw e;
+  }
 }
 
 export function laneConflicts(mindPath: string, id: string): LaneConflict[] {
@@ -120,9 +149,8 @@ export function landLane(mindPath: string, id: string): { conflicts: LaneConflic
   const result = consolidate(blob(mind, base), blob(mind, "main"), blob(mind, ref));
   // Git handles every other path with its normal 3-way rules. Never hide an
   // atom conflict or a conflict in authored memory behind an automatic choice.
-  const driver = `${JSON.stringify(process.execPath)} ${JSON.stringify(import.meta.filename)} merge-driver %O %A %B`;
   try {
-    try { git(mind, "-c", `merge.circadian-ledger.driver=${driver}`, "merge", "--no-commit", "--no-ff", ref); }
+    try { git(mind, "-c", ledgerDriver, "merge", "--no-commit", "--no-ff", ref); }
     catch (e) {
       const unmerged = git(mind, "diff", "--name-only", "--diff-filter=U").split("\n").filter(Boolean);
       if (!unmerged.length || unmerged.some(p => !["SELF.md", "render-manifest.json"].includes(p))) throw e;
@@ -161,9 +189,12 @@ export function laneMain(args: string[]): void {
   const positional = opt < 0 ? tail : tail.filter((_, i) => i !== opt && i !== opt + 1);
   const id = positional[0];
   try {
-    if (!mind || (opt >= 0 && !tail[opt + 1]) || positional.length > 1 || (command !== "conflicts" && !id)) throw new Error("usage: circadian lane open|land <id> | conflicts [id] [--mind <mind repo>]");
+    if (!mind || (opt >= 0 && !tail[opt + 1]) || positional.length > 1 || (command !== "conflicts" && !id)) throw new Error("usage: circadian lane open|land <id> | import <m5|hive> | conflicts [id] [--mind <mind repo>]");
     let summary: string;
     if (command === "open") summary = `opened ${branch(id)} at ${openLane(mind, id)}`;
+    else if (command === "import" && (id === "m5" || id === "hive")) {
+      summary = importLane(mind, id) ? `imported ${branch(id)}; ready to land` : `already imported ${branch(id)}`;
+    }
     else if (command === "land") {
       const r = landLane(mind, id);
       summary = `landed ${branch(id)}: ${r.conflicts.length} contradiction(s)`;
@@ -179,6 +210,7 @@ export function laneMain(args: string[]): void {
     else ok({ process: "lane", phase: command, correlation_id: corr, summary, context });
   } catch (e) {
     fail({ process: "lane", phase: command || "usage", correlation_id: corr, summary: "lane operation failed", context: { mind, id, command }, cause: (e as Error).message, next_action: "inspect the mind branch, worktree and merge state; commit or stash local changes before retrying" });
+    process.exitCode = 1;
   }
 }
 if (import.meta.main) {
