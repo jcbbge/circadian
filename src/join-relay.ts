@@ -49,6 +49,7 @@ if (import.meta.main) {
       const repo = resolve(arg);
       if (existsSync(repo)) throw new Error("refuse existing relay path");
       execFileSync("git", ["init", "--bare", repo], { stdio: "ignore" });
+      chmodSync(repo, 0o700);
       git(repo, "config", "receive.denyNonFastForwards", "true");
       git(repo, "config", "receive.denyDeletes", "true");
       const hook = join(repo, "hooks", "pre-receive");
