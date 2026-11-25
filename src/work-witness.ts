@@ -157,8 +157,56 @@ export async function witnessTask(
   return state.children;
 }
 
+export type FeedPage = { events: unknown[]; offset: string; caughtUp: boolean };
+/** Rivet's works feed (`index/works`): one line per top-level work that ended. No admin credential. */
+export const readFeedPage = async (offset: string): Promise<FeedPage> => {
+  const url = new URL("http://127.0.0.1:8642/durable-streams/v1/stream/index/works");
+  url.searchParams.set("offset", offset);
+  const response = await fetch(url, { redirect: "error", signal: AbortSignal.timeout(5000) });
+  if (response.status === 404) return { events: [], offset, caughtUp: true }; // no work has ended yet
+  const next = response.headers.get("stream-next-offset");
+  if (!response.ok || !next) throw new Error("works feed unavailable");
+  const events = await response.json();
+  if (!Array.isArray(events)) throw new Error("invalid works feed page");
+  return { events, offset: next, caughtUp: response.headers.get("stream-up-to-date") === "true" };
+};
+
+/** Witness every work the feed names since the last checkpoint, with every child it started. Returns the
+ * number of works witnessed. The offset is checkpointed per page, after its works are witnessed. */
+export async function followFeed(mind: string, stateDir: string, readFeed = readFeedPage,
+  witness: (mind: string, stateDir: string, task: string) => Promise<string[]> = witnessTask): Promise<number> {
+  const file = join(stateDir, "feed.json");
+  let offset: string = fs.existsSync(file) ? JSON.parse(fs.readFileSync(file, "utf8")).offset : "-1";
+  let count = 0;
+  for (;;) {
+    const page = await readFeed(offset);
+    for (const row of page.events) {
+      const task = (row as { task?: unknown })?.task;
+      if (typeof task !== "string" || !keyPattern.test(task)) continue;
+      const queue = [task];
+      const seen = new Set<string>();
+      for (const key of queue) {
+        if (seen.has(key)) continue;
+        seen.add(key);
+        queue.push(...await witness(mind, stateDir, key));
+      }
+      count++;
+    }
+    const old = offset;
+    offset = page.offset;
+    fs.mkdirSync(stateDir, { recursive: true, mode: 0o700 });
+    const tmp = file + "." + randomUUID();
+    try { fs.writeFileSync(tmp, JSON.stringify({ offset }), { mode: 0o600 }); fs.renameSync(tmp, file); }
+    finally { fs.rmSync(tmp, { force: true }); }
+    if (page.caughtUp || offset === old) return count;
+  }
+}
+
 if (import.meta.main) {
-  if (process.argv[2] === "--subscribe") {
+  if (process.argv[2] === "--follow") {
+    const home = process.env.CIRCADIAN_HOME || join(homedir(), "circadian");
+    console.log(`witnessed ${await followFeed(join(home, "mind"), join(home, "logs", "witness"))} work(s)`);
+  } else if (process.argv[2] === "--subscribe") {
     const home = process.env.CIRCADIAN_HOME || join(homedir(), "circadian");
     const queue = process.argv.slice(3);
     if (!queue.length) throw new Error("usage: work-witness.ts --subscribe <work-task>...");

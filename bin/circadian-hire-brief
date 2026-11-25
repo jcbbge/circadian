@@ -1,0 +1,7 @@
+#!/bin/sh
+# Rivet's hire brief callback (RIVET_HIRE_BRIEF_CALLBACK): a hand's task wake from its work's own record.
+# It never reads the mind. Rivet runs it with PATH=/usr/bin:/bin, no HOME, a 750 ms limit and an 8 KiB cap.
+HOME=$(getent passwd "$(id -u)" | cut -d: -f6)
+export HOME
+here=$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)
+exec "$HOME/.bun/bin/bun" "$here/src/work-witness.ts"

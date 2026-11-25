@@ -3,7 +3,7 @@ import { spawnSync } from "node:child_process";
 import * as fs from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { witnessTask, workBrief, workLane, type WorkEvent, type Page } from "./work-witness.ts";
+import { followFeed, witnessTask, workBrief, workLane, type WorkEvent, type Page, type FeedPage } from "./work-witness.ts";
 
 const step = "delivery.implementation";
 const at = "2026-11-25T11:00:00.000Z";
@@ -74,4 +74,24 @@ test("attempts stay lane-only; terminal publication survives crash before cursor
     expect(fs.readFileSync(join(mind, "SELF.md"), "utf8")).toBe("fixture SELF\n");
     expect(fs.readFileSync(join(mind, "NOW.md"), "utf8")).toBe("fixture NOW\n");
   } finally { fs.rmSync(root, { force: true, recursive: true }); }
+});
+
+test("the works feed witnesses each ended work and its children once, then resumes from its checkpoint", async () => {
+  const state = fs.mkdtempSync(join(tmpdir(), "witness-feed-"));
+  try {
+    const pages: Record<string, FeedPage> = {
+      "-1": { events: [{ task: "alpha", what: "grammar.done" }, { task: "../bad" }, { task: "beta", what: "task.abandoned" }], offset: "o1", caughtUp: false },
+      "o1": { events: [], offset: "o1", caughtUp: true },
+    };
+    const witnessed: string[] = [];
+    const witness = async (_mind: string, _state: string, task: string) => {
+      witnessed.push(task);
+      return task === "alpha" ? ["alpha.delivery", "alpha.delivery"] : [];
+    };
+    expect(await followFeed("/unused", state, async offset => pages[offset], witness)).toBe(2);
+    expect(witnessed).toEqual(["alpha", "alpha.delivery", "beta"]);
+    witnessed.length = 0;
+    expect(await followFeed("/unused", state, async offset => pages[offset], witness)).toBe(0);
+    expect(witnessed).toEqual([]);
+  } finally { fs.rmSync(state, { recursive: true, force: true }); }
 });
