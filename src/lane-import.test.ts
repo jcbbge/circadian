@@ -69,6 +69,8 @@ test("land a projected mind on a local lane, with both ledgers unioned and re-im
     fs.writeFileSync(join(mind, "other-local.txt"), "untracked fixture\n");
     expect(() => importLane(mind, "m5", preserve)).toThrow("dirty worktree");
     fs.unlinkSync(join(mind, "other-local.txt"));
+    // The M5's case: an unstaged edit to USER.md (machine-local) passes a transfer lane untouched.
+    fs.appendFileSync(join(mind, "USER.md"), "unsaved local edit\n");
     expect(git(mind, "rev-parse", "HEAD")).toBe(old);
     const scopeDiff = git(mind, "diff", "--", "scopes.tsv");
     const scopeIndex = git(mind, "ls-files", "--stage", "--", "scopes.tsv");
@@ -88,7 +90,7 @@ test("land a projected mind on a local lane, with both ledgers unioned and re-im
     git(mind, "merge-base", "--is-ancestor", old, "main");
     git(mind, "merge-base", "--is-ancestor", "fm/m5", "main");
     expect(fs.readFileSync(join(mind, "episodes/new.md"), "utf8")).toBe("another approved episode\n");
-    expect(fs.readFileSync(join(mind, "USER.md"), "utf8")).toBe("private 2\n");
+    expect(fs.readFileSync(join(mind, "USER.md"), "utf8")).toBe("private 2\nunsaved local edit\n");
     expect(fs.readFileSync(join(mind, "scopes.tsv"), "utf8")).toBe("local scope fixture 2\nuncommitted\n");
     expect(git(mind, "diff", "--", "scopes.tsv")).toBe(scopeDiff);
     expect(git(mind, "ls-files", "--stage", "--", "scopes.tsv")).toBe(scopeIndex);

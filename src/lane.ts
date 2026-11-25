@@ -69,12 +69,19 @@ export function consolidate(base: string, main: string, lane: string): { ledger:
 }
 
 type TransferOptions = { preserveLocalScopes?: boolean };
+// A transfer lane carries only approved mind paths and a land writes only the ledger, SELF.md and the render
+// manifest, so an unstaged edit to any other tracked file is never touched: hive's scopes.tsv, the M5's
+// USER.md (2026-11-25). Staged edits and untracked files still stop the lane.
+const machineLocalEdit = (line: string): boolean => {
+  const match = /^ M (.+)$/.exec(line);
+  return !!match && !approvedMindPath(match[1]) && match[1] !== "SELF.md" && match[1] !== "render-manifest.json";
+};
 function clean(repo: string, preserveLocalScopes = false): void {
   // Publication metadata is local to the worktree, not part of the mind ref.
   // NUL framing preserves porcelain's leading space for an unstaged change.
   const dirty = gitOutput(repo, "status", "--porcelain=v1", "-z", "--no-renames", "--untracked-files=all").split("\0")
     .filter(line => line && !/^\?\? (intents|receipts)\//.test(line) &&
-      !(preserveLocalScopes && line === " M scopes.tsv"));
+      !(preserveLocalScopes && machineLocalEdit(line)));
   if (dirty.length) throw new Error(`dirty worktree: ${repo}; inspect local changes before lane operation`);
 }
 function branch(id: string): string {

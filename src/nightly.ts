@@ -1,13 +1,14 @@
 #!/usr/bin/env bun
 // Preserve each phase's failure without stranding successfully harvested episodes.
 import { execFileSync, spawnSync } from "node:child_process";
-import { receive } from "./join-sync.ts";
+import { receive, send } from "./join-sync.ts";
+import { fetchHive } from "./mind-transfer.ts";
 import { importLane, landLane } from "./lane.ts";
 import { homedir } from "node:os";
 import { join } from "node:path";
 import { correlation, degraded, ok } from "./obs.ts";
 
-export function runNightly(): number {
+export async function runNightly(): Promise<number> {
   const home = process.env.CIRCADIAN_HOME || join(homedir(), "circadian");
   const bun = process.env.CIRCADIAN_BUN_BIN || process.execPath;
   const corr = correlation("nightly");
@@ -37,11 +38,28 @@ export function runNightly(): number {
         cause: (e as Error).message, next_action: "inspect fm/m5 and relay refs, then retry import/land without altering local edits", context: {} });
     }
   }
-  for (const [script, ...args] of [
-    ["harvest.ts"],
-    ["rem-popmem.ts", "--drain"],
-    ["doctor.ts", "--alert"],
-  ]) {
+  // The M5's role (a hiveTransfer URL, set only there): hive consolidates both minds, so the M5 lands hive's
+  // consolidated mind (keeping its machine-local edits), drafts its own episodes, sends them, and never runs
+  // REM itself; two REMs fading the same beliefs is what the join removes (Josh, 2026-11-25).
+  let hiveUrl = "";
+  try { hiveUrl = execFileSync("git", ["-C", mind, "config", "--local", "--get", "circadian.hiveTransfer"], { encoding: "utf8" }).trim(); }
+  catch { /* not the M5, or no join */ }
+  if (hiveUrl) {
+    try {
+      if (!(await fetchHive(mind, hiveUrl))) throw new Error("hive's export could not be fetched");
+      importLane(mind, "hive", { preserveLocalScopes: true });
+      const landed = spawnSync("git", ["-C", mind, "merge-base", "--is-ancestor", "fm/hive", "main"]);
+      if (landed.status !== 0) landLane(mind, "hive", { preserveLocalScopes: true });
+      ok({ process: "ops", phase: "mind-transfer", correlation_id: corr, summary: "hive's consolidated mind landed on the M5", context: {} });
+    } catch (e) {
+      failed = true;
+      degraded({ process: "ops", phase: "mind-transfer", correlation_id: corr,
+        summary: "hive's mind not landed on the M5; local phases continue", cause: (e as Error).message,
+        next_action: "inspect refs/circadian/import/hive and fm/hive, then retry without altering local edits", context: {} });
+    }
+  }
+  const phases = hiveUrl ? [["harvest.ts"], ["doctor.ts", "--alert"]] : [["harvest.ts"], ["rem-popmem.ts", "--drain"], ["doctor.ts", "--alert"]];
+  for (const [script, ...args] of phases) {
     const result = spawnSync(bun, [join(home, "src", script), ...args], {
       cwd: home, env: { ...process.env, CIRCADIAN_HOME: home }, stdio: "inherit",
     });
@@ -59,7 +77,19 @@ export function runNightly(): number {
       ok({ ...event, summary: `${script} completed` });
     }
   }
+  // Publish this machine's approved records for the other side: the M5 its new episodes, hive its
+  // consolidated mind for the M5's next land.
+  if (hiveUrl || relay) {
+    try {
+      const tip = hiveUrl ? send(mind, "m5", hiveUrl) : send(mind, "hive", relay);
+      ok({ process: "ops", phase: "mind-transfer", correlation_id: corr, summary: `${hiveUrl ? "M5" : "hive"} projection published to the relay`, context: { tip } });
+    } catch (e) {
+      failed = true;
+      degraded({ process: "ops", phase: "mind-transfer", correlation_id: corr, summary: "projection not published to the relay",
+        cause: (e as Error).message, next_action: "retry join-sync send; local episodes and commits remain", context: {} });
+    }
+  }
   return failed ? 1 : 0;
 }
 
-if (import.meta.main) process.exitCode = runNightly();
+if (import.meta.main) process.exitCode = await runNightly();
