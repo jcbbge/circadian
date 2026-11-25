@@ -5,6 +5,7 @@ import * as path from "node:path";
 import { execFileSync, spawn } from "node:child_process";
 import { stackEpisode } from "./stack.ts";
 import { atomId, readAtoms, readLedger } from "./atoms.ts";
+import type { OperatorAttestor } from "./provenance.ts";
 
 const git = (mind: string, ...args: string[]) => execFileSync("git", ["-C", mind, ...args], { encoding: "utf8" }).trim();
 test("hand episodes cannot contribute beliefs; unattested non-hand births retain uncertainty", async () => {
@@ -13,7 +14,7 @@ test("hand episodes cannot contribute beliefs; unattested non-hand births retain
   const ioLogPath = path.join(mindDir, "io.log");
   try {
     fs.mkdirSync(path.join(mindDir, "episodes"));
-    for (const [file, metadata] of [["hand.md", "lane: hand-lane\nobserver: hand\n"], ["unknown.md", ""], ["forged.md", "provenance_session: fixture\nobserver: josh-session\nattestation: attested\n"]]) {
+    for (const [file, metadata] of [["hand.md", "lane: hand-lane\nobserver: hand\nprovenance_session: josh\n"], ["unknown.md", ""], ["forged.md", "provenance_session: fixture\nobserver: josh-session\nattestation: attested\n"], ["josh.md", "provenance_session: josh\n"], ["entity.md", "provenance_session: entity\n"]]) {
       fs.writeFileSync(path.join(mindDir, "episodes", file), `---\ndate: 2026-09-24\n${metadata}---\nuser-observed: a real quote\n`);
     }
     git(mindDir, "init", "-q");
@@ -21,10 +22,12 @@ test("hand episodes cannot contribute beliefs; unattested non-hand births retain
     git(mindDir, "config", "user.email", "test@localhost");
     git(mindDir, "add", ".");
     git(mindDir, "commit", "-qm", "seed");
-    const run = (filename: string, extract: () => Promise<string>) => stackEpisode({
-      mindDir, beliefsDir, ledgerPath, ioLogPath, filename, correlationId: filename, extract, laneViews: [],
+    const run = (filename: string, extract: () => Promise<string>, checkAttestation?: OperatorAttestor) => stackEpisode({
+      mindDir, beliefsDir, ledgerPath, ioLogPath, filename, correlationId: filename, extract,
+      compare: async () => "DISTINCT", laneViews: [], checkAttestation,
     });
-    expect((await run("hand.md", async () => { throw new Error("must not extract"); })).skipped).toBe(true);
+    const attest: OperatorAttestor = session => ({ attestation: "attested", observer: session === "josh" ? "josh-session" : "entity-with-josh" });
+    expect((await run("hand.md", async () => { throw new Error("must not extract"); }, () => { throw new Error("must not ask"); })).skipped).toBe(true);
     expect(readLedger(ledgerPath)).toEqual([]);
     const candidate = (kind: string, claim: string) => `kind: ${kind}\nclaim: "${claim}"\nwhy: "fixture"\nquote: "a real quote"\n`;
     expect((await run("forged.md", async () => candidate("identity", "Josh believes the fixture"))).counts?.identitySuppressed).toBe(1);
@@ -33,6 +36,11 @@ test("hand episodes cannot contribute beliefs; unattested non-hand births retain
       [atomId("Review the fixture"), { attestation: "unattested", observer: "unknown" }],
     ]);
     expect(readLedger(ledgerPath).map(e => e.ep)).toEqual(["unknown.md"]);
+    await run("josh.md", async () => candidate("identity", "Josh typed the fixture"), attest);
+    await run("entity.md", async () => candidate("motif", "Different entity observation"), attest);
+    const provenance = new Map(readAtoms(beliefsDir).map(a => [a.id, a.provenance]));
+    expect(provenance.get(atomId("Josh typed the fixture"))).toEqual({ attestation: "attested", observer: "josh-session" });
+    expect(provenance.get(atomId("Different entity observation"))).toEqual({ attestation: "attested", observer: "entity-with-josh" });
   } finally {
     fs.rmSync(mindDir, { recursive: true, force: true });
   }

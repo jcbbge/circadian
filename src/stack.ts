@@ -127,7 +127,7 @@ import { publish, recoverPublications } from "./publish.ts";
 import { readExtensions } from "./extensions.ts";
 import { bindCandidateSourceLines, numberSourceLines } from "./stack-source-lines.ts";
 import { VIEW_IO_LIMITS } from "./views.ts";
-import { observationProvenance } from "./provenance.ts";
+import { observationProvenance, type OperatorAttestor } from "./provenance.ts";
 
 // ---------------------------------------------------------------------
 // knobs — all thresholds exported, per the brief
@@ -787,6 +787,8 @@ export interface StackEpisodeContext {
   laneViews?: string[];
   /** Injectable per-vote decision transport; production uses decide. */
   voteTransport?: DecisionTransport;
+  /** Trusted service boundary, not episode-supplied metadata. */
+  checkAttestation?: OperatorAttestor;
 }
 
 export interface StackCounts {
@@ -845,7 +847,7 @@ export async function stackEpisode(ctx: StackEpisodeContext): Promise<StackEpiso
       summary: "hand episode retained in its lane, not absorbed", context: { filename: ctx.filename } });
     return { skipped: true };
   }
-  const provenance = observationProvenance(header.match(/^provenance_session: (.+)$/m)?.[1] ?? "", false);
+  const provenance = observationProvenance(header.match(/^provenance_session: (.+)$/m)?.[1] ?? "", false, ctx.checkAttestation);
 
   // Idempotence layer (b): the episode-level short-circuit ("suspenders" —
   // layer (a) is the dedupe pipeline itself, below).

@@ -21,16 +21,17 @@ import { normalizeTurnText } from "./transcript-format.ts";
 export type ObservationProvenance =
   | { attestation: "unattested"; observer: "hand" | "unknown" }
   | { attestation: "attested"; observer: "josh-session" | "entity-with-josh" };
+export type OperatorAttestor = (session: string) => Extract<ObservationProvenance, { attestation: "attested" }> | null;
 
 /** Only a trusted, external session receipt may replace this check. Neither
  * hook fields, transcript roles, nor episode prose can attest who typed. */
-export function checkOperatorAttestation(_session: string): Extract<ObservationProvenance, { attestation: "attested" }> | null {
+export const checkOperatorAttestation: OperatorAttestor = _session => {
   return null;
-}
+};
 
-export function observationProvenance(session: string, hand: boolean): ObservationProvenance {
+export function observationProvenance(session: string, hand: boolean, check = checkOperatorAttestation): ObservationProvenance {
   if (hand) return { attestation: "unattested", observer: "hand" };
-  return checkOperatorAttestation(session) ?? { attestation: "unattested", observer: "unknown" };
+  return (session ? check(session) : null) ?? { attestation: "unattested", observer: "unknown" };
 }
 
 /** Resolve session-end identity before detaching. Never rely on the worker's
