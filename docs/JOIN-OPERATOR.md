@@ -1,9 +1,11 @@
 # Hive–M5 Circadian join: operator runbook
 
-Run live by the M5 oracle on 2026-11-25, 11:19 to 11:33 CT; every gate passed. Gate 4 first failed: the
+Run live by the M5 oracle on 2026-11-25, 11:19 to 11:33 CT. Gates 0 to 3 passed. Gate 4 first failed: the
 lands wrote hive's 1.9 MB ledger empty (lane.ts read limit, fixed in a7d3f4a) and SELF rendered 3 atoms;
 the ledger was rebuilt by the same consolidation in an additive commit (hive mind 855d885a) before the
-M5 REM was disabled. The record is in hive `~/desk/rivet-install-log.md`.
+M5 REM was disabled; an independent check then found the M5's mind frozen (it cannot land hive's
+export while USER.md is dirty), so M5 REM was re-enabled until the M5 can land. The record is in hive
+`~/desk/rivet-install-log.md`.
 
 Only the oracle on the M5 performs this cutover and records **command, host, CT time, exit status and redacted output** on `circadian.join`. The code branch is a candidate, not evidence of a live join. Do not paste USER.md, wake text, local edits, credentials or URLs with secrets. Stop at the first failed check; no stash, reset, history rewrite or force push. The M5 REM job remains enabled until the exact live round trip **and** fallback both pass. Do not touch Rex, Rivet or other M5 software. Read the oracle guide before cross-machine work. Commands below run on hive unless prefixed `ssh m5`; substitute verified paths before execution. A `git merge` on a live mind is not generally reversible; after a failed land, inspect and ask Josh before any rollback.
 

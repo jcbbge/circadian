@@ -134,8 +134,10 @@ round trip and fallback both pass.
 
 **Live since 2026-11-25** (11:19 to 11:33 CT): the relay is `~/circadian-relay.git` on
 hive; the M5 carries `circadian.hiveTransfer` and hive carries `circadian.relayPath`;
-hive's REM (05:00 CT) consolidates both machines and the M5's `com.circadian.rem` is
-disabled. Measured live: a real M5 session's episode landed on hive byte-identical
+hive's REM (05:00 CT) consolidates both machines' records into hive's mind. The M5's
+`com.circadian.rem` stays **on** for now: the M5 fetches hive's export but cannot yet land it
+(its USER.md edit keeps the mind dirty and `lane land` refuses a dirty worktree), so without its
+own REM the M5's mind would freeze. Measured live: a real M5 session's episode landed on hive byte-identical
 and returned on the M5's next wake; a stalled fetch fell back to the local mind in a
 3 s session. [The operator runbook](docs/JOIN-OPERATOR.md) has the gates, checks and
 undo points (re-enable M5 REM: `launchctl enable gui/$(id -u)/com.circadian.rem` and
