@@ -61,6 +61,7 @@ describe("isDroneOpening — the 2026-08-09 post-mortem patterns", () => {
       "say ok when you have read it",
       "work out of /Users/jrg/.madewell/work/packages/unit-3",
       "post a claim to the tower board before you start",
+      "Task: oracle.research-m5\nRulebook: ~/rivet/CONTRACTOR.md on hive. You are this task's receiver.",
     ];
     for (const d of drones) expect(isDroneOpening(d)).toBe(true);
   });

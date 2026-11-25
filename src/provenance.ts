@@ -82,6 +82,8 @@ const DRONE_OPENINGS: RegExp[] = [
   /\.madewell\/work\/packages\//,
   /claim to the tower board/i,
   /and then stop\.? do not/i,
+  // A Rivet sub-agent brief (2026-11-25: six of the oracle's helper agents were drafted into memory).
+  /^\s*task: [\w.:-]+\s*\n\s*rulebook:/i,
 ];
 
 /** True when a session's opening user turn is a worker/orchestrator brief.
