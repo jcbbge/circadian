@@ -427,6 +427,10 @@ async function runWorker(): Promise<void> {
   }
 }
 
+// Contractor sessions have no configured lane capture here. In particular
+// the raw entry point and Pi's detached worker must not bypass the shell gate.
+if (process.env.MW_WORKER === "1") process.exit(0);
+
 // INVOCATION LEDGER: log who started us BEFORE any throttle can exit early.
 // Hook mode returns in <10ms and previously left no trace of its caller, which
 // is why a ~1,400/hour fan-out had no identifiable source.

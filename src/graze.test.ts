@@ -69,6 +69,22 @@ function skipEvents(phase: string): any[] {
   return ledger().filter((e) => e.process === "graze" && e.phase === phase);
 }
 
+test("a contractor flag closes both direct and detached global capture", () => {
+  const transcript = transcriptOf(8000);
+  const event = JSON.stringify({ session_id: SESSION, transcript_path: transcript });
+  const env = { ...process.env, CIRCADIAN_HOME: home, CIRCADIAN_BUN_BIN: "/bin/false",
+    CIRCADIAN_GRAZE_EVENT: event, MW_WORKER: "1" };
+  for (const args of [[], ["--worker"]]) {
+    const result = spawnSync(BUN, [GRAZE, ...args], { input: event, env, encoding: "utf8" });
+    expect(result.status).toBe(0);
+    expect(result.stdout).toBe("");
+    expect(result.stderr).toBe("");
+  }
+  expect(ledger()).toEqual([]);
+  expect(existsSync(join(home, "logs", "graze.log"))).toBe(false);
+  expect(existsSync(join(home, "mind", "meals", `${SESSION}.md`))).toBe(false);
+});
+
 test("lane-stamped worker brief becomes a lane-tagged meal; unstamped brief stays gated", () => {
   const transcript = join(home, "worker.jsonl");
   writeFileSync(transcript, [
