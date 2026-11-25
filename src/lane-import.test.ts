@@ -56,25 +56,47 @@ test("land a projected mind on a local lane, with both ledgers unioned and re-im
       expect(spawnSync("git", ["-C", transfer, "cat-file", "-e", expr]).status).not.toBe(0);
     }
 
-    // Preserve local edits: an unclean checkout is refused before touching its lane.
+    const preserve = { preserveLocalScopes: true };
+    const cli = (...args: string[]) => Bun.spawnSync([process.execPath, join(import.meta.dir, "archaeology.ts"),
+      "lane", ...args, "--preserve-local-scopes", "--mind", mind], { env: { ...process.env, CIRCADIAN_HOME: root } });
+    // Ordinary land still needs a clean mind. The transfer option never accepts staged edits.
     fs.appendFileSync(join(mind, "scopes.tsv"), "uncommitted\n");
     expect(() => importLane(mind, "m5")).toThrow("dirty worktree");
+    git(mind, "add", "--", "scopes.tsv");
+    expect(() => importLane(mind, "m5", preserve)).toThrow("dirty worktree");
+    expect(git(mind, "branch", "--list", "fm/m5")).toBe("");
+    git(mind, "restore", "--staged", "--", "scopes.tsv");
+    fs.writeFileSync(join(mind, "other-local.txt"), "untracked fixture\n");
+    expect(() => importLane(mind, "m5", preserve)).toThrow("dirty worktree");
+    fs.unlinkSync(join(mind, "other-local.txt"));
     expect(git(mind, "rev-parse", "HEAD")).toBe(old);
-    expect(fs.readFileSync(join(mind, "scopes.tsv"), "utf8")).toBe("local scope fixture 2\nuncommitted\n");
-    fs.writeFileSync(join(mind, "scopes.tsv"), "local scope fixture 2\n");
+    const scopeDiff = git(mind, "diff", "--", "scopes.tsv");
+    const scopeIndex = git(mind, "ls-files", "--stage", "--", "scopes.tsv");
+    git(mind, "config", "merge.autoStash", "true");
 
-    expect(importLane(mind, "m5")).toBe(true);
+    const imported = cli("import", "m5");
+    expect(imported.stderr.toString()).not.toContain("lane operation failed");
+    expect(imported.exitCode).toBe(0);
+    expect(imported.stdout.toString()).toContain("imported fm/m5; ready to land");
     git(mind, "merge-base", "--is-ancestor", old, "fm/m5");
     expect(fs.existsSync(join(mind, "episodes/new.md"))).toBe(false);
-    landLane(mind, "m5");
+    expect(() => landLane(mind, "m5")).toThrow("dirty worktree");
+    const merged = cli("land", "m5");
+    expect(merged.stderr.toString()).not.toContain("lane operation failed");
+    expect(merged.exitCode).toBe(0);
+    expect(merged.stdout.toString()).toContain("landed fm/m5");
     git(mind, "merge-base", "--is-ancestor", old, "main");
     git(mind, "merge-base", "--is-ancestor", "fm/m5", "main");
     expect(fs.readFileSync(join(mind, "episodes/new.md"), "utf8")).toBe("another approved episode\n");
     expect(fs.readFileSync(join(mind, "USER.md"), "utf8")).toBe("private 2\n");
-    expect(fs.readFileSync(join(mind, "scopes.tsv"), "utf8")).toBe("local scope fixture 2\n");
+    expect(fs.readFileSync(join(mind, "scopes.tsv"), "utf8")).toBe("local scope fixture 2\nuncommitted\n");
+    expect(git(mind, "diff", "--", "scopes.tsv")).toBe(scopeDiff);
+    expect(git(mind, "ls-files", "--stage", "--", "scopes.tsv")).toBe(scopeIndex);
+    expect(git(mind, "diff", "--cached", "--name-only")).toBe("");
+    expect(git(mind, "for-each-ref", "refs/stash")).toBe("");
     const landed = git(mind, "rev-parse", "main");
     git(mind, "worktree", "remove", join(root, "mind-lanes", "m5"));
-    expect(importLane(mind, "m5")).toBe(false);
+    expect(importLane(mind, "m5", preserve)).toBe(false);
     expect(git(mind, "rev-parse", "main")).toBe(landed);
     expect(git(mind, "rev-list", "main").split("\n")).not.toContain(source);
     expect(git(mind, "show", "main:beliefs.jsonl").split("\n")).toEqual([row(1), row(2), row(3)]);
@@ -82,8 +104,15 @@ test("land a projected mind on a local lane, with both ledgers unioned and re-im
     expect(git(mind, "remote")).toBe("");
 
     git(mind, "update-ref", "refs/circadian/import/hive", old);
-    expect(() => importLane(mind, "hive")).toThrow("non-approved object");
+    expect(() => importLane(mind, "hive", preserve)).toThrow("non-approved object");
     expect(git(mind, "rev-parse", "main")).toBe(landed);
     expect(git(mind, "branch", "--list", "fm/hive")).toBe("");
+
+    const lane = join(root, "mind-lanes", "m5");
+    fs.appendFileSync(join(lane, "scopes.tsv"), "lane must not touch scopes\n");
+    git(lane, "commit", "-qm", "machine-local lane change", "--", "scopes.tsv");
+    expect(() => landLane(mind, "m5", preserve)).toThrow("machine-local path");
+    expect(git(mind, "rev-parse", "main")).toBe(landed);
+    expect(git(mind, "diff", "--", "scopes.tsv")).toBe(scopeDiff);
   } finally { fs.rmSync(root, { recursive: true, force: true }); }
 });

@@ -9,7 +9,10 @@ The mind repo is a plain git repository with no configured remote. No remote off
 Josh's own machines. An opt-in join uses a separate transfer-only repo for
 additive projections of approved beliefs, ledgers, and episodes, never source
 mind history. Hive does not initiate connections to the M5. `USER.md` is
-private relational memory and never leaves this machine. `erase` is the only
+private relational memory and never leaves this machine. Transfer import and
+land can preserve an unstaged local `scopes.tsv` edit in place; land rejects
+changes to non-transfer paths from the lane. Ordinary lanes require clean
+worktrees. `erase` is the only
 process allowed to rewrite mind history: with an explicit reason and `--yes`,
 it removes an atom, redacts its text in episodes and all reachable commits,
 prunes unreachable objects, and records only the id and reason in compost.md.

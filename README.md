@@ -109,8 +109,12 @@ source mind's Git history stay home. This is not a backup or a history merge.
 `bun src/mind-transfer.ts hive|m5 <mind repo>` creates the corresponding
 `refs/circadian/export/<side>`. Transfer only that ref, without force. On the
 receiver, use `refs/circadian/import/<side>` and run `circadian lane import <side>`
-then `circadian lane land <side>` to integrate validated records. Land needs a
-clean mind; don't clear pre-existing edits to satisfy it. Land re-renders SELF.
+then `circadian lane land <side>` to integrate validated records and re-render
+SELF. Both operations normally require a clean mind. For the join's
+machine-local `scopes.tsv` edit, add `--preserve-local-scopes` to both commands:
+only an unstaged modification of that tracked file is allowed, and land
+rejects a transfer lane that changes any non-transfer path. The edit stays
+uncommitted; do not clear it or use this option for ordinary worker lanes.
 
 With `circadian.hiveTransfer` set in the M5 mind's local Git config, wake fetches
 only hive's export ref, with a 1.5-second transport deadline, and always renders

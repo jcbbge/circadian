@@ -8,12 +8,15 @@ import { createHash } from "node:crypto";
 import { readAtoms, readLedger, foldBeliefs, type LedgerEvent } from "./atoms.ts";
 import { renderSelf } from "./render.ts";
 import { correlation, fail, ok, idle } from "./obs.ts";
-import { incomingMind, type Side } from "./mind-transfer.ts";
+import { approvedMindPath, incomingMind, type Side } from "./mind-transfer.ts";
 
 const ledgerDriver = `merge.circadian-ledger.driver=${JSON.stringify(process.execPath)} ${JSON.stringify(import.meta.filename)} merge-driver %O %A %B`;
 
+function gitOutput(repo: string, ...args: string[]): string {
+  return execFileSync("git", ["-C", repo, ...args], { encoding: "utf8", stdio: ["pipe", "pipe", "pipe"] });
+}
 function git(repo: string, ...args: string[]): string {
-  return execFileSync("git", ["-C", repo, ...args], { encoding: "utf8", stdio: ["pipe", "pipe", "pipe"] }).trim();
+  return gitOutput(repo, ...args).trim();
 }
 function blob(repo: string, ref: string): string {
   try { return git(repo, "show", `${ref}:beliefs.jsonl`); }
@@ -61,11 +64,14 @@ export function consolidate(base: string, main: string, lane: string): { ledger:
   return { ledger: unionLedger([...kept, ...contradictions].join("\n")), conflicts };
 }
 
-function clean(repo: string): void {
+type TransferOptions = { preserveLocalScopes?: boolean };
+function clean(repo: string, preserveLocalScopes = false): void {
   // Publication metadata is local to the worktree, not part of the mind ref.
-  const dirty = git(repo, "status", "--porcelain", "--untracked-files=all").split("\n")
-    .filter(line => line && !/^\?\? (intents|receipts)\//.test(line));
-  if (dirty.length) throw new Error(`dirty worktree: ${repo}; commit or stash before lane operation`);
+  // NUL framing preserves porcelain's leading space for an unstaged change.
+  const dirty = gitOutput(repo, "status", "--porcelain=v1", "-z", "--no-renames", "--untracked-files=all").split("\0")
+    .filter(line => line && !/^\?\? (intents|receipts)\//.test(line) &&
+      !(preserveLocalScopes && line === " M scopes.tsv"));
+  if (dirty.length) throw new Error(`dirty worktree: ${repo}; inspect local changes before lane operation`);
 }
 function branch(id: string): string {
   if (!/^[a-zA-Z0-9][a-zA-Z0-9_-]{0,63}$/.test(id)) throw new Error("invalid lane id (use letters, digits, _ or -)");
@@ -77,15 +83,19 @@ function root(mind: string): string {
   if (git(real, "remote")) throw new Error("mind must remain local (no remote)");
   return real;
 }
-function requireMain(mind: string): void {
+function requireMain(mind: string, preserveLocalScopes = false): void {
   if (git(mind, "branch", "--show-current") !== "main") throw new Error("land/open requires main checked out in the mind root");
-  clean(mind);
+  clean(mind, preserveLocalScopes);
 }
 function lanePath(mind: string, id: string): string { return path.join(path.dirname(mind), "mind-lanes", id); }
 
 export function openLane(mindPath: string, id: string): string {
-  const mind = root(mindPath), ref = branch(id);
+  const mind = root(mindPath);
   requireMain(mind);
+  return openFromMain(mind, id);
+}
+function openFromMain(mind: string, id: string): string {
+  const ref = branch(id);
   if (git(mind, "branch", "--list", ref)) throw new Error(`lane ${ref} already exists`);
   const dest = lanePath(mind, id);
   if (fs.existsSync(dest)) throw new Error(`lane path exists: ${dest}`);
@@ -96,8 +106,8 @@ export function openLane(mindPath: string, id: string): string {
     .filter(line => !current.split("\n").includes(line));
   if (missing.length) {
     fs.writeFileSync(attrs, current + (current && !current.endsWith("\n") ? "\n" : "") + missing.join("\n") + "\n");
-    git(mind, "add", ".gitattributes");
-    git(mind, "commit", "-m", "mind: enable deterministic ledger union for worker lanes");
+    git(mind, "add", "--", ".gitattributes");
+    git(mind, "commit", "--only", "-m", "mind: enable deterministic ledger union for worker lanes", "--", ".gitattributes");
   }
   fs.mkdirSync(path.dirname(dest), { recursive: true });
   git(mind, "worktree", "add", "-b", ref, dest, "main");
@@ -106,12 +116,12 @@ export function openLane(mindPath: string, id: string): string {
 
 /** Validate before creating a lane. The ordinary land operation, not the
  * transfer, brings the projected records onto main. */
-export function importLane(mindPath: string, side: Side): boolean {
+export function importLane(mindPath: string, side: Side, { preserveLocalScopes = false }: TransferOptions = {}): boolean {
   const mind = root(mindPath);
-  requireMain(mind);
+  requireMain(mind, preserveLocalScopes);
   const tip = incomingMind(mind, side), ref = branch(side);
   const exists = Boolean(git(mind, "branch", "--list", ref));
-  const dest = exists ? lanePath(mind, side) : openLane(mind, side);
+  const dest = exists ? lanePath(mind, side) : openFromMain(mind, side);
   if (exists && !fs.existsSync(dest)) git(mind, "worktree", "add", dest, ref);
   if (git(dest, "rev-parse", "--path-format=absolute", "--git-common-dir") !==
       git(mind, "rev-parse", "--path-format=absolute", "--git-common-dir") ||
@@ -119,7 +129,7 @@ export function importLane(mindPath: string, side: Side): boolean {
   clean(dest);
   if (Bun.spawnSync(["git", "-C", dest, "merge-base", "--is-ancestor", tip, ref]).exitCode === 0) return false;
   try {
-    git(dest, "-c", ledgerDriver, "merge", "--allow-unrelated-histories", "--no-commit", "--no-ff", tip);
+    git(dest, "-c", ledgerDriver, "merge", "--allow-unrelated-histories", "--no-autostash", "--no-commit", "--no-ff", tip);
     git(dest, "commit", "-m", `lane: import approved ${side} records`);
     return true;
   } catch (e) {
@@ -136,21 +146,29 @@ export function laneConflicts(mindPath: string, id: string): LaneConflict[] {
   return divergentSupersedes(blob(mind, base), blob(mind, "main"), blob(mind, ref));
 }
 
-export function landLane(mindPath: string, id: string): { conflicts: LaneConflict[]; ledger: string } {
+export function landLane(mindPath: string, id: string, { preserveLocalScopes = false }: TransferOptions = {}): { conflicts: LaneConflict[]; ledger: string } {
   const mind = root(mindPath), ref = branch(id);
-  requireMain(mind);
+  if (preserveLocalScopes && id !== "m5" && id !== "hive") throw new Error("scope preservation is only for mind transfer lanes");
+  requireMain(mind, preserveLocalScopes);
   const dest = lanePath(mind, id);
   if (!fs.existsSync(dest)) throw new Error(`lane worktree missing: ${dest}`);
   clean(dest);
-  if (Bun.spawnSync(["git", "-C", mind, "merge-base", "--is-ancestor", ref, "main"]).exitCode === 0)
+  const laneTip = git(mind, "rev-parse", "--verify", `refs/heads/${ref}^{commit}`);
+  if (Bun.spawnSync(["git", "-C", mind, "merge-base", "--is-ancestor", laneTip, "main"]).exitCode === 0)
     throw new Error(`lane ${ref} has already landed`);
   const mainTip = git(mind, "rev-parse", "main");
-  const base = git(mind, "merge-base", "main", ref);
-  const result = consolidate(blob(mind, base), blob(mind, "main"), blob(mind, ref));
+  const base = git(mind, "merge-base", mainTip, laneTip);
+  if (preserveLocalScopes) {
+    const incoming = incomingMind(mind, id as Side);
+    git(mind, "merge-base", "--is-ancestor", incoming, laneTip);
+    const changed = gitOutput(mind, "diff", "--name-only", "--no-renames", "-z", base, laneTip).split("\0").filter(Boolean);
+    if (changed.some(p => !approvedMindPath(p))) throw new Error("transfer lane changes a machine-local path");
+  }
+  const result = consolidate(blob(mind, base), blob(mind, mainTip), blob(mind, laneTip));
   // Git handles every other path with its normal 3-way rules. Never hide an
   // atom conflict or a conflict in authored memory behind an automatic choice.
   try {
-    try { git(mind, "-c", ledgerDriver, "merge", "--no-commit", "--no-ff", ref); }
+    try { git(mind, "-c", ledgerDriver, "merge", "--no-autostash", "--no-commit", "--no-ff", laneTip); }
     catch (e) {
       const unmerged = git(mind, "diff", "--name-only", "--diff-filter=U").split("\n").filter(Boolean);
       if (!unmerged.length || unmerged.some(p => !["SELF.md", "render-manifest.json"].includes(p))) throw e;
@@ -167,6 +185,11 @@ export function landLane(mindPath: string, id: string): { conflicts: LaneConflic
     git(mind, "add", "--", "beliefs.jsonl", "SELF.md", "render-manifest.json");
     if (git(mind, "diff", "--name-only", "--diff-filter=U")) throw new Error("unresolved merge conflicts");
     if (git(mind, "rev-parse", "main") !== mainTip) throw new Error("main advanced during landing; retry against the new tip");
+    if (preserveLocalScopes) {
+      const staged = gitOutput(mind, "diff", "--cached", "--name-only", "--no-renames", "-z").split("\0").filter(Boolean);
+      if (staged.some(p => !approvedMindPath(p) && p !== "SELF.md" && p !== "render-manifest.json"))
+        throw new Error("transfer land would commit a machine-local path");
+    }
     git(mind, "commit", "-m", `lane: land ${ref} (${result.conflicts.length} contradictions)`);
     return result;
   } catch (e) {
@@ -186,17 +209,23 @@ export function laneMain(args: string[]): void {
   const [command, ...tail] = args;
   const opt = tail.indexOf("--mind");
   const mind = opt < 0 ? path.join(process.env.CIRCADIAN_HOME || path.join(homedir(), "circadian"), "mind") : tail[opt + 1];
-  const positional = opt < 0 ? tail : tail.filter((_, i) => i !== opt && i !== opt + 1);
+  const flags = opt < 0 ? tail : tail.filter((_, i) => i !== opt && i !== opt + 1);
+  const scopeFlag = "--preserve-local-scopes";
+  const preserveLocalScopes = flags.includes(scopeFlag);
+  const positional = flags.filter(arg => arg !== scopeFlag);
   const id = positional[0];
   try {
-    if (!mind || (opt >= 0 && !tail[opt + 1]) || positional.length > 1 || (command !== "conflicts" && !id)) throw new Error("usage: circadian lane open|land <id> | import <m5|hive> | conflicts [id] [--mind <mind repo>]");
+    if (!mind || (opt >= 0 && !tail[opt + 1]) || positional.length > 1 || (command !== "conflicts" && !id) ||
+        (preserveLocalScopes && (command !== "import" && command !== "land" || id !== "m5" && id !== "hive"))) {
+      throw new Error("usage: circadian lane open|land <id> | import <m5|hive> | conflicts [id] [--mind <mind repo>] [--preserve-local-scopes (transfer import/land only)]");
+    }
     let summary: string;
     if (command === "open") summary = `opened ${branch(id)} at ${openLane(mind, id)}`;
     else if (command === "import" && (id === "m5" || id === "hive")) {
-      summary = importLane(mind, id) ? `imported ${branch(id)}; ready to land` : `already imported ${branch(id)}`;
+      summary = importLane(mind, id, { preserveLocalScopes }) ? `imported ${branch(id)}; ready to land` : `already imported ${branch(id)}`;
     }
     else if (command === "land") {
-      const r = landLane(mind, id);
+      const r = landLane(mind, id, { preserveLocalScopes });
       summary = `landed ${branch(id)}: ${r.conflicts.length} contradiction(s)`;
     } else if (command === "conflicts") {
       const ids = id ? [id] : git(root(mind), "branch", "--list", "fm/*", "--format=%(refname:short)")
@@ -209,7 +238,7 @@ export function laneMain(args: string[]): void {
     if (command === "conflicts" && summary === "no divergent supersedes") idle({ process: "lane", phase: command, correlation_id: corr, summary, context });
     else ok({ process: "lane", phase: command, correlation_id: corr, summary, context });
   } catch (e) {
-    fail({ process: "lane", phase: command || "usage", correlation_id: corr, summary: "lane operation failed", context: { mind, id, command }, cause: (e as Error).message, next_action: "inspect the mind branch, worktree and merge state; commit or stash local changes before retrying" });
+    fail({ process: "lane", phase: command || "usage", correlation_id: corr, summary: "lane operation failed", context: { mind, id, command }, cause: (e as Error).message, next_action: "inspect the mind branch, worktree and merge state before retrying; preserve local changes" });
     process.exitCode = 1;
   }
 }
