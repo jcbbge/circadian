@@ -8,7 +8,13 @@ the process is wrong.
 The mind repo is a plain git repository with no configured remote. No remote off
 Josh's own machines. An opt-in join uses a separate transfer-only repo for
 additive projections of approved beliefs, ledgers, and episodes, never source
-mind history. Hive does not initiate connections to the M5. `USER.md` is
+mind history. The bare relay rejects unapproved ref updates and trees; M5 SLEEP
+commits locally and attempts a projection push, M5 WAKE fetches hive's export
+within 1.5 seconds and falls back to the local mind, and hive nightly imports
+from a local relay before REM only when explicitly configured. Hive does not
+initiate connections to the M5. Neither configuration disables M5 REM: first
+prove a live round trip and fallback, then change only its Circadian job.
+`USER.md` is
 private relational memory and never leaves this machine. Transfer import and
 land can preserve an unstaged local `scopes.tsv` edit in place; land rejects
 changes to non-transfer paths from the lane. Ordinary lanes require clean

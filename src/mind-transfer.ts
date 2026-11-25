@@ -50,11 +50,15 @@ function validate(repo: string, tip: string, forbidden: Set<string>): void {
   }
 }
 
-export function incomingMind(repo: string, side: Side): string {
-  if (side !== "hive" && side !== "m5") throw new Error("invalid transfer side");
-  const tip = git(repo, ["rev-parse", "--verify", `refs/circadian/import/${side}^{commit}`]).trim();
+export function validateIncomingRef(repo: string, ref: string): string {
+  if (!/^refs\/circadian\/(?:import\/(?:hive|m5)|pending\/[a-f0-9-]{36})$/.test(ref)) throw new Error("invalid incoming transfer ref");
+  const tip = git(repo, ["rev-parse", "--verify", `${ref}^{commit}`]).trim();
   validate(repo, tip, userObjects(repo));
   return tip;
+}
+export function incomingMind(repo: string, side: Side): string {
+  if (side !== "hive" && side !== "m5") throw new Error("invalid transfer side");
+  return validateIncomingRef(repo, `refs/circadian/import/${side}`);
 }
 
 export const HIVE_FETCH_MS = 1500;

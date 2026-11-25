@@ -116,12 +116,23 @@ only an unstaged modification of that tracked file is allowed, and land
 rejects a transfer lane that changes any non-transfer path. The edit stays
 uncommitted; do not clear it or use this option for ordinary worker lanes.
 
-With `circadian.hiveTransfer` set in the M5 mind's local Git config, wake fetches
-only hive's export ref, with a 1.5-second transport deadline, and always renders
-the local working copy. A failed fetch is logged and leaves the prior import ref
-in place. This wake does not touch the index or worktree or start REM. Removing
-that key disables the optional fetch. Setting it alone does not wire sleep-time
-publication or change either machine's scheduled REM job.
+`bun src/join-relay.ts init <private bare relay on hive>` creates a dedicated
+repository whose pre-receive hook rejects non-approved paths, histories, refs,
+deletes and non-fast-forward pushes. `bun src/join-sync.ts m5-send <mind> <ssh-url>`
+pushes only the M5 projection; `hive-receive <mind> <local-relay-path>` validates
+it before exposing the hive import ref; `hive-send` publishes hive's projection
+back to that relay. The M5 and hive mind repos remain remote-free. With the
+verified relay SSH URL in M5's local `circadian.hiveTransfer`, wake fetches only
+hive's export ref within 1.5 seconds and always renders the local working copy.
+A failed fetch logs fallback and leaves the import ref in place. SLEEP commits
+its episode locally and attempts the approved-only M5 push; failure leaves its
+local episode for manual retry. If `circadian.relayPath` is configured in hive's
+local mind Git config, hive's nightly job fetches from its **local relay** and
+lands M5 records before REM. No automated hive process connects to M5. Neither
+config key changes scheduler state; do not disable M5 REM until the observed
+round trip and fallback both pass. The candidate is **not** a live cutover;
+follow [the operator runbook](docs/JOIN-OPERATOR.md) for ordered live gates,
+checks, and stop/undo points.
 
 ## Why
 

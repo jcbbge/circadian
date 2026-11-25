@@ -34,6 +34,8 @@ import { ok, idle, degraded, fail, correlation } from "./obs.ts";
 import { isDroneOpening, isFleetPacketOpening, firstUserTurnFromText, resolveEpisodeProvenance, observationProvenance } from "./provenance.ts";
 import { normalizeTurnText } from "./transcript-format.ts";
 import { publish, recoverPublications } from "./publish.ts";
+import { hiveTransfer } from "./mind-transfer.ts";
+import { send } from "./join-sync.ts";
 import { createHash } from "node:crypto";
 import { resolveScope, sessionLocation, tagEpisode, scopeNowPath } from "./scopes.ts";
 
@@ -1251,6 +1253,20 @@ export async function draftSessionEpisode(opts: {
     files: backfilled || opts.lane ? { [`episodes/${filename}`]: episodeContent } : { [`episodes/${filename}`]: episodeContent, [nowRelative]: nowContent },
     appends: backfilled ? {} : { "scoreboard.jsonl": sleepLine + verdictLine },
   });
+  // Opt-in on M5 only. The episode has already been committed locally; a
+  // transport outage cannot lose it or turn this sleep into a false success.
+  const transferUrl = hiveTransfer(MIND);
+  if (transferUrl && !DRY_RUN) {
+    try {
+      const tip = send(MIND, "m5", transferUrl);
+      ok({ process: "sleep", phase: "mind-transfer", correlation_id: corr, session_id: sessionId,
+        summary: "approved M5 projection pushed", context: { tip } });
+    } catch (e) {
+      degraded({ process: "sleep", phase: "mind-transfer", correlation_id: corr, session_id: sessionId,
+        summary: "episode committed locally; approved projection not pushed",
+        cause: (e as Error).message, next_action: "retry bun src/join-sync.ts m5-send <mind> <relay SSH URL>", context: {} });
+    }
+  }
   if (opts.lane && !backfilled) idle({ process: "sleep", phase: "now", correlation_id: corr, session_id: sessionId,
     summary: `lane session (${opts.lane}): episode written, NOW left for the operator's sessions`,
     context: { lane: opts.lane, scope, now_path: nowRelative } });
