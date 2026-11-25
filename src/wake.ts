@@ -22,11 +22,12 @@ import { ok, degraded, emit, correlation } from "./obs.ts";
 import { isFirstWakeToday, renderDailyReading, loadScoreboardFile, appendDailyReadingEntry } from "./scorecard.ts";
 import { loadIndex, retrieveForWake } from "./relindex.ts";
 import { computeVerdictStreak } from "./status.ts";
-import { resolveScope, recallScope } from "./scopes.ts";
+import { resolveScope, recallScope, scopeNowPath } from "./scopes.ts";
 import { whileAway } from "./away.ts";
 import { readExtensions } from "./extensions.ts";
 import { viewsInstructions, checksInstructions } from "./views-usage.ts";
 import {
+  operatorWake,
   CAP_TOKENS,
   STALE_MS,
   extractLastSleep,
@@ -157,12 +158,20 @@ async function runHook(): Promise<void> {
   // CIRCADIAN_INTERNAL=1) must not receive the injection: the mind payload
   // would contaminate their strict-format outputs, and they are not wakes.
   if (process.env.CIRCADIAN_INTERNAL === "1") process.exit(0);
+  const tier = detectFleetTier();
+  const leanOperator = !tier.tier;
+  const scope = resolveScope(MIND, sessionCwd);
 
   // Read each mind file independently — a missing file is a context-bound
   // event, not a silent skip (Law 7: wake still delivers, but the gap is
   // visible). Previously all four reads lived in one try/catch: a single
   // missing file swallowed the entire injection silently.
-  const fileSpecs = [
+  const fileSpecs = leanOperator ? [
+    ["LETTER.md", join(MIND, "LETTER.md")],
+    ["NOW.md", join(MIND, scopeNowPath(scope))],
+    ["USER.md", join(MIND, "USER.md")],
+    ["SELF.md", join(MIND, "SELF.md")], // scoreboard size only; never injected
+  ] : [
     ["CONSTITUTION.md", join(MIND, "CONSTITUTION.md")],
     ["CONSTITUTION-JOSH.md", join(MIND, "CONSTITUTION-JOSH.md")],
     ["SELF.md", join(MIND, "SELF.md")],
@@ -186,7 +195,7 @@ async function runHook(): Promise<void> {
   // SELF without writing to mind/. For an unpublished working tree (or a
   // legacy mind whose committed SELF is not yet a fold), keep the old file
   // reads: wake must not discard in-flight work or withhold the injection.
-  try {
+  if (!leanOperator) try {
     const restored = checkout(MIND);
     if (!missing.includes("SELF.md") && !missing.includes("NOW.md") &&
         files["SELF.md"] === restored.self && files["NOW.md"] === restored.now) {
@@ -222,7 +231,7 @@ async function runHook(): Promise<void> {
   // INSIDE the existing 15k cap: it is part of `body`, so buildPayload's own
   // OVER-CAP accounting already covers it. Budget ≤ 2000 tokens (brief §4).
   let evidence = "";
-  try {
+  if (!leanOperator) try {
     const loaded = loadIndex(MIND);
     const source = process.env.CIRCADIAN_WAKE_SOURCE;
     // budget halved 2000 -> 1000 (2026-08-09 stitch audit): the worldview +
@@ -299,7 +308,6 @@ async function runHook(): Promise<void> {
     });
   }
 
-  const tier = detectFleetTier();
   // Executor tiers (3-AGNT/4-SAGT) get the slim payload: constitution(s) +
   // DOCTRINE-only SELF slice + NOW + brief-relevant evidence, USER dropped
   // (wake-slim, 2026-08-11). Orchestrator tiers (1-CORD/2-ORCH) and operator
@@ -317,11 +325,10 @@ async function runHook(): Promise<void> {
     });
   }
 
-  const scope = resolveScope(MIND, sessionCwd);
-  const view = recallScope(MIND, scope, { slim, evidenceTokens: slim ? 0 : Math.ceil(evidence.length / 4) });
-  const scopedNow = view.now || (scope === "global" ? files["NOW.md"] : "");
-  const payload = buildPayload({
-    scope, here: view.here, elsewhere: view.elsewhere,
+  const view = leanOperator ? undefined : recallScope(MIND, scope, { slim, evidenceTokens: slim ? 0 : Math.ceil(evidence.length / 4) });
+  const scopedNow = view?.now || (leanOperator || scope === "global" ? files["NOW.md"] : "");
+  const payload = leanOperator ? operatorWake(files["LETTER.md"], scope, scopedNow, files["USER.md"]) : buildPayload({
+    scope, here: view?.here, elsewhere: view?.elsewhere,
     capabilities: (() => { const state = readExtensions(CIRCADIAN_HOME); return [state.views ? viewsInstructions(scope) : "", state.checks ? checksInstructions(state.views) : ""].filter(Boolean).join("\n\n") || undefined; })(),
     away: whileAway(CIRCADIAN_HOME, scope, Date.now(), process.env.CIRCADIAN_SESSION || "", process.env.CIRCADIAN_LANE || ""),
     self: "", // scope-specific atom origins live in <mind:here>; global has no local beliefs
@@ -428,8 +435,8 @@ async function runHook(): Promise<void> {
   catch { inbox = { notice: INBOX_UNAVAILABLE, reason: "preparation", duration: 0 }; }
   const inboxSpool = hookEvent ? spoolPath(CIRCADIAN_HOME, hookEvent.session_id || "") : undefined;
   let prepared: ReturnType<typeof prepareInbox>;
-  try { prepared = prepareInbox(inbox, memoryPayload, inboxSpool); }
-  catch { prepared = prepareInbox({ notice: INBOX_UNAVAILABLE, reason: "layout", duration: 0 }, memoryPayload, inboxSpool); }
+  try { prepared = prepareInbox(inbox, memoryPayload, inboxSpool, leanOperator); }
+  catch { prepared = prepareInbox({ notice: INBOX_UNAVAILABLE, reason: "layout", duration: 0 }, memoryPayload, inboxSpool, leanOperator); }
   let delivery = prepared.delivery;
   finalPayload = prepared.payload;
   let outputs = prepared.outputs;
@@ -458,7 +465,9 @@ async function runHook(): Promise<void> {
         cause: (e as Error).message,
         next_action: `verify ${spoolDir(CIRCADIAN_HOME)} is writable`,
       });
-      if (inbox.cursor || inbox.notice) finalPayload = INBOX_UNAVAILABLE + "\n\n" + memoryPayload;
+      if (inbox.cursor || inbox.notice) finalPayload = leanOperator
+        ? memoryPayload + "\n\n" + INBOX_UNAVAILABLE
+        : INBOX_UNAVAILABLE + "\n\n" + memoryPayload;
       delivery = undefined;
       outputs = [finalPayload];
     }

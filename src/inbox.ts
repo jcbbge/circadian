@@ -100,10 +100,10 @@ function backlog(read: InboxRead, count: number): string {
   return read.caughtUp ? (remaining ? `[Circadian] ${remaining} notes waiting.\n\n` : "") :
     remaining ? `[Circadian] ${remaining}+ notes waiting; more remain beyond this response.\n\n` : "[Circadian] More notes waiting; count unavailable from this response.\n\n";
 }
-export function prepareInbox(read: InboxRead, memory: string, spool?: string): { payload: string; outputs: string[]; delivery?: InboxDelivery } {
+export function prepareInbox(read: InboxRead, memory: string, spool?: string, memoryFirst = false): { payload: string; outputs: string[]; delivery?: InboxDelivery } {
   const format = (payload: string) => spool ? hookLayout(payload, spool, [], RESERVE).outputs : [payload];
   if (!read.cursor) {
-    const payload = (read.notice ? read.notice + "\n\n" : "") + memory;
+    const payload = !read.notice ? memory : memoryFirst ? memory + "\n\n" + read.notice : read.notice + "\n\n" + memory;
     return { payload, outputs: read.notice ? format(payload) : spool ? hookLayout(payload, spool).outputs : [payload] };
   }
   const notes = read.notes ?? [];
@@ -112,11 +112,12 @@ export function prepareInbox(read: InboxRead, memory: string, spool?: string): {
   let layout: ReturnType<typeof hookLayout> | undefined;
   let ranges: { start: number; end: number }[] = [];
   for (;;) {
-    let block = "";
+    let block = memoryFirst ? memory + "\n\n" : "";
     ranges = notes.slice(0, selected).map(n => { const start = block.length; block += render(n); return { start, end: block.length }; });
-    payload = block + backlog(read, selected) + memory;
+    payload = block + backlog(read, selected) + (memoryFirst ? "" : memory);
     layout = spool ? hookLayout(payload, spool, ranges, RESERVE) : undefined;
-    const fits = !layout || layout.ranges.every(parts => parts.every(p => p < WAKE_PARTS)) && layout.outputs.slice(0, WAKE_PARTS - 1).every(o => Buffer.byteLength(o) + 1 + RESERVE <= HOOK_OUTPUT_LIMIT);
+    const fits = memoryFirst ? Buffer.byteLength(payload) + 1 + RESERVE <= HOOK_OUTPUT_LIMIT :
+      !layout || layout.ranges.every(parts => parts.every(p => p < WAKE_PARTS)) && layout.outputs.slice(0, WAKE_PARTS - 1).every(o => Buffer.byteLength(o) + 1 + RESERVE <= HOOK_OUTPUT_LIMIT);
     if (fits || selected === 0) break;
     selected--;
   }

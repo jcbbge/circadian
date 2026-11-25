@@ -179,6 +179,18 @@ export function correctionsFromUser(user: string): string {
   return remaining.slice(0, next.exec(remaining)?.index ?? remaining.length).trim();
 }
 
+export function operatorWake(letter: string, scope: string, now: string, user: string): string {
+  const next = now.match(/^## (?:Next move|Flight plan)[^\S\n]*\n+([^\n]+)/m)?.[1]?.trim();
+  const corrections = correctionsFromUser(user);
+  return [
+    letter.trim(),
+    `Resolved scope: ${scope}`,
+    next && `Next move: ${next}`,
+    corrections,
+    `More memory on demand: circadian recall ${scope} or circadian view.`,
+  ].filter(Boolean).join("\n\n");
+}
+
 export function buildPayload(files: {
   self: string;
   user: string;

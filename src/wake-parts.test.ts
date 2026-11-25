@@ -215,6 +215,7 @@ function fixtureMind(): { home: string; project: string } {
   fs.writeFileSync(path.join(mind, "scopes.tsv"), `proj\t${project}\tactive\n`);
   fs.writeFileSync(path.join(mind, "CONSTITUTION.md"), MAX.constitution + "\n");
   fs.writeFileSync(path.join(mind, "CONSTITUTION-JOSH.md"), MAX.constitutionJosh + "\n");
+  fs.writeFileSync(path.join(mind, "LETTER.md"), "A letter to the next instance. 🌱\n");
   fs.writeFileSync(path.join(mind, "USER.md"), MAX.user + "\n");
   fs.writeFileSync(path.join(mind, "now", "proj.md"), MAX.now + "\n");
   // A wake today already happened: no first-of-day scorecard in this run.
@@ -223,9 +224,27 @@ function fixtureMind(): { home: string; project: string } {
 }
 
 describe("wake.ts hook slots (subprocess)", () => {
+  test("operator receives one letter-led part, with next move and corrections only", async () => {
+    const { home, project } = fixtureMind();
+    const mind = path.join(home, "mind");
+    fs.writeFileSync(path.join(mind, "USER.md"), "## Portrait\nPRIVATE_PORTRAIT\n\n## Corrections\nCORRECTION_MARKER\n\n## Other\nOTHER_MARKER\n");
+    fs.writeFileSync(path.join(mind, "SELF.md"), "PRIVATE_SELF\n");
+    const outputs = (await runAllSlots(project, wakeEnv(home, { CIRCADIAN_INBOX_SKIP: "1" }), "sess-operator")).filter(Boolean);
+    expect(outputs).toHaveLength(1);
+    const [out] = outputs;
+    expect(out).toStartWith("A letter to the next instance. 🌱\n");
+    expect(out.indexOf("Next move: Ship the wake parts.")).toBeGreaterThan(0);
+    expect(out.indexOf("CORRECTION_MARKER")).toBeGreaterThan(out.indexOf("Next move:"));
+    for (const omitted of ["PRIVATE_PORTRAIT", "PRIVATE_SELF", "OTHER_MARKER", MAX.constitution, MAX.constitutionJosh]) {
+      expect(out).not.toContain(omitted);
+    }
+    expectWithinHookCap(out);
+    expect([...out.trimEnd()].length).toBeLessThan(out.trimEnd().length);
+  }, 30000);
+
   test("parallel slots each print under the cap; together they are the whole wake; part 1 leads with mind:here", async () => {
     const { home, project } = fixtureMind();
-    const env = wakeEnv(home);
+    const env = wakeEnv(home, { CIRCADIAN_ROLE: "CORD" });
     const outputs = (await runAllSlots(project, env, "sess-a")).map((o) => o.replace(/\n$/, ""));
     const delivered = outputs.filter(Boolean);
     expect(delivered.length).toBeGreaterThan(1);
@@ -269,7 +288,7 @@ describe("Claude Code wake with the current mind", () => {
     const constitution = fs.readFileSync(path.join(LIVE_MIND, "CONSTITUTION.md"), "utf8").trim();
     const josh = fs.readFileSync(path.join(LIVE_MIND, "CONSTITUTION-JOSH.md"), "utf8").trim();
     for (const scope of [...scopes, "global"]) {
-      const outputs = (await runAllSlots(home, wakeEnv(home, { CIRCADIAN_SCOPE: scope }), `live-${scope}`)).map((o) => o.replace(/\n$/, ""));
+      const outputs = (await runAllSlots(home, wakeEnv(home, { CIRCADIAN_SCOPE: scope, CIRCADIAN_ROLE: "CORD" }), `live-${scope}`)).map((o) => o.replace(/\n$/, ""));
       for (const o of outputs) expectWithinHookCap(o);
       if (scope === "global") expect(outputs[0]).not.toContain("<mind:here");
       else expect(outputs[0]).toContain(`<mind:here scope="${scope}">`);
@@ -285,7 +304,7 @@ describe("wake.ts spool failure (subprocess)", () => {
     const { home, project } = fixtureMind();
     fs.mkdirSync(path.join(home, "logs"), { recursive: true });
     fs.writeFileSync(path.join(home, "logs", "wake-parts"), "not a directory"); // spool dir cannot be created
-    const env = wakeEnv(home);
+    const env = wakeEnv(home, { CIRCADIAN_ROLE: "CORD" });
     const event = JSON.stringify({ session_id: "sess-c", hook_event_name: "SessionStart" });
     const part1 = spawnSync(process.execPath, [WAKE], { cwd: project, env, input: event, encoding: "utf8" });
     const whole = spawnSync(process.execPath, [WAKE], { cwd: project, env, input: "", encoding: "utf8" });
@@ -300,8 +319,7 @@ test("hook session cwd overrides the runner cwd in both directions", async () =>
   const { home, project } = fixtureMind();
   for (const [runner, session, scope] of [[home, project, "proj"], [project, home, "global"]]) {
     const output = await runSlot(1, runner, wakeEnv(home), JSON.stringify({ hook_event_name: "SessionStart", session_id: `cwd-${scope}`, cwd: session }));
-    expect(output).toStartWith(`Resolved scope: ${scope}\n`);
-    if (scope === "global") expect(output).not.toContain("Next move:");
-    else expect(output).toContain("Next move: Ship the wake parts.");
+    expect(output).toContain(`Resolved scope: ${scope}\n`);
+    if (scope === "proj") expect(output).toContain("Next move: Ship the wake parts.");
   }
 });

@@ -165,7 +165,7 @@ describe("wake.ts integration — source-text + live subprocess (no live import)
       const runWake = (cwd: string) =>
         execFileSync(process.execPath, [path.join(import.meta.dir, "wake.ts")], {
           cwd,
-          env: { ...process.env, HOME: home, CIRCADIAN_HOME: home, CIRCADIAN_BUN_BIN: process.execPath, CIRCADIAN_ROLE: "", CIRCADIAN_SCOPE: "" },
+          env: { ...process.env, HOME: home, CIRCADIAN_HOME: home, CIRCADIAN_BUN_BIN: process.execPath, CIRCADIAN_ROLE: "CORD", CIRCADIAN_SCOPE: "" },
           input: "",
           encoding: "utf8",
           stdio: ["pipe", "pipe", "ignore"],
@@ -184,7 +184,7 @@ describe("wake.ts integration — source-text + live subprocess (no live import)
     withWakeSandbox((home) => {
       const out = execFileSync(process.execPath, [path.join(import.meta.dir, "wake.ts")], {
         cwd: path.join(home, "circadian"),
-        env: { ...process.env, HOME: home, CIRCADIAN_HOME: home, CIRCADIAN_BUN_BIN: process.execPath, CIRCADIAN_ROLE: "", CIRCADIAN_SCOPE: "" },
+        env: { ...process.env, HOME: home, CIRCADIAN_HOME: home, CIRCADIAN_BUN_BIN: process.execPath, CIRCADIAN_ROLE: "CORD", CIRCADIAN_SCOPE: "" },
         input: "",
         encoding: "utf8",
         stdio: ["pipe", "pipe", "ignore"],

@@ -30,6 +30,6 @@ export function wakeNotice(wake: { scope?: string; parts: number } | null, strip
 /** The scope a whole (unsplit) wake payload names on its first line,
  * `Resolved scope: <scope>`; undefined when the line is absent. */
 export function payloadScope(payload: string): string | undefined {
-  const m = /^Resolved scope: (\S+)/.exec(payload);
+  const m = /^Resolved scope: ([a-z0-9_-]+)\s*$/m.exec(payload);
   return m ? m[1] : undefined;
 }
