@@ -88,10 +88,13 @@ test("the works feed witnesses each ended work and its children once, then resum
       witnessed.push(task);
       return task === "alpha" ? ["alpha.delivery", "alpha.delivery"] : [];
     };
-    expect(await followFeed("/unused", state, async offset => pages[offset], witness)).toBe(2);
+    const concluded: string[] = [];
+    const conclude = (_m: string, _s: string, work: string, tasks: string[]) => { concluded.push(`${work}:${tasks.join(",")}`); };
+    expect(await followFeed("/unused", state, async offset => pages[offset], witness, conclude)).toBe(2);
     expect(witnessed).toEqual(["alpha", "alpha.delivery", "beta"]);
+    expect(concluded).toEqual(["alpha:alpha,alpha.delivery", "beta:beta"]);
     witnessed.length = 0;
-    expect(await followFeed("/unused", state, async offset => pages[offset], witness)).toBe(0);
+    expect(await followFeed("/unused", state, async offset => pages[offset], witness, conclude)).toBe(0);
     expect(witnessed).toEqual([]);
   } finally { fs.rmSync(state, { recursive: true, force: true }); }
 });

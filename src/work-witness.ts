@@ -99,7 +99,7 @@ const episode = (task: string, timestamp: string, body: string, lane?: string) =
  * the window after publish and before the offset checkpoint is written. */
 export async function witnessTask(
   mind: string, stateDir: string, task: string, reader = readWorkPage,
-  beforeCheckpoint?: () => void,
+  beforeCheckpoint?: () => void, publishConclusion = true,
 ): Promise<string[]> {
   if (!keyPattern.test(task)) throw new Error("invalid task key");
   const key = hash(task);
@@ -139,7 +139,7 @@ export async function witnessTask(
         if (!contents || body < 0) throw new Error("accepted task attempt is unavailable");
         return `## ${step}\n\n${contents.slice(body + 6)}`;
       });
-      if (accepted.length) publish(mind, { id: `rivet-${key}`, subject: "witness: land accepted task conclusion",
+      if (accepted.length && publishConclusion) publish(mind, { id: `rivet-${key}`, subject: "witness: land accepted task conclusion",
         files: { [`episodes/${at.slice(0, 10)}-rivet-${key}.md`]:
           episode(task, at, `Task: ${task}\n\nTerminal stream event: ${row.seq}\n\n` +
             accepted.join("\n\n")) } });
@@ -155,6 +155,29 @@ export async function witnessTask(
     if (page.caughtUp || page.offset === old) break;
   }
   return state.children;
+}
+
+/** One memory per work (Josh, 2026-11-25: memory, not noise). Every task's attempts stay on its own lane;
+ * the work's conclusion is its latest accepted result, published once as one unattested hand episode. */
+export function concludeWork(mind: string, stateDir: string, work: string, tasks: string[]): void {
+  let latest: { ts: string; step: string; task: string; body: string } | undefined;
+  for (const task of tasks) {
+    const file = join(stateDir, `${hash(task)}.json`);
+    if (!fs.existsSync(file)) continue;
+    const state = JSON.parse(fs.readFileSync(file, "utf8")) as State;
+    for (const [step, sub] of Object.entries(state.accepted)) {
+      const contents = git(mind, ["show", `refs/heads/fm/${workLane(task)}:episodes/${sub.filename}`]);
+      const body = contents?.indexOf("\n---\n\n") ?? -1;
+      if (!contents || body < 0) continue;
+      const ts = contents.match(/^ts: (\S+)$/m)?.[1] ?? "";
+      if (!latest || ts > latest.ts) latest = { ts, step, task, body: contents.slice(body + 6) };
+    }
+  }
+  if (!latest) return;
+  const key = hash(work);
+  publish(mind, { id: `rivet-${key}`, subject: "witness: land a finished work's conclusion",
+    files: { [`episodes/${latest.ts.slice(0, 10)}-rivet-${key}.md`]:
+      episode(work, latest.ts, `Work: ${work}\n\nConclusion (${latest.task}, ${latest.step}):\n\n${latest.body}`) } });
 }
 
 export type FeedPage = { events: unknown[]; offset: string; caughtUp: boolean };
@@ -174,7 +197,9 @@ export const readFeedPage = async (offset: string): Promise<FeedPage> => {
 /** Witness every work the feed names since the last checkpoint, with every child it started. Returns the
  * number of works witnessed. The offset is checkpointed per page, after its works are witnessed. */
 export async function followFeed(mind: string, stateDir: string, readFeed = readFeedPage,
-  witness: (mind: string, stateDir: string, task: string) => Promise<string[]> = witnessTask): Promise<number> {
+  witness: (mind: string, stateDir: string, task: string) => Promise<string[]> =
+    (m, s, t) => witnessTask(m, s, t, readWorkPage, undefined, false),
+  conclude: (mind: string, stateDir: string, work: string, tasks: string[]) => void = concludeWork): Promise<number> {
   const file = join(stateDir, "feed.json");
   let offset: string = fs.existsSync(file) ? JSON.parse(fs.readFileSync(file, "utf8")).offset : "-1";
   let count = 0;
@@ -190,6 +215,7 @@ export async function followFeed(mind: string, stateDir: string, readFeed = read
         seen.add(key);
         queue.push(...await witness(mind, stateDir, key));
       }
+      conclude(mind, stateDir, task, [...seen]);
       count++;
     }
     const old = offset;
