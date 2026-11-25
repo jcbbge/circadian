@@ -130,9 +130,16 @@ local episode for manual retry. If `circadian.relayPath` is configured in hive's
 local mind Git config, hive's nightly job fetches from its **local relay** and
 lands M5 records before REM. No automated hive process connects to M5. Neither
 config key changes scheduler state; do not disable M5 REM until the observed
-round trip and fallback both pass. The candidate is **not** a live cutover;
-follow [the operator runbook](docs/JOIN-OPERATOR.md) for ordered live gates,
-checks, and stop/undo points.
+round trip and fallback both pass.
+
+**Live since 2026-11-25** (11:19 to 11:33 CT): the relay is `~/circadian-relay.git` on
+hive; the M5 carries `circadian.hiveTransfer` and hive carries `circadian.relayPath`;
+hive's REM (05:00 CT) consolidates both machines and the M5's `com.circadian.rem` is
+disabled. Measured live: a real M5 session's episode landed on hive byte-identical
+and returned on the M5's next wake; a stalled fetch fell back to the local mind in a
+3 s session. [The operator runbook](docs/JOIN-OPERATOR.md) has the gates, checks and
+undo points (re-enable M5 REM: `launchctl enable gui/$(id -u)/com.circadian.rem` and
+`launchctl bootstrap gui/$(id -u) ~/Library/LaunchAgents/com.circadian.rem.plist`).
 
 ## Why
 
