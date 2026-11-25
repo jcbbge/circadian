@@ -44,3 +44,5 @@ logs/invocations.jsonl
 logs/.statusline
 logs/.rem-popmem.ifdue.lock
 logs/pending-sleep.lock
+mind-lanes/
+logs/witness/
