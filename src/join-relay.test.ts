@@ -1,6 +1,6 @@
 import { test, expect } from "bun:test";
 import { execFileSync, spawnSync } from "node:child_process";
-import { mkdtempSync, mkdirSync, rmSync, writeFileSync } from "node:fs";
+import { mkdtempSync, mkdirSync, rmSync, statSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { exportMind } from "./mind-transfer.ts";
@@ -24,6 +24,7 @@ test("bare relay admits only additive approved projections, rejects private tree
       commit(repo, "USER.md", repo === m5 ? "m5 private\n" : "hive private\n");
     }
     expect(spawnSync("bun", [join(import.meta.dir, "join-relay.ts"), "init", relay]).status).toBe(0);
+    expect(statSync(relay).mode & 0o777).toBe(0o700);
     commit(m5, "digested.jsonl", "{\"ep\":\"one\"}\n");
     const original = git(m5, "rev-parse", "HEAD");
     const first = exportMind(m5, "m5");
