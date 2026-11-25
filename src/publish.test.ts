@@ -82,3 +82,20 @@ test("a publish waits out a briefly held index lock instead of leaving the check
     expect(fs.readFileSync(path.join(mind, "episodes/x.md"), "utf8")).toBe("x\n");
   } finally { fs.rmSync(path.dirname(mind), { recursive: true, force: true }); }
 });
+
+test("a publish never erases an uncommitted edit to a published file", () => {
+  const mind = repo();
+  try {
+    fs.writeFileSync(path.join(mind, "notes.md"), "committed\n");
+    git(mind, "add", "notes.md"); git(mind, "commit", "-qm", "notes");
+    // Local, uncommitted edits: one ledger line and a hand edit to a document.
+    fs.appendFileSync(path.join(mind, "beliefs.jsonl"), "{\"ev\":\"local\"}\n");
+    fs.writeFileSync(path.join(mind, "notes.md"), "committed\nmy own edit\n");
+    publish(mind, { id: "keep", appends: { "beliefs.jsonl": "{\"ev\":\"published\"}\n" }, files: { "notes.md": "published\n" } });
+    const ledger = fs.readFileSync(path.join(mind, "beliefs.jsonl"), "utf8");
+    expect(ledger).toContain('{"ev":"published"}');
+    expect(ledger).toContain('{"ev":"local"}');
+    expect(fs.readFileSync(path.join(mind, "notes.md"), "utf8")).toBe("committed\nmy own edit\n");
+    expect(git(mind, "show", "HEAD:notes.md")).toBe("published");
+  } finally { fs.rmSync(path.dirname(mind), { recursive: true, force: true }); }
+});

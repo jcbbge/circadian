@@ -173,7 +173,18 @@ export function syncPublished(mind: string, paths: string[] = []): void {
     for (const p of paths) {
       safePath(p);
       const content = blob(mind, old, p);
-      if (!fs.existsSync(path.join(mind, p)) || fs.readFileSync(path.join(mind, p), "utf8") !== content) atomic(path.join(mind, p), content);
+      const file = path.join(mind, p);
+      if (!fs.existsSync(file)) { atomic(file, content); continue; }
+      const local = fs.readFileSync(file, "utf8");
+      if (local === content) continue;
+      // Never erase an uncommitted edit (2026-11-25: a sleep's sync overwrote the M5's unstaged
+      // scoreboard.jsonl lines). A line ledger keeps every published line plus each local-only line; any
+      // other file is replaced only when it still holds the previous commit's bytes (nobody edited it).
+      if (p.endsWith(".jsonl")) {
+        const published = new Set(content.split("\n"));
+        const extra = local.split("\n").filter(line => line.trim() && !published.has(line));
+        atomic(file, extra.length ? content + (content.endsWith("\n") || !content ? "" : "\n") + extra.join("\n") + "\n" : content);
+      } else if (local === blob(mind, `${old}^`, p)) atomic(file, content);
     }
     // update-ref changes the checked-out ref, but leaves its index at the old
     // tree (published files appear staged-deleted and untracked). Refresh only
