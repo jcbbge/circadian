@@ -69,3 +69,16 @@ test("stale intent replay and receipt janitor", () => {
     expect(git(mind, "rev-list", "--count", "HEAD")).toBe("2");
   } finally { fs.rmSync(path.dirname(mind), { recursive: true, force: true }); }
 });
+
+test("a publish waits out a briefly held index lock instead of leaving the checkout staged-deleted", () => {
+  const mind = repo();
+  try {
+    const lock = path.join(mind, ".git", "index.lock");
+    fs.writeFileSync(lock, "");
+    // Another git process holds the index for 300 ms, as a live session's hook does.
+    spawn("sh", ["-c", `sleep 0.3; rm -f ${JSON.stringify(lock)}`], { detached: true, stdio: "ignore" }).unref();
+    publish(mind, { id: "locked", files: { "episodes/x.md": "x\n" } });
+    expect(git(mind, "status", "--porcelain")).toBe("");
+    expect(fs.readFileSync(path.join(mind, "episodes/x.md"), "utf8")).toBe("x\n");
+  } finally { fs.rmSync(path.dirname(mind), { recursive: true, force: true }); }
+});

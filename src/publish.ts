@@ -150,6 +150,15 @@ export function publish(mind: string, intent: PublishIntent, beforeCAS?: () => v
   }
   throw new Error("CAS exhausted");
 }
+function indexed(run: () => unknown): void {
+  for (let i = 0; ; i++) {
+    try { run(); return; }
+    catch (e) {
+      if (i >= 100 || !String((e as { stderr?: unknown }).stderr ?? e).includes("index.lock")) throw e;
+      Bun.sleepSync(100);
+    }
+  }
+}
 export function syncPublished(mind: string, paths: string[] = []): void {
   const lock = path.join(git(mind, ["rev-parse", "--absolute-git-dir"]), "circadian-checkout.lock");
   // mkdir is atomic. Do not break an unknown holder's lock: it could be alive.
@@ -170,8 +179,10 @@ export function syncPublished(mind: string, paths: string[] = []): void {
     // tree (published files appear staged-deleted and untracked). Refresh only
     // a non-bare worktree on the ref we just synced, under the checkout lock.
     if (git(mind, ["rev-parse", "--is-bare-repository"]) === "false") {
-      git(mind, ["read-tree", "HEAD"]);
-      git(mind, ["update-index", "-q", "--refresh"]);
+      // Live sessions' hooks take the index for a moment; wait for them (up to 10 s), never fail on it
+      // (2026-11-25: the witness's publish failed here twice on hive and left published files staged-deleted).
+      indexed(() => git(mind, ["read-tree", "HEAD"]));
+      indexed(() => git(mind, ["update-index", "-q", "--refresh"]));
     }
   } finally { fs.rmdirSync(lock); }
 }
