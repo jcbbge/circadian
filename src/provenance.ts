@@ -18,6 +18,21 @@ import { readFileSync } from "node:fs";
 import { hostname } from "node:os";
 import { normalizeTurnText } from "./transcript-format.ts";
 
+export type ObservationProvenance =
+  | { attestation: "unattested"; observer: "hand" | "unknown" }
+  | { attestation: "attested"; observer: "josh-session" | "entity-with-josh" };
+
+/** Only a trusted, external session receipt may replace this check. Neither
+ * hook fields, transcript roles, nor episode prose can attest who typed. */
+export function checkOperatorAttestation(_session: string): Extract<ObservationProvenance, { attestation: "attested" }> | null {
+  return null;
+}
+
+export function observationProvenance(session: string, hand: boolean): ObservationProvenance {
+  if (hand) return { attestation: "unattested", observer: "hand" };
+  return checkOperatorAttestation(session) ?? { attestation: "unattested", observer: "unknown" };
+}
+
 /** Resolve session-end identity before detaching. Never rely on the worker's
  * ambient cwd or on HOSTNAME (often an unexported shell variable). */
 export function resolveEpisodeProvenance(

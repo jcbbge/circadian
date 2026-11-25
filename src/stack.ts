@@ -127,6 +127,7 @@ import { publish, recoverPublications } from "./publish.ts";
 import { readExtensions } from "./extensions.ts";
 import { bindCandidateSourceLines, numberSourceLines } from "./stack-source-lines.ts";
 import { VIEW_IO_LIMITS } from "./views.ts";
+import { observationProvenance } from "./provenance.ts";
 
 // ---------------------------------------------------------------------
 // knobs — all thresholds exported, per the brief
@@ -837,6 +838,15 @@ export async function stackEpisode(ctx: StackEpisodeContext): Promise<StackEpiso
     return { skipped: true, failed: true, failurePhase: "read-episode", failureCause: cause };
   }
 
+  const header = episodeContent.match(/^---\r?\n([\s\S]*?)\r?\n---(?:\r?\n|$)/)?.[1] ?? "";
+  const hand = /^(?:lane: \S|observer: hand\s*$)/m.test(header);
+  if (hand) {
+    idle({ process: "stack", phase: "hand-episode", correlation_id: ctx.correlationId,
+      summary: "hand episode retained in its lane, not absorbed", context: { filename: ctx.filename } });
+    return { skipped: true };
+  }
+  const provenance = observationProvenance(header.match(/^provenance_session: (.+)$/m)?.[1] ?? "", false);
+
   // Idempotence layer (b): the episode-level short-circuit ("suspenders" —
   // layer (a) is the dedupe pipeline itself, below).
   const priorEvents = readLedger(ctx.ledgerPath);
@@ -898,14 +908,15 @@ export async function stackEpisode(ctx: StackEpisodeContext): Promise<StackEpiso
   // obs event (Law 9: nothing silent).
   const exposure = classifyExposure({ name: ctx.filename, body: episodeContent });
   const grain = exposure === "flash" ? FLASH_GRAIN : undefined;
-  const candidatePool = exposure === "flash" ? candidates.filter((c) => c.kind !== "identity") : candidates;
+  const candidatePool = candidates.filter(c => c.kind !== "identity" ||
+    (exposure !== "flash" && provenance.attestation === "attested"));
   const identitySuppressed = candidates.length - candidatePool.length;
   if (identitySuppressed > 0) {
     ok({
       process: "stack",
-      phase: "flash-identity-bar",
+      phase: "identity-provenance-bar",
       correlation_id: ctx.correlationId,
-      summary: "identity candidate suppressed: flash exposure",
+      summary: "identity candidate suppressed: flash or unattested exposure",
       context: {
         filename: ctx.filename,
         exposure,
@@ -919,8 +930,12 @@ export async function stackEpisode(ctx: StackEpisodeContext): Promise<StackEpiso
   }
 
   const priorStates = foldWeights(priorEvents);
-  let population: ExistingAtomView[] = readAtoms(ctx.beliefsDir)
-    .filter((a) => (priorStates.get(a.id)?.status ?? "active") === "active")
+  const atoms = readAtoms(ctx.beliefsDir);
+  const protectedIdentity = new Set(provenance.attestation === "attested" ? [] :
+    atoms.filter(a => a.kind === "identity").map(a => a.id));
+  let population: ExistingAtomView[] = atoms
+    .filter((a) => (priorStates.get(a.id)?.status ?? "active") === "active" &&
+      !protectedIdentity.has(a.id))
     .map((a) => ({ id: a.id, claim: a.claim }));
 
   const counts: StackCounts = {
@@ -948,6 +963,10 @@ export async function stackEpisode(ctx: StackEpisodeContext): Promise<StackEpiso
       .map(a => ({ id: a.id, claim: a.claim }));
   });
   for (const candidate of candidatePool) {
+    if (protectedIdentity.has(atomId(candidate.claim))) {
+      counts.identitySuppressed!++;
+      continue;
+    }
     const comparator: Comparator = async (a, b) => {
       if (ctx.compare) return ctx.compare(a, b);
       const prompt = buildComparePrompt(a, b);
@@ -991,6 +1010,7 @@ export async function stackEpisode(ctx: StackEpisodeContext): Promise<StackEpiso
       kind: candidate.kind, claim: candidate.claim, why: candidate.why,
       quotes: candidate.quotes.map((text) => ({ text, source: ctx.filename })), eps: [episodeDate],
       scope: episodeContent.match(/^scope:\s*([a-z0-9_-]+)\s*$/m)?.[1] || "global",
+      provenance,
     });
     if (sourceLines && Buffer.byteLength(md, "utf8") > VIEW_IO_LIMITS.atomBytes) {
       counts.rejected++;

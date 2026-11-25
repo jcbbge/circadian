@@ -26,6 +26,7 @@
 import * as fs from "fs";
 import * as path from "path";
 import { createHash } from "crypto";
+import type { ObservationProvenance } from "./provenance.ts";
 
 // ---------------------------------------------------------------------
 // types
@@ -41,6 +42,7 @@ export interface Atom {
   quotes: { text: string; source: string }[];
   eps: string[];
   scope?: string;
+  provenance?: ObservationProvenance;
 }
 
 export interface LedgerEvent {
@@ -145,6 +147,7 @@ export function serializeAtom(a: Omit<Atom, "id">): string {
   lines.push(`why: ${JSON.stringify(a.why)}`);
   for (const q of a.quotes) lines.push(`quote: ${JSON.stringify(q.text)} | ${q.source}`);
   if (a.scope) lines.push(`scope: ${a.scope}`);
+  if (a.provenance) lines.push(`observer: ${a.provenance.observer}`, `attestation: ${a.provenance.attestation}`);
   for (const ep of a.eps) lines.push(`[ep:${ep}]`);
   return lines.join("\n") + "\n";
 }
@@ -203,6 +206,16 @@ export function parseAtom(md: string): Atom {
     scope = lines[i++].slice(7);
     if (!/^[a-z0-9][a-z0-9_-]*$/.test(scope)) throw new AtomShapeError("bad scope");
   }
+  let provenance: ObservationProvenance | undefined;
+  if (lines[i]?.startsWith("observer: ")) {
+    const observer = lines[i++].slice(10);
+    const field = lines[i++];
+    if (!field?.startsWith("attestation: ")) throw new AtomShapeError("missing attestation");
+    const attestation = field.slice("attestation: ".length);
+    if (attestation === "unattested" && (observer === "hand" || observer === "unknown")) provenance = { observer, attestation };
+    else if (attestation === "attested" && (observer === "josh-session" || observer === "entity-with-josh")) provenance = { observer, attestation };
+    else throw new AtomShapeError("bad observation provenance");
+  }
   const eps: string[] = [];
   while (i < lines.length) {
     const m = EP_LINE_RE.exec(lines[i]);
@@ -212,7 +225,7 @@ export function parseAtom(md: string): Atom {
   }
   if (eps.length === 0) throw new AtomShapeError("no [ep:] stamp");
 
-  return { id: atomId(claim), kind, claim, why, quotes, eps, ...(scope ? { scope } : {}) };
+  return { id: atomId(claim), kind, claim, why, quotes, eps, ...(scope ? { scope } : {}), ...(provenance ? { provenance } : {}) };
 }
 
 // ---------------------------------------------------------------------

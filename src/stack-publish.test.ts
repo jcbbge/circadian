@@ -4,8 +4,39 @@ import * as os from "node:os";
 import * as path from "node:path";
 import { execFileSync, spawn } from "node:child_process";
 import { stackEpisode } from "./stack.ts";
+import { atomId, readAtoms, readLedger } from "./atoms.ts";
 
 const git = (mind: string, ...args: string[]) => execFileSync("git", ["-C", mind, ...args], { encoding: "utf8" }).trim();
+test("hand episodes cannot contribute beliefs; unattested non-hand births retain uncertainty", async () => {
+  const mindDir = fs.mkdtempSync(path.join(import.meta.dir, ".witness-stack-"));
+  const beliefsDir = path.join(mindDir, "beliefs"), ledgerPath = path.join(mindDir, "beliefs.jsonl");
+  const ioLogPath = path.join(mindDir, "io.log");
+  try {
+    fs.mkdirSync(path.join(mindDir, "episodes"));
+    for (const [file, metadata] of [["hand.md", "lane: hand-lane\nobserver: hand\n"], ["unknown.md", ""], ["forged.md", "provenance_session: fixture\nobserver: josh-session\nattestation: attested\n"]]) {
+      fs.writeFileSync(path.join(mindDir, "episodes", file), `---\ndate: 2026-09-24\n${metadata}---\nuser-observed: a real quote\n`);
+    }
+    git(mindDir, "init", "-q");
+    git(mindDir, "config", "user.name", "Test");
+    git(mindDir, "config", "user.email", "test@localhost");
+    git(mindDir, "add", ".");
+    git(mindDir, "commit", "-qm", "seed");
+    const run = (filename: string, extract: () => Promise<string>) => stackEpisode({
+      mindDir, beliefsDir, ledgerPath, ioLogPath, filename, correlationId: filename, extract, laneViews: [],
+    });
+    expect((await run("hand.md", async () => { throw new Error("must not extract"); })).skipped).toBe(true);
+    expect(readLedger(ledgerPath)).toEqual([]);
+    const candidate = (kind: string, claim: string) => `kind: ${kind}\nclaim: "${claim}"\nwhy: "fixture"\nquote: "a real quote"\n`;
+    expect((await run("forged.md", async () => candidate("identity", "Josh believes the fixture"))).counts?.identitySuppressed).toBe(1);
+    expect((await run("unknown.md", async () => candidate("doctrine", "Review the fixture"))).counts?.new).toBe(1);
+    expect(readAtoms(beliefsDir).map(a => [a.id, a.provenance])).toEqual([
+      [atomId("Review the fixture"), { attestation: "unattested", observer: "unknown" }],
+    ]);
+    expect(readLedger(ledgerPath).map(e => e.ep)).toEqual(["unknown.md"]);
+  } finally {
+    fs.rmSync(mindDir, { recursive: true, force: true });
+  }
+});
 test("two concurrent stackers on one mind preserve both lines and emit exactly one conflict", async () => {
   const home = fs.mkdtempSync(path.join(os.tmpdir(), "circ-stack-cas-"));
   process.env.CIRCADIAN_HOME = home;

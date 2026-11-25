@@ -31,7 +31,7 @@ import { homedir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import { complete } from "./llm.ts";
 import { ok, idle, degraded, fail, correlation } from "./obs.ts";
-import { isDroneOpening, isFleetPacketOpening, firstUserTurnFromText, resolveEpisodeProvenance } from "./provenance.ts";
+import { isDroneOpening, isFleetPacketOpening, firstUserTurnFromText, resolveEpisodeProvenance, observationProvenance } from "./provenance.ts";
 import { normalizeTurnText } from "./transcript-format.ts";
 import { publish, recoverPublications } from "./publish.ts";
 import { createHash } from "node:crypto";
@@ -1006,8 +1006,11 @@ export function shouldGateWorker(firstTurn: string, transcriptPath?: string, lan
 
 export function episodeMetadata(lane: string | undefined, provenance: Record<string, string>, sessionId: string): string {
   const safe = (value: string) => value.replace(/[\r\n]/g, " ").slice(0, 180);
+  const observation = observationProvenance(sessionId, !!lane);
   return [
     ...(lane ? [`lane: ${safe(lane)}`] : []),
+    `observer: ${observation.observer}`,
+    `attestation: ${observation.attestation}`,
     ...(["harness", "model", "machine", "session"] as const).map(key => `${key === "session" ? "provenance_session" : key}: ${safe(provenance[key] || (key === "session" ? sessionId : "unknown"))}`),
   ].join("\n");
 }
