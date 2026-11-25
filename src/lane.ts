@@ -12,15 +12,19 @@ import { approvedMindPath, incomingMind, type Side } from "./mind-transfer.ts";
 
 const ledgerDriver = `merge.circadian-ledger.driver=${JSON.stringify(process.execPath)} ${JSON.stringify(import.meta.filename)} merge-driver %O %A %B`;
 
+// A live ledger outgrows Node's 1 MiB default output buffer (hive's was 1.9 MB on 2026-11-25); reading it
+// must never fail for its size.
 function gitOutput(repo: string, ...args: string[]): string {
-  return execFileSync("git", ["-C", repo, ...args], { encoding: "utf8", stdio: ["pipe", "pipe", "pipe"] });
+  return execFileSync("git", ["-C", repo, ...args], { encoding: "utf8", stdio: ["pipe", "pipe", "pipe"], maxBuffer: 1 << 30 });
 }
 function git(repo: string, ...args: string[]): string {
   return gitOutput(repo, ...args).trim();
 }
-function blob(repo: string, ref: string): string {
-  try { return git(repo, "show", `${ref}:beliefs.jsonl`); }
-  catch { return ""; }
+/** A commit's ledger. Empty only when that commit has no ledger; any other failure throws, so a failed read
+ * can never pass for an empty ledger (2026-11-25: three lands wrote hive's ledger as empty). */
+export function blob(repo: string, ref: string): string {
+  const exists = Bun.spawnSync(["git", "-C", repo, "cat-file", "-e", `${ref}:beliefs.jsonl`]).exitCode === 0;
+  return exists ? git(repo, "show", `${ref}:beliefs.jsonl`) : "";
 }
 function lines(raw: string): string[] { return raw.split("\n").filter(x => x.trim().length > 0); }
 const hash = (line: string) => createHash("sha256").update(line).digest("hex");
@@ -175,6 +179,9 @@ export function landLane(mindPath: string, id: string, { preserveLocalScopes = f
       for (const p of unmerged) git(mind, "checkout", "--ours", "--", p);
       git(mind, "add", "--", ...unmerged);
     }
+    // A land only adds events. A ledger shorter than main's means a read failed; refuse it.
+    if (lines(result.ledger).length < lines(blob(mind, mainTip)).length)
+      throw new Error("land would shrink the belief ledger; refusing");
     fs.writeFileSync(path.join(mind, "beliefs.jsonl"), result.ledger);
     const atoms = readAtoms(path.join(mind, "beliefs"));
     const events = readLedger(path.join(mind, "beliefs.jsonl"));

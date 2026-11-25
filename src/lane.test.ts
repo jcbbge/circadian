@@ -61,6 +61,24 @@ describe("worker lanes", () => {
     } finally { f.cleanup(); }
   });
 
+  test("a ledger over 1 MiB lands whole: no event is lost to a read limit", () => {
+    const f = fixture();
+    try {
+      // Main carries a large ledger (about 2 MB), as hive's live mind did.
+      const big = Array.from({ length: 16_000 }, (_, i) =>
+        JSON.stringify({ ev: "stack", atom: `a${i}`, ep: "episode.md", ts: `2026-01-01T00:00:${String(i % 60).padStart(2, "0")}Z`, pad: "x".repeat(80) })).join("\n") + "\n";
+      fs.writeFileSync(path.join(f.mind, "beliefs.jsonl"), big);
+      commit(f.mind, "large ledger");
+      expect(fs.statSync(path.join(f.mind, "beliefs.jsonl")).size).toBeGreaterThan(1 << 20);
+      const one = openLane(f.mind, "one");
+      stack(one, "A claim landed onto a large ledger.", "2026-09-24T00:00:01Z"); commit(one, "stack one");
+      landLane(f.mind, "one");
+      const events = readLedger(path.join(f.mind, "beliefs.jsonl"));
+      expect(events.length).toBe(16_001);
+      expect(git(f.mind, "status", "--porcelain")).toBe("");
+    } finally { f.cleanup(); }
+  });
+
   test("divergent supersedes remove both decisions and expose both winners in a contradiction", () => {
     const f = fixture();
     try {
