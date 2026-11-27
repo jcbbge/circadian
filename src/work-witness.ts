@@ -228,10 +228,62 @@ export async function followFeed(mind: string, stateDir: string, readFeed = read
   }
 }
 
+export type CodingResult = { run: string; state: "done" | "failed"; exitCode: number;
+  observedAt: string; directory: string | null; harness: string | null };
+export const readCodingPage = async (offset: string): Promise<FeedPage> => {
+  const url = new URL("http://127.0.0.1:8642/durable-streams/v1/stream/index/coding-runs");
+  url.searchParams.set("offset", offset);
+  const response = await fetch(url, { redirect: "error", signal: AbortSignal.timeout(5000) });
+  if (response.status === 404) return { events: [], offset, caughtUp: true };
+  const next = response.headers.get("stream-next-offset");
+  if (!response.ok || !next) throw new Error("coding runs feed unavailable");
+  const events = await response.json();
+  if (!Array.isArray(events)) throw new Error("invalid coding runs feed page");
+  return { events, offset: next, caughtUp: response.headers.get("stream-up-to-date") === "true" };
+};
+
+/** Preserve what Rex verified (the terminal exit); never treat it as proof that code shipped. */
+export async function followCodingFeed(mind: string, stateDir: string, read = readCodingPage,
+  record: (mind: string, result: CodingResult) => void = (root, row) => {
+    const key = hash(row.run);
+    publish(root, { id: `rivet-code-${key}`, subject: "witness: retain coding run exit",
+      files: { [`episodes/${row.observedAt.slice(0, 10)}-rivet-code-${key}.md`]:
+        episode(row.run, row.observedAt, `Rivet coding run: ${row.run}\nProject: ${row.directory ?? "UNKNOWN"}\n` +
+          `Harness: ${row.harness ?? "UNKNOWN"}\nTerminal exit: ${row.exitCode} (${row.state}).\n` +
+          "Requested code outcome: UNKNOWN; an exit code is not independent verification.") } });
+  }): Promise<number> {
+  const file = join(stateDir, "coding-feed.json");
+  let offset: string = fs.existsSync(file) ? JSON.parse(fs.readFileSync(file, "utf8")).offset : "-1";
+  const seen = new Set<string>();
+  let count = 0;
+  for (;;) {
+    const page = await read(offset);
+    for (const value of page.events) {
+      const row = value as CodingResult;
+      if (!row || typeof row.run !== "string" || !/^[a-f0-9-]{36}$/.test(row.run) || seen.has(row.run) ||
+          !["done", "failed"].includes(row.state) || !Number.isInteger(row.exitCode) ||
+          typeof row.observedAt !== "string" || Number.isNaN(Date.parse(row.observedAt)) ||
+          (row.directory !== null && typeof row.directory !== "string") ||
+          (row.harness !== null && typeof row.harness !== "string")) continue;
+      seen.add(row.run);
+      record(mind, row);
+      count++;
+    }
+    const old = offset;
+    offset = page.offset;
+    fs.mkdirSync(stateDir, { recursive: true, mode: 0o700 });
+    const tmp = file + "." + randomUUID();
+    try { fs.writeFileSync(tmp, JSON.stringify({ offset }), { mode: 0o600 }); fs.renameSync(tmp, file); }
+    finally { fs.rmSync(tmp, { force: true }); }
+    if (page.caughtUp || old === offset) return count;
+  }
+}
+
 if (import.meta.main) {
   if (process.argv[2] === "--follow") {
     const home = process.env.CIRCADIAN_HOME || join(homedir(), "circadian");
-    console.log(`witnessed ${await followFeed(join(home, "mind"), join(home, "logs", "witness"))} work(s)`);
+    const mind = join(home, "mind"), state = join(home, "logs", "witness");
+    console.log(`witnessed ${await followFeed(mind, state)} work(s), ${await followCodingFeed(mind, state)} coding run(s)`);
   } else if (process.argv[2] === "--subscribe") {
     const home = process.env.CIRCADIAN_HOME || join(homedir(), "circadian");
     const queue = process.argv.slice(3);

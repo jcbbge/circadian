@@ -3,7 +3,8 @@ import { spawnSync } from "node:child_process";
 import * as fs from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { followFeed, witnessTask, workBrief, workLane, type WorkEvent, type Page, type FeedPage } from "./work-witness.ts";
+import { followFeed, followCodingFeed, witnessTask, workBrief, workLane,
+  type CodingResult, type WorkEvent, type Page, type FeedPage } from "./work-witness.ts";
 
 const step = "delivery.implementation";
 const at = "2026-11-25T11:00:00.000Z";
@@ -74,6 +75,24 @@ test("attempts stay lane-only; terminal publication survives crash before cursor
     expect(fs.readFileSync(join(mind, "SELF.md"), "utf8")).toBe("fixture SELF\n");
     expect(fs.readFileSync(join(mind, "NOW.md"), "utf8")).toBe("fixture NOW\n");
   } finally { fs.rmSync(root, { force: true, recursive: true }); }
+});
+
+test("coding feed witnesses verified exits, deduplicates retries and resumes from its checkpoint", async () => {
+  const state = fs.mkdtempSync(join(tmpdir(), "coding-witness-"));
+  try {
+    const row: CodingResult = { run: "01234567-89ab-cdef-0123-456789abcdef", state: "done", exitCode: 0,
+      observedAt: at, directory: "/home/jrg/proof", harness: "codex" };
+    const read = async (_offset: string): Promise<FeedPage> => ({
+      events: [row, row, { ...row, run: "invalid" }], offset: "end", caughtUp: true });
+    const recorded: CodingResult[] = [];
+    const record = (_mind: string, result: CodingResult) => { recorded.push(result); };
+    expect(await followCodingFeed("/unused", state, read, record)).toBe(1);
+    expect(recorded).toEqual([row]);
+    expect(await followCodingFeed("/unused", state, async offset => {
+      expect(offset).toBe("end"); return { events: [], offset, caughtUp: true };
+    }, record)).toBe(0);
+    expect(recorded).toHaveLength(1);
+  } finally { fs.rmSync(state, { recursive: true, force: true }); }
 });
 
 test("the works feed witnesses each ended work and its children once, then resumes from its checkpoint", async () => {
