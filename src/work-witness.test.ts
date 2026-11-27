@@ -82,16 +82,18 @@ test("coding feed witnesses verified exits, deduplicates retries and resumes fro
   try {
     const row: CodingResult = { run: "01234567-89ab-cdef-0123-456789abcdef", state: "done", exitCode: 0,
       observedAt: at, directory: "/home/jrg/proof", harness: "codex" };
+    const verified: CodingResult = { ...row, verification: { summary: "Checked GREEN output",
+      files: [{ path: "result.txt", sha256: "0".repeat(64) }] } };
     const read = async (_offset: string): Promise<FeedPage> => ({
-      events: [row, row, { ...row, run: "invalid" }], offset: "end", caughtUp: true });
+      events: [row, row, verified, verified, { ...row, run: "invalid" }], offset: "end", caughtUp: true });
     const recorded: CodingResult[] = [];
     const record = (_mind: string, result: CodingResult) => { recorded.push(result); };
-    expect(await followCodingFeed("/unused", state, read, record)).toBe(1);
-    expect(recorded).toEqual([row]);
+    expect(await followCodingFeed("/unused", state, read, record)).toBe(2);
+    expect(recorded).toEqual([row, verified]);
     expect(await followCodingFeed("/unused", state, async offset => {
       expect(offset).toBe("end"); return { events: [], offset, caughtUp: true };
     }, record)).toBe(0);
-    expect(recorded).toHaveLength(1);
+    expect(recorded).toHaveLength(2);
   } finally { fs.rmSync(state, { recursive: true, force: true }); }
 });
 

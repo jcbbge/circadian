@@ -229,7 +229,8 @@ export async function followFeed(mind: string, stateDir: string, readFeed = read
 }
 
 export type CodingResult = { run: string; state: "done" | "failed"; exitCode: number;
-  observedAt: string; directory: string | null; harness: string | null };
+  observedAt: string; directory: string | null; harness: string | null;
+  verification?: { summary: string; files: { path: string; sha256: string }[] } };
 export const readCodingPage = async (offset: string): Promise<FeedPage> => {
   const url = new URL("http://127.0.0.1:8642/durable-streams/v1/stream/index/coding-runs");
   url.searchParams.set("offset", offset);
@@ -246,11 +247,17 @@ export const readCodingPage = async (offset: string): Promise<FeedPage> => {
 export async function followCodingFeed(mind: string, stateDir: string, read = readCodingPage,
   record: (mind: string, result: CodingResult) => void = (root, row) => {
     const key = hash(row.run);
-    publish(root, { id: `rivet-code-${key}`, subject: "witness: retain coding run exit",
-      files: { [`episodes/${row.observedAt.slice(0, 10)}-rivet-code-${key}.md`]:
+    const verified = row.verification;
+    const suffix = verified ? "-verified" : "";
+    const outcome = verified
+      ? `Concierge-checked outcome: ${verified.summary}\nRivet-checked file hashes:\n` +
+        verified.files.map(file => `- ${file.path}: ${file.sha256}`).join("\n")
+      : "Requested code outcome: UNKNOWN; an exit code is not independent verification.";
+    publish(root, { id: `rivet-code-${key}${suffix}`,
+      subject: verified ? "witness: retain coding file verification" : "witness: retain coding run exit",
+      files: { [`episodes/${row.observedAt.slice(0, 10)}-rivet-code-${key}${suffix}.md`]:
         episode(row.run, row.observedAt, `Rivet coding run: ${row.run}\nProject: ${row.directory ?? "UNKNOWN"}\n` +
-          `Harness: ${row.harness ?? "UNKNOWN"}\nTerminal exit: ${row.exitCode} (${row.state}).\n` +
-          "Requested code outcome: UNKNOWN; an exit code is not independent verification.") } });
+          `Harness: ${row.harness ?? "UNKNOWN"}\nTerminal exit: ${row.exitCode} (${row.state}).\n${outcome}`) } });
   }): Promise<number> {
   const file = join(stateDir, "coding-feed.json");
   let offset: string = fs.existsSync(file) ? JSON.parse(fs.readFileSync(file, "utf8")).offset : "-1";
@@ -260,12 +267,17 @@ export async function followCodingFeed(mind: string, stateDir: string, read = re
     const page = await read(offset);
     for (const value of page.events) {
       const row = value as CodingResult;
-      if (!row || typeof row.run !== "string" || !/^[a-f0-9-]{36}$/.test(row.run) || seen.has(row.run) ||
+      const key = row?.run + (row?.verification ? "/verified" : "/exit");
+      if (!row || typeof row.run !== "string" || !/^[a-f0-9-]{36}$/.test(row.run) || seen.has(key) ||
           !["done", "failed"].includes(row.state) || !Number.isInteger(row.exitCode) ||
           typeof row.observedAt !== "string" || Number.isNaN(Date.parse(row.observedAt)) ||
           (row.directory !== null && typeof row.directory !== "string") ||
           (row.harness !== null && typeof row.harness !== "string")) continue;
-      seen.add(row.run);
+      if (row.verification && (typeof row.verification.summary !== "string" ||
+          !Array.isArray(row.verification.files) || !row.verification.files.length ||
+          row.verification.files.some(file => !file || typeof file.path !== "string" ||
+            !/^[a-f0-9]{64}$/.test(file.sha256)))) continue;
+      seen.add(key);
       record(mind, row);
       count++;
     }
